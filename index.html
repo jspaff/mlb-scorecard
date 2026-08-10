@@ -651,6 +651,39 @@
   .cell-wrap.clickable { cursor: pointer; }
   .cell-wrap.clickable:hover svg { filter: brightness(1.12); }
 
+  .player-name-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-decoration-color: var(--ink-soft);
+    text-underline-offset: 2px;
+  }
+  .player-name-btn:hover { color: var(--brick); }
+
+  .player-stat-line {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 5px 6px;
+    border-bottom: 1px solid var(--paper-line);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--ink);
+  }
+  .player-stat-line .psl-label {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 9px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
   .pitch-overlay {
     display: none;
     position: fixed;
@@ -780,6 +813,12 @@
       <div id="standingsModalBody"></div>
     </div>
   </div>
+  <div id="playerOverlay" class="pitch-overlay">
+    <div class="pitch-modal">
+      <button id="playerClose" class="pitch-close" aria-label="Close">&#10005;</button>
+      <div id="playerModalBody"></div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -792,8 +831,24 @@
   let rosterStore = {};
   let sprayStore = {};
   let standingsHtml = '';
+  let playerStore = {};
   const gameLogCache = {};
   const standingsCache = {};
+  const playerSeasonCache = {};
+  async function getPlayerSeasonStats(personId, season) {
+    const key = `${personId}-${season}`;
+    if (playerSeasonCache[key] !== undefined) return playerSeasonCache[key];
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/people/${personId}/stats?stats=season&group=hitting&season=${season}`);
+      const data = await res.json();
+      const stat = (data.stats && data.stats[0] && data.stats[0].splits && data.stats[0].splits[0] && data.stats[0].splits[0].stat) || null;
+      playerSeasonCache[key] = stat;
+      return stat;
+    } catch (e) {
+      playerSeasonCache[key] = null;
+      return null;
+    }
+  }
   async function getStandings(season, date) {
     const key = `${season}-${date}`;
     if (standingsCache[key] !== undefined) return standingsCache[key];
@@ -1615,6 +1670,27 @@
     return `<div class="pitch-header">Standings</div><div class="pitch-subheader">As of ${date}</div>${sections}`;
   }
 
+  function renderPlayerModalContent(info, seasonStat) {
+    const s = info.todayStats || {};
+    const todayHtml = `
+      <div class="player-stat-line"><span class="psl-label">Today</span><span>${s.hits ?? 0}-${s.atBats ?? 0}, ${s.rbi ?? 0} RBI, ${s.baseOnBalls ?? 0} BB, ${s.homeRuns ?? 0} HR</span></div>`;
+    const seasonHtml = seasonStat
+      ? `<div class="player-stat-line"><span class="psl-label">AVG</span><span>${seasonStat.avg ?? '&#8212;'}</span></div>
+         <div class="player-stat-line"><span class="psl-label">OBP</span><span>${seasonStat.obp ?? '&#8212;'}</span></div>
+         <div class="player-stat-line"><span class="psl-label">SLG</span><span>${seasonStat.slg ?? '&#8212;'}</span></div>
+         <div class="player-stat-line"><span class="psl-label">HR</span><span>${seasonStat.homeRuns ?? '&#8212;'}</span></div>
+         <div class="player-stat-line"><span class="psl-label">RBI</span><span>${seasonStat.rbi ?? '&#8212;'}</span></div>`
+      : `<div class="pitch-empty">Season stats not available.</div>`;
+    return `
+      <div class="pitch-header">${info.name}</div>
+      <div class="pitch-subheader">${info.pos} &#183; ${info.team}</div>
+      <div class="roster-section-title">${info.season} Season</div>
+      ${seasonHtml}
+      <div class="roster-section-title">This Game</div>
+      ${todayHtml}
+    `;
+  }
+
   function renderRosterContent(teamName, bullpenList, lineupRows, benchPlayers) {
     const lineupHtml = lineupRows.map((r, i) => {
       const starter = r.players[0];
@@ -1698,7 +1774,7 @@
     </table></div></div>`;
   }
 
-  function renderTeamTable(teamName, rows, numInnings, pitcherByInning, starterPitcherId, columnsPerInning, pitcherCardHtml, teamKey, liveBatterInfo) {
+  function renderTeamTable(teamName, rows, numInnings, pitcherByInning, starterPitcherId, columnsPerInning, pitcherCardHtml, teamKey, liveBatterInfo, season) {
     let head = `<tr><th class="ply">Player</th><th class="pos">Pos</th>`;
     for (let i = 1; i <= numInnings; i++) {
       const cols = (columnsPerInning && columnsPerInning[i]) || 1;
@@ -1707,7 +1783,11 @@
     head += `<th class="stat stat-hab">H-AB</th><th class="stat stat-extra">BB-2B-3B-HR</th><th class="stat stat-rbi">RBI</th></tr>`;
 
     const bodyRows = rows.map(r => {
-      const nameHtml = r.players.map((p, i) => i === 0 ? p.name : `<span class="sub-note">&#8594; ${p.name}</span>`).join('<br/>');
+      const nameHtml = r.players.map((p, i) => {
+        playerStore[p.id] = { name: p.name, pos: p.pos, team: teamName, season, todayStats: p.stats };
+        const btn = `<button type="button" class="player-name-btn" data-player-id="${p.id}">${p.name}</button>`;
+        return i === 0 ? btn : `<span class="sub-note">&#8594; ${btn}</span>`;
+      }).join('<br/>');
       const posHtml = r.players.map((p, i) => i === 0 ? p.pos : `<span class="sub-note">${p.pos}</span>`).join('<br/>');
       let cells = `<td class="ply">${nameHtml}</td><td class="pos">${posHtml}</td>`;
       for (let i = 1; i <= numInnings; i++) {
@@ -1996,8 +2076,8 @@
             <div class="live-strip">${stripHtml}</div>
             ${lastPlayHtml}
           </div>
-          ${renderTeamTable(awayName, awayRows, numInnings, away.pitcherByInning, away.starterPitcherId, columnsPerInning, homePitcherCard, 'away', liveBatterInfo)}
-          ${renderTeamTable(homeName, homeRows, numInnings, home.pitcherByInning, home.starterPitcherId, columnsPerInning, awayPitcherCard, 'home', liveBatterInfo)}
+          ${renderTeamTable(awayName, awayRows, numInnings, away.pitcherByInning, away.starterPitcherId, columnsPerInning, homePitcherCard, 'away', liveBatterInfo, season)}
+          ${renderTeamTable(homeName, homeRows, numInnings, home.pitcherByInning, home.starterPitcherId, columnsPerInning, awayPitcherCard, 'home', liveBatterInfo, season)}
         </div>
         <div class="footnote">Source: MLB Stats API &#183; updated ${new Date().toLocaleTimeString()}</div>
       `;
@@ -2118,6 +2198,23 @@
     standingsOverlay.classList.remove('open');
   }
 
+  const playerOverlay = document.getElementById('playerOverlay');
+  const playerModalBody = document.getElementById('playerModalBody');
+  const playerClose = document.getElementById('playerClose');
+
+  async function showPlayerModal(playerId) {
+    const info = playerStore[playerId];
+    if (!info) return;
+    playerModalBody.innerHTML = renderPlayerModalContent(info, null) + '<div class="pitch-empty">Loading season stats&#8230;</div>';
+    playerOverlay.classList.add('open');
+    const seasonStat = await getPlayerSeasonStats(playerId, info.season);
+    if (!playerOverlay.classList.contains('open')) return;
+    playerModalBody.innerHTML = renderPlayerModalContent(info, seasonStat);
+  }
+  function hidePlayerModal() {
+    playerOverlay.classList.remove('open');
+  }
+
   document.addEventListener('click', (e) => {
     const target = e.target.closest('[data-pkey]');
     if (target) showPitchPopup(target.getAttribute('data-pkey'));
@@ -2126,6 +2223,8 @@
     const sprayBtn = e.target.closest('.spray-btn');
     if (sprayBtn) showSprayModal(sprayBtn.getAttribute('data-team'));
     if (e.target.closest('.standings-btn')) showStandingsModal();
+    const playerBtn = e.target.closest('.player-name-btn');
+    if (playerBtn) showPlayerModal(playerBtn.getAttribute('data-player-id'));
   });
   document.addEventListener('change', (e) => {
     const sel = e.target.closest('select.spray-filter');
@@ -2156,8 +2255,12 @@
   standingsOverlay.addEventListener('click', (e) => {
     if (e.target === standingsOverlay) hideStandingsModal();
   });
+  playerClose.addEventListener('click', hidePlayerModal);
+  playerOverlay.addEventListener('click', (e) => {
+    if (e.target === playerOverlay) hidePlayerModal();
+  });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { hidePitchPopup(); hideRosterModal(); hideSprayModal(); hideStandingsModal(); }
+    if (e.key === 'Escape') { hidePitchPopup(); hideRosterModal(); hideSprayModal(); hideStandingsModal(); hidePlayerModal(); }
   });
 
   loadSchedule(dateInput.value);
