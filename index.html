@@ -377,6 +377,30 @@
     border-bottom: 1px solid var(--paper-line);
   }
   .standings-row.standings-highlight { background: rgba(179, 121, 26, 0.1); }
+  .league-toggle {
+    display: flex;
+    gap: 6px;
+    margin: 6px 0 10px;
+  }
+  .league-toggle-btn {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 10.5px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    background: rgba(28, 58, 44, 0.05);
+    border: 1px solid var(--paper-line);
+    border-radius: 5px;
+    padding: 5px 14px;
+    cursor: pointer;
+  }
+  .league-toggle-btn:hover { background: rgba(28, 58, 44, 0.1); }
+  .league-toggle-btn.active {
+    color: var(--paper);
+    background: var(--gold);
+    border-color: var(--gold);
+  }
   .standings-team {
     flex: 1;
     font-family: 'Inter', sans-serif;
@@ -845,7 +869,9 @@
   let pitchStore = {};
   let rosterStore = {};
   let sprayStore = {};
-  let standingsHtml = '';
+  let standingsRecords = [];
+  let standingsMeta = { date: '', awayTeamId: null, homeTeamId: null };
+  let standingsActiveLeague = 103;
   let playerStore = {};
   const gameLogCache = {};
   const standingsCache = {};
@@ -1647,11 +1673,30 @@
       </div>`).join('');
   }
 
-  function renderStandingsContent(records, awayDivisionId, homeDivisionId, awayTeamId, homeTeamId, date) {
-    const relevantIds = new Set([awayDivisionId, homeDivisionId].filter(Boolean));
-    const relevant = (records || []).filter(r => r.division && relevantIds.has(r.division.id));
+  const AL_DIVISION_IDS = new Set([200, 201, 202]);
+  const NL_DIVISION_IDS = new Set([203, 204, 205]);
+  function getRecordLeagueId(rec) {
+    if (rec.league && rec.league.id) return rec.league.id;
+    const divId = rec.division && rec.division.id;
+    if (AL_DIVISION_IDS.has(divId)) return 103;
+    if (NL_DIVISION_IDS.has(divId)) return 104;
+    return null;
+  }
+  function renderStandingsContent(records, activeLeague, awayTeamId, homeTeamId, date) {
+    const DIVISION_ORDER = ['East', 'Central', 'West'];
+    const toggleHtml = `<div class="league-toggle">
+      <button type="button" class="league-toggle-btn${activeLeague === 103 ? ' active' : ''}" data-league="103">AL</button>
+      <button type="button" class="league-toggle-btn${activeLeague === 104 ? ' active' : ''}" data-league="104">NL</button>
+    </div>`;
+    const relevant = (records || []).filter(r => getRecordLeagueId(r) === activeLeague).sort((a, b) => {
+      const nameA = (a.division && a.division.name) || '';
+      const nameB = (b.division && b.division.name) || '';
+      const rankA = DIVISION_ORDER.findIndex(d => nameA.includes(d));
+      const rankB = DIVISION_ORDER.findIndex(d => nameB.includes(d));
+      return (rankA === -1 ? 99 : rankA) - (rankB === -1 ? 99 : rankB);
+    });
     if (!relevant.length) {
-      return `<div class="pitch-header">Standings</div><div class="pitch-empty">Standings not available for this date.</div>`;
+      return `<div class="pitch-header">Standings</div>${toggleHtml}<div class="pitch-empty">Standings not available for this date.</div>`;
     }
     const sections = relevant.map(div => {
       const teams = (div.teamRecords || []).slice().sort((a, b) =>
@@ -1682,7 +1727,7 @@
         </div>
         ${rows}`;
     }).join('');
-    return `<div class="pitch-header">Standings</div><div class="pitch-subheader">As of ${date}</div>${sections}`;
+    return `<div class="pitch-header">Standings</div>${toggleHtml}<div class="pitch-subheader">As of ${date}</div>${sections}`;
   }
 
   function renderPlayerModalContent(info, seasonStat) {
@@ -2029,13 +2074,15 @@
       sprayStore[awayName] = renderSprayChart(away.battedBalls, awayName);
       sprayStore[homeName] = renderSprayChart(home.battedBalls, homeName);
 
-      const awayDivisionId = gameData.teams.away.division && gameData.teams.away.division.id;
-      const homeDivisionId = gameData.teams.home.division && gameData.teams.home.division.id;
-      const standingsRecords = await getStandings(season, officialDate);
-      standingsHtml = renderStandingsContent(
-        standingsRecords, awayDivisionId, homeDivisionId,
-        gameData.teams.away.id, gameData.teams.home.id, officialDate
-      );
+      const awayLeagueId = gameData.teams.away.league && gameData.teams.away.league.id;
+      const homeLeagueId = gameData.teams.home.league && gameData.teams.home.league.id;
+      standingsRecords = await getStandings(season, officialDate);
+      standingsMeta = {
+        date: officialDate,
+        awayTeamId: gameData.teams.away.id,
+        homeTeamId: gameData.teams.home.id,
+      };
+      standingsActiveLeague = awayLeagueId || homeLeagueId || 103;
 
       let badgeClass = 'badge-preview';
       if (state === 'Live') badgeClass = 'badge-live';
@@ -2086,7 +2133,7 @@
       body.innerHTML = `
         <div class="sheet">
           <div class="sticky-top">
-            <button class="standings-btn">Divisional Standings</button>
+            <button class="standings-btn">Standings</button>
             ${renderBoxScore(linescore, awayName, homeName)}
             <div class="live-strip">${stripHtml}</div>
             ${lastPlayHtml}
@@ -2205,8 +2252,13 @@
   const standingsModalBody = document.getElementById('standingsModalBody');
   const standingsClose = document.getElementById('standingsClose');
 
+  function renderStandingsModalBody() {
+    return standingsRecords.length
+      ? renderStandingsContent(standingsRecords, standingsActiveLeague, standingsMeta.awayTeamId, standingsMeta.homeTeamId, standingsMeta.date)
+      : '<div class="pitch-header">Standings</div><div class="pitch-empty">Standings not available.</div>';
+  }
   function showStandingsModal() {
-    standingsModalBody.innerHTML = standingsHtml || '<div class="pitch-header">Standings</div><div class="pitch-empty">Standings not available.</div>';
+    standingsModalBody.innerHTML = renderStandingsModalBody();
     standingsOverlay.classList.add('open');
   }
   function hideStandingsModal() {
@@ -2238,6 +2290,11 @@
     const sprayBtn = e.target.closest('.spray-btn');
     if (sprayBtn) showSprayModal(sprayBtn.getAttribute('data-team'));
     if (e.target.closest('.standings-btn')) showStandingsModal();
+    const leagueToggleBtn = e.target.closest('.league-toggle-btn');
+    if (leagueToggleBtn) {
+      standingsActiveLeague = parseInt(leagueToggleBtn.getAttribute('data-league'), 10);
+      standingsModalBody.innerHTML = renderStandingsModalBody();
+    }
     const playerBtn = e.target.closest('.player-name-btn');
     if (playerBtn) showPlayerModal(playerBtn.getAttribute('data-player-id'));
   });
