@@ -49,6 +49,30 @@
   }
 
   .mlb-controls { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .tab-bar {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid rgba(243, 236, 219, 0.15);
+  }
+  .tab-btn {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 8px 4px;
+    margin-bottom: -1px;
+    cursor: pointer;
+  }
+  .tab-btn:hover { color: var(--ink); }
+  .tab-btn.active { color: var(--ink); border-bottom-color: var(--gold); }
+  .tab-panel[hidden] { display: none; }
   .date-nav { display: flex; align-items: center; gap: 4px; }
   .date-nav-btn {
     background: var(--paper);
@@ -299,7 +323,7 @@
   .spray-key .dot.hit { background: var(--gold); }
   .spray-key .dot.out { background: #8a8478; }
 
-  .roster-btn, .spray-btn, .standings-btn {
+  .roster-btn, .spray-btn {
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
     font-size: 10.5px;
@@ -312,8 +336,7 @@
     padding: 6px 12px;
     cursor: pointer;
   }
-  .standings-btn { display: inline-block; margin-bottom: 10px; }
-  .roster-btn:hover, .spray-btn:hover, .standings-btn:hover { background: rgba(28, 58, 44, 0.1); }
+  .roster-btn:hover, .spray-btn:hover { background: rgba(28, 58, 44, 0.1); }
   .roster-section-title {
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
@@ -801,8 +824,15 @@
       <select id="gamePick"><option>Loading games&#8230;</option></select>
     </div>
   </div>
-  <div id="mlbBody">
+  <div class="tab-bar">
+    <button type="button" class="tab-btn active" data-tab="scorecard">Scorecard</button>
+    <button type="button" class="tab-btn" data-tab="standings">Standings</button>
+  </div>
+  <div class="tab-panel" data-tab-panel="scorecard" id="mlbBody">
     <div class="mlb-status-msg">Loading today's schedule&#8230;</div>
+  </div>
+  <div class="tab-panel" data-tab-panel="standings" id="standingsBody" hidden>
+    <div class="mlb-status-msg">Pick a game on the Scorecard tab to see its division standings.</div>
   </div>
   <div id="pitchOverlay" class="pitch-overlay">
     <div class="pitch-modal">
@@ -822,12 +852,6 @@
       <div id="sprayModalBody"></div>
     </div>
   </div>
-  <div id="standingsOverlay" class="pitch-overlay">
-    <div class="pitch-modal">
-      <button id="standingsClose" class="pitch-close" aria-label="Close">&#10005;</button>
-      <div id="standingsModalBody"></div>
-    </div>
-  </div>
   <div id="playerOverlay" class="pitch-overlay">
     <div class="pitch-modal">
       <button id="playerClose" class="pitch-close" aria-label="Close">&#10005;</button>
@@ -841,6 +865,7 @@
   const dateInput = document.getElementById('datePick');
   const gameSelect = document.getElementById('gamePick');
   const body = document.getElementById('mlbBody');
+  const standingsBody = document.getElementById('standingsBody');
   let pollTimer = null;
   let pitchStore = {};
   let rosterStore = {};
@@ -1912,6 +1937,7 @@
       if (!games.length) {
         gameSelect.innerHTML = '<option>No games</option>';
         body.innerHTML = '<div class="mlb-status-msg">No MLB games scheduled on this date.</div>';
+        standingsBody.innerHTML = '<div class="mlb-status-msg">Pick a game on the Scorecard tab to see its division standings.</div>';
         return;
       }
       gameSelect.innerHTML = games.map(g => {
@@ -1930,6 +1956,7 @@
       loadGame(chosen);
     } catch (e) {
       body.innerHTML = '<div class="mlb-status-msg">Could not load schedule. The MLB API may be unreachable right now.</div>';
+      standingsBody.innerHTML = '<div class="mlb-status-msg">Standings not available.</div>';
     }
   }
 
@@ -2036,6 +2063,7 @@
         standingsRecords, awayDivisionId, homeDivisionId,
         gameData.teams.away.id, gameData.teams.home.id, officialDate
       );
+      standingsBody.innerHTML = `<div class="sheet">${standingsHtml}</div>`;
 
       let badgeClass = 'badge-preview';
       if (state === 'Live') badgeClass = 'badge-live';
@@ -2086,7 +2114,6 @@
       body.innerHTML = `
         <div class="sheet">
           <div class="sticky-top">
-            <button class="standings-btn">Divisional Standings</button>
             ${renderBoxScore(linescore, awayName, homeName)}
             <div class="live-strip">${stripHtml}</div>
             ${lastPlayHtml}
@@ -2111,6 +2138,7 @@
       }
     } catch (e) {
       body.innerHTML = '<div class="mlb-status-msg">Could not load game data.</div>';
+      standingsBody.innerHTML = '<div class="mlb-status-msg">Standings not available.</div>';
     }
   }
 
@@ -2201,17 +2229,42 @@
     sprayOverlay.classList.remove('open');
   }
 
-  const standingsOverlay = document.getElementById('standingsOverlay');
-  const standingsModalBody = document.getElementById('standingsModalBody');
-  const standingsClose = document.getElementById('standingsClose');
+  // Tab framework: register a tab with an optional lazy `init` (runs once,
+  // on first visit) and `onShow` (runs every time the tab becomes active).
+  // Adding a future tab is just a register() call plus a button + panel in
+  // the HTML - no router dependency needed for a single-page app like this.
+  const Tabs = (() => {
+    const tabs = {};
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabPanels = document.querySelectorAll('.tab-panel');
+    let active = null;
 
-  function showStandingsModal() {
-    standingsModalBody.innerHTML = standingsHtml || '<div class="pitch-header">Standings</div><div class="pitch-empty">Standings not available.</div>';
-    standingsOverlay.classList.add('open');
-  }
-  function hideStandingsModal() {
-    standingsOverlay.classList.remove('open');
-  }
+    function register(id, { init, onShow } = {}) {
+      tabs[id] = { init, onShow, initialized: false };
+    }
+
+    function switchTo(id) {
+      if (!tabs[id] || id === active) return;
+      tabBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === id));
+      tabPanels.forEach(p => { p.hidden = p.dataset.tabPanel !== id; });
+      const tab = tabs[id];
+      if (!tab.initialized) { if (tab.init) tab.init(); tab.initialized = true; }
+      if (tab.onShow) tab.onShow();
+      active = id;
+      history.replaceState(null, '', '#' + id);
+    }
+
+    function init(defaultId) {
+      tabBtns.forEach(btn => btn.addEventListener('click', () => switchTo(btn.dataset.tab)));
+      const fromHash = location.hash.slice(1);
+      switchTo(tabs[fromHash] ? fromHash : defaultId);
+    }
+
+    return { register, switchTo, init };
+  })();
+
+  Tabs.register('scorecard');
+  Tabs.register('standings');
 
   const playerOverlay = document.getElementById('playerOverlay');
   const playerModalBody = document.getElementById('playerModalBody');
@@ -2237,7 +2290,6 @@
     if (rosterBtn) showRosterModal(rosterBtn.getAttribute('data-team'));
     const sprayBtn = e.target.closest('.spray-btn');
     if (sprayBtn) showSprayModal(sprayBtn.getAttribute('data-team'));
-    if (e.target.closest('.standings-btn')) showStandingsModal();
     const playerBtn = e.target.closest('.player-name-btn');
     if (playerBtn) showPlayerModal(playerBtn.getAttribute('data-player-id'));
   });
@@ -2266,18 +2318,15 @@
   sprayOverlay.addEventListener('click', (e) => {
     if (e.target === sprayOverlay) hideSprayModal();
   });
-  standingsClose.addEventListener('click', hideStandingsModal);
-  standingsOverlay.addEventListener('click', (e) => {
-    if (e.target === standingsOverlay) hideStandingsModal();
-  });
   playerClose.addEventListener('click', hidePlayerModal);
   playerOverlay.addEventListener('click', (e) => {
     if (e.target === playerOverlay) hidePlayerModal();
   });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { hidePitchPopup(); hideRosterModal(); hideSprayModal(); hideStandingsModal(); hidePlayerModal(); }
+    if (e.key === 'Escape') { hidePitchPopup(); hideRosterModal(); hideSprayModal(); hidePlayerModal(); }
   });
 
+  Tabs.init('scorecard');
   loadSchedule(dateInput.value);
 })();
 </script>
