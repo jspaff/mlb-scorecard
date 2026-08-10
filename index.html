@@ -1,0 +1,2167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MLB Scorecard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Overpass:wght@600;700;800&family=Special+Elite&family=IBM+Plex+Mono:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
+
+  html, body { margin: 0; padding: 0; background: var(--frame, #54796d); }
+
+  :root {
+    --paper: #3b4336;
+    --paper-line: #545e4d;
+    --ink: #f3ecdb;
+    --ink-soft: #c3c8bb;
+    --gold: #d9a91a;
+    --brick: #e0604a;
+    --frame: #54796d;
+  }
+
+  #mlb-root * { box-sizing: border-box; }
+
+  #mlb-root {
+    background: var(--frame);
+    padding: 18px;
+    border-radius: 10px;
+    font-family: 'Inter', sans-serif;
+    min-height: 100%;
+  }
+
+  .mlb-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .mlb-title {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 800;
+    font-size: 21px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+
+  .mlb-controls { display: flex; gap: 8px; flex-wrap: wrap; }
+  .date-nav { display: flex; align-items: center; gap: 4px; }
+  .date-nav-btn {
+    background: var(--paper);
+    color: var(--ink);
+    border: 1px solid var(--paper-line);
+    border-radius: 6px;
+    width: 28px;
+    height: 30px;
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .date-nav-btn:hover { background: rgba(28, 58, 44, 0.1); }
+  .date-nav-btn:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
+  select, input[type=date] {
+    background: var(--paper);
+    color: var(--ink);
+    border: 1px solid var(--paper-line);
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-family: 'Oswald', sans-serif;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    font-size: 13px;
+    max-width: 260px;
+  }
+  select:focus, input:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
+
+  .mlb-status-msg {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--paper);
+    opacity: 0.75;
+    padding: 30px 10px;
+    text-align: center;
+  }
+
+  .sheet {
+    background: var(--paper);
+    border-radius: 6px;
+    padding: 18px 18px 12px;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.25) inset, 0 4px 14px rgba(0,0,0,0.35);
+  }
+
+  .sticky-top {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--paper);
+    padding-top: 2px;
+    margin: -2px -18px 0;
+    padding-left: 18px;
+    padding-right: 18px;
+    box-shadow: 0 6px 8px -6px rgba(11, 15, 12, 0.35);
+  }
+
+  .box-score { margin-bottom: 14px; }
+  table.box-table {
+    border-collapse: collapse;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    min-width: 100%;
+  }
+  table.box-table th {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 11.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    text-align: center;
+    padding: 1px 4px 3px;
+    border-bottom: 1px solid var(--ink);
+  }
+  table.box-table th.box-stat { border-left: 1px solid var(--paper-line); }
+  table.box-table td {
+    text-align: center;
+    padding: 2px 4px;
+    color: var(--ink);
+    border-bottom: 1px solid var(--paper-line);
+    font-family: 'Special Elite', monospace;
+  }
+  table.box-table tr:last-child td { border-bottom: none; }
+  table.box-table td.box-team {
+    text-align: left;
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    padding-right: 10px;
+  }
+  table.box-table td.box-stat { border-left: 1px solid var(--paper-line); font-weight: 700; }
+  .run-scored { font-weight: 700; color: var(--ink); }
+
+  .live-strip {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+    padding-bottom: 12px;
+    margin-bottom: 14px;
+    border-bottom: 1.5px solid var(--paper-line);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    color: var(--ink);
+  }
+  .badge {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: 4px;
+  }
+  .badge-live { background: var(--brick); color: var(--paper); }
+  .badge-final { background: var(--ink); color: var(--paper); }
+  .badge-preview { background: transparent; color: var(--gold); border: 1px solid var(--gold); }
+
+  .count-board {
+    display: flex;
+    gap: 16px;
+    padding: 2px 0;
+  }
+  .count-col { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+  .count-label {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 800;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .count-lights { display: flex; gap: 4px; }
+  .light-bulb {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: transparent;
+    border: 1px solid var(--ink-soft);
+    display: inline-block;
+  }
+  .light-bulb.lit-green { background: #4f9e57; border-color: #4f9e57; }
+  .light-bulb.lit-red { background: var(--brick); border-color: var(--brick); }
+
+  .diamond-mini { width: 26px; height: 26px; position: relative; transform: rotate(45deg); vertical-align: middle; }
+  .base-mini { position: absolute; width: 10px; height: 10px; border: 1.4px solid var(--ink-soft); }
+  .base-mini.on { background: var(--gold); border-color: var(--gold); }
+  .base-mini.first { top: 0; right: 0; }
+  .base-mini.second { top: 0; left: 0; }
+  .base-mini.third { bottom: 0; left: 0; }
+
+  .last-play {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-top: -4px;
+    margin-bottom: 14px;
+    padding-bottom: 6px;
+  }
+  .last-play-label {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 9px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-right: 7px;
+  }
+
+  .team-block { margin-bottom: 20px; }
+  .team-block:last-child { margin-bottom: 8px; }
+  .team-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+    padding-bottom: 4px;
+    border-bottom: 2px solid var(--ink);
+  }
+  .team-name {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .team-header-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .spray-card {
+    margin-top: 8px;
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    background: rgba(28, 58, 44, 0.03);
+    border: 1px solid var(--paper-line);
+    border-radius: 6px;
+    text-align: center;
+  }
+  .spray-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+  }
+  .spray-title {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .spray-filter {
+    font-family: 'Inter', sans-serif;
+    font-size: 10.5px;
+    background: var(--paper);
+    color: var(--ink);
+    border: 1px solid var(--paper-line);
+    border-radius: 4px;
+    padding: 2px 5px;
+    max-width: 150px;
+  }
+  .spray-legend {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 4px;
+  }
+  .spray-key {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 600;
+    font-size: 10px;
+    color: var(--ink-soft);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .spray-key .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .spray-key .dot.hr-dot { background: #fff8ea; border: 1.6px solid; box-sizing: border-box; }
+  .spray-key .dot.hit { background: var(--gold); }
+  .spray-key .dot.out { background: #8a8478; }
+
+  .roster-btn, .spray-btn, .standings-btn {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 10.5px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink);
+    background: rgba(28, 58, 44, 0.05);
+    border: 1px solid var(--paper-line);
+    border-radius: 5px;
+    padding: 6px 12px;
+    cursor: pointer;
+  }
+  .standings-btn { display: inline-block; margin-bottom: 10px; }
+  .roster-btn:hover, .spray-btn:hover, .standings-btn:hover { background: rgba(28, 58, 44, 0.1); }
+  .roster-section-title {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin: 16px 0 6px;
+    padding-bottom: 3px;
+    border-bottom: 1px solid var(--paper-line);
+  }
+  .roster-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    border-bottom: 1px dashed var(--paper-line);
+    font-family: 'Special Elite', monospace;
+    font-size: 12px;
+    color: var(--ink);
+  }
+  .roster-row:last-child { border-bottom: none; }
+  .roster-order {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 10.5px;
+    color: var(--ink-soft);
+    width: 14px;
+  }
+  .roster-name { flex: 1; }
+  .roster-pos {
+    font-family: 'Special Elite', monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+  .roster-empty {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: var(--ink-soft);
+    font-style: italic;
+    padding: 4px 0;
+  }
+  .standings-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0;
+    border-bottom: 1px dashed var(--paper-line);
+    font-family: 'Special Elite', monospace;
+    font-size: 11.5px;
+    color: var(--ink);
+  }
+  .standings-row:last-child { border-bottom: none; }
+  .standings-row.standings-header-row {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 9px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    border-bottom: 1px solid var(--paper-line);
+  }
+  .standings-row.standings-highlight { background: rgba(179, 121, 26, 0.1); }
+  .standings-team {
+    flex: 1;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .standings-row.standings-header-row .standings-team { font-family: 'Overpass', sans-serif; }
+  .standings-num { width: 38px; text-align: center; }
+  .bp-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 5px 0;
+    border-bottom: 1px dashed var(--paper-line);
+    flex-wrap: wrap;
+  }
+  .bp-row:last-child { border-bottom: none; }
+  .bp-name {
+    font-family: 'Special Elite', monospace;
+    font-weight: 500;
+    font-size: 12px;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .bp-badge {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 8px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #fff8ea;
+    background: var(--gold);
+    padding: 2px 5px;
+    border-radius: 3px;
+  }
+  .bp-badge.bp-badge-starter { background: var(--ink); }
+  .bp-recent { display: flex; gap: 10px; }
+  .bp-recent-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .bp-recent-value {
+    font-family: 'Special Elite', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .bp-recent-label {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 7.5px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  .pitcher-card {
+    margin-top: 8px;
+    margin-bottom: 14px;
+    padding: 10px 14px;
+    background: rgba(28, 58, 44, 0.035);
+    border: 1px solid var(--paper-line);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .pc-kicker {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 8.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    width: 100%;
+    margin-bottom: -8px;
+  }
+  .pc-name {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.02em;
+    color: var(--ink);
+    white-space: nowrap;
+    padding-right: 4px;
+  }
+  .pc-stats { display: flex; gap: 16px; flex-wrap: wrap; }
+  .pc-stat { display: flex; flex-direction: column; align-items: center; min-width: 26px; }
+  .pc-value {
+    font-family: 'Special Elite', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .pc-label {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 8px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-top: 1px;
+  }
+
+  .table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+  }
+  .table-scroll::-webkit-scrollbar { height: 7px; }
+  .table-scroll::-webkit-scrollbar-track { background: var(--paper-line); border-radius: 4px; }
+  .table-scroll::-webkit-scrollbar-thumb { background: var(--ink-soft); border-radius: 4px; }
+
+  table.scorecard-table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 640px;
+    table-layout: fixed;
+  }
+  table.scorecard-table th {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    text-align: center;
+    padding: 4px 3px 6px;
+    border-bottom: 1px solid var(--paper-line);
+    width: 52px;
+  }
+  table.scorecard-table th.ply { text-align: left; }
+  table.scorecard-table th.pos { text-align: center; }
+  table.scorecard-table th.ply { position: sticky; left: 0; background: var(--paper); z-index: 3; width: 118px; }
+  table.scorecard-table th.pos { width: 34px; }
+  table.scorecard-table th.stat { width: 62px; }
+  table.scorecard-table th.stat-hab { width: 42px; border-left: 1px solid var(--paper-line); }
+  table.scorecard-table th.stat-extra {
+    width: 82px;
+    padding-left: 2px;
+    padding-right: 2px;
+    letter-spacing: 0.01em;
+  }
+  table.scorecard-table th.stat-rbi { width: 34px; }
+  table.scorecard-table th.inning-cont { border-left: none; color: var(--gold); }
+  table.scorecard-table th.stat { border-left: 1px solid var(--paper-line); white-space: nowrap; }
+
+  table.scorecard-table td {
+    text-align: center;
+    padding: 3px 2px;
+    border-bottom: 1px dashed var(--paper-line);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--ink);
+  }
+  table.scorecard-table td.ply {
+    text-align: left;
+    font-family: 'Special Elite', monospace;
+    font-weight: 500;
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 8px;
+    width: 118px;
+    position: sticky;
+    left: 0;
+    background: var(--paper);
+    box-shadow: 2px 0 4px rgba(28,58,44,0.08);
+    z-index: 2;
+  }
+  table.scorecard-table td.pos {
+    text-align: center;
+    color: var(--ink-soft);
+    font-size: 11px;
+    font-family: 'Special Elite', monospace;
+    padding-right: 0;
+    width: 34px;
+  }
+  table.scorecard-table td.cell { width: 52px; padding: 3px 1px 7px; }
+  table.scorecard-table td.sub-divider { border-left: 1px dashed rgba(28,58,44,0.3); }
+  table.scorecard-table td.pitcher-change { border-top: 1.5px solid var(--ink); padding-top: 5px; }
+  table.scorecard-table th.starter-span,
+  table.scorecard-table td.starter-span { background: rgba(243, 236, 219, 0.07); }
+  .cell-wrap { position: relative; display: inline-block; }
+  .live-dot {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 8px;
+    height: 8px;
+    margin: -4px 0 0 -4px;
+    border-radius: 50%;
+    background: var(--gold);
+    box-shadow: 0 0 0 2px rgba(179, 121, 26, 0.25);
+    animation: live-pulse 1.3s ease-in-out infinite;
+  }
+  @keyframes live-pulse {
+    0%, 100% { opacity: 0.55; transform: scale(0.85); }
+    50% { opacity: 1; transform: scale(1.25); }
+  }
+  .adv-wrap {
+    position: absolute;
+    right: -3px;
+    bottom: -6px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    max-width: 52px;
+    gap: 1px;
+  }
+  .adv-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 7.5px;
+    line-height: 1.2;
+    color: var(--paper);
+    background: rgba(228, 217, 191, 0.85);
+    padding: 0.5px 3px;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+  .adv-tag.scored {
+    color: #fff8ea;
+    background: var(--gold);
+    font-weight: 700;
+    box-shadow: 0 0 0 1px rgba(179,121,26,0.5), 0 1px 2px rgba(0,0,0,0.25);
+  }
+  .adv-tag.out {
+    color: #fbf3e3;
+    background: var(--brick);
+    font-weight: 700;
+  }
+  .pitch-tag {
+    position: absolute;
+    top: -3px;
+    left: -3px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 7px;
+    font-style: italic;
+    color: var(--paper);
+    background: rgba(228, 217, 191, 0.92);
+    padding: 0 2px;
+    border-radius: 2px;
+    white-space: nowrap;
+    border-top: 1px solid var(--paper);
+  }
+  table.scorecard-table td.stat { font-weight: 600; white-space: nowrap; padding: 3px 4px; font-family: 'Special Elite', monospace; }
+  table.scorecard-table td.stat-hab { border-left: 1px solid var(--paper-line); width: 42px; }
+  table.scorecard-table td.stat-extra { width: 82px; padding-left: 2px; padding-right: 2px; }
+  table.scorecard-table td.stat-rbi { width: 34px; }
+  .sub-note { font-size: 10px; color: var(--ink-soft); opacity: 0.85; font-style: italic; }
+
+  .footnote {
+    font-size: 10.5px;
+    color: var(--paper);
+    opacity: 0.55;
+    text-align: right;
+    margin-top: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .cell-wrap.clickable { cursor: pointer; }
+  .cell-wrap.clickable:hover svg { filter: brightness(1.12); }
+
+  .pitch-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(11, 15, 12, 0.55);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .pitch-overlay.open { display: flex; }
+  #pitchOverlay { z-index: 110; }
+  .pitch-modal {
+    position: relative;
+    background: var(--paper);
+    border-radius: 8px;
+    max-width: 360px;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+    padding: 18px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  }
+  .pitch-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 14px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px;
+  }
+  .pitch-header {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--ink);
+    margin-bottom: 2px;
+    padding-right: 18px;
+  }
+  .pitch-subheader {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-bottom: 12px;
+  }
+  table.pitch-table { width: 100%; border-collapse: collapse; font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+  table.pitch-table th {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 9px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    text-align: left;
+    padding: 3px 6px;
+    border-bottom: 1px solid var(--ink);
+  }
+  table.pitch-table td {
+    padding: 4px 6px;
+    border-bottom: 1px solid var(--paper-line);
+    color: var(--ink);
+  }
+  table.pitch-table td.pnum { color: var(--ink-soft); width: 20px; }
+  table.pitch-table td.pcount { color: var(--ink-soft); white-space: nowrap; }
+  .pitch-result-ball { color: #4f7a5f; font-weight: 600; }
+  .pitch-result-strike { color: var(--gold); font-weight: 600; }
+  .pitch-result-inplay { color: var(--brick); font-weight: 700; }
+  .pitch-final-desc {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1.5px solid var(--ink);
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: var(--ink);
+    line-height: 1.5;
+  }
+  .pitch-empty { font-family: 'Inter', sans-serif; font-size: 12px; color: var(--ink-soft); padding: 6px 0; }
+
+  @media (max-width: 520px) {
+    .mlb-header { flex-direction: column; align-items: flex-start; }
+    .sheet { padding: 14px; }
+    .sticky-top { margin: -2px -14px 0; padding-left: 14px; padding-right: 14px; }
+  }
+</style>
+</head>
+<body>
+<div id="mlb-root">
+  <div class="mlb-header">
+    <div class="mlb-title">Ball<span>game</span></div>
+    <div class="mlb-controls">
+      <div class="date-nav">
+        <button type="button" class="date-nav-btn" id="datePrev" aria-label="Previous day">&#8249;</button>
+        <input type="date" id="datePick" />
+        <button type="button" class="date-nav-btn" id="dateNext" aria-label="Next day">&#8250;</button>
+      </div>
+      <select id="gamePick"><option>Loading games&#8230;</option></select>
+    </div>
+  </div>
+  <div id="mlbBody">
+    <div class="mlb-status-msg">Loading today's schedule&#8230;</div>
+  </div>
+  <div id="pitchOverlay" class="pitch-overlay">
+    <div class="pitch-modal">
+      <button id="pitchClose" class="pitch-close" aria-label="Close">&#10005;</button>
+      <div id="pitchModalBody"></div>
+    </div>
+  </div>
+  <div id="rosterOverlay" class="pitch-overlay">
+    <div class="pitch-modal">
+      <button id="rosterClose" class="pitch-close" aria-label="Close">&#10005;</button>
+      <div id="rosterModalBody"></div>
+    </div>
+  </div>
+  <div id="sprayOverlay" class="pitch-overlay">
+    <div class="pitch-modal">
+      <button id="sprayClose" class="pitch-close" aria-label="Close">&#10005;</button>
+      <div id="sprayModalBody"></div>
+    </div>
+  </div>
+  <div id="standingsOverlay" class="pitch-overlay">
+    <div class="pitch-modal">
+      <button id="standingsClose" class="pitch-close" aria-label="Close">&#10005;</button>
+      <div id="standingsModalBody"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const dateInput = document.getElementById('datePick');
+  const gameSelect = document.getElementById('gamePick');
+  const body = document.getElementById('mlbBody');
+  let pollTimer = null;
+  let pitchStore = {};
+  let rosterStore = {};
+  let sprayStore = {};
+  let standingsHtml = '';
+  const gameLogCache = {};
+  const standingsCache = {};
+  async function getStandings(season, date) {
+    const key = `${season}-${date}`;
+    if (standingsCache[key] !== undefined) return standingsCache[key];
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=${season}&date=${date}`);
+      const data = await res.json();
+      standingsCache[key] = data.records || [];
+      return standingsCache[key];
+    } catch (e) {
+      standingsCache[key] = [];
+      return [];
+    }
+  }
+  async function getPitcherGameLog(personId, season) {
+    if (gameLogCache[personId] !== undefined) return gameLogCache[personId];
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/people/${personId}/stats?stats=gameLog&group=pitching&season=${season}`);
+      const data = await res.json();
+      const splits = (data.stats && data.stats[0] && data.stats[0].splits) || [];
+      gameLogCache[personId] = splits;
+      return splits;
+    } catch (e) {
+      gameLogCache[personId] = [];
+      return [];
+    }
+  }
+  function pitchesOnDate(splits, dateStr) {
+    const entry = splits.find(s => s.date === dateStr);
+    if (!entry || !entry.stat) return null;
+    return entry.stat.numberOfPitches ?? entry.stat.pitchesThrown ?? null;
+  }
+  function addDays(dateStr, delta) {
+    const d = new Date(dateStr + 'T00:00:00Z');
+    d.setUTCDate(d.getUTCDate() + delta);
+    return d.toISOString().slice(0, 10);
+  }
+  const sprayFilterState = {};
+
+  function todayStr() {
+    const d = new Date();
+    const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+    return local.toISOString().slice(0, 10);
+  }
+  dateInput.value = todayStr();
+
+  const POS_PATTERNS = [
+    [/pitcher/gi, 1], [/catcher/gi, 2], [/first baseman/gi, 3],
+    [/second baseman/gi, 4], [/third baseman/gi, 5], [/shortstop/gi, 6],
+    [/left fielder/gi, 7], [/center fielder/gi, 8], [/right fielder/gi, 9]
+  ];
+
+  function getFielderSequence(play) {
+    const credits = play.credits || [];
+    const relevant = credits.filter(c => c.credit && /assist|putout/i.test(c.credit));
+    if (relevant.length) {
+      const assists = relevant.filter(c => /assist/i.test(c.credit));
+      const putouts = relevant.filter(c => /putout/i.test(c.credit));
+      const seq = [...assists, ...putouts].map(c => c.position && c.position.code).filter(Boolean);
+      if (seq.length) return seq;
+    }
+    // fallback: derive fielder(s) from the play description, in the order mentioned
+    const desc = (play.result && play.result.description) || '';
+    const found = [];
+    POS_PATTERNS.forEach(([re, num]) => {
+      let m;
+      re.lastIndex = 0;
+      while ((m = re.exec(desc)) !== null) found.push({ idx: m.index, num });
+    });
+    found.sort((a, b) => a.idx - b.idx);
+    const seq = [];
+    found.forEach(f => { if (seq[seq.length - 1] !== f.num) seq.push(f.num); });
+    return seq;
+  }
+
+  function baseLabel(code) {
+    if (code === '1B') return '1';
+    if (code === '2B') return '2';
+    if (code === '3B') return '3';
+    return null;
+  }
+
+  function reachedBase(event) {
+    if (event === 'Single') return 1;
+    if (event === 'Double') return 2;
+    if (event === 'Triple') return 3;
+    if (event === 'Home Run') return 4;
+    if (['Walk','Intent Walk','Hit By Pitch','Fielders Choice','Field Error','Catcher Interference'].includes(event)) return 1;
+    return 0;
+  }
+
+  function getPlayCode(play) {
+    const event = (play.result && play.result.event) || '';
+    const seq = getFielderSequence(play);
+    const seqStr = seq.join('-');
+
+    const simple = {
+      'Single':'1B','Double':'2B','Triple':'3B','Home Run':'HR',
+      'Walk':'BB','Intent Walk':'IBB','Hit By Pitch':'HBP',
+      'Strikeout':'K','Strikeout Double Play':'K',
+      'Field Error': seqStr ? 'E' + seqStr : 'E',
+      'Catcher Interference':'CI'
+    };
+    if (simple[event]) return simple[event];
+
+    let prefix = '';
+    if (/Fly/.test(event)) prefix = 'F';
+    else if (/Line/.test(event)) prefix = 'L';
+    else if (/Pop/.test(event)) prefix = 'P';
+    else if (/Ground/.test(event)) prefix = 'G';
+    else if (/Forceout/.test(event)) prefix = 'FO';
+    else if (/Sac Fly/.test(event)) prefix = 'SF';
+    else if (/Sac Bunt/.test(event)) prefix = 'SH';
+    else if (/Fielders Choice/.test(event)) prefix = 'FC';
+    else if (/Grounded Into DP|Double Play/.test(event)) prefix = 'DP';
+    else if (/Triple Play/.test(event)) prefix = 'TP';
+
+    if (prefix) return seq.length > 1 ? seqStr : prefix + seqStr;
+    if (!event) return '';
+    return event.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 3);
+  }
+
+  function diamondSVG(reached, scored, code, isOut, outEdge, specialEdges, ghostStart, calledLooking) {
+    const dim = 'rgba(243,236,219,0.22)';
+    const ink = '#f3ecdb';
+    const gold = '#d9a91a';
+    const brick = '#e0604a';
+    const blue = '#5b8fc0';
+    const paper = '#3b4336';
+    const isHR = code === 'HR';
+    const isK = code === 'K';
+    const home = [20,36], first = [36,20], second = [20,4], third = [4,20];
+    const edges = [
+      ['home-first', home, first, !ghostStart && reached >= 1],
+      ['first-second', first, second, !ghostStart && reached >= 2],
+      ['second-third', second, third, reached >= 3],
+      ['third-home', third, home, scored]
+    ];
+    const specialMap = {};
+    (specialEdges || []).forEach(s => { specialMap[s.edge] = s.label; });
+    let svg = '<svg viewBox="0 0 40 40" width="52" height="52">';
+    let labelSvg = '';
+    edges.forEach(([name, p1, p2, on]) => {
+      if (isK || on) {
+        const special = !isK && specialMap[name];
+        const color = isK ? brick : (special ? blue : gold);
+        svg += `<line x1="${p1[0]}" y1="${p1[1]}" x2="${p2[0]}" y2="${p2[1]}" stroke="${color}" stroke-width="2.4" stroke-linecap="square"/>`;
+        if (special) {
+          const midX = (p1[0] + p2[0]) / 2, midY = (p1[1] + p2[1]) / 2;
+          const outFactor = 1.55;
+          const labelX = 20 + (midX - 20) * outFactor;
+          const labelY = 20 + (midY - 20) * outFactor;
+          labelSvg += `<rect x="${labelX - 6.5}" y="${labelY - 4.5}" width="13" height="9" rx="1.5" fill="${paper}" stroke="${blue}" stroke-width="0.8"/>`;
+          labelSvg += `<text x="${labelX}" y="${labelY + 2.8}" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="6.5" font-weight="700" fill="${blue}">${special}</text>`;
+        }
+      } else if (outEdge === name) {
+        const stopX = p1[0] + (p2[0] - p1[0]) * 0.55;
+        const stopY = p1[1] + (p2[1] - p1[1]) * 0.55;
+        const outLabel = specialMap[name] === 'CS' || specialMap[name] === 'PO' ? specialMap[name] : null;
+        svg += `<line x1="${p1[0]}" y1="${p1[1]}" x2="${stopX}" y2="${stopY}" stroke="${outLabel ? blue : gold}" stroke-width="2.4" stroke-linecap="square"/>`;
+        svg += `<line x1="${stopX}" y1="${stopY}" x2="${p2[0]}" y2="${p2[1]}" stroke="${dim}" stroke-width="1.2" stroke-linecap="square"/>`;
+        const dx = p2[0] - p1[0], dy = p2[1] - p1[1];
+        const len = Math.sqrt(dx * dx + dy * dy) || 1;
+        const px = -dy / len, py = dx / len;
+        const tickLen = 3.4;
+        svg += `<line x1="${stopX - px * tickLen}" y1="${stopY - py * tickLen}" x2="${stopX + px * tickLen}" y2="${stopY + py * tickLen}" stroke="${brick}" stroke-width="2.2" stroke-linecap="butt"/>`;
+        if (outLabel) {
+          const outFactor = 1.55;
+          const labelX = 20 + (stopX - 20) * outFactor;
+          const labelY = 20 + (stopY - 20) * outFactor;
+          labelSvg += `<rect x="${labelX - 6.5}" y="${labelY - 4.5}" width="13" height="9" rx="1.5" fill="${paper}" stroke="${blue}" stroke-width="0.8"/>`;
+          labelSvg += `<text x="${labelX}" y="${labelY + 2.8}" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="6.5" font-weight="700" fill="${blue}">${outLabel}</text>`;
+        }
+      } else {
+        svg += `<line x1="${p1[0]}" y1="${p1[1]}" x2="${p2[0]}" y2="${p2[1]}" stroke="${dim}" stroke-width="1.2" stroke-linecap="square"/>`;
+      }
+    });
+    if (ghostStart) svg += `<circle cx="${second[0]}" cy="${second[1]}" r="3.6" fill="${gold}" stroke="${paper}" stroke-width="1.1"/>`;
+    svg += labelSvg;
+    if (scored) svg += `<polygon points="20,36 36,20 20,4 4,20" fill="${gold}" opacity="${isHR ? 0.92 : 0.5}"/>`;
+    if (isK) svg += `<polygon points="20,36 36,20 20,4 4,20" fill="${brick}" opacity="0.82"/>`;
+    if (code) {
+      let fontSize = code.length > 4 ? 9.5 : code.length > 2 ? 11 : 12.5;
+      if (isHR || isK) fontSize += 3;
+      const textFill = isK ? '#fbf3e3' : (isHR ? '#fbf3e3' : (isOut ? brick : ink));
+      const flipStyle = isK && calledLooking ? ' style="transform: scaleX(-1); transform-origin: 50% 50%; transform-box: fill-box;"' : '';
+      svg += `<text x="20" y="24.5" text-anchor="middle" font-family="'Special Elite', monospace" font-size="${fontSize}" fill="${textFill}"${flipStyle}>${code}</text>`;
+    }
+    svg += '</svg>';
+    return svg;
+  }
+
+  function isCalledStrikeout(play) {
+    if (!/strikeout/i.test((play.result && play.result.event) || '')) return false;
+    const pitches = (play.playEvents || []).filter(pe => pe.isPitch || pe.type === 'pitch');
+    const lastPitch = pitches[pitches.length - 1];
+    if (!lastPitch) return false;
+    const desc = (lastPitch.details && (
+      (lastPitch.details.call && lastPitch.details.call.description) || lastPitch.details.description
+    )) || '';
+    return /called strike/i.test(desc);
+  }
+
+  function extractHitCoordinates(play) {
+    const events = play.playEvents || [];
+    for (let i = events.length - 1; i >= 0; i--) {
+      const pe = events[i];
+      const coords = pe.hitData && pe.hitData.coordinates;
+      if (coords && coords.coordX != null && coords.coordY != null) {
+        return { x: coords.coordX, y: coords.coordY };
+      }
+    }
+    return null;
+  }
+
+  function extractPitches(play) {
+    return (play.playEvents || [])
+      .filter(pe => pe.isPitch || pe.type === 'pitch')
+      .map(pe => ({
+        num: pe.pitchNumber || null,
+        type: (pe.details && pe.details.type && pe.details.type.description) || 'Pitch',
+        speed: pe.pitchData && pe.pitchData.startSpeed ? Math.round(pe.pitchData.startSpeed) : null,
+        result: (pe.details && pe.details.description) || '',
+        balls: pe.count && pe.count.balls,
+        strikes: pe.count && pe.count.strikes
+      }));
+  }
+
+  function buildTeamRows(sideBoxscore, halfKey, allPlays) {
+    const players = sideBoxscore.players || {};
+    const battingPlayers = Object.values(players).filter(p => p.battingOrder);
+
+    // group players into their lineup slot (1-9); substitutes share the starter's slot
+    const slots = {};
+    battingPlayers.forEach(p => {
+      const order = parseInt(p.battingOrder);
+      const slot = Math.floor(order / 100);
+      if (!slots[slot]) slots[slot] = [];
+      slots[slot].push({
+        id: p.person.id,
+        name: p.person.fullName,
+        pos: (p.position && p.position.abbreviation) || '',
+        order,
+        stats: (p.stats && p.stats.batting) || {}
+      });
+    });
+
+    const rows = Object.keys(slots)
+      .map(Number)
+      .sort((a, b) => a - b)
+      .map(slot => {
+        const group = slots[slot].sort((a, b) => a.order - b.order);
+        return { slot, players: group, cells: {} };
+      });
+
+    const rowByPlayerId = {};
+    rows.forEach(r => r.players.forEach(p => rowByPlayerId[p.id] = r));
+
+    const teamPlays = allPlays.filter(pl => (pl.about.halfInning || '').toLowerCase() === halfKey);
+
+    // pass 1: create each plate appearance's own cell. Cells are stored as
+    // arrays per inning (not a single value) because the batting order can
+    // turn over within one inning, giving the same slot two at-bats in the
+    // same numbered inning. Each cell is tagged with its chronological
+    // `order` (its index in teamPlays) so movement-tracking in pass 2 can
+    // always resolve to whichever at-bat was actually active at that point
+    // in the game, rather than colliding the two together.
+    let lastPitcherId = null;
+    let starterPitcherId = null;
+    const battedBalls = [];
+    const ghostHandledInnings = new Set();
+    teamPlays.forEach((play, order) => {
+      const inning = play.about.inning;
+      const batterId = play.matchup && play.matchup.batter && play.matchup.batter.id;
+      const event = (play.result && play.result.event) || '';
+      const row = batterId && rowByPlayerId[batterId];
+      const isAtBat = play.result && play.result.type === 'atBat';
+
+      // MLB's automatic extra-inning runner is placed on second before the
+      // first pitch of the inning, with no plate appearance of their own to
+      // create a cell -- seed one here so movement tracking has somewhere
+      // to attach to. Primarily detected via the runners array: anyone who
+      // started this very first play of the inning already on second base
+      // can only be the automatic runner, since nobody has batted yet --
+      // this also correctly catches the case where they score or advance
+      // immediately on this same play. Falls back to postOnSecond for the
+      // (more common) case where they simply haven't moved yet.
+      if (inning >= 10 && !ghostHandledInnings.has(inning)) {
+        ghostHandledInnings.add(inning);
+        const fromRunners = (play.runners || []).find(rm =>
+          rm.movement && rm.movement.start === '2B' && rm.details && rm.details.runner
+        );
+        const ghost = (fromRunners && fromRunners.details.runner) || (play.matchup && play.matchup.postOnSecond);
+        const ghostRow = ghost && rowByPlayerId[ghost.id];
+        if (ghostRow && !(ghostRow.cells[inning] && ghostRow.cells[inning].length)) {
+          ghostRow.cells[inning] = ghostRow.cells[inning] || [];
+          ghostRow.cells[inning].push({
+            code: '', reached: 2, scored: false, isOut: false,
+            playerId: ghost.id, ghostStart: true, order
+          });
+        }
+      }
+
+      if (row && isAtBat && event) {
+        const rb = reachedBase(event);
+        const code = getPlayCode(play);
+        const calledLooking = isCalledStrikeout(play);
+        const pitcher = play.matchup && play.matchup.pitcher;
+        const pitcherId = pitcher && pitcher.id;
+        const isStarterAppearance = lastPitcherId === null && !!pitcherId;
+        const pitcherChanged = isStarterAppearance || (lastPitcherId !== null && pitcherId !== lastPitcherId);
+        const pitcherName = pitcherChanged && pitcher ? pitcher.fullName.split(' ').pop() : null;
+        if (starterPitcherId === null && pitcherId) starterPitcherId = pitcherId;
+        if (pitcherId) lastPitcherId = pitcherId;
+
+        const pitches = extractPitches(play);
+        const hitCoords = extractHitCoordinates(play);
+        if (hitCoords) {
+          const hitType =
+            event === 'Single' ? 'single' :
+            event === 'Double' ? 'double' :
+            event === 'Triple' ? 'triple' :
+            event === 'Home Run' ? 'homerun' : 'out';
+          battedBalls.push({
+            x: hitCoords.x, y: hitCoords.y, hitType, code,
+            pitches, batterId,
+            batterName: (play.matchup && play.matchup.batter && play.matchup.batter.fullName) || '',
+            pitcherFullName: (play.matchup && play.matchup.pitcher && play.matchup.pitcher.fullName) || '',
+            playDesc: (play.result && play.result.description) || ''
+          });
+        }
+
+        row.cells[inning] = row.cells[inning] || [];
+        row.cells[inning].push({
+          code, reached: rb, scored: rb === 4, isOut: rb === 0, playerId: batterId,
+          pitcherChanged, pitcherId, pitcherName, order, calledLooking,
+          pitches,
+          batterName: (play.matchup && play.matchup.batter && play.matchup.batter.fullName) || '',
+          pitcherFullName: (pitcher && pitcher.fullName) || '',
+          playDesc: (play.result && play.result.description) || ''
+        });
+      }
+    });
+
+    // find the cell representing a given player's plate appearance in a given
+    // inning -- looked up fresh each time (by player id, not a cached
+    // reference), so correctness never depends on the order plays are
+    // processed in or whether an earlier step already "resolved" a runner
+    // find whichever cell was actually active for this player, in this
+    // inning, as of a given point in the game (uptoOrder) -- necessary
+    // because a player can have two cells in the same inning if the order
+    // turned over, and we need the one relevant at this moment, not either
+    // one arbitrarily
+    function activeCellFor(cellsArr, uptoOrder, rid) {
+      if (!cellsArr) return null;
+      let best = null;
+      cellsArr.forEach(c => {
+        if ((rid === undefined || c.playerId === rid) && c.order <= uptoOrder && (!best || c.order > best.order)) best = c;
+      });
+      return best;
+    }
+    function findCell(rid, inning, uptoOrder) {
+      const row = rowByPlayerId[rid];
+      return row ? activeCellFor(row.cells[inning], uptoOrder, rid) : null;
+    }
+
+    // pass 2: resolve baserunner movement/scoring and build advancement tags
+    teamPlays.forEach((play, order) => {
+      const inning = play.about.inning;
+      const batterId = play.matchup && play.matchup.batter && play.matchup.batter.id;
+      const event = (play.result && play.result.event) || '';
+      const isAtBat = play.result && play.result.type === 'atBat';
+      const batterCell = isAtBat ? findCell(batterId, inning, order) : null;
+      const advancesThisPlay = {};
+
+      (play.runners || []).forEach(rm => {
+        const rid = rm.details && rm.details.runner && rm.details.runner.id;
+        if (!rid) return;
+        const target = findCell(rid, inning, order);
+        if (target && target.outEdge) return; // already ruled out on the bases this inning -- can't move further
+        const end = rm.movement && rm.movement.end;
+        const isOut = rm.movement && rm.movement.isOut;
+        const startLabel = baseLabel(rm.movement && rm.movement.start);
+        const endLabel = end === 'score' ? 'H' : baseLabel(end);
+
+        if (isOut && target) {
+          // any out on the bases -- caught stealing, picked off, or retired
+          // on a fielder's choice / double play during another batter's
+          // play -- marks the runner's OWN diamond: a line up to where
+          // they were retired, with a red tick showing the cutoff. Caught
+          // stealing specifically gets a blue line (matching a successful
+          // steal) and a "CS" label, since it's still worth distinguishing
+          // from a fielder's-choice/double-play out.
+          // Rather than parse MLB's out-movement fields (which are
+          // inconsistent -- null start/end with the base tucked into
+          // outBase for some out types), use target.reached: our own
+          // tracking already knows exactly which base this runner was on
+          // right before this play, built up from their prior movements.
+          const prevBase = target.reached;
+          const edge = { 1: 'first-second', 2: 'second-third', 3: 'third-home' }[prevBase];
+          if (edge) {
+            target.outEdge = edge;
+            const outRmEvent = (rm.details && (rm.details.event || rm.details.eventType)) || '';
+            const outLabel = /caught stealing/i.test(outRmEvent) ? 'CS' : /pickoff/i.test(outRmEvent) ? 'PO' : null;
+            if (outLabel) {
+              target.specialEdges = target.specialEdges || [];
+              target.specialEdges.push({ edge, label: outLabel });
+            }
+          }
+          // and if it happened during another batter's play, also tag that
+          // batter's own cell (e.g. a fielder's choice shows both: the
+          // batter reaching, and a note that the runner at first is out)
+          if (rid !== batterId && isAtBat && batterCell && edge) {
+            if (!advancesThisPlay[rid]) advancesThisPlay[rid] = { startLabel: String(prevBase), out: true };
+          }
+        } else if (!isOut && rid !== batterId && isAtBat && batterCell && startLabel && endLabel) {
+          // another runner successfully advanced during this batter's own
+          // play (e.g. scoring from third on a single) -- tag the batter's cell
+          if (!advancesThisPlay[rid]) advancesThisPlay[rid] = { startLabel, endLabel };
+          else advancesThisPlay[rid].endLabel = endLabel;
+        }
+
+        if (!target) return;
+        if (isOut) return;
+
+        const rmEvent = (rm.details && (rm.details.event || rm.details.eventType)) || '';
+        const advanceLabel =
+          /stolen[\s_]?base/i.test(rmEvent) ? 'S' :
+          /wild[\s_]?pitch/i.test(rmEvent) ? 'WP' :
+          /passed[\s_]?ball/i.test(rmEvent) ? 'PB' :
+          /balk/i.test(rmEvent) ? 'BK' :
+          /defensive[\s_]?indiff/i.test(rmEvent) ? 'DI' : null;
+        if (advanceLabel) {
+          const edgeByPrevBase = { 0: null, 1: 'first-second', 2: 'second-third', 3: 'third-home' };
+          const edge = edgeByPrevBase[target.reached];
+          if (edge) {
+            target.specialEdges = target.specialEdges || [];
+            target.specialEdges.push({ edge, label: advanceLabel });
+          }
+        }
+
+        if (end === 'score') {
+          target.reached = Math.max(target.reached, 3);
+          target.scored = true;
+        } else if (end) {
+          const baseMap = { '1B': 1, '2B': 2, '3B': 3 };
+          if (baseMap[end]) target.reached = Math.max(target.reached, baseMap[end]);
+        }
+      });
+
+      // safety net: a home run always scores every runner who was on base
+      // this same inning, even if the play's own runners array is
+      // incomplete (this can happen on game-ending walk-off plays)
+      if (event === 'Home Run') {
+        rows.forEach(r => {
+          const c = activeCellFor(r.cells[inning], order);
+          if (c && c.playerId !== batterId && c.reached > 0 && c.reached < 4 && !c.scored && !c.isOut && !c.outEdge) {
+            c.reached = Math.max(c.reached, 3);
+            c.scored = true;
+          }
+        });
+      }
+
+      if (isAtBat && batterCell) {
+        const tags = Object.values(advancesThisPlay)
+          .filter(a => a.out || a.startLabel !== a.endLabel)
+          .sort((a, b) => a.startLabel.localeCompare(b.startLabel))
+          .map(a => a.out
+            ? { label: `${a.startLabel}&#8594;X`, out: true }
+            : { label: `${a.startLabel}&#8594;${a.endLabel}`, scored: a.endLabel === 'H' });
+        if (tags.length) batterCell.otherAdvances = (batterCell.otherAdvances || []).concat(tags);
+      }
+    });
+
+    // flag the inning a replacement enters the field, even before they bat.
+    // Substitutions mostly show up as playEvents nested inside whichever at-bat
+    // was in progress, with the incoming player's id on the event directly
+    // (details.eventType / player.id). As a backup -- in case a particular
+    // event type doesn't carry a player id -- also try parsing the event's own
+    // description text ("X replaces Y"), which is nested per-event too.
+    const idToPerson = {};
+    const nameToId = {};
+    Object.values(players).forEach(p => {
+      if (p.person) {
+        idToPerson[p.person.id] = p.person;
+        nameToId[p.person.fullName] = p.person.id;
+      }
+    });
+
+    function parseIncomingName(desc) {
+      const repIdx = desc.search(/replaces/i);
+      if (repIdx === -1) return '';
+      const left = desc.slice(0, repIdx);
+      const lastSep = Math.max(left.lastIndexOf(':'), left.lastIndexOf(','));
+      let name = (lastSep !== -1 ? left.slice(lastSep + 1) : left).trim();
+      name = name
+        .replace(/^(Pinch[- ]?hitter|Pinch[- ]?runner|Offensive Substitution|Defensive Substitution|Defensive Switch|Defensive Sub)\b[:\s]*/i, '')
+        .trim();
+      return name;
+    }
+
+    allPlays.forEach(play => {
+      const inning = play.about && play.about.inning;
+      (play.playEvents || []).forEach(pe => {
+        const eventType = (pe.details && pe.details.eventType) || '';
+        const desc = (pe.details && pe.details.description) || '';
+        const looksLikeSub = (eventType && !/pitch/i.test(eventType) && /substitution|switch/i.test(eventType)) || /replaces/i.test(desc);
+        if (!looksLikeSub) return;
+
+        let incomingId = pe.player && pe.player.id;
+        let displayName = pe.player && pe.player.fullName;
+
+        if (!incomingId && desc) {
+          const parsedName = parseIncomingName(desc);
+          if (parsedName) {
+            displayName = displayName || parsedName;
+            incomingId = nameToId[parsedName];
+          }
+        }
+        if (incomingId && !displayName) displayName = idToPerson[incomingId] && idToPerson[incomingId].fullName;
+
+        const row = incomingId && rowByPlayerId[incomingId];
+        if (!row || !displayName) return;
+
+        row.entryInningByPlayerId = row.entryInningByPlayerId || {};
+        if (row.entryInningByPlayerId[incomingId] === undefined) {
+          row.entryInningByPlayerId[incomingId] = inning;
+        }
+      });
+    });
+
+    // backup pass: substitutions that happen between plays (e.g. a pinch
+    // runner sent in before the next pitch) don't always leave a clean
+    // playEvents trace. Instead, compare who's occupying each base from one
+    // play to the next -- if the identity changes without that runner's
+    // movement being explained by the current play's own action, someone
+    // else took their spot on the bases in between.
+    {
+      const prevBase = { first: null, second: null, third: null };
+      let lastInning = null;
+      allPlays
+        .filter(pl => (pl.about.halfInning || '').toLowerCase() === halfKey && pl.result && pl.result.type === 'atBat')
+        .forEach(play => {
+          if (play.about.inning !== lastInning) {
+            prevBase.first = prevBase.second = prevBase.third = null;
+            lastInning = play.about.inning;
+          }
+          const matchup = play.matchup || {};
+          const explainedIds = new Set(
+            (play.runners || [])
+              .map(rm => rm.details && rm.details.runner && rm.details.runner.id)
+              .filter(Boolean)
+          );
+          ['first', 'second', 'third'].forEach(baseKey => {
+            const field = 'postOn' + baseKey[0].toUpperCase() + baseKey.slice(1);
+            const postPlayer = matchup[field];
+            const postId = postPlayer && postPlayer.id;
+            const prevId = prevBase[baseKey];
+            if (prevId && postId && prevId !== postId && !explainedIds.has(prevId)) {
+              const row = rowByPlayerId[postId];
+              if (row) {
+                row.entryInningByPlayerId = row.entryInningByPlayerId || {};
+                if (row.entryInningByPlayerId[postId] === undefined) {
+                  row.entryInningByPlayerId[postId] = play.about.inning;
+                }
+              }
+            }
+            prevBase[baseKey] = postId || null;
+          });
+        });
+    }
+
+    // track which pitcher this team faced in each inning, using the last
+    // pitcher of record for that inning (i.e. whoever was on the mound when
+    // the inning's final play concluded), so a mid-inning pitching change
+    // is reflected in the inning where it actually took effect
+    const pitcherByInning = {};
+    teamPlays.forEach(play => {
+      const pitcher = play.matchup && play.matchup.pitcher;
+      if (pitcher) pitcherByInning[play.about.inning] = pitcher.fullName;
+    });
+
+    rows.forEach(r => {
+      r.dividerInnings = new Set();
+      r.players.slice(1).forEach(p => {
+        const battingInnings = Object.keys(r.cells)
+          .map(Number)
+          .filter(i => r.cells[i].some(c => c.playerId === p.id));
+        const battingEntry = battingInnings.length ? Math.min(...battingInnings) : null;
+        const eventEntry = (r.entryInningByPlayerId && r.entryInningByPlayerId[p.id] !== undefined)
+          ? r.entryInningByPlayerId[p.id] : null;
+        const entries = [battingEntry, eventEntry].filter(v => v !== null);
+        if (entries.length) r.dividerInnings.add(Math.min(...entries));
+      });
+    });
+
+    return { rows, pitcherByInning, starterPitcherId, battedBalls };
+  }
+
+  function renderSprayChart(balls, teamName) {
+    if (!balls || !balls.length) return '';
+    const home = [125, 205];
+    const ink = '#f3ecdb';
+    const grass = 'rgba(243,236,219,0.06)';
+    const dirt = 'rgba(217,169,26,0.18)';
+    const gold = '#d9a91a';
+    const brick = '#e0604a';
+
+    const batters = [];
+    const seenBatters = new Set();
+    balls.forEach(b => {
+      if (b.batterId && !seenBatters.has(b.batterId)) {
+        seenBatters.add(b.batterId);
+        batters.push({ id: b.batterId, name: b.batterName });
+      }
+    });
+    const currentFilter = sprayFilterState[teamName] || 'all';
+    const filterOptions = [`<option value="all"${currentFilter === 'all' ? ' selected' : ''}>All Batters</option>`]
+      .concat(batters.map(bt => `<option value="${bt.id}"${String(bt.id) === String(currentFilter) ? ' selected' : ''}>${bt.name}</option>`))
+      .join('');
+
+    // generic MLB fence distances: shallower down the lines, deeper in the
+    // gaps, deepest to straightaway center. Scale is set so center field
+    // (the deepest point) comfortably fits the visible chart area.
+    const leftLineFt = 330, leftCenterFt = 370, centerFt = 400, rightCenterFt = 370, rightLineFt = 330;
+    const maxDepthUnits = 182;
+    const scale = maxDepthUnits / centerFt; // units per foot, anchored to center field
+    const ptAt = (angleDeg, distFeet) => {
+      const rad = angleDeg * Math.PI / 180;
+      const d = distFeet * scale;
+      return [home[0] + d * Math.sin(rad), home[1] - d * Math.cos(rad)];
+    };
+    const fencePts = [
+      ptAt(-45, leftLineFt),    // left field line
+      ptAt(-22.5, leftCenterFt),  // left-center gap
+      ptAt(0, centerFt),      // straightaway center
+      ptAt(22.5, rightCenterFt),   // right-center gap
+      ptAt(45, rightLineFt)      // right field line
+    ];
+
+    // smooth curve through the fence points (Catmull-Rom -> cubic Bezier)
+    let fenceCurve = '';
+    for (let i = 0; i < fencePts.length - 1; i++) {
+      const p0 = fencePts[i - 1] || fencePts[i];
+      const p1 = fencePts[i];
+      const p2 = fencePts[i + 1];
+      const p3 = fencePts[i + 2] || p2;
+      const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
+      const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+      fenceCurve += `C ${c1[0]},${c1[1]} ${c2[0]},${c2[1]} ${p2[0]},${p2[1]} `;
+    }
+
+    // infield diamond, to scale: bases are 90ft apart, so home-to-second is
+    // 90*sqrt(2) ft. Uses the same 45-degree foul-line direction as the fence.
+    const baseDist = 90 * scale;
+    const diagBase = baseDist * Math.SQRT1_2;
+    const first = [home[0] + diagBase, home[1] - diagBase];
+    const third = [home[0] - diagBase, home[1] - diagBase];
+    const second = [home[0], home[1] - baseDist * Math.SQRT2];
+
+    let svg = '<svg viewBox="0 15 250 200" width="100%" style="max-width:280px; display:block; margin:0 auto;">';
+    svg += `<path d="M ${home[0]},${home[1]} L ${fencePts[0][0]},${fencePts[0][1]} ${fenceCurve} L ${home[0]},${home[1]} Z" fill="${grass}" stroke="${ink}" stroke-width="1.3" stroke-linejoin="round"/>`;
+    svg += `<line x1="${home[0]}" y1="${home[1]}" x2="${fencePts[0][0]}" y2="${fencePts[0][1]}" stroke="${ink}" stroke-width="1"/>`;
+    svg += `<line x1="${home[0]}" y1="${home[1]}" x2="${fencePts[4][0]}" y2="${fencePts[4][1]}" stroke="${ink}" stroke-width="1"/>`;
+
+    svg += `<path d="M ${home[0]},${home[1]} L ${first[0]},${first[1]} L ${second[0]},${second[1]} L ${third[0]},${third[1]} Z" fill="${dirt}" stroke="${ink}" stroke-width="1"/>`;
+    [first, second, third].forEach(b => {
+      svg += `<rect x="${b[0] - 2}" y="${b[1] - 2}" width="4" height="4" fill="#fff8ea" stroke="${ink}" stroke-width="0.6" transform="rotate(45 ${b[0]} ${b[1]})"/>`;
+    });
+    svg += `<circle cx="${home[0]}" cy="${home[1]}" r="2.5" fill="${ink}"/>`;
+
+    const hitColors = {
+      single: '#c98a12',
+      double: '#1f6fb3',
+      triple: '#8a4fc9',
+      homerun: '#c98a12',
+      out: '#8a8478'
+    };
+
+    balls.forEach((b, i) => {
+      const color = hitColors[b.hitType] || brick;
+      const pkey = `${teamName}-ball-${i}`;
+      pitchStore[pkey] = b;
+      const visible = currentFilter === 'all' || String(b.batterId) === String(currentFilter);
+      svg += `<g data-batter="${b.batterId || ''}"${visible ? '' : ' style="display:none"'}>`;
+      if (b.hitType === 'homerun') {
+        svg += `<circle cx="${b.x}" cy="${b.y}" r="7.5" fill="${color}" opacity="0.3"/>`;
+        svg += `<circle cx="${b.x}" cy="${b.y}" r="5.5" fill="${color}" opacity="0.3"/>`;
+        svg += `<circle cx="${b.x}" cy="${b.y}" r="4" fill="#fff8ea" stroke="${color}" stroke-width="1.4" class="clickable" data-pkey="${pkey}"/>`;
+      } else {
+        const opacity = b.hitType === 'out' ? 0.32 : 0.95;
+        svg += `<circle cx="${b.x}" cy="${b.y}" r="3.2" fill="${color}" opacity="${opacity}" stroke="#3b4336" stroke-width="0.7" class="clickable" data-pkey="${pkey}"/>`;
+      }
+      svg += '</g>';
+    });
+    svg += '</svg>';
+
+    return `<div class="spray-card">
+      <div class="spray-header">
+        <div class="spray-title">${teamName} &#8212; Batted Balls</div>
+        <select class="spray-filter" data-team="${teamName}">${filterOptions}</select>
+      </div>
+      ${svg}
+      <div class="spray-legend">
+        <span class="spray-key"><span class="dot" style="background:${hitColors.single}"></span>1B</span>
+        <span class="spray-key"><span class="dot" style="background:${hitColors.double}"></span>2B</span>
+        <span class="spray-key"><span class="dot" style="background:${hitColors.triple}"></span>3B</span>
+        <span class="spray-key"><span class="dot hr-dot" style="border-color:${hitColors.homerun}"></span>HR</span>
+        <span class="spray-key"><span class="dot out"></span>Out</span>
+      </div>
+    </div>`;
+  }
+
+  function inningsToOuts(ipStr) {
+    if (!ipStr) return 0;
+    const parts = String(ipStr).split('.');
+    const whole = parseInt(parts[0], 10) || 0;
+    const partial = parts[1] ? parseInt(parts[1], 10) : 0; // MLB encodes .1/.2 as 1/2 outs
+    return whole * 3 + partial;
+  }
+
+  async function buildBullpenList(sideBoxscore, starterPitcherId, season, officialDate, allPlays, pitchingHalfKey) {
+    const players = sideBoxscore.players || {};
+    const allPitchers = Object.values(players).filter(p => p.person && p.position && p.position.abbreviation === 'P');
+
+    const yDate = addDays(officialDate, -1);
+    const twoDate = addDays(officialDate, -2);
+
+    // chronological order each pitcher first appeared on the mound this
+    // game, so relievers who've entered can be sorted by when they came in
+    const firstAppearanceOrder = {};
+    (allPlays || []).forEach((play, idx) => {
+      if ((play.about.halfInning || '').toLowerCase() !== pitchingHalfKey) return;
+      const pid = play.matchup && play.matchup.pitcher && play.matchup.pitcher.id;
+      if (pid && firstAppearanceOrder[pid] === undefined) firstAppearanceOrder[pid] = idx;
+    });
+
+    const results = await Promise.all(allPitchers.map(async p => {
+      const todayPitching = (p.stats && p.stats.pitching) || {};
+      const usedToday = !!(todayPitching.inningsPitched || todayPitching.numberOfPitches || todayPitching.battersFaced);
+      const isStarter = p.person.id === starterPitcherId;
+      const splits = await getPitcherGameLog(p.person.id, season);
+      // derive games started from the game log itself rather than the
+      // boxscore's seasonStats, which isn't reliably populated for a
+      // preview/future game and would leave everyone tied at 0
+      const gamesStarted = splits.reduce((sum, s) => sum + ((s.stat && s.stat.gamesStarted) || 0), 0);
+      return {
+        id: p.person.id,
+        name: p.person.fullName,
+        usedToday,
+        isStarter,
+        gamesStarted,
+        entryOrder: firstAppearanceOrder[p.person.id],
+        yPitches: pitchesOnDate(splits, yDate),
+        twoPitches: pitchesOnDate(splits, twoDate),
+        todayIp: todayPitching.inningsPitched,
+        todayPc: todayPitching.numberOfPitches ?? todayPitching.pitchesThrown
+      };
+    }));
+
+    results.sort((a, b) => {
+      if (a.isStarter !== b.isStarter) return a.isStarter ? -1 : 1;
+      if (a.usedToday !== b.usedToday) return a.usedToday ? -1 : 1;
+      if (a.usedToday && b.usedToday) return (a.entryOrder ?? 0) - (b.entryOrder ?? 0);
+      return a.gamesStarted - b.gamesStarted;
+    });
+
+    return results;
+  }
+
+  function bullpenRowsHtml(list) {
+    if (!list || !list.length) return '<div class="roster-empty">No pitching data available</div>';
+    return list.map(p => `
+      <div class="bp-row">
+        <div class="bp-name">${p.name}${p.isStarter ? '<span class="bp-badge bp-badge-starter">STARTER</span>' : (p.usedToday ? '<span class="bp-badge">IN GAME</span>' : '')}</div>
+        <div class="bp-recent">
+          <span class="bp-recent-item"><span class="bp-recent-value">${p.usedToday ? (p.todayIp ?? '0.0') : '&#8212;'}</span><span class="bp-recent-label">IP</span></span>
+          <span class="bp-recent-item"><span class="bp-recent-value">${p.usedToday ? (p.todayPc ?? 0) : '&#8212;'}</span><span class="bp-recent-label">P</span></span>
+          <span class="bp-recent-item"><span class="bp-recent-value">${p.yPitches ?? '&#8212;'}</span><span class="bp-recent-label">Y</span></span>
+          <span class="bp-recent-item"><span class="bp-recent-value">${p.twoPitches ?? '&#8212;'}</span><span class="bp-recent-label">2D</span></span>
+        </div>
+      </div>`).join('');
+  }
+
+  function renderStandingsContent(records, awayDivisionId, homeDivisionId, awayTeamId, homeTeamId, date) {
+    const relevantIds = new Set([awayDivisionId, homeDivisionId].filter(Boolean));
+    const relevant = (records || []).filter(r => r.division && relevantIds.has(r.division.id));
+    if (!relevant.length) {
+      return `<div class="pitch-header">Standings</div><div class="pitch-empty">Standings not available for this date.</div>`;
+    }
+    const sections = relevant.map(div => {
+      const teams = (div.teamRecords || []).slice().sort((a, b) =>
+        (parseInt(a.divisionRank, 10) || 99) - (parseInt(b.divisionRank, 10) || 99)
+      );
+      const rows = teams.map(tr => {
+        const isPlaying = tr.team && (tr.team.id === awayTeamId || tr.team.id === homeTeamId);
+        const streak = (tr.streak && tr.streak.streakCode) || '&#8212;';
+        const gb = tr.gamesBack === '-' || tr.gamesBack == null ? '&#8212;' : tr.gamesBack;
+        return `<div class="standings-row${isPlaying ? ' standings-highlight' : ''}">
+          <span class="standings-team">${(tr.team && tr.team.name) || ''}</span>
+          <span class="standings-num">${tr.wins ?? 0}</span>
+          <span class="standings-num">${tr.losses ?? 0}</span>
+          <span class="standings-num">${tr.winningPercentage ?? '.000'}</span>
+          <span class="standings-num">${gb}</span>
+          <span class="standings-num">${streak}</span>
+        </div>`;
+      }).join('');
+      const divName = (div.division && div.division.name) || 'Division';
+      return `<div class="roster-section-title">${divName}</div>
+        <div class="standings-row standings-header-row">
+          <span class="standings-team">Team</span>
+          <span class="standings-num">W</span>
+          <span class="standings-num">L</span>
+          <span class="standings-num">PCT</span>
+          <span class="standings-num">GB</span>
+          <span class="standings-num">Strk</span>
+        </div>
+        ${rows}`;
+    }).join('');
+    return `<div class="pitch-header">Standings</div><div class="pitch-subheader">As of ${date}</div>${sections}`;
+  }
+
+  function renderRosterContent(teamName, bullpenList, lineupRows, benchPlayers) {
+    const lineupHtml = lineupRows.map((r, i) => {
+      const starter = r.players[0];
+      return `<div class="roster-row"><span class="roster-order">${i + 1}</span><span class="roster-name">${starter.name}</span><span class="roster-pos">${starter.pos}</span></div>`;
+    }).join('');
+    const benchHtml = benchPlayers.length
+      ? benchPlayers.map(p => `<div class="roster-row"><span class="roster-name">${p.name}</span><span class="roster-pos">${p.pos}</span></div>`).join('')
+      : '<div class="roster-empty">None</div>';
+
+    return `
+      <div class="pitch-header">${teamName}</div>
+      <div class="pitch-subheader">Full Roster</div>
+      <div class="roster-section-title">Starting Lineup</div>
+      ${lineupHtml}
+      <div class="roster-section-title">Bench</div>
+      ${benchHtml}
+      <div class="roster-section-title">Pitching</div>
+      ${bullpenRowsHtml(bullpenList)}
+    `;
+  }
+
+  function renderPitcherCard(name, stats) {
+    if (!name) return '';
+    const ip = (stats && stats.inningsPitched) ?? '0.0';
+    const pc = (stats && (stats.numberOfPitches ?? stats.pitchesThrown)) ?? 0;
+    const k = (stats && stats.strikeOuts) ?? 0;
+    const bb = (stats && stats.baseOnBalls) ?? 0;
+    const h = (stats && stats.hits) ?? 0;
+    const r = (stats && stats.runs) ?? 0;
+    const hr = (stats && stats.homeRuns) ?? 0;
+    const outs = inningsToOuts(ip);
+    // Tom Tango's Game Score v2.0 (2016 revision of the Bill James original)
+    const gameScore = Math.round(40 + 2 * outs + 1 * k - 2 * bb - 2 * h - 3 * r - 6 * hr);
+
+    const stat = (label, val) => `<div class="pc-stat"><div class="pc-value">${val}</div><div class="pc-label">${label}</div></div>`;
+
+    return `<div class="pitcher-card">
+      <div class="pc-kicker">Starting Pitcher</div>
+      <div class="pc-name">${name}</div>
+      <div class="pc-stats">
+        ${stat('IP', ip)}
+        ${stat('PC', pc)}
+        ${stat('K', k)}
+        ${stat('BB', bb)}
+        ${stat('H', h)}
+        ${stat('R', r)}
+        ${stat('Game Score', gameScore)}
+      </div>
+    </div>`;
+  }
+
+  function renderBoxScore(linescore, awayName, homeName) {
+    const innings = linescore.innings || [];
+    const numInnings = Math.max(innings.length, 9);
+    const teams = linescore.teams || {};
+
+    let head = '<tr><th class="box-team"></th>';
+    for (let i = 1; i <= numInnings; i++) head += `<th>${i}</th>`;
+    head += '<th class="box-stat">R</th><th class="box-stat">H</th><th class="box-stat">E</th></tr>';
+
+    function row(teamName, isAway) {
+      let cells = `<td class="box-team">${teamName}</td>`;
+      for (let i = 0; i < numInnings; i++) {
+        const inn = innings[i];
+        const side = inn && (isAway ? inn.away : inn.home);
+        const hasRuns = side && side.runs != null;
+        const isPastInning = i < (linescore.currentInning || 0) - 1;
+        const val = hasRuns ? side.runs : (isPastInning ? 0 : '');
+        const display = val === 0 ? '0' : (val === '' ? '' : val);
+        cells += `<td>${val ? `<span class="run-scored">${display}</span>` : display}</td>`;
+      }
+      const tot = isAway ? teams.away : teams.home;
+      const totalRuns = (tot && tot.runs) ?? 0;
+      cells += `<td class="box-stat">${totalRuns ? `<span class="run-scored">${totalRuns}</span>` : totalRuns}</td><td class="box-stat">${(tot && tot.hits) ?? 0}</td><td class="box-stat">${(tot && tot.errors) ?? 0}</td>`;
+      return `<tr>${cells}</tr>`;
+    }
+
+    return `<div class="box-score"><div class="table-scroll"><table class="box-table">
+      <thead>${head}</thead>
+      <tbody>${row(awayName, true)}${row(homeName, false)}</tbody>
+    </table></div></div>`;
+  }
+
+  function renderTeamTable(teamName, rows, numInnings, pitcherByInning, starterPitcherId, columnsPerInning, pitcherCardHtml, teamKey, liveBatterInfo) {
+    let head = `<tr><th class="ply">Player</th><th class="pos">Pos</th>`;
+    for (let i = 1; i <= numInnings; i++) {
+      const cols = (columnsPerInning && columnsPerInning[i]) || 1;
+      for (let k = 0; k < cols; k++) head += `<th${k > 0 ? ' class="inning-cont"' : ''}>${i}</th>`;
+    }
+    head += `<th class="stat stat-hab">H-AB</th><th class="stat stat-extra">BB-2B-3B-HR</th><th class="stat stat-rbi">RBI</th></tr>`;
+
+    const bodyRows = rows.map(r => {
+      const nameHtml = r.players.map((p, i) => i === 0 ? p.name : `<span class="sub-note">&#8594; ${p.name}</span>`).join('<br/>');
+      const posHtml = r.players.map((p, i) => i === 0 ? p.pos : `<span class="sub-note">${p.pos}</span>`).join('<br/>');
+      let cells = `<td class="ply">${nameHtml}</td><td class="pos">${posHtml}</td>`;
+      for (let i = 1; i <= numInnings; i++) {
+        const cols = (columnsPerInning && columnsPerInning[i]) || 1;
+        const cellArr = r.cells[i] || [];
+        for (let k = 0; k < cols; k++) {
+          const c = cellArr[k];
+          let inner = '';
+          if (c) {
+            const svg = diamondSVG(c.reached, c.scored, c.code, c.isOut, c.outEdge, c.specialEdges, c.ghostStart, c.calledLooking);
+            let advHtml = '';
+            if (c.otherAdvances && c.otherAdvances.length) {
+              advHtml = '<div class="adv-wrap">' + c.otherAdvances.map(a =>
+                `<div class="adv-tag ${a.scored ? 'scored' : a.out ? 'out' : ''}">${a.label}</div>`
+              ).join('') + '</div>';
+            }
+            inner += svg + advHtml;
+          }
+          if (c && c.pitcherChanged && c.pitcherName) inner += `<div class="pitch-tag" title="${c.pitcherName} enters to pitch">${c.pitcherName}</div>`;
+          const isLiveCell = !c && liveBatterInfo && liveBatterInfo.team === teamKey
+            && liveBatterInfo.rowSlot === r.slot && liveBatterInfo.inning === i && liveBatterInfo.slotIndex === k;
+          if (isLiveCell) {
+            inner += diamondSVG(0, false, '', false, null, null, false) + '<div class="live-dot" title="At bat now"></div>';
+          }
+          let pitchAttr = '';
+          const pitchSource = c || (isLiveCell ? {
+            pitches: liveBatterInfo.pitches, batterName: liveBatterInfo.batterName,
+            pitcherFullName: liveBatterInfo.pitcherFullName, playDesc: 'At bat in progress&#8230;'
+          } : null);
+          if (pitchSource) {
+            const pkey = `${teamName}-${r.slot}-${i}-${k}`;
+            pitchStore[pkey] = pitchSource;
+            pitchAttr = ` data-pkey="${pkey}"`;
+          }
+          const cellHtml = inner ? `<div class="cell-wrap${pitchSource && pitchSource.pitches && pitchSource.pitches.length ? ' clickable' : ''}"${pitchAttr}>${inner}</div>` : '';
+          const cls = 'cell'
+            + (r.dividerInnings && r.dividerInnings.has(i) && k === 0 ? ' sub-divider' : '')
+            + (c && c.pitcherChanged ? ' pitcher-change' : '')
+            + (c && starterPitcherId && c.pitcherId === starterPitcherId ? ' starter-span' : '');
+          cells += `<td class="${cls}">${cellHtml}</td>`;
+        }
+      }
+      const habLine = (p, i) => {
+        const s = p.stats;
+        const txt = `${s.hits ?? 0}-${s.atBats ?? 0}`;
+        return i === 0 ? txt : `<span class="sub-note">${txt}</span>`;
+      };
+      const extraLine = (p, i) => {
+        const s = p.stats;
+        const txt = `${s.baseOnBalls ?? 0}-${s.doubles ?? 0}-${s.triples ?? 0}-${s.homeRuns ?? 0}`;
+        return i === 0 ? txt : `<span class="sub-note">${txt}</span>`;
+      };
+      const rbiLine = (p, i) => {
+        const txt = `${p.stats.rbi ?? 0}`;
+        return i === 0 ? txt : `<span class="sub-note">${txt}</span>`;
+      };
+      cells += `<td class="stat stat-hab">${r.players.map(habLine).join('<br/>')}</td>`;
+      cells += `<td class="stat stat-extra">${r.players.map(extraLine).join('<br/>')}</td>`;
+      cells += `<td class="stat stat-rbi">${r.players.map(rbiLine).join('<br/>')}</td>`;
+      return `<tr>${cells}</tr>`;
+    }).join('');
+
+    return `<div class="team-block">
+      <div class="team-header">
+        <div class="team-name">${teamName}</div>
+        <div class="team-header-btns">
+          <button class="roster-btn" data-team="${teamName}">Full Roster</button>
+          <button class="spray-btn" data-team="${teamName}">Spray Chart</button>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table class="scorecard-table"><thead>${head}</thead><tbody>${bodyRows}</tbody></table>
+      </div>
+      ${pitcherCardHtml || ''}
+    </div>`;
+  }
+
+  function countBoard(balls, strikes, outs) {
+    const col = (label, count, max, cls) => {
+      let lights = '';
+      for (let i = 0; i < max; i++) lights += `<span class="light-bulb ${i < count ? cls : ''}"></span>`;
+      return `<div class="count-col"><div class="count-label">${label}</div><div class="count-lights">${lights}</div></div>`;
+    };
+    return `<div class="count-board">${col('Balls', balls, 3, 'lit-green')}${col('Strikes', strikes, 2, 'lit-red')}${col('Outs', outs, 2, 'lit-red')}</div>`;
+  }
+
+  const TEAM_NICKNAMES = {
+    108: 'Angels', 109: 'Diamondbacks', 110: 'Orioles', 111: 'Red Sox', 112: 'Cubs',
+    113: 'Reds', 114: 'Guardians', 115: 'Rockies', 116: 'Tigers', 117: 'Astros',
+    118: 'Royals', 119: 'Dodgers', 120: 'Nationals', 121: 'Mets', 133: 'Athletics',
+    134: 'Pirates', 135: 'Padres', 136: 'Mariners', 137: 'Giants', 138: 'Cardinals',
+    139: 'Rays', 140: 'Rangers', 141: 'Blue Jays', 142: 'Twins', 143: 'Phillies',
+    144: 'Braves', 145: 'White Sox', 146: 'Marlins', 147: 'Yankees', 158: 'Brewers'
+  };
+  function teamNickname(team) {
+    return TEAM_NICKNAMES[team && team.id] || (team && (team.teamName || team.name)) || '';
+  }
+
+  async function loadSchedule(dateStr) {
+    gameSelect.innerHTML = '<option>Loading games&#8230;</option>';
+    body.innerHTML = '<div class="mlb-status-msg">Fetching schedule for ' + dateStr + '&#8230;</div>';
+    clearInterval(pollTimer);
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}`);
+      const data = await res.json();
+      const games = (data.dates && data.dates[0] && data.dates[0].games) || [];
+      if (!games.length) {
+        gameSelect.innerHTML = '<option>No games</option>';
+        body.innerHTML = '<div class="mlb-status-msg">No MLB games scheduled on this date.</div>';
+        return;
+      }
+      gameSelect.innerHTML = games.map(g => {
+        const away = teamNickname(g.teams.away.team);
+        const home = teamNickname(g.teams.home.team);
+        const state = g.status.abstractGameState;
+        let tag = '';
+        if (state === 'Live') tag = ' &#8212; LIVE';
+        else if (state === 'Final') tag = ' &#8212; Final';
+        return `<option value="${g.gamePk}">${away} @ ${home}${tag}</option>`;
+      }).join('');
+
+      const liveGame = games.find(g => g.status.abstractGameState === 'Live');
+      const chosen = liveGame ? liveGame.gamePk : games[0].gamePk;
+      gameSelect.value = chosen;
+      loadGame(chosen);
+    } catch (e) {
+      body.innerHTML = '<div class="mlb-status-msg">Could not load schedule. The MLB API may be unreachable right now.</div>';
+    }
+  }
+
+  async function loadGame(gamePk) {
+    clearInterval(pollTimer);
+    await fetchAndRender(gamePk);
+  }
+
+  async function fetchAndRender(gamePk) {
+    try {
+      pitchStore = {};
+      const res = await fetch(`https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live`);
+      const data = await res.json();
+      const gameData = data.gameData;
+      const liveData = data.liveData;
+      const linescore = liveData.linescore;
+      const awayName = gameData.teams.away.name;
+      const homeName = gameData.teams.home.name;
+      const state = gameData.status.abstractGameState;
+      const detailedState = gameData.status.detailedState;
+      const allPlays = (liveData.plays && liveData.plays.allPlays) || [];
+
+      const numInnings = Math.max((linescore.innings || []).length, 9);
+      const away = buildTeamRows(liveData.boxscore.teams.away, 'top', allPlays);
+      const home = buildTeamRows(liveData.boxscore.teams.home, 'bottom', allPlays);
+      const awayRows = away.rows, homeRows = home.rows;
+
+      // if the batting order turns over within an inning, some rows will
+      // have two cells for that inning number -- give that inning an extra
+      // column, applied to BOTH teams' tables so they stay aligned even
+      // though only one side actually used the extra column
+      const columnsPerInning = {};
+      for (let i = 1; i <= numInnings; i++) {
+        let max = 1;
+        [...awayRows, ...homeRows].forEach(r => {
+          const len = (r.cells[i] || []).length;
+          if (len > max) max = len;
+        });
+        columnsPerInning[i] = max;
+      }
+
+      // if there's a batter up right now, find their row so we can show a
+      // live placeholder diamond even before this at-bat's result exists.
+      // Deliberately never expands columnsPerInning for this -- only shown
+      // if it fits within columns already needed by completed at-bats --
+      // otherwise a transient state (e.g. during a mound visit) could
+      // briefly force a column open and then collapse it again.
+      let liveBatterInfo = null;
+      if (state === 'Live' && linescore.offense && linescore.offense.batter) {
+        const battingTeam = linescore.inningHalf === 'Top' ? 'away' : 'home';
+        const battingRows = battingTeam === 'away' ? awayRows : homeRows;
+        const liveRow = battingRows.find(r => r.players.some(p => p.id === linescore.offense.batter.id));
+        if (liveRow) {
+          const inning = linescore.currentInning;
+          const slotIndex = (liveRow.cells[inning] || []).length;
+          if (slotIndex < (columnsPerInning[inning] || 1)) {
+            const livePlay = allPlays.length ? allPlays[allPlays.length - 1] : null;
+            const liveMatchesBatter = livePlay && livePlay.matchup && livePlay.matchup.batter
+              && livePlay.matchup.batter.id === linescore.offense.batter.id;
+            liveBatterInfo = {
+              team: battingTeam, rowSlot: liveRow.slot, inning, slotIndex,
+              pitches: liveMatchesBatter ? extractPitches(livePlay) : [],
+              batterName: linescore.offense.batter.fullName || '',
+              pitcherFullName: (linescore.defense && linescore.defense.pitcher && linescore.defense.pitcher.fullName) || ''
+            };
+          }
+        }
+      }
+
+      // away.starterPitcherId is the pitcher who faced the away batters --
+      // i.e. the HOME team's starter -- and belongs under the away
+      // scorecard; home.starterPitcherId is the AWAY team's starter and
+      // belongs under the home scorecard
+      function pitcherCardFor(pitcherId, oppositeSideBoxscore) {
+        if (!pitcherId) return '';
+        const p = oppositeSideBoxscore.players && oppositeSideBoxscore.players['ID' + pitcherId];
+        if (!p) return '';
+        return renderPitcherCard(p.person && p.person.fullName, p.stats && p.stats.pitching);
+      }
+      const homePitcherCard = pitcherCardFor(away.starterPitcherId, liveData.boxscore.teams.home);
+      const awayPitcherCard = pitcherCardFor(home.starterPitcherId, liveData.boxscore.teams.away);
+
+      // bullpen: every pitcher who isn't today's starter, with pitch counts
+      // from the prior two days for fatigue context
+      const season = gameData.game.season;
+      const officialDate = gameData.datetime.officialDate;
+      const homeBullpen = await buildBullpenList(liveData.boxscore.teams.home, away.starterPitcherId, season, officialDate, allPlays, 'top');
+      const awayBullpen = await buildBullpenList(liveData.boxscore.teams.away, home.starterPitcherId, season, officialDate, allPlays, 'bottom');
+
+      function getBenchPlayers(sideBoxscore) {
+        return Object.values(sideBoxscore.players || {})
+          .filter(p => p.person && p.position && p.position.abbreviation !== 'P' && !p.battingOrder)
+          .map(p => ({ name: p.person.fullName, pos: p.position.abbreviation }));
+      }
+      rosterStore[awayName] = renderRosterContent(awayName, awayBullpen, awayRows, getBenchPlayers(liveData.boxscore.teams.away));
+      rosterStore[homeName] = renderRosterContent(homeName, homeBullpen, homeRows, getBenchPlayers(liveData.boxscore.teams.home));
+      sprayStore[awayName] = renderSprayChart(away.battedBalls, awayName);
+      sprayStore[homeName] = renderSprayChart(home.battedBalls, homeName);
+
+      const awayDivisionId = gameData.teams.away.division && gameData.teams.away.division.id;
+      const homeDivisionId = gameData.teams.home.division && gameData.teams.home.division.id;
+      const standingsRecords = await getStandings(season, officialDate);
+      standingsHtml = renderStandingsContent(
+        standingsRecords, awayDivisionId, homeDivisionId,
+        gameData.teams.away.id, gameData.teams.home.id, officialDate
+      );
+
+      let badgeClass = 'badge-preview';
+      if (state === 'Live') badgeClass = 'badge-live';
+      else if (state === 'Final') badgeClass = 'badge-final';
+
+      let stripHtml = '';
+      let lastPlayHtml = '';
+      if (state === 'Live') {
+        const halfOver = (linescore.outs ?? 0) >= 3;
+        const balls = halfOver ? 0 : (linescore.balls ?? 0);
+        const strikes = halfOver ? 0 : (linescore.strikes ?? 0);
+        const outs = halfOver ? 0 : (linescore.outs ?? 0);
+        const offense = halfOver ? {} : (linescore.offense || {});
+        const inningHalf = linescore.inningHalf === 'Top' ? 'Top' : 'Bot';
+        const inningNum = linescore.currentInning;
+        const onFirst = !!offense.first, onSecond = !!offense.second, onThird = !!offense.third;
+        const batter = offense.batter ? offense.batter.fullName : '';
+        const pitcher = halfOver ? '' : ((linescore.defense && linescore.defense.pitcher) ? linescore.defense.pitcher.fullName : '');
+
+        stripHtml = `
+          <div class="badge ${badgeClass}">${inningHalf} ${inningNum}</div>
+          ${countBoard(balls, strikes, outs)}
+          <div class="diamond-mini">
+            <span class="base-mini second ${onSecond ? 'on' : ''}"></span>
+            <span class="base-mini third ${onThird ? 'on' : ''}"></span>
+            <span class="base-mini first ${onFirst ? 'on' : ''}"></span>
+          </div>
+          <div>${batter ? 'At bat: ' + batter : ''}${pitcher ? ' &nbsp;&#183;&nbsp; Pitching: ' + pitcher : ''}</div>
+        `;
+        const currentHalf = (linescore.inningHalf || '').toLowerCase();
+        const completedAtBats = allPlays.filter(p =>
+          p.result && p.result.type === 'atBat' && p.result.description &&
+          !/mound visit|pitching change|pitching substitution|defensive substitution|defensive switch|offensive substitution|ejection|challenge|replay review|batter timeout|timeout/i.test(p.result.event || '') &&
+          p.about && p.about.inning === inningNum && (p.about.halfInning || '').toLowerCase() === currentHalf
+        );
+        const prevPlay = completedAtBats[completedAtBats.length - 1];
+        if (prevPlay) {
+          lastPlayHtml = `<div class="last-play"><span class="last-play-label">Previous Batter</span>${prevPlay.result.description}</div>`;
+        }
+      } else if (state === 'Final') {
+        stripHtml = `<div class="badge ${badgeClass}">Final</div>`;
+      } else {
+        const startTime = gameData.datetime && gameData.datetime.dateTime ? new Date(gameData.datetime.dateTime) : null;
+        stripHtml = `<div class="badge ${badgeClass}">${detailedState}</div>
+          ${startTime ? '<div>First pitch: ' + startTime.toLocaleString(undefined, {hour:'numeric', minute:'2-digit', month:'short', day:'numeric'}) + '</div>' : ''}`;
+      }
+
+      body.innerHTML = `
+        <div class="sheet">
+          <div class="sticky-top">
+            <button class="standings-btn">Divisional Standings</button>
+            ${renderBoxScore(linescore, awayName, homeName)}
+            <div class="live-strip">${stripHtml}</div>
+            ${lastPlayHtml}
+          </div>
+          ${renderTeamTable(awayName, awayRows, numInnings, away.pitcherByInning, away.starterPitcherId, columnsPerInning, homePitcherCard, 'away', liveBatterInfo)}
+          ${renderTeamTable(homeName, homeRows, numInnings, home.pitcherByInning, home.starterPitcherId, columnsPerInning, awayPitcherCard, 'home', liveBatterInfo)}
+        </div>
+        <div class="footnote">Source: MLB Stats API &#183; updated ${new Date().toLocaleTimeString()}</div>
+      `;
+
+      clearInterval(pollTimer);
+      if (state === 'Live') pollTimer = setInterval(() => fetchAndRender(gamePk), 15000);
+
+      // if the pitch modal is currently open, refresh it in place with the
+      // freshly-rebuilt pitchStore rather than leaving it showing stale data.
+      // The same pkey naturally carries through from a live at-bat to its
+      // completed cell once the plate appearance resolves, since both are
+      // keyed by team/slot/inning/sub-column rather than by play instance.
+      if (currentOpenPkey && pitchOverlay.classList.contains('open')) {
+        if (pitchStore[currentOpenPkey]) showPitchPopup(currentOpenPkey);
+        else hidePitchPopup();
+      }
+    } catch (e) {
+      body.innerHTML = '<div class="mlb-status-msg">Could not load game data.</div>';
+    }
+  }
+
+  dateInput.addEventListener('change', () => loadSchedule(dateInput.value));
+  document.getElementById('datePrev').addEventListener('click', () => {
+    dateInput.value = addDays(dateInput.value, -1);
+    loadSchedule(dateInput.value);
+  });
+  document.getElementById('dateNext').addEventListener('click', () => {
+    dateInput.value = addDays(dateInput.value, 1);
+    loadSchedule(dateInput.value);
+  });
+  gameSelect.addEventListener('change', () => loadGame(gameSelect.value));
+
+  const pitchOverlay = document.getElementById('pitchOverlay');
+  let currentOpenPkey = null;
+  const pitchModalBody = document.getElementById('pitchModalBody');
+  const pitchClose = document.getElementById('pitchClose');
+
+  const RESULT_CLASS = (result) => {
+    if (/ball/i.test(result) && !/in play/i.test(result)) return 'pitch-result-ball';
+    if (/strike|foul/i.test(result)) return 'pitch-result-strike';
+    if (/in play/i.test(result)) return 'pitch-result-inplay';
+    return '';
+  };
+
+  function showPitchPopup(pkey) {
+    const c = pitchStore[pkey];
+    if (!c) return;
+    currentOpenPkey = pkey;
+    const pitches = c.pitches || [];
+    let rows = '';
+    if (pitches.length) {
+      rows = pitches.map(p => `
+        <tr>
+          <td class="pnum">${p.num || ''}</td>
+          <td>${p.type}${p.speed ? ' &#183; ' + p.speed + ' mph' : ''}</td>
+          <td class="${RESULT_CLASS(p.result)}">${p.result || ''}</td>
+          <td class="pcount">${p.balls != null ? p.balls : ''}-${p.strikes != null ? p.strikes : ''}</td>
+        </tr>
+      `).join('');
+      rows = `<table class="pitch-table">
+        <thead><tr><th>#</th><th>Pitch</th><th>Result</th><th>Count</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+    } else {
+      rows = '<div class="pitch-empty">No pitch-by-pitch data available for this plate appearance.</div>';
+    }
+
+    pitchModalBody.innerHTML = `
+      <div class="pitch-header">${c.batterName || 'Batter'}</div>
+      <div class="pitch-subheader">vs ${c.pitcherFullName || 'pitcher'}</div>
+      ${rows}
+      ${c.playDesc ? `<div class="pitch-final-desc">${c.playDesc}</div>` : ''}
+    `;
+    pitchOverlay.classList.add('open');
+  }
+
+  function hidePitchPopup() {
+    pitchOverlay.classList.remove('open');
+    currentOpenPkey = null;
+  }
+
+  const rosterOverlay = document.getElementById('rosterOverlay');
+  const rosterModalBody = document.getElementById('rosterModalBody');
+  const rosterClose = document.getElementById('rosterClose');
+
+  function showRosterModal(team) {
+    const html = rosterStore[team];
+    if (!html) return;
+    rosterModalBody.innerHTML = html;
+    rosterOverlay.classList.add('open');
+  }
+  function hideRosterModal() {
+    rosterOverlay.classList.remove('open');
+  }
+
+  const sprayOverlay = document.getElementById('sprayOverlay');
+  const sprayModalBody = document.getElementById('sprayModalBody');
+  const sprayClose = document.getElementById('sprayClose');
+
+  function showSprayModal(team) {
+    const html = sprayStore[team] || '<div class="pitch-header">' + team + '</div><div class="pitch-empty">No batted balls recorded yet.</div>';
+    sprayModalBody.innerHTML = html;
+    sprayOverlay.classList.add('open');
+  }
+  function hideSprayModal() {
+    sprayOverlay.classList.remove('open');
+  }
+
+  const standingsOverlay = document.getElementById('standingsOverlay');
+  const standingsModalBody = document.getElementById('standingsModalBody');
+  const standingsClose = document.getElementById('standingsClose');
+
+  function showStandingsModal() {
+    standingsModalBody.innerHTML = standingsHtml || '<div class="pitch-header">Standings</div><div class="pitch-empty">Standings not available.</div>';
+    standingsOverlay.classList.add('open');
+  }
+  function hideStandingsModal() {
+    standingsOverlay.classList.remove('open');
+  }
+
+  document.addEventListener('click', (e) => {
+    const target = e.target.closest('[data-pkey]');
+    if (target) showPitchPopup(target.getAttribute('data-pkey'));
+    const rosterBtn = e.target.closest('.roster-btn');
+    if (rosterBtn) showRosterModal(rosterBtn.getAttribute('data-team'));
+    const sprayBtn = e.target.closest('.spray-btn');
+    if (sprayBtn) showSprayModal(sprayBtn.getAttribute('data-team'));
+    if (e.target.closest('.standings-btn')) showStandingsModal();
+  });
+  document.addEventListener('change', (e) => {
+    const sel = e.target.closest('select.spray-filter');
+    if (!sel) return;
+    const team = sel.getAttribute('data-team');
+    const val = sel.value;
+    sprayFilterState[team] = val;
+    const card = sel.closest('.spray-card');
+    if (!card) return;
+    card.querySelectorAll('g[data-batter]').forEach(g => {
+      const match = val === 'all' || g.getAttribute('data-batter') === val;
+      g.style.display = match ? '' : 'none';
+    });
+  });
+  pitchClose.addEventListener('click', hidePitchPopup);
+  pitchOverlay.addEventListener('click', (e) => {
+    if (e.target === pitchOverlay) hidePitchPopup();
+  });
+  rosterClose.addEventListener('click', hideRosterModal);
+  rosterOverlay.addEventListener('click', (e) => {
+    if (e.target === rosterOverlay) hideRosterModal();
+  });
+  sprayClose.addEventListener('click', hideSprayModal);
+  sprayOverlay.addEventListener('click', (e) => {
+    if (e.target === sprayOverlay) hideSprayModal();
+  });
+  standingsClose.addEventListener('click', hideStandingsModal);
+  standingsOverlay.addEventListener('click', (e) => {
+    if (e.target === standingsOverlay) hideStandingsModal();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { hidePitchPopup(); hideRosterModal(); hideSprayModal(); hideStandingsModal(); }
+  });
+
+  loadSchedule(dateInput.value);
+})();
+</script>
+</body>
+</html>
