@@ -48,7 +48,31 @@
     color: var(--ink);
   }
 
-  .mlb-controls { display: flex; gap: 8px; flex-wrap: wrap; }
+  .mlb-controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+
+  .tab-bar {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid rgba(243, 236, 219, 0.15);
+  }
+  .tab-btn {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 8px 4px;
+    margin-bottom: -1px;
+    cursor: pointer;
+  }
+  .tab-btn:hover { color: var(--ink); }
+  .tab-btn.active { color: var(--ink); border-bottom-color: var(--gold); }
+  .tab-panel[hidden] { display: none; }
   .date-nav { display: flex; align-items: center; gap: 4px; }
   .date-nav-btn {
     background: var(--paper);
@@ -299,7 +323,7 @@
   .spray-key .dot.hit { background: var(--gold); }
   .spray-key .dot.out { background: #8a8478; }
 
-  .roster-btn, .spray-btn, .standings-btn {
+  .roster-btn, .spray-btn {
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
     font-size: 10.5px;
@@ -312,8 +336,7 @@
     padding: 6px 12px;
     cursor: pointer;
   }
-  .standings-btn { display: inline-block; margin-bottom: 10px; }
-  .roster-btn:hover, .spray-btn:hover, .standings-btn:hover { background: rgba(28, 58, 44, 0.1); }
+  .roster-btn:hover, .spray-btn:hover { background: rgba(28, 58, 44, 0.1); }
   .roster-section-title {
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
@@ -376,7 +399,7 @@
     color: var(--ink-soft);
     border-bottom: 1px solid var(--paper-line);
   }
-  .standings-row.standings-highlight { background: rgba(179, 121, 26, 0.1); }
+  .standings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 32px; }
   .standings-team {
     flex: 1;
     font-family: 'Inter', sans-serif;
@@ -785,6 +808,7 @@
     .mlb-header { flex-direction: column; align-items: flex-start; }
     .sheet { padding: 14px; }
     .sticky-top { margin: -2px -14px 0; padding-left: 14px; padding-right: 14px; }
+    .standings-grid { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -792,6 +816,12 @@
 <div id="mlb-root">
   <div class="mlb-header">
     <div class="mlb-title">Take Me Out to the Ballgame</div>
+  </div>
+  <div class="tab-bar">
+    <button type="button" class="tab-btn active" data-tab="scorecard">Scorecard</button>
+    <button type="button" class="tab-btn" data-tab="standings">Standings</button>
+  </div>
+  <div class="tab-panel" data-tab-panel="scorecard" id="scorecardPanel">
     <div class="mlb-controls">
       <div class="date-nav">
         <button type="button" class="date-nav-btn" id="datePrev" aria-label="Previous day">&#8249;</button>
@@ -800,9 +830,21 @@
       </div>
       <select id="gamePick"><option>Loading games&#8230;</option></select>
     </div>
+    <div id="mlbBody">
+      <div class="mlb-status-msg">Loading today's schedule&#8230;</div>
+    </div>
   </div>
-  <div id="mlbBody">
-    <div class="mlb-status-msg">Loading today's schedule&#8230;</div>
+  <div class="tab-panel" data-tab-panel="standings" id="standingsPanel" hidden>
+    <div class="mlb-controls">
+      <div class="date-nav">
+        <button type="button" class="date-nav-btn" id="standingsDatePrev" aria-label="Previous day">&#8249;</button>
+        <input type="date" id="standingsDatePick" />
+        <button type="button" class="date-nav-btn" id="standingsDateNext" aria-label="Next day">&#8250;</button>
+      </div>
+    </div>
+    <div id="standingsBody">
+      <div class="mlb-status-msg">Loading standings&#8230;</div>
+    </div>
   </div>
   <div id="pitchOverlay" class="pitch-overlay">
     <div class="pitch-modal">
@@ -822,12 +864,6 @@
       <div id="sprayModalBody"></div>
     </div>
   </div>
-  <div id="standingsOverlay" class="pitch-overlay">
-    <div class="pitch-modal">
-      <button id="standingsClose" class="pitch-close" aria-label="Close">&#10005;</button>
-      <div id="standingsModalBody"></div>
-    </div>
-  </div>
   <div id="playerOverlay" class="pitch-overlay">
     <div class="pitch-modal">
       <button id="playerClose" class="pitch-close" aria-label="Close">&#10005;</button>
@@ -841,11 +877,12 @@
   const dateInput = document.getElementById('datePick');
   const gameSelect = document.getElementById('gamePick');
   const body = document.getElementById('mlbBody');
+  const standingsBody = document.getElementById('standingsBody');
+  const standingsDateInput = document.getElementById('standingsDatePick');
   let pollTimer = null;
   let pitchStore = {};
   let rosterStore = {};
   let sprayStore = {};
-  let standingsHtml = '';
   let playerStore = {};
   const gameLogCache = {};
   const standingsCache = {};
@@ -868,11 +905,16 @@
     const key = `${season}-${date}`;
     if (standingsCache[key] !== undefined) return standingsCache[key];
     try {
-      const res = await fetch(`https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=${season}&date=${date}`);
+      const url = `https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=${season}&date=${date}`;
+      const res = await fetch(url);
       const data = await res.json();
+      if (!res.ok || !data.records || !data.records.length) {
+        console.warn('[standings] empty/failed response', { url, status: res.status, data });
+      }
       standingsCache[key] = data.records || [];
       return standingsCache[key];
     } catch (e) {
+      console.warn('[standings] fetch threw', e);
       standingsCache[key] = [];
       return [];
     }
@@ -908,6 +950,7 @@
     return local.toISOString().slice(0, 10);
   }
   dateInput.value = todayStr();
+  standingsDateInput.value = todayStr();
 
   const POS_PATTERNS = [
     [/pitcher/gi, 1], [/catcher/gi, 2], [/first baseman/gi, 3],
@@ -1647,21 +1690,35 @@
       </div>`).join('');
   }
 
-  function renderStandingsContent(records, awayDivisionId, homeDivisionId, awayTeamId, homeTeamId, date) {
-    const relevantIds = new Set([awayDivisionId, homeDivisionId].filter(Boolean));
-    const relevant = (records || []).filter(r => r.division && relevantIds.has(r.division.id));
-    if (!relevant.length) {
+  // The standings API's division objects only carry {id, link} - no name -
+  // so division display names/ordering are looked up by the (stable, well-
+  // known) MLB division ids rather than trusting a name field that isn't there.
+  const DIVISION_INFO = {
+    201: { name: 'American League East', order: 0 },
+    202: { name: 'American League Central', order: 1 },
+    200: { name: 'American League West', order: 2 },
+    204: { name: 'National League East', order: 3 },
+    205: { name: 'National League Central', order: 4 },
+    203: { name: 'National League West', order: 5 }
+  };
+
+  function renderStandingsContent(records, date) {
+    const divisions = (records || [])
+      .filter(r => r.division && DIVISION_INFO[r.division.id] && r.teamRecords && r.teamRecords.length)
+      .slice()
+      .sort((a, b) => DIVISION_INFO[a.division.id].order - DIVISION_INFO[b.division.id].order);
+    if (!divisions.length) {
       return `<div class="pitch-header">Standings</div><div class="pitch-empty">Standings not available for this date.</div>`;
     }
-    const sections = relevant.map(div => {
+
+    function renderDivision(div) {
       const teams = (div.teamRecords || []).slice().sort((a, b) =>
         (parseInt(a.divisionRank, 10) || 99) - (parseInt(b.divisionRank, 10) || 99)
       );
       const rows = teams.map(tr => {
-        const isPlaying = tr.team && (tr.team.id === awayTeamId || tr.team.id === homeTeamId);
         const streak = (tr.streak && tr.streak.streakCode) || '&#8212;';
         const gb = tr.gamesBack === '-' || tr.gamesBack == null ? '&#8212;' : tr.gamesBack;
-        return `<div class="standings-row${isPlaying ? ' standings-highlight' : ''}">
+        return `<div class="standings-row">
           <span class="standings-team">${(tr.team && tr.team.name) || ''}</span>
           <span class="standings-num">${tr.wins ?? 0}</span>
           <span class="standings-num">${tr.losses ?? 0}</span>
@@ -1670,8 +1727,7 @@
           <span class="standings-num">${streak}</span>
         </div>`;
       }).join('');
-      const divName = (div.division && div.division.name) || 'Division';
-      return `<div class="roster-section-title">${divName}</div>
+      return `<div class="roster-section-title">${DIVISION_INFO[div.division.id].name}</div>
         <div class="standings-row standings-header-row">
           <span class="standings-team">Team</span>
           <span class="standings-num">W</span>
@@ -1681,8 +1737,15 @@
           <span class="standings-num">Strk</span>
         </div>
         ${rows}`;
-    }).join('');
-    return `<div class="pitch-header">Standings</div><div class="pitch-subheader">As of ${date}</div>${sections}`;
+    }
+
+    const alDivisions = divisions.filter(d => DIVISION_INFO[d.division.id].name.startsWith('American League'));
+    const nlDivisions = divisions.filter(d => DIVISION_INFO[d.division.id].name.startsWith('National League'));
+    const grid = `<div class="standings-grid">
+      <div class="standings-col">${alDivisions.map(renderDivision).join('')}</div>
+      <div class="standings-col">${nlDivisions.map(renderDivision).join('')}</div>
+    </div>`;
+    return `<div class="pitch-header">Standings</div><div class="pitch-subheader">As of ${date}</div>${grid}`;
   }
 
   function renderPlayerModalContent(info, seasonStat) {
@@ -1938,6 +2001,17 @@
     await fetchAndRender(gamePk);
   }
 
+  async function loadStandings(dateStr) {
+    standingsBody.innerHTML = '<div class="mlb-status-msg">Loading standings&#8230;</div>';
+    try {
+      const season = dateStr.slice(0, 4);
+      const records = await getStandings(season, dateStr);
+      standingsBody.innerHTML = `<div class="sheet">${renderStandingsContent(records, dateStr)}</div>`;
+    } catch (e) {
+      standingsBody.innerHTML = '<div class="mlb-status-msg">Standings not available.</div>';
+    }
+  }
+
   async function fetchAndRender(gamePk) {
     try {
       pitchStore = {};
@@ -2029,14 +2103,6 @@
       sprayStore[awayName] = renderSprayChart(away.battedBalls, awayName);
       sprayStore[homeName] = renderSprayChart(home.battedBalls, homeName);
 
-      const awayDivisionId = gameData.teams.away.division && gameData.teams.away.division.id;
-      const homeDivisionId = gameData.teams.home.division && gameData.teams.home.division.id;
-      const standingsRecords = await getStandings(season, officialDate);
-      standingsHtml = renderStandingsContent(
-        standingsRecords, awayDivisionId, homeDivisionId,
-        gameData.teams.away.id, gameData.teams.home.id, officialDate
-      );
-
       let badgeClass = 'badge-preview';
       if (state === 'Live') badgeClass = 'badge-live';
       else if (state === 'Final') badgeClass = 'badge-final';
@@ -2086,7 +2152,6 @@
       body.innerHTML = `
         <div class="sheet">
           <div class="sticky-top">
-            <button class="standings-btn">Divisional Standings</button>
             ${renderBoxScore(linescore, awayName, homeName)}
             <div class="live-strip">${stripHtml}</div>
             ${lastPlayHtml}
@@ -2124,6 +2189,16 @@
     loadSchedule(dateInput.value);
   });
   gameSelect.addEventListener('change', () => loadGame(gameSelect.value));
+
+  standingsDateInput.addEventListener('change', () => loadStandings(standingsDateInput.value));
+  document.getElementById('standingsDatePrev').addEventListener('click', () => {
+    standingsDateInput.value = addDays(standingsDateInput.value, -1);
+    loadStandings(standingsDateInput.value);
+  });
+  document.getElementById('standingsDateNext').addEventListener('click', () => {
+    standingsDateInput.value = addDays(standingsDateInput.value, 1);
+    loadStandings(standingsDateInput.value);
+  });
 
   const pitchOverlay = document.getElementById('pitchOverlay');
   let currentOpenPkey = null;
@@ -2201,17 +2276,42 @@
     sprayOverlay.classList.remove('open');
   }
 
-  const standingsOverlay = document.getElementById('standingsOverlay');
-  const standingsModalBody = document.getElementById('standingsModalBody');
-  const standingsClose = document.getElementById('standingsClose');
+  // Tab framework: register a tab with an optional lazy `init` (runs once,
+  // on first visit) and `onShow` (runs every time the tab becomes active).
+  // Adding a future tab is just a register() call plus a button + panel in
+  // the HTML - no router dependency needed for a single-page app like this.
+  const Tabs = (() => {
+    const tabs = {};
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabPanels = document.querySelectorAll('.tab-panel');
+    let active = null;
 
-  function showStandingsModal() {
-    standingsModalBody.innerHTML = standingsHtml || '<div class="pitch-header">Standings</div><div class="pitch-empty">Standings not available.</div>';
-    standingsOverlay.classList.add('open');
-  }
-  function hideStandingsModal() {
-    standingsOverlay.classList.remove('open');
-  }
+    function register(id, { init, onShow } = {}) {
+      tabs[id] = { init, onShow, initialized: false };
+    }
+
+    function switchTo(id) {
+      if (!tabs[id] || id === active) return;
+      tabBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === id));
+      tabPanels.forEach(p => { p.hidden = p.dataset.tabPanel !== id; });
+      const tab = tabs[id];
+      if (!tab.initialized) { if (tab.init) tab.init(); tab.initialized = true; }
+      if (tab.onShow) tab.onShow();
+      active = id;
+      try { history.replaceState(null, '', '#' + id); } catch (e) {}
+    }
+
+    function init(defaultId) {
+      tabBtns.forEach(btn => btn.addEventListener('click', () => switchTo(btn.dataset.tab)));
+      const fromHash = location.hash.slice(1);
+      switchTo(tabs[fromHash] ? fromHash : defaultId);
+    }
+
+    return { register, switchTo, init };
+  })();
+
+  Tabs.register('scorecard');
+  Tabs.register('standings', { init: () => loadStandings(standingsDateInput.value) });
 
   const playerOverlay = document.getElementById('playerOverlay');
   const playerModalBody = document.getElementById('playerModalBody');
@@ -2237,7 +2337,6 @@
     if (rosterBtn) showRosterModal(rosterBtn.getAttribute('data-team'));
     const sprayBtn = e.target.closest('.spray-btn');
     if (sprayBtn) showSprayModal(sprayBtn.getAttribute('data-team'));
-    if (e.target.closest('.standings-btn')) showStandingsModal();
     const playerBtn = e.target.closest('.player-name-btn');
     if (playerBtn) showPlayerModal(playerBtn.getAttribute('data-player-id'));
   });
@@ -2266,18 +2365,15 @@
   sprayOverlay.addEventListener('click', (e) => {
     if (e.target === sprayOverlay) hideSprayModal();
   });
-  standingsClose.addEventListener('click', hideStandingsModal);
-  standingsOverlay.addEventListener('click', (e) => {
-    if (e.target === standingsOverlay) hideStandingsModal();
-  });
   playerClose.addEventListener('click', hidePlayerModal);
   playerOverlay.addEventListener('click', (e) => {
     if (e.target === playerOverlay) hidePlayerModal();
   });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { hidePitchPopup(); hideRosterModal(); hideSprayModal(); hideStandingsModal(); hidePlayerModal(); }
+    if (e.key === 'Escape') { hidePitchPopup(); hideRosterModal(); hideSprayModal(); hidePlayerModal(); }
   });
 
+  Tabs.init('scorecard');
   loadSchedule(dateInput.value);
 })();
 </script>
