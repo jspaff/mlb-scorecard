@@ -905,11 +905,16 @@
     const key = `${season}-${date}`;
     if (standingsCache[key] !== undefined) return standingsCache[key];
     try {
-      const res = await fetch(`https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=${season}&date=${date}`);
+      const url = `https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=${season}&date=${date}`;
+      const res = await fetch(url);
       const data = await res.json();
+      if (!res.ok || !data.records || !data.records.length) {
+        console.warn('[standings] empty/failed response', { url, status: res.status, data });
+      }
       standingsCache[key] = data.records || [];
       return standingsCache[key];
     } catch (e) {
+      console.warn('[standings] fetch threw', e);
       standingsCache[key] = [];
       return [];
     }
@@ -1692,6 +1697,9 @@
 
   function renderStandingsContent(records, date) {
     const divisions = (records || []).filter(r => r.division && r.division.name && r.teamRecords && r.teamRecords.length);
+    if (!divisions.length && records && records.length) {
+      console.warn('[standings] records present but none matched the expected shape', records);
+    }
     if (!divisions.length) {
       return `<div class="pitch-header">Standings</div><div class="pitch-empty">Standings not available for this date.</div>`;
     }
