@@ -1698,7 +1698,9 @@
   function renderStandingsContent(records, date) {
     const divisions = (records || []).filter(r => r.division && r.division.name && r.teamRecords && r.teamRecords.length);
     if (!divisions.length && records && records.length) {
-      console.warn('[standings] records present but none matched the expected shape', records);
+      console.warn('[standings] records present but none matched the expected shape. First record raw JSON:');
+      console.warn(JSON.stringify(records[0], null, 2));
+      console.warn('[standings] top-level keys per record:', records.map(r => Object.keys(r)));
     }
     if (!divisions.length) {
       return `<div class="pitch-header">Standings</div><div class="pitch-empty">Standings not available for this date.</div>`;
