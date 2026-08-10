@@ -905,7 +905,7 @@
     const key = `${season}-${date}`;
     if (standingsCache[key] !== undefined) return standingsCache[key];
     try {
-      const res = await fetch(`https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=${season}&date=${date}`);
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&standingsTypes=regularSeason&season=${season}&date=${date}`);
       const data = await res.json();
       standingsCache[key] = data.records || [];
       return standingsCache[key];
@@ -1691,7 +1691,7 @@
   ];
 
   function renderStandingsContent(records, date) {
-    const divisions = (records || []).filter(r => r.division && r.teamRecords && r.teamRecords.length);
+    const divisions = (records || []).filter(r => r.division && r.division.name && r.teamRecords && r.teamRecords.length);
     if (!divisions.length) {
       return `<div class="pitch-header">Standings</div><div class="pitch-empty">Standings not available for this date.</div>`;
     }
@@ -1730,7 +1730,7 @@
     }
 
     const alDivisions = divisions.filter(d => d.division.name.startsWith('American League'));
-    const nlDivisions = divisions.filter(d => !d.division.name.startsWith('American League'));
+    const nlDivisions = divisions.filter(d => d.division.name.startsWith('National League'));
     const grid = `<div class="standings-grid">
       <div class="standings-col">${alDivisions.map(renderDivision).join('')}</div>
       <div class="standings-col">${nlDivisions.map(renderDivision).join('')}</div>
@@ -1993,9 +1993,13 @@
 
   async function loadStandings(dateStr) {
     standingsBody.innerHTML = '<div class="mlb-status-msg">Loading standings&#8230;</div>';
-    const season = dateStr.slice(0, 4);
-    const records = await getStandings(season, dateStr);
-    standingsBody.innerHTML = `<div class="sheet">${renderStandingsContent(records, dateStr)}</div>`;
+    try {
+      const season = dateStr.slice(0, 4);
+      const records = await getStandings(season, dateStr);
+      standingsBody.innerHTML = `<div class="sheet">${renderStandingsContent(records, dateStr)}</div>`;
+    } catch (e) {
+      standingsBody.innerHTML = '<div class="mlb-status-msg">Standings not available.</div>';
+    }
   }
 
   async function fetchAndRender(gamePk) {
@@ -2284,7 +2288,7 @@
       if (!tab.initialized) { if (tab.init) tab.init(); tab.initialized = true; }
       if (tab.onShow) tab.onShow();
       active = id;
-      history.replaceState(null, '', '#' + id);
+      try { history.replaceState(null, '', '#' + id); } catch (e) {}
     }
 
     function init(defaultId) {
