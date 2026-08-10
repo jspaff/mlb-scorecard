@@ -905,7 +905,7 @@
     const key = `${season}-${date}`;
     if (standingsCache[key] !== undefined) return standingsCache[key];
     try {
-      const res = await fetch(`https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&standingsTypes=regularSeason&season=${season}&date=${date}`);
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=${season}&date=${date}`);
       const data = await res.json();
       standingsCache[key] = data.records || [];
       return standingsCache[key];
