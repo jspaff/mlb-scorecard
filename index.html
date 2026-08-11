@@ -239,6 +239,38 @@
     color: var(--ink);
     margin: 12px 0 16px;
   }
+  .pog-section {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--paper-line);
+  }
+  .pog-inning {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 4px;
+  }
+  .pog-description {
+    font-family: 'Inter', sans-serif;
+    font-size: 12.5px;
+    color: var(--ink);
+    line-height: 1.5;
+  }
+  .pog-watch {
+    display: inline-block;
+    margin-top: 6px;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--gold);
+    text-decoration: none;
+  }
+  .pog-watch:hover, .pog-watch:focus-visible { text-decoration: underline; }
   .potg-section {
     margin-top: 14px;
     margin-bottom: 16px;
@@ -3072,7 +3104,7 @@
     }
 
     const wpaHtml = game.state === 'Final'
-      ? `<div class="potg-section" id="wpaLeaders-${game.gamePk}"><div class="potg-loading">Loading Players of the Game&#8230;</div></div>`
+      ? `<div class="pog-section" id="wpaLeaders-${game.gamePk}"><div class="potg-loading">Loading game highlights&#8230;</div></div>`
       : '';
 
     return `
@@ -3152,7 +3184,15 @@
     return parts.map(p => `<span class="potg-stat">${p}</span>`).join(', ');
   }
 
-  async function fetchGameWpaLeaders(gamePk) {
+  function ordinalSuffix(n) {
+    const j = n % 10, k = n % 100;
+    if (j === 1 && k !== 11) return n + 'st';
+    if (j === 2 && k !== 12) return n + 'nd';
+    if (j === 3 && k !== 13) return n + 'rd';
+    return n + 'th';
+  }
+
+  async function fetchGameHighlights(gamePk) {
     try {
       const [feedRes, wpRes] = await Promise.all([
         fetch(`https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live`),
@@ -3171,6 +3211,7 @@
         t.wpa += amount;
       };
       let matchedCount = 0;
+      let playOfGame = null;
       allPlays.forEach((play, i) => {
         const entry = wp[i];
         const homeAdded = entry && entry.homeTeamWinProbabilityAdded;
@@ -3180,6 +3221,21 @@
         const battingWpa = isTop ? -homeAdded : homeAdded;
         credit(play.matchup && play.matchup.batter, 'batter', battingWpa);
         credit(play.matchup && play.matchup.pitcher, 'pitcher', -battingWpa);
+
+        const description = (play.result && play.result.description) || '';
+        const absWpa = Math.abs(homeAdded);
+        if (description && (!playOfGame || absWpa > playOfGame.absWpa)) {
+          const events = play.playEvents || [];
+          const lastEvent = events[events.length - 1];
+          const playId = lastEvent && lastEvent.playId;
+          const inning = play.about && play.about.inning;
+          playOfGame = {
+            absWpa,
+            description,
+            inningLabel: inning ? `${isTop ? 'Top' : 'Bottom'} ${ordinalSuffix(inning)}` : '',
+            videoUrl: playId ? `https://baseballsavant.mlb.com/sporty-videos?playId=${playId}` : null
+          };
+        }
       });
 
       const boxscore = feedData.liveData && feedData.liveData.boxscore;
@@ -3197,19 +3253,28 @@
         `  wp[0]: ${JSON.stringify(wp[0])}\n` +
         `  wpData (if not array) keys: ${Array.isArray(wpData) ? 'n/a' : JSON.stringify(Object.keys(wpData || {}))}\n` +
         `  allPlays[0].about: ${JSON.stringify(allPlays[0] && allPlays[0].about)}`;
-      return { leaders, debug };
+      return { leaders, playOfGame, debug };
     } catch (e) {
-      return { leaders: [], debug: `gamePk ${gamePk}: FETCH/PARSE FAILED - ${e.message}` };
+      return { leaders: [], playOfGame: null, debug: `gamePk ${gamePk}: FETCH/PARSE FAILED - ${e.message}` };
     }
   }
 
-  function renderPlayersOfTheGame(leaders, debug) {
-    if (!leaders.length) {
-      const debugHtml = debug
-        ? `<pre style="margin-top:8px;padding:8px;background:#111;color:#7fdc7f;font-size:10px;line-height:1.4;white-space:pre-wrap;word-break:break-all;border-radius:6px;max-height:260px;overflow:auto;-webkit-user-select:text;user-select:text;">${debug.replace(/</g, '&lt;')}</pre>`
-        : '';
-      return `<div class="potg-section"><div class="potg-loading">Players of the Game unavailable for this game.</div>${debugHtml}</div>`;
-    }
+  function renderPlayOfGame(playOfGame) {
+    if (!playOfGame) return '';
+    const watchHtml = playOfGame.videoUrl
+      ? `<a class="pog-watch" href="${playOfGame.videoUrl}" target="_blank" rel="noopener noreferrer">Watch &#9654;</a>`
+      : '';
+    return `
+      <div class="pog-section">
+        <div class="gs-game-label">Play of the Game</div>
+        ${playOfGame.inningLabel ? `<div class="pog-inning">${playOfGame.inningLabel}</div>` : ''}
+        <div class="pog-description">${playOfGame.description}</div>
+        ${watchHtml}
+      </div>`;
+  }
+
+  function renderPlayersOfTheGame(leaders) {
+    if (!leaders.length) return '';
     const players = leaders.map(p => {
       const headshotUrl = `https://img.mlbstatic.com/mlb-photos/image/upload/w_112,q_100,f_auto/v1/people/${p.id}/headshot/67/current`;
       return `
@@ -3226,11 +3291,21 @@
       </div>`;
   }
 
+  function renderGameHighlights(playOfGame, leaders, debug) {
+    if (!playOfGame && !leaders.length) {
+      const debugHtml = debug
+        ? `<pre style="margin-top:8px;padding:8px;background:#111;color:#7fdc7f;font-size:10px;line-height:1.4;white-space:pre-wrap;word-break:break-all;border-radius:6px;max-height:260px;overflow:auto;-webkit-user-select:text;user-select:text;">${debug.replace(/</g, '&lt;')}</pre>`
+        : '';
+      return `<div class="pog-section"><div class="potg-loading">Highlights unavailable for this game.</div>${debugHtml}</div>`;
+    }
+    return renderPlayOfGame(playOfGame) + renderPlayersOfTheGame(leaders);
+  }
+
   async function loadWpaLeadersInto(gamePk, requestId) {
-    const { leaders, debug } = await fetchGameWpaLeaders(gamePk);
+    const { leaders, playOfGame, debug } = await fetchGameHighlights(gamePk);
     if (requestId !== gameSummaryRequestId) return;
     const el = document.getElementById(`wpaLeaders-${gamePk}`);
-    if (el) el.outerHTML = renderPlayersOfTheGame(leaders, debug);
+    if (el) el.outerHTML = renderGameHighlights(playOfGame, leaders, debug);
   }
 
   scheduleTeamSelect.addEventListener('change', () => {
