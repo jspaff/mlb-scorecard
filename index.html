@@ -858,6 +858,34 @@
   }
   .standings-row.standings-header-row .standings-team { font-family: 'Overpass', sans-serif; }
   .standings-num { width: 38px; text-align: center; }
+  button.standings-team-btn {
+    flex: 1;
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: left;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 10.5px;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--ink);
+    background: rgba(243, 236, 219, 0.08);
+    border: 1px solid var(--paper-line);
+    border-radius: 3px;
+    padding: 3px 8px;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+  button.standings-team-btn:hover,
+  button.standings-team-btn:focus-visible {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: var(--paper);
+    outline: none;
+  }
   .bp-row {
     display: flex;
     align-items: center;
@@ -1388,6 +1416,12 @@
     <div class="pitch-modal">
       <button id="gameSummaryClose" class="pitch-close" aria-label="Close">&#10005;</button>
       <div id="gameSummaryModalBody"></div>
+    </div>
+  </div>
+  <div id="teamChartOverlay" class="pitch-overlay">
+    <div class="pitch-modal">
+      <button id="teamChartClose" class="pitch-close" aria-label="Close">&#10005;</button>
+      <div id="teamChartModalBody"></div>
     </div>
   </div>
 </div>
@@ -2242,8 +2276,10 @@
       const rows = teams.map(tr => {
         const streak = (tr.streak && tr.streak.streakCode) || '&#8212;';
         const gb = tr.gamesBack === '-' || tr.gamesBack == null ? '&#8212;' : tr.gamesBack;
+        const teamId = tr.team && tr.team.id;
+        const teamName = (tr.team && tr.team.name) || '';
         return `<div class="standings-row">
-          <span class="standings-team">${(tr.team && tr.team.name) || ''}</span>
+          <button type="button" class="standings-team standings-team-btn" data-team-id="${teamId}" data-team-name="${teamName}">${teamName}</button>
           <span class="standings-num">${tr.wins ?? 0}</span>
           <span class="standings-num">${tr.losses ?? 0}</span>
           <span class="standings-num">${tr.winningPercentage ?? '.000'}</span>
@@ -2285,8 +2321,10 @@
       const streak = (tr.streak && tr.streak.streakCode) || '&#8212;';
       const gb = tr.wildCardGamesBack;
       const gbDisplay = gb === '-' || gb == null ? '&#8212;' : gb;
+      const teamId = tr.team && tr.team.id;
+      const teamName = (tr.team && tr.team.name) || '';
       return `<div class="standings-row">
-        <span class="standings-team">${(tr.team && tr.team.name) || ''}</span>
+        <button type="button" class="standings-team standings-team-btn" data-team-id="${teamId}" data-team-name="${teamName}">${teamName}</button>
         <span class="standings-num">${tr.wins ?? 0}</span>
         <span class="standings-num">${tr.losses ?? 0}</span>
         <span class="standings-num">${tr.winningPercentage ?? '.000'}</span>
@@ -2623,6 +2661,116 @@
     };
     scheduleCache[key] = result;
     return result;
+  }
+
+  const teamChartCache = {};
+
+  async function getTeamWinLossSeries(teamId, season) {
+    const key = `${teamId}-${season}`;
+    if (teamChartCache[key]) return teamChartCache[key];
+    const { gamesByDate } = await fetchTeamSchedule(teamId, season);
+    const dates = Object.keys(gamesByDate).sort();
+    const series = [];
+    let net = 0;
+    dates.forEach(date => {
+      const games = gamesByDate[date].slice().sort((a, b) => a.gameNumber - b.gameNumber);
+      games.forEach(g => {
+        if (g.state !== 'Final') return;
+        const teamScore = g.isHome ? g.homeScore : g.awayScore;
+        const oppScore = g.isHome ? g.awayScore : g.homeScore;
+        if (teamScore == null || oppScore == null || teamScore === oppScore) return;
+        const won = teamScore > oppScore;
+        net += won ? 1 : -1;
+        series.push({ date, net, won });
+      });
+    });
+    teamChartCache[key] = series;
+    return series;
+  }
+
+  function renderTeamChartContent(teamId, teamName, season, series, throughDate) {
+    const played = throughDate ? series.filter(s => s.date <= throughDate) : series;
+    if (!played.length) {
+      return `<div class="pitch-header">${teamName}</div><div class="pitch-subheader">${season} Season</div><div class="pitch-empty">No completed games yet this season.</div>`;
+    }
+    const wins = played.filter(s => s.won).length;
+    const losses = played.length - wins;
+    const netValues = played.map(s => s.net);
+    const finalNet = netValues[netValues.length - 1];
+    let peakIdx = 0, troughIdx = 0;
+    netValues.forEach((v, i) => {
+      if (v > netValues[peakIdx]) peakIdx = i;
+      if (v < netValues[troughIdx]) troughIdx = i;
+    });
+    const maxNet = Math.max(0, netValues[peakIdx]);
+    const minNet = Math.min(0, netValues[troughIdx]);
+    const range = Math.max(1, maxNet - minNet);
+
+    const width = 320, height = 160;
+    const padL = 26, padR = 10, padT = 10, padB = 16;
+    const plotW = width - padL - padR;
+    const plotH = height - padT - padB;
+    const n = played.length;
+    const yFor = v => padT + plotH - ((v - minNet) / range) * plotH;
+    const xFor = i => n === 1 ? padL + plotW / 2 : padL + (i / (n - 1)) * plotW;
+    const zeroY = yFor(0);
+
+    const linePts = played.map((s, i) => `${xFor(i).toFixed(1)},${yFor(s.net).toFixed(1)}`).join(' ');
+    const areaPts = n > 1
+      ? `${xFor(0).toFixed(1)},${zeroY.toFixed(1)} ${linePts} ${xFor(n - 1).toFixed(1)},${zeroY.toFixed(1)}`
+      : '';
+
+    const monthTicks = [];
+    let lastMonth = null;
+    played.forEach((s, i) => {
+      const month = s.date.slice(5, 7);
+      if (month !== lastMonth) {
+        monthTicks.push({ x: xFor(i), label: MONTH_NAMES[Number(month) - 1].slice(0, 3) });
+        lastMonth = month;
+      }
+    });
+
+    const clipId = `teamChartClip${teamId}`;
+    const gold = '#d9a91a';
+    const brick = '#e0604a';
+    const ink = '#f3ecdb';
+
+    let svg = `<svg viewBox="0 0 ${width} ${height}" width="100%" style="display:block; margin-top:4px;">`;
+    svg += `<defs>
+      <clipPath id="${clipId}Above"><rect x="${padL}" y="${padT}" width="${plotW}" height="${Math.max(0, zeroY - padT).toFixed(1)}"/></clipPath>
+      <clipPath id="${clipId}Below"><rect x="${padL}" y="${zeroY.toFixed(1)}" width="${plotW}" height="${Math.max(0, padT + plotH - zeroY).toFixed(1)}"/></clipPath>
+    </defs>`;
+    if (n > 1) {
+      svg += `<polygon points="${areaPts}" fill="${gold}" opacity="0.28" clip-path="url(#${clipId}Above)"/>`;
+      svg += `<polygon points="${areaPts}" fill="${brick}" opacity="0.28" clip-path="url(#${clipId}Below)"/>`;
+    }
+    svg += `<line x1="${padL}" y1="${zeroY.toFixed(1)}" x2="${width - padR}" y2="${zeroY.toFixed(1)}" stroke="${ink}" stroke-width="1" stroke-dasharray="2,2" opacity="0.5"/>`;
+    monthTicks.forEach(t => {
+      svg += `<line x1="${t.x.toFixed(1)}" y1="${padT}" x2="${t.x.toFixed(1)}" y2="${height - padB}" stroke="${ink}" stroke-width="0.5" opacity="0.15"/>`;
+      svg += `<text x="${t.x.toFixed(1)}" y="${height - 4}" font-family="Overpass, sans-serif" font-size="7" font-weight="700" letter-spacing="0.04em" fill="${ink}" opacity="0.6">${t.label}</text>`;
+    });
+    svg += `<text x="${padL - 4}" y="${(padT + 6).toFixed(1)}" font-family="'IBM Plex Mono', monospace" font-size="8" fill="${ink}" opacity="0.6" text-anchor="end">${maxNet > 0 ? '+' + maxNet : maxNet}</text>`;
+    svg += `<text x="${padL - 4}" y="${(zeroY - 3).toFixed(1)}" font-family="'IBM Plex Mono', monospace" font-size="8" fill="${ink}" opacity="0.6" text-anchor="end">0</text>`;
+    if (minNet < 0) {
+      svg += `<text x="${padL - 4}" y="${height - padB}" font-family="'IBM Plex Mono', monospace" font-size="8" fill="${ink}" opacity="0.6" text-anchor="end">${minNet}</text>`;
+    }
+    if (n > 1) {
+      svg += `<polyline points="${linePts}" fill="none" stroke="${ink}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>`;
+    }
+    const lastX = xFor(n - 1), lastY = yFor(finalNet);
+    svg += `<circle cx="${lastX.toFixed(1)}" cy="${lastY.toFixed(1)}" r="3" fill="${finalNet >= 0 ? gold : brick}" stroke="${ink}" stroke-width="1"/>`;
+    svg += '</svg>';
+
+    const fmtNet = v => v > 0 ? `+${v}` : String(v);
+    const fmtDate = d => {
+      const [y, m, dd] = d.split('-').map(Number);
+      return `${MONTH_NAMES[m - 1].slice(0, 3)} ${dd}`;
+    };
+
+    return `<div class="pitch-header">${teamName}</div>
+      <div class="pitch-subheader">${season} Season &#8226; ${wins}-${losses}</div>
+      ${svg}
+      <div class="pitch-final-desc">Current: ${fmtNet(finalNet)} &#8226; Best: ${fmtNet(netValues[peakIdx])} on ${fmtDate(played[peakIdx].date)} &#8226; Worst: ${fmtNet(netValues[troughIdx])} on ${fmtDate(played[troughIdx].date)}</div>`;
   }
 
   function formatGameTime(iso) {
@@ -3658,6 +3806,25 @@
     sprayOverlay.classList.remove('open');
   }
 
+  const teamChartOverlay = document.getElementById('teamChartOverlay');
+  const teamChartModalBody = document.getElementById('teamChartModalBody');
+  const teamChartClose = document.getElementById('teamChartClose');
+
+  async function showTeamChartModal(teamId, teamName, season, throughDate) {
+    teamChartModalBody.innerHTML = `<div class="pitch-header">${teamName}</div><div class="pitch-subheader">${season} Season</div><div class="pitch-empty">Loading&#8230;</div>`;
+    teamChartOverlay.classList.add('open');
+    try {
+      const series = await getTeamWinLossSeries(teamId, season);
+      if (!teamChartOverlay.classList.contains('open')) return;
+      teamChartModalBody.innerHTML = renderTeamChartContent(teamId, teamName, season, series, throughDate);
+    } catch (e) {
+      teamChartModalBody.innerHTML = `<div class="pitch-header">${teamName}</div><div class="pitch-empty">Chart not available.</div>`;
+    }
+  }
+  function hideTeamChartModal() {
+    teamChartOverlay.classList.remove('open');
+  }
+
   // Tab framework: register a tab with an optional lazy `init` (runs once,
   // on first visit) and `onShow` (runs every time the tab becomes active).
   // Adding a future tab is just a register() call plus a button + panel in
@@ -3737,6 +3904,13 @@
     if (sprayBtn) showSprayModal(sprayBtn.getAttribute('data-team'));
     const playerBtn = e.target.closest('.player-name-btn');
     if (playerBtn) showPlayerModal(playerBtn.getAttribute('data-player-id'));
+    const teamChartBtn = e.target.closest('.standings-team-btn');
+    if (teamChartBtn) {
+      const teamId = teamChartBtn.getAttribute('data-team-id');
+      const teamName = teamChartBtn.getAttribute('data-team-name');
+      const teamSeason = standingsDateInput.value.slice(0, 4);
+      showTeamChartModal(teamId, teamName, teamSeason, standingsDateInput.value);
+    }
   });
   document.addEventListener('change', (e) => {
     const sel = e.target.closest('select.spray-filter');
@@ -3767,8 +3941,12 @@
   playerOverlay.addEventListener('click', (e) => {
     if (e.target === playerOverlay) hidePlayerModal();
   });
+  teamChartClose.addEventListener('click', hideTeamChartModal);
+  teamChartOverlay.addEventListener('click', (e) => {
+    if (e.target === teamChartOverlay) hideTeamChartModal();
+  });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { hidePitchPopup(); hideRosterModal(); hideSprayModal(); hidePlayerModal(); hideGameSummaryModal(); }
+    if (e.key === 'Escape') { hidePitchPopup(); hideRosterModal(); hideSprayModal(); hidePlayerModal(); hideGameSummaryModal(); hideTeamChartModal(); }
   });
 
   Tabs.init('scorecard');
