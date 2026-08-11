@@ -457,14 +457,13 @@
   }
   .calendar-day {
     position: relative;
-    min-height: 54px;
+    min-height: 68px;
     border-radius: 3px;
-    padding: 3px 3px 4px;
+    padding: 3px 2px 4px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 1px;
     background: rgba(255, 255, 255, 0.03);
   }
   .calendar-day.is-empty { visibility: hidden; }
@@ -487,18 +486,22 @@
   .cal-game-opp {
     font-family: 'Overpass', sans-serif;
     font-weight: 800;
-    font-size: 14px;
+    font-size: 24px;
     letter-spacing: 0.01em;
-    line-height: 1.1;
-    margin-top: 6px;
+    line-height: 1;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    margin-top: 8px;
   }
   .calendar-day.is-home .cal-game-opp { color: var(--paper); }
   .calendar-day.is-away .cal-game-opp { color: var(--ink); }
   .cal-game-time {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 9.5px;
-    opacity: 0.8;
-    line-height: 1.1;
+    font-size: 7.5px;
+    opacity: 0.75;
+    line-height: 1;
+    margin-bottom: 1px;
   }
   .calendar-day.is-home .cal-game-time { color: var(--paper); }
   .calendar-day.is-away .cal-game-time { color: var(--ink); }
@@ -930,9 +933,9 @@
     .sheet { padding: 14px; }
     .sticky-top { margin: -2px -14px 0; padding-left: 14px; padding-right: 14px; }
     .standings-grid { grid-template-columns: 1fr; }
-    .calendar-day { min-height: 42px; padding: 2px 1px 3px; }
-    .cal-game-opp { font-size: 11px; margin-top: 5px; }
-    .cal-game-time { font-size: 8px; }
+    .calendar-day { min-height: 52px; padding: 2px 1px 3px; }
+    .cal-game-opp { font-size: 16px; margin-top: 6px; }
+    .cal-game-time { font-size: 6.5px; }
     .cal-daynum { font-size: 7px; }
   }
 </style>
