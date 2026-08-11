@@ -279,6 +279,7 @@
     font-size: 11px;
     color: var(--gold);
   }
+  .potg-stat { white-space: nowrap; }
   .modal-cta {
     display: block;
     width: 100%;
@@ -3127,22 +3128,27 @@
     return away['ID' + personId] || home['ID' + personId] || null;
   }
 
-  function buildPitcherStatLine(stats) {
-    if (!stats) return '';
+  function buildPitcherStatLineParts(stats) {
+    if (!stats) return [];
     const ip = stats.inningsPitched ?? '0.0';
     const r = stats.runs ?? 0;
     const k = stats.strikeOuts ?? 0;
-    return `${ip} IP, ${r} R, ${k} K`;
+    return [`${ip} IP`, `${r} R`, `${k} K`];
   }
 
-  function buildBatterStatLine(stats) {
-    if (!stats) return '';
+  function buildBatterStatLineParts(stats) {
+    if (!stats) return [];
     const parts = [];
     if (stats.hits) parts.push(`${stats.hits} H`);
     if (stats.doubles) parts.push(`${stats.doubles} 2B`);
     if (stats.triples) parts.push(`${stats.triples} 3B`);
     if (stats.homeRuns) parts.push(`${stats.homeRuns} HR`);
-    return parts.join(', ');
+    if (stats.rbi) parts.push(`${stats.rbi} RBI`);
+    return parts;
+  }
+
+  function renderStatLineParts(parts) {
+    return parts.map(p => `<span class="potg-stat">${p}</span>`).join(', ');
   }
 
   async function fetchGameWpaLeaders(gamePk) {
@@ -3179,10 +3185,10 @@
       const leaders = Object.values(totals).sort((a, b) => b.wpa - a.wpa).slice(0, 3).map(p => {
         const boxPlayer = findBoxscorePlayer(boxscore, p.id);
         const stats = boxPlayer && boxPlayer.stats;
-        const statLine = p.role === 'pitcher'
-          ? buildPitcherStatLine(stats && stats.pitching)
-          : buildBatterStatLine(stats && stats.batting);
-        return { id: p.id, name: p.name, statLine };
+        const statParts = p.role === 'pitcher'
+          ? buildPitcherStatLineParts(stats && stats.pitching)
+          : buildBatterStatLineParts(stats && stats.batting);
+        return { id: p.id, name: p.name, statLine: renderStatLineParts(statParts) };
       });
       const debug = `gamePk ${gamePk}: feed ${feedRes.status}, winProbability ${wpRes.status}\n` +
         `  allPlays: ${allPlays.length}, winProbability entries: ${wp.length}, matched (non-null homeTeamWinProbabilityAdded): ${matchedCount}\n` +
