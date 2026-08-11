@@ -365,6 +365,18 @@
     color: var(--ink-soft);
     white-space: nowrap;
   }
+  .hr-watch {
+    display: inline-block;
+    margin-top: 3px;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--gold);
+    text-decoration: none;
+  }
+  .hr-watch:hover, .hr-watch:focus-visible { text-decoration: underline; }
 
   .count-board {
     display: flex;
@@ -2668,13 +2680,16 @@
           const hd = events[i].hitData;
           if (hd && hd.totalDistance != null) { distance = hd.totalDistance; break; }
         }
+        const lastEvent = events[events.length - 1];
+        const playId = lastEvent && lastEvent.playId;
         return {
           batterName: (p.matchup && p.matchup.batter && p.matchup.batter.fullName) || '',
           pitcherName: (p.matchup && p.matchup.pitcher && p.matchup.pitcher.fullName) || '',
           battingAbbr: isTop ? awayAbbr : homeAbbr,
           pitchingAbbr: isTop ? homeAbbr : awayAbbr,
           isGrandSlam: p.result.rbi === 4,
-          distance
+          distance,
+          videoUrl: playId ? `https://baseballsavant.mlb.com/sporty-videos?playId=${playId}` : null
         };
       });
     } catch (e) {
@@ -2685,12 +2700,14 @@
   function renderHomeRunRow(hr) {
     const grandSlamLabel = hr.isGrandSlam ? '<div class="hr-grand-slam-label">Grand Slam</div>' : '';
     const distanceHtml = hr.distance != null ? `<div class="hr-distance">${Math.round(hr.distance)} ft</div>` : '';
+    const watchHtml = hr.videoUrl ? `<a class="hr-watch" href="${hr.videoUrl}" target="_blank" rel="noopener noreferrer">Watch &#9654;</a>` : '';
     return `
       <div class="hr-row${hr.isGrandSlam ? ' is-grand-slam' : ''}">
         <div class="hr-main">
           ${grandSlamLabel}
           <div class="hr-batter">${hr.batterName} <span class="hr-team">${hr.battingAbbr}</span></div>
           <div class="hr-pitcher">vs ${hr.pitcherName} <span class="hr-team">${hr.pitchingAbbr}</span></div>
+          ${watchHtml}
         </div>
         ${distanceHtml}
       </div>`;
