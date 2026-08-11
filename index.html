@@ -2671,7 +2671,9 @@
     try {
       const res = await fetch(`https://statsapi.mlb.com/api/v1/game/${gamePk}/content`);
       const data = await res.json();
+      console.log('[hr-video] content response for', gamePk, data);
       const items = (data.highlights && data.highlights.highlights && data.highlights.highlights.items) || [];
+      console.log('[hr-video] highlight items:', items.length, items);
       const urlByPlayId = {};
       items.forEach(item => {
         const playIdKeyword = (item.keywordsAll || []).find(k => k.type === 'play_id');
@@ -2680,10 +2682,13 @@
         const playback = playbacks.find(pb => pb.name === 'mp4Avc') || playbacks[0];
         if (playback) urlByPlayId[playIdKeyword.value] = playback.url;
       });
+      console.log('[hr-video] urlByPlayId:', urlByPlayId, 'looking for playIds:', homeRuns.map(hr => hr.playId));
       homeRuns.forEach(hr => {
         if (hr.playId && urlByPlayId[hr.playId]) hr.videoUrl = urlByPlayId[hr.playId];
       });
-    } catch (e) {}
+    } catch (e) {
+      console.warn('[hr-video] fetch/parse failed for', gamePk, e);
+    }
   }
 
   async function fetchGameHomeRuns(gamePk, awayAbbr, homeAbbr) {
