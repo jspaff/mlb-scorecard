@@ -3124,7 +3124,7 @@
     try {
       const [feedRes, wpRes] = await Promise.all([
         fetch(`https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live`),
-        fetch(`https://statsapi.mlb.com/api/v1.1/game/${gamePk}/winProbability`)
+        fetch(`https://statsapi.mlb.com/api/v1/game/${gamePk}/winProbability`)
       ]);
       const feedData = await feedRes.json();
       const wpData = await wpRes.json();
