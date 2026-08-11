@@ -321,6 +321,51 @@
   }
   .daily-tile-state.is-live { color: var(--gold); }
 
+  .hr-list { display: flex; flex-direction: column; }
+  .hr-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--paper-line);
+  }
+  .hr-row:last-child { border-bottom: none; }
+  .hr-row.is-grand-slam { border-left: 3px solid var(--gold); padding-left: 8px; margin-left: -11px; }
+  .hr-main { flex: 1; min-width: 0; }
+  .hr-grand-slam-label {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 2px;
+  }
+  .hr-batter {
+    font-family: 'Special Elite', monospace;
+    font-size: 13px;
+    color: var(--ink);
+  }
+  .hr-row.is-grand-slam .hr-batter { color: var(--gold); }
+  .hr-pitcher {
+    font-family: 'Inter', sans-serif;
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    margin-top: 1px;
+  }
+  .hr-team {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 10px;
+    color: var(--ink-soft);
+  }
+  .hr-distance {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+
   .count-board {
     display: flex;
     gap: 16px;
@@ -2610,7 +2655,51 @@
       </div>`;
   }
 
+  async function fetchGameHomeRuns(gamePk, awayAbbr, homeAbbr) {
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live`);
+      const data = await res.json();
+      const allPlays = (data.liveData && data.liveData.plays && data.liveData.plays.allPlays) || [];
+      return allPlays.filter(p => p.result && p.result.event === 'Home Run').map(p => {
+        const isTop = p.about && p.about.isTopInning;
+        let distance = null;
+        const events = p.playEvents || [];
+        for (let i = events.length - 1; i >= 0; i--) {
+          const hd = events[i].hitData;
+          if (hd && hd.totalDistance != null) { distance = hd.totalDistance; break; }
+        }
+        return {
+          batterName: (p.matchup && p.matchup.batter && p.matchup.batter.fullName) || '',
+          pitcherName: (p.matchup && p.matchup.pitcher && p.matchup.pitcher.fullName) || '',
+          battingAbbr: isTop ? awayAbbr : homeAbbr,
+          pitchingAbbr: isTop ? homeAbbr : awayAbbr,
+          isGrandSlam: p.result.rbi === 4,
+          distance
+        };
+      });
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function renderHomeRunRow(hr) {
+    const grandSlamLabel = hr.isGrandSlam ? '<div class="hr-grand-slam-label">Grand Slam</div>' : '';
+    const distanceHtml = hr.distance != null ? `<div class="hr-distance">${Math.round(hr.distance)} ft</div>` : '';
+    return `
+      <div class="hr-row${hr.isGrandSlam ? ' is-grand-slam' : ''}">
+        <div class="hr-main">
+          ${grandSlamLabel}
+          <div class="hr-batter">${hr.batterName} <span class="hr-team">${hr.battingAbbr}</span></div>
+          <div class="hr-pitcher">vs ${hr.pitcherName} <span class="hr-team">${hr.pitchingAbbr}</span></div>
+        </div>
+        ${distanceHtml}
+      </div>`;
+  }
+
+  let summaryRequestId = 0;
+
   async function loadDailySummary(dateStr) {
+    const requestId = ++summaryRequestId;
     summaryBody.innerHTML = '<div class="mlb-status-msg">Loading today&#8217;s games&#8230;</div>';
     try {
       const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}&hydrate=linescore`);
@@ -2633,7 +2722,23 @@
         inningState: linescore(g).inningState,
         inningOrdinal: linescore(g).currentInningOrdinal
       })).join('');
-      summaryBody.innerHTML = `<div class="sheet"><div class="daily-games-grid">${tiles}</div></div>`;
+      summaryBody.innerHTML = `<div class="sheet"><div class="daily-games-grid">${tiles}</div>
+        <div class="roster-section-title">Home Runs</div>
+        <div id="summaryHomeRuns" class="mlb-status-msg">Loading home runs&#8230;</div>
+      </div>`;
+
+      const startedGames = games.filter(g => g.status.abstractGameState === 'Live' || g.status.abstractGameState === 'Final');
+      const homeRunLists = await Promise.all(startedGames.map(g =>
+        fetchGameHomeRuns(g.gamePk, teamAbbr(g.teams.away.team), teamAbbr(g.teams.home.team))
+      ));
+      if (requestId !== summaryRequestId) return;
+      const homeRuns = homeRunLists.flat();
+      const hrContainer = document.getElementById('summaryHomeRuns');
+      if (hrContainer) {
+        hrContainer.outerHTML = homeRuns.length
+          ? `<div class="hr-list">${homeRuns.map(renderHomeRunRow).join('')}</div>`
+          : '<div class="roster-empty">No home runs on this date.</div>';
+      }
     } catch (e) {
       summaryBody.innerHTML = '<div class="mlb-status-msg">Could not load today\'s games. The MLB API may be unreachable right now.</div>';
     }
