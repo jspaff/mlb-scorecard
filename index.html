@@ -478,6 +478,8 @@
     white-space: nowrap;
   }
   .roster-badge.roster-badge-il { color: #fbf3e3; background: var(--brick); border-color: var(--brick); }
+  .roster-columns { display: flex; gap: 0 28px; align-items: flex-start; }
+  .roster-column { flex: 1; min-width: 0; }
   .roster-detail {
     font-family: 'Inter', sans-serif;
     font-size: 11px;
@@ -1024,6 +1026,7 @@
     .sheet { padding: 14px; }
     .sticky-top { margin: -2px -14px 0; padding-left: 14px; padding-right: 14px; }
     .standings-grid { grid-template-columns: 1fr; }
+    .roster-columns { flex-direction: column; gap: 14px 0; }
     .calendar-day { min-height: 52px; padding: 2px 1px 3px; }
     .cal-game-opp { font-size: 16px; margin-top: 6px; }
     .cal-game-time { font-size: 6.5px; }
@@ -2506,17 +2509,18 @@
     return sentences.length > 1 ? sentences.slice(1).join('. ').replace(/\.$/, '') : null;
   }
 
-  const ROSTER_POS_GROUP_ORDER = ['Pitcher', 'Catcher', 'Infielder', 'Outfielder', 'Hitter'];
-  const ROSTER_POS_GROUP_LABEL = {
-    Pitcher: 'Pitchers', Catcher: 'Catchers', Infielder: 'Infielders',
-    Outfielder: 'Outfielders', Hitter: 'Designated Hitter', Other: 'Other'
-  };
+  function rosterStatusRank(p) {
+    const desc = p.statusDesc || '';
+    if (!desc || /^active$/i.test(desc)) return 0;
+    if (/injured/i.test(desc)) return 2;
+    return 1;
+  }
 
-  function groupRosterByPosition(list) {
-    const groups = {};
-    list.forEach(p => { (groups[p.posType] = groups[p.posType] || []).push(p); });
-    Object.values(groups).forEach(arr => arr.sort((a, b) => (a.name || '').localeCompare(b.name || '')));
-    return groups;
+  function sortRosterList(list) {
+    return list.slice().sort((a, b) => {
+      const r = rosterStatusRank(a) - rosterStatusRank(b);
+      return r !== 0 ? r : (a.name || '').localeCompare(b.name || '');
+    });
   }
 
   function rosterStatusBadge(p) {
@@ -2526,22 +2530,27 @@
     return `<span class="roster-badge">${desc}</span>`;
   }
 
+  function renderRosterRow(p, opts) {
+    return `
+      <div class="roster-row">
+        <span class="roster-jersey">${p.jersey ? '#' + p.jersey : ''}</span>
+        <span class="roster-name">${p.name}</span>
+        ${opts.badges ? rosterStatusBadge(p) : ''}
+        <span class="roster-pos">${p.posAbbr}</span>
+      </div>`;
+  }
+
   function renderRosterGroups(list, opts) {
     opts = opts || {};
     if (!list.length) return '<div class="roster-empty">No players found.</div>';
-    const groups = groupRosterByPosition(list);
-    const keys = ROSTER_POS_GROUP_ORDER.filter(g => groups[g])
-      .concat(Object.keys(groups).filter(g => !ROSTER_POS_GROUP_ORDER.includes(g)));
-    return keys.map(g => {
-      const rows = groups[g].map(p => `
-        <div class="roster-row">
-          <span class="roster-jersey">${p.jersey ? '#' + p.jersey : ''}</span>
-          <span class="roster-name">${p.name}</span>
-          <span class="roster-pos">${p.posAbbr}</span>
-          ${opts.badges ? rosterStatusBadge(p) : ''}
-        </div>`).join('');
-      return `<div class="roster-section-title">${ROSTER_POS_GROUP_LABEL[g] || g}</div>${rows}`;
-    }).join('');
+    const pitchers = sortRosterList(list.filter(p => p.posType === 'Pitcher'));
+    const positionPlayers = sortRosterList(list.filter(p => p.posType !== 'Pitcher'));
+    const col = (title, players) => `
+      <div class="roster-column">
+        <div class="roster-section-title">${title}</div>
+        ${players.length ? players.map(p => renderRosterRow(p, opts)).join('') : '<div class="roster-empty">None</div>'}
+      </div>`;
+    return `<div class="roster-columns">${col('Pitchers', pitchers)}${col('Position Players', positionPlayers)}</div>`;
   }
 
   function renderInjuredList(fortyMan, injuryMap) {
