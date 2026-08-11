@@ -2667,44 +2667,12 @@
       </div>`;
   }
 
-  let hrVideoDebugLines = [];
-
-  async function attachHomeRunVideos(gamePk, homeRuns) {
-    try {
-      const res = await fetch(`https://statsapi.mlb.com/api/v1/game/${gamePk}/content`);
-      const data = await res.json();
-      const items = (data.highlights && data.highlights.highlights && data.highlights.highlights.items) || [];
-      const urlByPlayId = {};
-      items.forEach(item => {
-        const playIdKeyword = (item.keywordsAll || []).find(k => k.type === 'play_id');
-        if (!playIdKeyword) return;
-        const playbacks = item.playbacks || [];
-        const playback = playbacks.find(pb => pb.name === 'mp4Avc') || playbacks[0];
-        if (playback) urlByPlayId[playIdKeyword.value] = playback.url;
-      });
-      homeRuns.forEach(hr => {
-        if (hr.playId && urlByPlayId[hr.playId]) hr.videoUrl = urlByPlayId[hr.playId];
-      });
-      hrVideoDebugLines.push(
-        `gamePk ${gamePk}: HTTP ${res.status}, ${items.length} highlight item(s), ` +
-        `${Object.keys(urlByPlayId).length} with a play_id+playback.\n` +
-        `  looking for playIds: [${homeRuns.map(h => h.playId).join(', ')}]\n` +
-        `  found playIds:       [${Object.keys(urlByPlayId).join(', ')}]\n` +
-        (items[0]
-          ? `  first item keys: ${Object.keys(items[0]).join(', ')}\n  first item keywordsAll: ${JSON.stringify((items[0].keywordsAll || []).slice(0, 6))}`
-          : '  (no highlight items at all)')
-      );
-    } catch (e) {
-      hrVideoDebugLines.push(`gamePk ${gamePk}: FETCH/PARSE FAILED - ${e.message}`);
-    }
-  }
-
   async function fetchGameHomeRuns(gamePk, awayAbbr, homeAbbr) {
     try {
       const res = await fetch(`https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live`);
       const data = await res.json();
       const allPlays = (data.liveData && data.liveData.plays && data.liveData.plays.allPlays) || [];
-      const homeRuns = allPlays.filter(p => p.result && p.result.event === 'Home Run').map(p => {
+      return allPlays.filter(p => p.result && p.result.event === 'Home Run').map(p => {
         const isTop = p.about && p.about.isTopInning;
         let distance = null;
         const events = p.playEvents || [];
@@ -2713,6 +2681,7 @@
           if (hd && hd.totalDistance != null) { distance = hd.totalDistance; break; }
         }
         const lastEvent = events[events.length - 1];
+        const playId = lastEvent && lastEvent.playId;
         return {
           batterName: (p.matchup && p.matchup.batter && p.matchup.batter.fullName) || '',
           pitcherName: (p.matchup && p.matchup.pitcher && p.matchup.pitcher.fullName) || '',
@@ -2720,12 +2689,9 @@
           pitchingAbbr: isTop ? homeAbbr : awayAbbr,
           isGrandSlam: p.result.rbi === 4,
           distance,
-          playId: lastEvent && lastEvent.playId,
-          videoUrl: null
+          videoUrl: playId ? `https://baseballsavant.mlb.com/sporty-videos?playId=${playId}` : null
         };
       });
-      if (homeRuns.length) await attachHomeRunVideos(gamePk, homeRuns);
-      return homeRuns;
     } catch (e) {
       return [];
     }
@@ -2751,7 +2717,6 @@
 
   async function loadDailySummary(dateStr) {
     const requestId = ++summaryRequestId;
-    hrVideoDebugLines = [];
     summaryBody.innerHTML = '<div class="mlb-status-msg">Loading today&#8217;s games&#8230;</div>';
     try {
       const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}&hydrate=linescore`);
@@ -2791,12 +2756,6 @@
           ? `<div class="hr-list">${homeRuns.map(renderHomeRunRow).join('')}</div>`
           : '<div class="roster-empty">No home runs on this date.</div>';
       }
-      const debugText = `HR VIDEO DEBUG\n${startedGames.length} started game(s), ${homeRuns.length} home run(s) total\n\n` +
-        (hrVideoDebugLines.length ? hrVideoDebugLines.join('\n\n') : '(no home runs found, so video lookup was never attempted)');
-      const debugBlock = document.createElement('pre');
-      debugBlock.style.cssText = 'margin-top:14px;padding:10px;background:#111;color:#7fdc7f;font-size:10px;line-height:1.4;white-space:pre-wrap;word-break:break-all;border-radius:6px;max-height:400px;overflow:auto;-webkit-user-select:text;user-select:text;';
-      debugBlock.textContent = debugText;
-      document.querySelector('#summaryBody .sheet').appendChild(debugBlock);
     } catch (e) {
       summaryBody.innerHTML = '<div class="mlb-status-msg">Could not load today\'s games. The MLB API may be unreachable right now.</div>';
     }
