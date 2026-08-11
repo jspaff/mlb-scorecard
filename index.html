@@ -239,6 +239,46 @@
     color: var(--ink);
     margin: 12px 0 16px;
   }
+  .wpa-section {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--paper-line);
+  }
+  .wpa-loading {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+  .wpa-players { display: flex; gap: 10px; margin-top: 8px; }
+  .wpa-player {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 4px;
+  }
+  .wpa-headshot {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--paper-line);
+    border: 1px solid var(--paper-line);
+  }
+  .wpa-player-name {
+    font-family: 'Special Elite', monospace;
+    font-size: 11px;
+    color: var(--ink);
+    line-height: 1.25;
+  }
+  .wpa-player-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--gold);
+  }
   .modal-cta {
     display: block;
     width: 100%;
@@ -2660,7 +2700,7 @@
       tileClass = 'is-preview';
     }
     return `
-      <div class="daily-tile ${tileClass}" data-date="${dateStr}" data-game-pk="${game.gamePk}" tabindex="0" role="button">
+      <div class="daily-tile ${tileClass}" data-date="${dateStr}" data-game-pk="${game.gamePk}" data-state="${game.state}" tabindex="0" role="button">
         <div class="daily-tile-matchup">${game.awayAbbr} @ ${game.homeAbbr}</div>
         ${statHtml}
         ${stateHtml}
@@ -2714,6 +2754,21 @@
   }
 
   let summaryRequestId = 0;
+  let summaryGamesByPk = {};
+
+  function scheduleGameToNeutral(g) {
+    return {
+      gamePk: g.gamePk,
+      gameNumber: g.gameNumber,
+      awayName: teamNickname(g.teams.away.team),
+      homeName: teamNickname(g.teams.home.team),
+      awayScore: g.teams.away.score,
+      homeScore: g.teams.home.score,
+      state: g.status.abstractGameState,
+      detailedState: g.status.detailedState,
+      gameDate: g.gameDate
+    };
+  }
 
   async function loadDailySummary(dateStr) {
     const requestId = ++summaryRequestId;
@@ -2726,6 +2781,8 @@
         summaryBody.innerHTML = '<div class="mlb-status-msg">No MLB games scheduled on this date.</div>';
         return;
       }
+      summaryGamesByPk = {};
+      games.forEach(g => { summaryGamesByPk[g.gamePk] = g; });
       const linescore = g => g.linescore || {};
       const tiles = games.map(g => renderDailyGameTile(dateStr, {
         gamePk: g.gamePk,
@@ -2770,14 +2827,23 @@
     summaryDateInput.value = addDays(summaryDateInput.value, 1);
     loadDailySummary(summaryDateInput.value);
   });
+  function handleDailyTileActivate(tile) {
+    if (!tile) return;
+    if (tile.dataset.state === 'Final') {
+      const g = summaryGamesByPk[tile.dataset.gamePk];
+      if (g) openGameSummaryModal(tile.dataset.date, [scheduleGameToNeutral(g)]);
+    } else {
+      jumpToScorecardGame(tile.dataset.date, tile.dataset.gamePk);
+    }
+  }
   summaryBody.addEventListener('click', (e) => {
-    const tile = e.target.closest('.daily-tile');
-    if (tile) jumpToScorecardGame(tile.dataset.date, tile.dataset.gamePk);
+    handleDailyTileActivate(e.target.closest('.daily-tile'));
   });
   summaryBody.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
     const tile = e.target.closest('.daily-tile');
-    if (tile) { e.preventDefault(); jumpToScorecardGame(tile.dataset.date, tile.dataset.gamePk); }
+    if (tile) e.preventDefault();
+    handleDailyTileActivate(tile);
   });
 
   const ROSTER_TAB_TEAM_KEY = 'mlb-roster-tab-team';
@@ -2982,11 +3048,7 @@
   const gameSummaryModalBody = document.getElementById('gameSummaryModalBody');
   const gameSummaryClose = document.getElementById('gameSummaryClose');
 
-  function renderGameSummaryGame(teamId, dateStr, game, multi) {
-    const teamName = TEAM_NICKNAMES[teamId] || '';
-    const homeName = game.isHome ? teamName : game.opponentFull;
-    const awayName = game.isHome ? game.opponentFull : teamName;
-
+  function renderGameSummaryGame(dateStr, game, multi) {
     const hasScore = game.homeScore != null && game.awayScore != null && (game.state === 'Final' || game.state === 'Live');
     let statusHtml;
     if (hasScore) {
@@ -2997,8 +3059,8 @@
       statusHtml = `
         <div class="badge ${badgeClass}">${badgeLabel}</div>
         <div class="game-summary-score">
-          <div class="gs-team-row${awayWon ? ' gs-winner' : ''}"><span class="gs-team-name">${awayName}</span><span class="gs-team-score">${game.awayScore}</span></div>
-          <div class="gs-team-row${homeWon ? ' gs-winner' : ''}"><span class="gs-team-name">${homeName}</span><span class="gs-team-score">${game.homeScore}</span></div>
+          <div class="gs-team-row${awayWon ? ' gs-winner' : ''}"><span class="gs-team-name">${game.awayName}</span><span class="gs-team-score">${game.awayScore}</span></div>
+          <div class="gs-team-row${homeWon ? ' gs-winner' : ''}"><span class="gs-team-name">${game.homeName}</span><span class="gs-team-score">${game.homeScore}</span></div>
         </div>`;
     } else {
       const badgeLabel = game.detailedState && game.detailedState !== 'Scheduled' ? game.detailedState : 'Upcoming';
@@ -3007,36 +3069,116 @@
         <div class="game-summary-time">First pitch: ${formatGameTime(game.gameDate)}</div>`;
     }
 
+    const wpaHtml = game.state === 'Final'
+      ? `<div class="wpa-section" id="wpaLeaders-${game.gamePk}"><div class="wpa-loading">Loading top plays&#8230;</div></div>`
+      : '';
+
     return `
       <div class="game-summary-game">
         ${multi ? `<div class="gs-game-label">Game ${game.gameNumber}</div>` : ''}
-        <div class="${multi ? 'gs-game-matchup' : 'pitch-header'}">${awayName} @ ${homeName}</div>
+        <div class="${multi ? 'gs-game-matchup' : 'pitch-header'}">${game.awayName} @ ${game.homeName}</div>
         ${statusHtml}
+        ${wpaHtml}
         <button type="button" class="modal-cta" data-date="${dateStr}" data-game-pk="${game.gamePk}">View Full Scorecard &#8594;</button>
       </div>`;
   }
 
-  function renderGameSummaryContent(teamId, dateStr, games) {
+  function renderGameSummaryContent(dateStr, games, headerLabel) {
     const dateLabel = new Date(dateStr + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
     const multi = games.length > 1;
-    const teamName = TEAM_NICKNAMES[teamId] || '';
 
     return `
-      ${multi ? `<div class="pitch-header">${teamName} Doubleheader</div>` : ''}
+      ${multi ? `<div class="pitch-header">${headerLabel ? headerLabel + ' ' : ''}Doubleheader</div>` : ''}
       <div class="pitch-subheader">${dateLabel}</div>
-      ${games.map(g => renderGameSummaryGame(teamId, dateStr, g, multi)).join('')}
+      ${games.map(g => renderGameSummaryGame(dateStr, g, multi)).join('')}
     `;
+  }
+
+  let gameSummaryRequestId = 0;
+
+  function openGameSummaryModal(dateStr, games, headerLabel) {
+    if (!games || !games.length) return;
+    const requestId = ++gameSummaryRequestId;
+    gameSummaryModalBody.innerHTML = renderGameSummaryContent(dateStr, games, headerLabel);
+    gameSummaryOverlay.classList.add('open');
+    games.filter(g => g.state === 'Final').forEach(g => loadWpaLeadersInto(g.gamePk, requestId));
   }
 
   function showGameSummaryModal(dateStr) {
     if (!currentScheduleTeam) return;
     const games = currentScheduleTeam.gamesByDate[dateStr];
     if (!games || !games.length) return;
-    gameSummaryModalBody.innerHTML = renderGameSummaryContent(currentScheduleTeam.teamId, dateStr, games);
-    gameSummaryOverlay.classList.add('open');
+    const teamName = TEAM_NICKNAMES[currentScheduleTeam.teamId] || '';
+    const neutralGames = games.map(g => ({
+      ...g,
+      awayName: g.isHome ? g.opponentFull : teamName,
+      homeName: g.isHome ? teamName : g.opponentFull
+    }));
+    openGameSummaryModal(dateStr, neutralGames, teamName);
   }
   function hideGameSummaryModal() {
     gameSummaryOverlay.classList.remove('open');
+  }
+
+  async function fetchGameWpaLeaders(gamePk) {
+    try {
+      const [feedRes, wpRes] = await Promise.all([
+        fetch(`https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live`),
+        fetch(`https://statsapi.mlb.com/api/v1.1/game/${gamePk}/winProbability`)
+      ]);
+      const feedData = await feedRes.json();
+      const wpData = await wpRes.json();
+      const allPlays = (feedData.liveData && feedData.liveData.plays && feedData.liveData.plays.allPlays) || [];
+      const wp = Array.isArray(wpData) ? wpData : [];
+
+      const totals = {};
+      const credit = (person, amount) => {
+        if (!person || person.id == null) return;
+        const t = totals[person.id] || (totals[person.id] = { id: person.id, name: person.fullName, wpa: 0 });
+        t.wpa += amount;
+      };
+      allPlays.forEach((play, i) => {
+        const entry = wp[i];
+        const homeAdded = entry && entry.homeTeamWinProbabilityAdded;
+        if (homeAdded == null) return;
+        const isTop = play.about && play.about.isTopInning;
+        const battingWpa = isTop ? -homeAdded : homeAdded;
+        credit(play.matchup && play.matchup.batter, battingWpa);
+        credit(play.matchup && play.matchup.pitcher, -battingWpa);
+      });
+
+      return Object.values(totals).sort((a, b) => b.wpa - a.wpa).slice(0, 3);
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function renderWpaLeaders(leaders) {
+    if (!leaders.length) {
+      return '<div class="wpa-section"><div class="wpa-loading">Top plays unavailable for this game.</div></div>';
+    }
+    const players = leaders.map(p => {
+      const headshotUrl = `https://img.mlbstatic.com/mlb-photos/image/upload/w_112,q_100,f_auto/v1/people/${p.id}/headshot/67/current`;
+      const sign = p.wpa >= 0 ? '+' : '';
+      return `
+        <div class="wpa-player">
+          <img class="wpa-headshot" src="${headshotUrl}" alt="" loading="lazy" onerror="this.style.display='none'">
+          <div class="wpa-player-name">${p.name}</div>
+          <div class="wpa-player-value">${sign}${p.wpa.toFixed(1)}%</div>
+        </div>`;
+    }).join('');
+    return `
+      <div class="wpa-section">
+        <div class="gs-game-label">Top Plays (WPA)</div>
+        <div class="wpa-players">${players}</div>
+      </div>`;
+  }
+
+  async function loadWpaLeadersInto(gamePk, requestId) {
+    const leaders = await fetchGameWpaLeaders(gamePk);
+    if (requestId !== gameSummaryRequestId) return;
+    const el = document.getElementById(`wpaLeaders-${gamePk}`);
+    if (el) el.outerHTML = renderWpaLeaders(leaders);
   }
 
   scheduleTeamSelect.addEventListener('change', () => {
