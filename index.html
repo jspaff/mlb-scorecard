@@ -323,6 +323,24 @@
   .spray-key .dot.hit { background: var(--gold); }
   .spray-key .dot.out { background: #8a8478; }
 
+  .view-toggle { display: flex; border: 1px solid var(--paper-line); border-radius: 6px; overflow: hidden; }
+  .view-toggle-btn {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    background: none;
+    border: none;
+    padding: 7px 12px;
+    cursor: pointer;
+  }
+  .view-toggle-btn + .view-toggle-btn { border-left: 1px solid var(--paper-line); }
+  .view-toggle-btn:hover { color: var(--ink); background: rgba(28, 58, 44, 0.1); }
+  .view-toggle-btn.active { color: var(--ink); background: rgba(217, 169, 26, 0.15); }
+  .wc-cutoff-line { border-top: 2px dashed var(--gold); margin: 2px 0 0; }
+
   .roster-btn, .spray-btn {
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
@@ -841,6 +859,10 @@
         <input type="date" id="standingsDatePick" />
         <button type="button" class="date-nav-btn" id="standingsDateNext" aria-label="Next day">&#8250;</button>
       </div>
+      <div class="view-toggle" id="standingsViewToggle">
+        <button type="button" class="view-toggle-btn active" data-view="division">Division</button>
+        <button type="button" class="view-toggle-btn" data-view="wildcard">Wild Card</button>
+      </div>
     </div>
     <div id="standingsBody">
       <div class="mlb-status-msg">Loading standings&#8230;</div>
@@ -886,6 +908,7 @@
   let playerStore = {};
   const gameLogCache = {};
   const standingsCache = {};
+  let standingsView = 'division';
   const playerSeasonCache = {};
   async function getPlayerSeasonStats(personId, season) {
     const key = `${personId}-${season}`;
@@ -1748,6 +1771,74 @@
     return `<div class="pitch-header">Standings</div><div class="pitch-subheader">As of ${date}</div>${grid}`;
   }
 
+  function renderWildcardContent(records, date) {
+    const divisions = (records || [])
+      .filter(r => r.division && DIVISION_INFO[r.division.id] && r.teamRecords && r.teamRecords.length)
+      .slice()
+      .sort((a, b) => DIVISION_INFO[a.division.id].order - DIVISION_INFO[b.division.id].order);
+    if (!divisions.length) {
+      return `<div class="pitch-header">Standings</div><div class="pitch-empty">Standings not available for this date.</div>`;
+    }
+
+    function row(tr) {
+      const streak = (tr.streak && tr.streak.streakCode) || '&#8212;';
+      const gb = tr.wildCardGamesBack;
+      const gbDisplay = gb === '-' || gb == null ? '&#8212;' : gb;
+      return `<div class="standings-row">
+        <span class="standings-team">${(tr.team && tr.team.name) || ''}</span>
+        <span class="standings-num">${tr.wins ?? 0}</span>
+        <span class="standings-num">${tr.losses ?? 0}</span>
+        <span class="standings-num">${tr.winningPercentage ?? '.000'}</span>
+        <span class="standings-num">${gbDisplay}</span>
+        <span class="standings-num">${streak}</span>
+      </div>`;
+    }
+
+    const header = `<div class="standings-row standings-header-row">
+      <span class="standings-team">Team</span>
+      <span class="standings-num">W</span>
+      <span class="standings-num">L</span>
+      <span class="standings-num">PCT</span>
+      <span class="standings-num">GB</span>
+      <span class="standings-num">Strk</span>
+    </div>`;
+
+    function renderLeague(leagueDivisions, label) {
+      const leaders = [];
+      const contenders = [];
+      leagueDivisions.forEach(div => {
+        const teams = (div.teamRecords || []).slice().sort((a, b) =>
+          (parseInt(a.divisionRank, 10) || 99) - (parseInt(b.divisionRank, 10) || 99)
+        );
+        teams.forEach((tr, i) => { (i === 0 ? leaders : contenders).push(tr); });
+      });
+      leaders.sort((a, b) => (parseFloat(b.winningPercentage) || 0) - (parseFloat(a.winningPercentage) || 0));
+      contenders.sort((a, b) => {
+        const ar = parseInt(a.wildCardRank, 10), br = parseInt(b.wildCardRank, 10);
+        if (!isNaN(ar) && !isNaN(br)) return ar - br;
+        return (parseFloat(b.winningPercentage) || 0) - (parseFloat(a.winningPercentage) || 0);
+      });
+
+      const contenderRows = contenders.map((tr, i) => {
+        const html = row(tr);
+        return i === 3 ? `<div class="wc-cutoff-line"></div>${html}` : html;
+      }).join('');
+
+      return `<div class="roster-section-title">${label} Division Leaders</div>
+        ${header}${leaders.map(row).join('')}
+        <div class="roster-section-title">${label} Wild Card</div>
+        ${header}${contenderRows}`;
+    }
+
+    const alDivisions = divisions.filter(d => DIVISION_INFO[d.division.id].name.startsWith('American League'));
+    const nlDivisions = divisions.filter(d => DIVISION_INFO[d.division.id].name.startsWith('National League'));
+    const grid = `<div class="standings-grid">
+      <div class="standings-col">${renderLeague(alDivisions, 'AL')}</div>
+      <div class="standings-col">${renderLeague(nlDivisions, 'NL')}</div>
+    </div>`;
+    return `<div class="pitch-header">Standings</div><div class="pitch-subheader">Wild Card &#8226; As of ${date}</div>${grid}`;
+  }
+
   function renderPlayerModalContent(info, seasonStat) {
     const s = info.todayStats || {};
     const todayHtml = `
@@ -2006,7 +2097,10 @@
     try {
       const season = dateStr.slice(0, 4);
       const records = await getStandings(season, dateStr);
-      standingsBody.innerHTML = `<div class="sheet">${renderStandingsContent(records, dateStr)}</div>`;
+      const content = standingsView === 'wildcard'
+        ? renderWildcardContent(records, dateStr)
+        : renderStandingsContent(records, dateStr);
+      standingsBody.innerHTML = `<div class="sheet">${content}</div>`;
     } catch (e) {
       standingsBody.innerHTML = '<div class="mlb-status-msg">Standings not available.</div>';
     }
@@ -2197,6 +2291,15 @@
   });
   document.getElementById('standingsDateNext').addEventListener('click', () => {
     standingsDateInput.value = addDays(standingsDateInput.value, 1);
+    loadStandings(standingsDateInput.value);
+  });
+
+  document.getElementById('standingsViewToggle').addEventListener('click', (e) => {
+    const btn = e.target.closest('.view-toggle-btn');
+    if (!btn || btn.dataset.view === standingsView) return;
+    standingsView = btn.dataset.view;
+    document.querySelectorAll('#standingsViewToggle .view-toggle-btn')
+      .forEach(b => b.classList.toggle('active', b === btn));
     loadStandings(standingsDateInput.value);
   });
 
