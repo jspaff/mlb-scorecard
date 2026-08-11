@@ -2667,13 +2667,13 @@
       </div>`;
   }
 
+  let hrVideoDebugLines = [];
+
   async function attachHomeRunVideos(gamePk, homeRuns) {
     try {
       const res = await fetch(`https://statsapi.mlb.com/api/v1/game/${gamePk}/content`);
       const data = await res.json();
-      console.log('[hr-video] content response for', gamePk, data);
       const items = (data.highlights && data.highlights.highlights && data.highlights.highlights.items) || [];
-      console.log('[hr-video] highlight items:', items.length, items);
       const urlByPlayId = {};
       items.forEach(item => {
         const playIdKeyword = (item.keywordsAll || []).find(k => k.type === 'play_id');
@@ -2682,12 +2682,20 @@
         const playback = playbacks.find(pb => pb.name === 'mp4Avc') || playbacks[0];
         if (playback) urlByPlayId[playIdKeyword.value] = playback.url;
       });
-      console.log('[hr-video] urlByPlayId:', urlByPlayId, 'looking for playIds:', homeRuns.map(hr => hr.playId));
       homeRuns.forEach(hr => {
         if (hr.playId && urlByPlayId[hr.playId]) hr.videoUrl = urlByPlayId[hr.playId];
       });
+      hrVideoDebugLines.push(
+        `gamePk ${gamePk}: HTTP ${res.status}, ${items.length} highlight item(s), ` +
+        `${Object.keys(urlByPlayId).length} with a play_id+playback.\n` +
+        `  looking for playIds: [${homeRuns.map(h => h.playId).join(', ')}]\n` +
+        `  found playIds:       [${Object.keys(urlByPlayId).join(', ')}]\n` +
+        (items[0]
+          ? `  first item keys: ${Object.keys(items[0]).join(', ')}\n  first item keywordsAll: ${JSON.stringify((items[0].keywordsAll || []).slice(0, 6))}`
+          : '  (no highlight items at all)')
+      );
     } catch (e) {
-      console.warn('[hr-video] fetch/parse failed for', gamePk, e);
+      hrVideoDebugLines.push(`gamePk ${gamePk}: FETCH/PARSE FAILED - ${e.message}`);
     }
   }
 
@@ -2743,6 +2751,7 @@
 
   async function loadDailySummary(dateStr) {
     const requestId = ++summaryRequestId;
+    hrVideoDebugLines = [];
     summaryBody.innerHTML = '<div class="mlb-status-msg">Loading today&#8217;s games&#8230;</div>';
     try {
       const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}&hydrate=linescore`);
@@ -2782,6 +2791,12 @@
           ? `<div class="hr-list">${homeRuns.map(renderHomeRunRow).join('')}</div>`
           : '<div class="roster-empty">No home runs on this date.</div>';
       }
+      const debugText = `HR VIDEO DEBUG\n${startedGames.length} started game(s), ${homeRuns.length} home run(s) total\n\n` +
+        (hrVideoDebugLines.length ? hrVideoDebugLines.join('\n\n') : '(no home runs found, so video lookup was never attempted)');
+      const debugBlock = document.createElement('pre');
+      debugBlock.style.cssText = 'margin-top:14px;padding:10px;background:#111;color:#7fdc7f;font-size:10px;line-height:1.4;white-space:pre-wrap;word-break:break-all;border-radius:6px;max-height:400px;overflow:auto;-webkit-user-select:text;user-select:text;';
+      debugBlock.textContent = debugText;
+      document.querySelector('#summaryBody .sheet').appendChild(debugBlock);
     } catch (e) {
       summaryBody.innerHTML = '<div class="mlb-status-msg">Could not load today\'s games. The MLB API may be unreachable right now.</div>';
     }
