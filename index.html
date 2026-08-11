@@ -278,6 +278,49 @@
     margin-bottom: 2px;
   }
 
+  .daily-games-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    gap: 8px;
+  }
+  .daily-tile {
+    aspect-ratio: 1 / 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    border: 1px solid var(--paper-line);
+    border-radius: 6px;
+    padding: 8px 6px;
+    cursor: pointer;
+    text-align: center;
+  }
+  .daily-tile:hover, .daily-tile:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+  .daily-tile.is-live { border-width: 2px; border-color: var(--gold); }
+  .daily-tile.is-final { border-color: var(--gold); background: rgba(217, 169, 26, 0.1); }
+  .daily-tile-matchup {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--ink);
+  }
+  .daily-tile-stat {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--ink);
+  }
+  .daily-tile-state {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 9px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .daily-tile-state.is-live { color: var(--gold); }
+
   .count-board {
     display: flex;
     gap: 16px;
@@ -1117,10 +1160,18 @@
   </div>
   <div class="tab-header">
     <div class="tab-bar">
+      <button type="button" class="tab-btn" data-tab="summary">Summary</button>
       <button type="button" class="tab-btn active" data-tab="scorecard">Scorecard</button>
       <button type="button" class="tab-btn" data-tab="standings">Standings</button>
       <button type="button" class="tab-btn" data-tab="schedule">Schedule</button>
       <button type="button" class="tab-btn" data-tab="roster">Roster</button>
+    </div>
+    <div class="mlb-controls" data-tab-controls="summary" hidden>
+      <div class="date-nav">
+        <button type="button" class="date-nav-btn" id="summaryDatePrev" aria-label="Previous day">&#8249;</button>
+        <input type="date" id="summaryDatePick" />
+        <button type="button" class="date-nav-btn" id="summaryDateNext" aria-label="Next day">&#8250;</button>
+      </div>
     </div>
     <div class="mlb-controls" data-tab-controls="scorecard">
       <div class="date-nav">
@@ -1151,6 +1202,11 @@
         <button type="button" class="view-toggle-btn" data-view="40man">40-Man</button>
         <button type="button" class="view-toggle-btn" data-view="il">Injured List</button>
       </div>
+    </div>
+  </div>
+  <div class="tab-panel" data-tab-panel="summary" id="summaryPanel" hidden>
+    <div id="summaryBody">
+      <div class="mlb-status-msg">Loading today's games&#8230;</div>
     </div>
   </div>
   <div class="tab-panel" data-tab-panel="scorecard" id="scorecardPanel">
@@ -1212,6 +1268,8 @@
   const body = document.getElementById('mlbBody');
   const standingsBody = document.getElementById('standingsBody');
   const standingsDateInput = document.getElementById('standingsDatePick');
+  const summaryBody = document.getElementById('summaryBody');
+  const summaryDateInput = document.getElementById('summaryDatePick');
   let pollTimer = null;
   let pitchStore = {};
   let rosterStore = {};
@@ -1285,6 +1343,7 @@
   }
   dateInput.value = todayStr();
   standingsDateInput.value = todayStr();
+  summaryDateInput.value = todayStr();
 
   const POS_PATTERNS = [
     [/pitcher/gi, 1], [/catcher/gi, 2], [/first baseman/gi, 3],
@@ -2521,6 +2580,84 @@
     loadSchedule(dateStr, gamePk);
   }
 
+  function formatInningState(state) {
+    if (state === 'Bottom') return 'Bot';
+    if (state === 'Middle') return 'Mid';
+    return state || '';
+  }
+
+  function renderDailyGameTile(dateStr, game) {
+    let statHtml, stateHtml, tileClass;
+    if (game.state === 'Live') {
+      const stateLabel = `${formatInningState(game.inningState)} ${game.inningOrdinal || ''}`.trim();
+      statHtml = `<div class="daily-tile-stat">${game.awayScore ?? 0}&#8211;${game.homeScore ?? 0}</div>`;
+      stateHtml = `<div class="daily-tile-state is-live">${stateLabel}</div>`;
+      tileClass = 'is-live';
+    } else if (game.state === 'Final') {
+      statHtml = `<div class="daily-tile-stat">${game.awayScore}&#8211;${game.homeScore}</div>`;
+      stateHtml = `<div class="daily-tile-state">Final</div>`;
+      tileClass = 'is-final';
+    } else {
+      statHtml = `<div class="daily-tile-stat">${formatGameTime(game.gameDate)}</div>`;
+      stateHtml = '';
+      tileClass = 'is-preview';
+    }
+    return `
+      <div class="daily-tile ${tileClass}" data-date="${dateStr}" data-game-pk="${game.gamePk}" tabindex="0" role="button">
+        <div class="daily-tile-matchup">${game.awayAbbr} @ ${game.homeAbbr}</div>
+        ${statHtml}
+        ${stateHtml}
+      </div>`;
+  }
+
+  async function loadDailySummary(dateStr) {
+    summaryBody.innerHTML = '<div class="mlb-status-msg">Loading today&#8217;s games&#8230;</div>';
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}&hydrate=linescore`);
+      const data = await res.json();
+      const games = (data.dates && data.dates[0] && data.dates[0].games) || [];
+      if (!games.length) {
+        summaryBody.innerHTML = '<div class="mlb-status-msg">No MLB games scheduled on this date.</div>';
+        return;
+      }
+      const linescore = g => g.linescore || {};
+      const tiles = games.map(g => renderDailyGameTile(dateStr, {
+        gamePk: g.gamePk,
+        awayAbbr: teamAbbr(g.teams.away.team),
+        homeAbbr: teamAbbr(g.teams.home.team),
+        awayScore: g.teams.away.score,
+        homeScore: g.teams.home.score,
+        state: g.status.abstractGameState,
+        detailedState: g.status.detailedState,
+        gameDate: g.gameDate,
+        inningState: linescore(g).inningState,
+        inningOrdinal: linescore(g).currentInningOrdinal
+      })).join('');
+      summaryBody.innerHTML = `<div class="sheet"><div class="daily-games-grid">${tiles}</div></div>`;
+    } catch (e) {
+      summaryBody.innerHTML = '<div class="mlb-status-msg">Could not load today\'s games. The MLB API may be unreachable right now.</div>';
+    }
+  }
+
+  summaryDateInput.addEventListener('change', () => loadDailySummary(summaryDateInput.value));
+  document.getElementById('summaryDatePrev').addEventListener('click', () => {
+    summaryDateInput.value = addDays(summaryDateInput.value, -1);
+    loadDailySummary(summaryDateInput.value);
+  });
+  document.getElementById('summaryDateNext').addEventListener('click', () => {
+    summaryDateInput.value = addDays(summaryDateInput.value, 1);
+    loadDailySummary(summaryDateInput.value);
+  });
+  summaryBody.addEventListener('click', (e) => {
+    const tile = e.target.closest('.daily-tile');
+    if (tile) jumpToScorecardGame(tile.dataset.date, tile.dataset.gamePk);
+  });
+  summaryBody.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const tile = e.target.closest('.daily-tile');
+    if (tile) { e.preventDefault(); jumpToScorecardGame(tile.dataset.date, tile.dataset.gamePk); }
+  });
+
   const ROSTER_TAB_TEAM_KEY = 'mlb-roster-tab-team';
   const rosterTabTeamSelect = document.getElementById('rosterTabTeamPick');
   const rosterTabBody = document.getElementById('rosterTabBody');
@@ -3177,6 +3314,7 @@
   if (window.ResizeObserver) new ResizeObserver(syncTabHeaderHeight).observe(tabHeaderEl);
   else window.addEventListener('resize', syncTabHeaderHeight);
 
+  Tabs.register('summary', { init: () => loadDailySummary(summaryDateInput.value) });
   Tabs.register('scorecard');
   Tabs.register('standings', { init: () => loadStandings(standingsDateInput.value) });
   Tabs.register('schedule', { init: () => { populateScheduleTeamSelect(); loadTeamSchedule(scheduleTeamSelect.value); } });
