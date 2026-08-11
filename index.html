@@ -50,15 +50,20 @@
 
   .mlb-controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
 
+  .tab-header {
+    position: sticky;
+    top: 0;
+    z-index: 21;
+    background: var(--frame);
+    margin: -18px -18px 14px;
+    padding: 18px 18px 0;
+    box-shadow: 0 6px 8px -6px rgba(11, 15, 12, 0.35);
+  }
   .tab-bar {
     display: flex;
     gap: 6px;
     margin-bottom: 14px;
     border-bottom: 1px solid rgba(243, 236, 219, 0.15);
-    position: sticky;
-    top: 0;
-    z-index: 21;
-    background: var(--frame);
   }
   .tab-btn {
     font-family: 'Overpass', sans-serif;
@@ -77,6 +82,7 @@
   .tab-btn:hover { color: var(--ink); }
   .tab-btn.active { color: var(--ink); border-bottom-color: var(--gold); }
   .tab-panel[hidden] { display: none; }
+  .mlb-controls[hidden] { display: none; }
   .date-nav { display: flex; align-items: center; gap: 4px; }
   .date-nav-btn {
     background: var(--paper);
@@ -137,15 +143,6 @@
     box-shadow: 0 6px 8px -6px rgba(11, 15, 12, 0.35);
   }
 
-  .schedule-controls {
-    position: sticky;
-    top: var(--tabbar-h, 42px);
-    z-index: 20;
-    background: var(--frame);
-    margin: 0 -18px 14px;
-    padding: 14px 18px 10px;
-    box-shadow: 0 6px 8px -6px rgba(11, 15, 12, 0.35);
-  }
 
   .box-score { margin-bottom: 14px; }
   table.box-table {
@@ -1094,14 +1091,14 @@
   <div class="mlb-header">
     <div class="mlb-title">Take Me Out to the Ballgame</div>
   </div>
-  <div class="tab-bar">
-    <button type="button" class="tab-btn active" data-tab="scorecard">Scorecard</button>
-    <button type="button" class="tab-btn" data-tab="standings">Standings</button>
-    <button type="button" class="tab-btn" data-tab="schedule">Schedule</button>
-    <button type="button" class="tab-btn" data-tab="roster">Roster</button>
-  </div>
-  <div class="tab-panel" data-tab-panel="scorecard" id="scorecardPanel">
-    <div class="mlb-controls">
+  <div class="tab-header">
+    <div class="tab-bar">
+      <button type="button" class="tab-btn active" data-tab="scorecard">Scorecard</button>
+      <button type="button" class="tab-btn" data-tab="standings">Standings</button>
+      <button type="button" class="tab-btn" data-tab="schedule">Schedule</button>
+      <button type="button" class="tab-btn" data-tab="roster">Roster</button>
+    </div>
+    <div class="mlb-controls" data-tab-controls="scorecard">
       <div class="date-nav">
         <button type="button" class="date-nav-btn" id="datePrev" aria-label="Previous day">&#8249;</button>
         <input type="date" id="datePick" />
@@ -1109,12 +1106,7 @@
       </div>
       <select id="gamePick"><option>Loading games&#8230;</option></select>
     </div>
-    <div id="mlbBody">
-      <div class="mlb-status-msg">Loading today's schedule&#8230;</div>
-    </div>
-  </div>
-  <div class="tab-panel" data-tab-panel="standings" id="standingsPanel" hidden>
-    <div class="mlb-controls">
+    <div class="mlb-controls" data-tab-controls="standings" hidden>
       <div class="date-nav">
         <button type="button" class="date-nav-btn" id="standingsDatePrev" aria-label="Previous day">&#8249;</button>
         <input type="date" id="standingsDatePick" />
@@ -1125,20 +1117,10 @@
         <button type="button" class="view-toggle-btn" data-view="wildcard">Wild Card</button>
       </div>
     </div>
-    <div id="standingsBody">
-      <div class="mlb-status-msg">Loading standings&#8230;</div>
-    </div>
-  </div>
-  <div class="tab-panel" data-tab-panel="schedule" id="schedulePanel" hidden>
-    <div class="mlb-controls schedule-controls">
+    <div class="mlb-controls" data-tab-controls="schedule" hidden>
       <select id="scheduleTeamPick"></select>
     </div>
-    <div id="scheduleBody">
-      <div class="mlb-status-msg">Loading schedule&#8230;</div>
-    </div>
-  </div>
-  <div class="tab-panel" data-tab-panel="roster" id="rosterTabPanel" hidden>
-    <div class="mlb-controls schedule-controls">
+    <div class="mlb-controls" data-tab-controls="roster" hidden>
       <select id="rosterTabTeamPick"></select>
       <div class="view-toggle" id="rosterTabViewToggle">
         <button type="button" class="view-toggle-btn active" data-view="active">26-Man</button>
@@ -1146,6 +1128,23 @@
         <button type="button" class="view-toggle-btn" data-view="il">Injured List</button>
       </div>
     </div>
+  </div>
+  <div class="tab-panel" data-tab-panel="scorecard" id="scorecardPanel">
+    <div id="mlbBody">
+      <div class="mlb-status-msg">Loading today's schedule&#8230;</div>
+    </div>
+  </div>
+  <div class="tab-panel" data-tab-panel="standings" id="standingsPanel" hidden>
+    <div id="standingsBody">
+      <div class="mlb-status-msg">Loading standings&#8230;</div>
+    </div>
+  </div>
+  <div class="tab-panel" data-tab-panel="schedule" id="schedulePanel" hidden>
+    <div id="scheduleBody">
+      <div class="mlb-status-msg">Loading schedule&#8230;</div>
+    </div>
+  </div>
+  <div class="tab-panel" data-tab-panel="roster" id="rosterTabPanel" hidden>
     <div id="rosterTabBody">
       <div class="mlb-status-msg">Loading roster&#8230;</div>
     </div>
@@ -3102,6 +3101,7 @@
     const tabs = {};
     const tabBtns = document.querySelectorAll('.tab-btn');
     const tabPanels = document.querySelectorAll('.tab-panel');
+    const tabControls = document.querySelectorAll('[data-tab-controls]');
     let active = null;
 
     function register(id, { init, onShow } = {}) {
@@ -3112,6 +3112,7 @@
       if (!tabs[id] || id === active) return;
       tabBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === id));
       tabPanels.forEach(p => { p.hidden = p.dataset.tabPanel !== id; });
+      tabControls.forEach(c => { c.hidden = c.dataset.tabControls !== id; });
       const tab = tabs[id];
       if (!tab.initialized) { if (tab.init) tab.init(); tab.initialized = true; }
       if (tab.onShow) tab.onShow();
@@ -3128,16 +3129,16 @@
     return { register, switchTo, init };
   })();
 
-  // Keep the sticky panel content (box score, schedule/roster filters) pinned
-  // just below the sticky tab bar instead of underneath it, whatever height
-  // the tab bar happens to render at (font loading, wrapping, etc.).
-  const tabBarEl = document.querySelector('.tab-bar');
-  function syncTabBarHeight() {
-    document.documentElement.style.setProperty('--tabbar-h', tabBarEl.offsetHeight + 'px');
+  // Keep the scorecard's sticky box score pinned just below the sticky tab
+  // header instead of underneath it, whatever height the header happens to
+  // render at (font loading, wrapping, which tab's controls are showing, etc).
+  const tabHeaderEl = document.querySelector('.tab-header');
+  function syncTabHeaderHeight() {
+    document.documentElement.style.setProperty('--tabbar-h', tabHeaderEl.offsetHeight + 'px');
   }
-  syncTabBarHeight();
-  if (window.ResizeObserver) new ResizeObserver(syncTabBarHeight).observe(tabBarEl);
-  else window.addEventListener('resize', syncTabBarHeight);
+  syncTabHeaderHeight();
+  if (window.ResizeObserver) new ResizeObserver(syncTabHeaderHeight).observe(tabHeaderEl);
+  else window.addEventListener('resize', syncTabHeaderHeight);
 
   Tabs.register('scorecard');
   Tabs.register('standings', { init: () => loadStandings(standingsDateInput.value) });
