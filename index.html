@@ -789,6 +789,25 @@
     color: var(--ink-soft);
     margin-bottom: 12px;
   }
+  .player-modal-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .player-modal-head .pitch-header,
+  .player-modal-head .pitch-subheader {
+    margin-bottom: 0;
+  }
+  .player-headshot {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--paper-line);
+    border: 1px solid var(--paper-line);
+    flex-shrink: 0;
+  }
   table.pitch-table { width: 100%; border-collapse: collapse; font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
   table.pitch-table th {
     font-family: 'Overpass', sans-serif;
@@ -1850,9 +1869,15 @@
          <div class="player-stat-line"><span class="psl-label">HR</span><span>${seasonStat.homeRuns ?? '&#8212;'}</span></div>
          <div class="player-stat-line"><span class="psl-label">RBI</span><span>${seasonStat.rbi ?? '&#8212;'}</span></div>`
       : `<div class="pitch-empty">Season stats not available.</div>`;
+    const headshotUrl = `https://img.mlbstatic.com/mlb-photos/image/upload/w_112,q_100,f_auto/v1/people/${info.id}/headshot/67/current`;
     return `
-      <div class="pitch-header">${info.name}</div>
-      <div class="pitch-subheader">${info.pos} &#183; ${info.team}</div>
+      <div class="player-modal-head">
+        <img class="player-headshot" src="${headshotUrl}" alt="" loading="lazy" onerror="this.style.display='none'">
+        <div>
+          <div class="pitch-header">${info.name}</div>
+          <div class="pitch-subheader">${info.pos} &#183; ${info.team}</div>
+        </div>
+      </div>
       <div class="roster-section-title">${info.season} Season</div>
       ${seasonHtml}
       <div class="roster-section-title">This Game</div>
@@ -1953,7 +1978,7 @@
 
     const bodyRows = rows.map(r => {
       const nameHtml = r.players.map((p, i) => {
-        playerStore[p.id] = { name: p.name, pos: p.pos, team: teamName, season, todayStats: p.stats };
+        playerStore[p.id] = { id: p.id, name: p.name, pos: p.pos, team: teamName, season, todayStats: p.stats };
         const btn = `<button type="button" class="player-name-btn" data-player-id="${p.id}">${p.name}</button>`;
         return i === 0 ? btn : `<span class="sub-note">&#8594; ${btn}</span>`;
       }).join('<br/>');
