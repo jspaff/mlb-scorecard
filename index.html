@@ -2209,7 +2209,9 @@
         const strikes = halfOver ? 0 : (linescore.strikes ?? 0);
         const outs = halfOver ? 0 : (linescore.outs ?? 0);
         const offense = halfOver ? {} : (linescore.offense || {});
-        const inningHalf = linescore.inningHalf === 'Top' ? 'Top' : 'Bot';
+        const inningHalf = halfOver
+          ? (linescore.inningHalf === 'Top' ? 'Mid' : 'End')
+          : (linescore.inningHalf === 'Top' ? 'Top' : 'Bot');
         const inningNum = linescore.currentInning;
         const onFirst = !!offense.first, onSecond = !!offense.second, onThird = !!offense.third;
         const batter = offense.batter ? offense.batter.fullName : '';
