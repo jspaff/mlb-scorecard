@@ -64,7 +64,12 @@
     gap: 6px;
     margin-bottom: 14px;
     border-bottom: 1px solid rgba(243, 236, 219, 0.15);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
+  .tab-bar::-webkit-scrollbar { display: none; }
   .tab-btn {
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
@@ -78,6 +83,8 @@
     padding: 8px 4px;
     margin-bottom: -1px;
     cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
   .tab-btn:hover { color: var(--ink); }
   .tab-btn.active { color: var(--ink); border-bottom-color: var(--gold); }
