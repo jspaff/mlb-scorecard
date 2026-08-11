@@ -864,10 +864,10 @@
     font-size: 24px;
     letter-spacing: 0.01em;
     line-height: 1;
-    flex: 1;
+    flex: none;
     display: flex;
     align-items: center;
-    margin-top: 8px;
+    margin-top: 2px;
   }
   .calendar-day.is-home .cal-game-opp { color: var(--paper); }
   .calendar-day.is-away .cal-game-opp { color: var(--ink); }
@@ -881,7 +881,7 @@
   }
   .calendar-day.is-home .cal-game-time { color: var(--paper); }
   .calendar-day.is-away .cal-game-time { color: var(--ink); }
-  .calendar-day.is-dh .cal-game-opp { font-size: 17px; flex: none; margin-top: 1px; }
+  .calendar-day.is-dh .cal-game-opp { font-size: 17px; margin-top: 1px; }
   .standings-team {
     flex: 1;
     font-family: 'Inter', sans-serif;
@@ -1340,10 +1340,10 @@
     .standings-grid { grid-template-columns: 1fr; }
     .roster-columns { flex-direction: column; gap: 14px 0; }
     .calendar-day { min-height: 52px; padding: 2px 1px 3px; }
-    .cal-game-opp { font-size: 16px; margin-top: 6px; }
+    .cal-game-opp { font-size: 16px; margin-top: 2px; }
     .cal-game-time { font-size: 6.5px; }
     .cal-daynum { font-size: 7px; }
-    .calendar-day.is-dh .cal-game-opp { font-size: 12px; flex: none; margin-top: 1px; }
+    .calendar-day.is-dh .cal-game-opp { font-size: 12px; margin-top: 1px; }
   }
 </style>
 </head>
