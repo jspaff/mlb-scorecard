@@ -480,13 +480,64 @@
   .roster-badge.roster-badge-il { color: #fbf3e3; background: var(--brick); border-color: var(--brick); }
   .roster-columns { display: flex; gap: 0 28px; align-items: flex-start; }
   .roster-column { flex: 1; min-width: 0; }
-  .roster-detail {
+  .roster-subgroup-title {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 9px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin: 10px 0 4px;
+  }
+  .roster-subgroup-title:first-child { margin-top: 0; }
+  table.il-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  table.il-table th {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 9px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    text-align: left;
+    padding: 4px 8px 6px;
+    border-bottom: 1px solid var(--ink);
+    white-space: nowrap;
+  }
+  table.il-table td {
+    padding: 7px 8px;
+    border-bottom: 1px dashed var(--paper-line);
+    color: var(--ink);
+    vertical-align: top;
+  }
+  table.il-table tr:last-child td { border-bottom: none; }
+  table.il-table td.il-num {
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--ink-soft);
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  table.il-table td.il-name {
+    font-family: 'Special Elite', monospace;
+    white-space: nowrap;
+  }
+  table.il-table td.il-pos {
+    font-family: 'Special Elite', monospace;
+    color: var(--ink-soft);
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  table.il-table td.il-injury {
     font-family: 'Inter', sans-serif;
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    min-width: 160px;
+  }
+  table.il-table td.il-date {
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 11px;
     color: var(--ink-soft);
-    font-style: italic;
-    padding: 0 0 6px 34px;
-    margin-top: -3px;
+    white-space: nowrap;
+    text-align: right;
   }
   .standings-row {
     display: flex;
@@ -2540,39 +2591,63 @@
       </div>`;
   }
 
+  const POSITION_PLAYER_GROUP_ORDER = ['Catcher', 'Infielder', 'Outfielder', 'Hitter'];
+  const POSITION_PLAYER_GROUP_LABEL = {
+    Catcher: 'Catchers', Infielder: 'Infielders', Outfielder: 'Outfielders', Hitter: 'Designated Hitter'
+  };
+
+  function renderPositionPlayerColumn(list, opts) {
+    if (!list.length) return '<div class="roster-empty">None</div>';
+    const groups = {};
+    list.forEach(p => { (groups[p.posType] = groups[p.posType] || []).push(p); });
+    const keys = POSITION_PLAYER_GROUP_ORDER.filter(g => groups[g])
+      .concat(Object.keys(groups).filter(g => !POSITION_PLAYER_GROUP_ORDER.includes(g)));
+    return keys.map(g => {
+      const rows = sortRosterList(groups[g]).map(p => renderRosterRow(p, opts)).join('');
+      return `<div class="roster-subgroup-title">${POSITION_PLAYER_GROUP_LABEL[g] || g}</div>${rows}`;
+    }).join('');
+  }
+
   function renderRosterGroups(list, opts) {
     opts = opts || {};
     if (!list.length) return '<div class="roster-empty">No players found.</div>';
     const pitchers = sortRosterList(list.filter(p => p.posType === 'Pitcher'));
-    const positionPlayers = sortRosterList(list.filter(p => p.posType !== 'Pitcher'));
-    const col = (title, players) => `
+    const positionPlayers = list.filter(p => p.posType !== 'Pitcher');
+    const pitcherRows = pitchers.length ? pitchers.map(p => renderRosterRow(p, opts)).join('') : '<div class="roster-empty">None</div>';
+    const col = (title, inner) => `
       <div class="roster-column">
         <div class="roster-section-title">${title}</div>
-        ${players.length ? players.map(p => renderRosterRow(p, opts)).join('') : '<div class="roster-empty">None</div>'}
+        ${inner}
       </div>`;
-    return `<div class="roster-columns">${col('Pitchers', pitchers)}${col('Position Players', positionPlayers)}</div>`;
+    return `<div class="roster-columns">${col('Pitchers', pitcherRows)}${col('Position Players', renderPositionPlayerColumn(positionPlayers, opts))}</div>`;
   }
 
   function renderInjuredList(fortyMan, injuryMap) {
     const ilPlayers = fortyMan.filter(p => /injured/i.test(p.statusDesc || ''));
     if (!ilPlayers.length) return '<div class="roster-empty">No players currently on the injured list.</div>';
-    const groups = {};
-    ilPlayers.forEach(p => { (groups[p.statusDesc] = groups[p.statusDesc] || []).push(p); });
-    return Object.keys(groups).sort().map(status => {
-      const rows = groups[status].map(p => {
-        const txn = injuryMap[p.id];
-        const detail = txn ? extractInjuryDetail(txn.description) : null;
-        const since = txn ? new Date(txn.date + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : null;
-        return `
-          <div class="roster-row">
-            <span class="roster-jersey">${p.jersey ? '#' + p.jersey : ''}</span>
-            <span class="roster-name">${p.name}</span>
-            <span class="roster-pos">${p.posAbbr}</span>
-          </div>
-          ${(detail || since) ? `<div class="roster-detail">${detail || 'Injury details unavailable'}${since ? ' &#183; since ' + since : ''}</div>` : ''}`;
-      }).join('');
-      return `<div class="roster-section-title">${status}</div>${rows}`;
+    const rows = ilPlayers.map(p => {
+      const txn = injuryMap[p.id];
+      return { p, detail: txn ? extractInjuryDetail(txn.description) : null, date: txn ? txn.date : null };
+    }).sort((a, b) => {
+      if (a.date && b.date) return b.date.localeCompare(a.date);
+      if (a.date || b.date) return a.date ? -1 : 1;
+      return (a.p.name || '').localeCompare(b.p.name || '');
+    });
+    const trs = rows.map(({ p, detail, date }) => {
+      const dateLabel = date ? new Date(date + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '&#8212;';
+      return `
+        <tr>
+          <td class="il-num">${p.jersey ? '#' + p.jersey : ''}</td>
+          <td class="il-name">${p.name} <span class="roster-badge roster-badge-il">${p.statusDesc}</span></td>
+          <td class="il-pos">${p.posAbbr}</td>
+          <td class="il-injury">${detail || 'Details unavailable'}</td>
+          <td class="il-date">${dateLabel}</td>
+        </tr>`;
     }).join('');
+    return `<div class="table-scroll"><table class="il-table">
+      <thead><tr><th></th><th>Player</th><th>Pos</th><th>Injury</th><th>Since</th></tr></thead>
+      <tbody>${trs}</tbody>
+    </table></div>`;
   }
 
   async function loadRosterTab(teamId) {
