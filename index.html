@@ -278,6 +278,17 @@
     margin-bottom: 2px;
   }
 
+  .daily-games-list { display: flex; flex-direction: column; gap: 10px; }
+  .daily-game-card {
+    border: 1px solid var(--paper-line);
+    border-radius: 6px;
+    padding: 12px 14px;
+    cursor: pointer;
+  }
+  .daily-game-card:hover, .daily-game-card:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+  .daily-game-card .game-summary-score,
+  .daily-game-card .game-summary-time { margin: 8px 0 0; }
+
   .count-board {
     display: flex;
     gap: 16px;
@@ -1117,10 +1128,18 @@
   </div>
   <div class="tab-header">
     <div class="tab-bar">
+      <button type="button" class="tab-btn" data-tab="summary">Summary</button>
       <button type="button" class="tab-btn active" data-tab="scorecard">Scorecard</button>
       <button type="button" class="tab-btn" data-tab="standings">Standings</button>
       <button type="button" class="tab-btn" data-tab="schedule">Schedule</button>
       <button type="button" class="tab-btn" data-tab="roster">Roster</button>
+    </div>
+    <div class="mlb-controls" data-tab-controls="summary" hidden>
+      <div class="date-nav">
+        <button type="button" class="date-nav-btn" id="summaryDatePrev" aria-label="Previous day">&#8249;</button>
+        <input type="date" id="summaryDatePick" />
+        <button type="button" class="date-nav-btn" id="summaryDateNext" aria-label="Next day">&#8250;</button>
+      </div>
     </div>
     <div class="mlb-controls" data-tab-controls="scorecard">
       <div class="date-nav">
@@ -1151,6 +1170,11 @@
         <button type="button" class="view-toggle-btn" data-view="40man">40-Man</button>
         <button type="button" class="view-toggle-btn" data-view="il">Injured List</button>
       </div>
+    </div>
+  </div>
+  <div class="tab-panel" data-tab-panel="summary" id="summaryPanel" hidden>
+    <div id="summaryBody">
+      <div class="mlb-status-msg">Loading today's games&#8230;</div>
     </div>
   </div>
   <div class="tab-panel" data-tab-panel="scorecard" id="scorecardPanel">
@@ -1212,6 +1236,8 @@
   const body = document.getElementById('mlbBody');
   const standingsBody = document.getElementById('standingsBody');
   const standingsDateInput = document.getElementById('standingsDatePick');
+  const summaryBody = document.getElementById('summaryBody');
+  const summaryDateInput = document.getElementById('summaryDatePick');
   let pollTimer = null;
   let pitchStore = {};
   let rosterStore = {};
@@ -1285,6 +1311,7 @@
   }
   dateInput.value = todayStr();
   standingsDateInput.value = todayStr();
+  summaryDateInput.value = todayStr();
 
   const POS_PATTERNS = [
     [/pitcher/gi, 1], [/catcher/gi, 2], [/first baseman/gi, 3],
@@ -2521,6 +2548,92 @@
     loadSchedule(dateStr, gamePk);
   }
 
+  function formatInningState(state) {
+    if (state === 'Bottom') return 'Bot';
+    if (state === 'Middle') return 'Mid';
+    return state || '';
+  }
+
+  function renderDailyGameCard(dateStr, game) {
+    let statusHtml;
+    if (game.state === 'Live') {
+      const badgeLabel = `${formatInningState(game.inningState)} ${game.inningOrdinal || ''}`.trim();
+      statusHtml = `
+        <div class="badge badge-live">${badgeLabel}</div>
+        <div class="game-summary-score">
+          <div class="gs-team-row"><span class="gs-team-name">${game.awayName}</span><span class="gs-team-score">${game.awayScore ?? 0}</span></div>
+          <div class="gs-team-row"><span class="gs-team-name">${game.homeName}</span><span class="gs-team-score">${game.homeScore ?? 0}</span></div>
+        </div>`;
+    } else if (game.state === 'Final') {
+      const awayWon = game.awayScore > game.homeScore;
+      const homeWon = game.homeScore > game.awayScore;
+      statusHtml = `
+        <div class="badge badge-final">Final</div>
+        <div class="game-summary-score">
+          <div class="gs-team-row${awayWon ? ' gs-winner' : ''}"><span class="gs-team-name">${game.awayName}</span><span class="gs-team-score">${game.awayScore}</span></div>
+          <div class="gs-team-row${homeWon ? ' gs-winner' : ''}"><span class="gs-team-name">${game.homeName}</span><span class="gs-team-score">${game.homeScore}</span></div>
+        </div>`;
+    } else {
+      const badgeLabel = game.detailedState && game.detailedState !== 'Scheduled' ? game.detailedState : 'Upcoming';
+      statusHtml = `
+        <div class="badge badge-preview">${badgeLabel}</div>
+        <div class="game-summary-time">First pitch: ${formatGameTime(game.gameDate)}</div>`;
+    }
+    return `
+      <div class="daily-game-card" data-date="${dateStr}" data-game-pk="${game.gamePk}" tabindex="0" role="button">
+        <div class="gs-game-matchup">${game.awayName} @ ${game.homeName}</div>
+        ${statusHtml}
+      </div>`;
+  }
+
+  async function loadDailySummary(dateStr) {
+    summaryBody.innerHTML = '<div class="mlb-status-msg">Loading today&#8217;s games&#8230;</div>';
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}&hydrate=linescore`);
+      const data = await res.json();
+      const games = (data.dates && data.dates[0] && data.dates[0].games) || [];
+      if (!games.length) {
+        summaryBody.innerHTML = '<div class="mlb-status-msg">No MLB games scheduled on this date.</div>';
+        return;
+      }
+      const linescore = g => g.linescore || {};
+      const cards = games.map(g => renderDailyGameCard(dateStr, {
+        gamePk: g.gamePk,
+        awayName: teamNickname(g.teams.away.team),
+        homeName: teamNickname(g.teams.home.team),
+        awayScore: g.teams.away.score,
+        homeScore: g.teams.home.score,
+        state: g.status.abstractGameState,
+        detailedState: g.status.detailedState,
+        gameDate: g.gameDate,
+        inningState: linescore(g).inningState,
+        inningOrdinal: linescore(g).currentInningOrdinal
+      })).join('');
+      summaryBody.innerHTML = `<div class="sheet"><div class="daily-games-list">${cards}</div></div>`;
+    } catch (e) {
+      summaryBody.innerHTML = '<div class="mlb-status-msg">Could not load today\'s games. The MLB API may be unreachable right now.</div>';
+    }
+  }
+
+  summaryDateInput.addEventListener('change', () => loadDailySummary(summaryDateInput.value));
+  document.getElementById('summaryDatePrev').addEventListener('click', () => {
+    summaryDateInput.value = addDays(summaryDateInput.value, -1);
+    loadDailySummary(summaryDateInput.value);
+  });
+  document.getElementById('summaryDateNext').addEventListener('click', () => {
+    summaryDateInput.value = addDays(summaryDateInput.value, 1);
+    loadDailySummary(summaryDateInput.value);
+  });
+  summaryBody.addEventListener('click', (e) => {
+    const card = e.target.closest('.daily-game-card');
+    if (card) jumpToScorecardGame(card.dataset.date, card.dataset.gamePk);
+  });
+  summaryBody.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const card = e.target.closest('.daily-game-card');
+    if (card) { e.preventDefault(); jumpToScorecardGame(card.dataset.date, card.dataset.gamePk); }
+  });
+
   const ROSTER_TAB_TEAM_KEY = 'mlb-roster-tab-team';
   const rosterTabTeamSelect = document.getElementById('rosterTabTeamPick');
   const rosterTabBody = document.getElementById('rosterTabBody');
@@ -3177,6 +3290,7 @@
   if (window.ResizeObserver) new ResizeObserver(syncTabHeaderHeight).observe(tabHeaderEl);
   else window.addEventListener('resize', syncTabHeaderHeight);
 
+  Tabs.register('summary', { init: () => loadDailySummary(summaryDateInput.value) });
   Tabs.register('scorecard');
   Tabs.register('standings', { init: () => loadStandings(standingsDateInput.value) });
   Tabs.register('schedule', { init: () => { populateScheduleTeamSelect(); loadTeamSchedule(scheduleTeamSelect.value); } });
