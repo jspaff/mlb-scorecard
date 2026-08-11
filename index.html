@@ -513,7 +513,11 @@
     margin: 10px 0 4px;
   }
   .roster-subgroup-title:first-child { margin-top: 0; }
-  table.il-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  table.il-table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
+  table.il-table col.il-col-num { width: 32px; }
+  table.il-table col.il-col-name { width: 140px; }
+  table.il-table col.il-col-pos { width: 44px; }
+  table.il-table col.il-col-date { width: 60px; }
   table.il-table th {
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
@@ -541,7 +545,6 @@
   }
   table.il-table td.il-name {
     font-family: 'Special Elite', monospace;
-    white-space: nowrap;
   }
   table.il-table td.il-pos {
     font-family: 'Special Elite', monospace;
@@ -553,7 +556,6 @@
     font-family: 'Inter', sans-serif;
     font-size: 11.5px;
     color: var(--ink-soft);
-    min-width: 160px;
   }
   table.il-table td.il-date {
     font-family: 'IBM Plex Mono', monospace;
@@ -2677,6 +2679,7 @@
     return Object.keys(groups).sort().map(status => `
       <div class="roster-section-title">${status}</div>
       <div class="table-scroll"><table class="il-table">
+        <colgroup><col class="il-col-num"><col class="il-col-name"><col class="il-col-pos"><col><col class="il-col-date"></colgroup>
         <thead><tr><th></th><th>Player</th><th>Pos</th><th>Injury</th><th>Since</th></tr></thead>
         <tbody>${renderInjuredListRows(groups[status], injuryMap)}</tbody>
       </table></div>`).join('');
