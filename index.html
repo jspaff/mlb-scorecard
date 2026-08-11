@@ -207,6 +207,54 @@
   .badge-final { background: var(--ink); color: var(--paper); }
   .badge-preview { background: transparent; color: var(--gold); border: 1px solid var(--gold); }
 
+  .game-summary-score {
+    margin: 12px 0 16px;
+    border: 1px solid var(--paper-line);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .gs-team-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 9px 12px;
+    font-family: 'Oswald', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--ink-soft);
+  }
+  .gs-team-row + .gs-team-row { border-top: 1px solid var(--paper-line); }
+  .gs-team-score {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--ink-soft);
+  }
+  .gs-team-row.gs-winner { color: var(--ink); font-weight: 700; }
+  .gs-team-row.gs-winner .gs-team-score { color: var(--gold); }
+  .game-summary-time {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--ink);
+    margin: 12px 0 16px;
+  }
+  .modal-cta {
+    display: block;
+    width: 100%;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--paper);
+    background: var(--gold);
+    border: none;
+    border-radius: 6px;
+    padding: 11px 14px;
+    cursor: pointer;
+  }
+  .modal-cta:hover, .modal-cta:focus-visible { filter: brightness(0.93); outline: none; }
+
   .count-board {
     display: flex;
     gap: 16px;
@@ -1023,6 +1071,12 @@
     <div class="pitch-modal">
       <button id="playerClose" class="pitch-close" aria-label="Close">&#10005;</button>
       <div id="playerModalBody"></div>
+    </div>
+  </div>
+  <div id="gameSummaryOverlay" class="pitch-overlay">
+    <div class="pitch-modal">
+      <button id="gameSummaryClose" class="pitch-close" aria-label="Close">&#10005;</button>
+      <div id="gameSummaryModalBody"></div>
     </div>
   </div>
 </div>
@@ -2234,7 +2288,17 @@
       gamesByDate[d.date] = d.games.map(g => {
         const isHome = g.teams.home.team.id === Number(teamId);
         const opponent = isHome ? g.teams.away.team : g.teams.home.team;
-        return { gamePk: g.gamePk, isHome, opponent: teamAbbr(opponent), gameDate: g.gameDate };
+        return {
+          gamePk: g.gamePk,
+          isHome,
+          opponent: teamAbbr(opponent),
+          opponentFull: teamNickname(opponent),
+          gameDate: g.gameDate,
+          state: g.status.abstractGameState,
+          detailedState: g.status.detailedState,
+          homeScore: g.teams.home.score,
+          awayScore: g.teams.away.score
+        };
       });
     });
     const result = {
@@ -2307,6 +2371,8 @@
     if (currentBlock) currentBlock.scrollIntoView({ block: 'start' });
   }
 
+  let currentScheduleTeam = null;
+
   async function loadTeamSchedule(teamId) {
     scheduleBody.innerHTML = '<div class="mlb-status-msg">Loading schedule&#8230;</div>';
     const season = new Date().getFullYear();
@@ -2316,6 +2382,7 @@
         scheduleBody.innerHTML = '<div class="mlb-status-msg">No regular season schedule available.</div>';
         return;
       }
+      currentScheduleTeam = { teamId, gamesByDate };
       renderScheduleAllMonths(gamesByDate, seasonStart, seasonEnd);
     } catch (e) {
       scheduleBody.innerHTML = '<div class="mlb-status-msg">Could not load schedule. The MLB API may be unreachable right now.</div>';
@@ -2323,9 +2390,60 @@
   }
 
   function jumpToScorecardGame(dateStr, gamePk) {
+    hideGameSummaryModal();
     Tabs.switchTo('scorecard');
     dateInput.value = dateStr;
     loadSchedule(dateStr, gamePk);
+  }
+
+  const gameSummaryOverlay = document.getElementById('gameSummaryOverlay');
+  const gameSummaryModalBody = document.getElementById('gameSummaryModalBody');
+  const gameSummaryClose = document.getElementById('gameSummaryClose');
+
+  function renderGameSummaryContent(teamId, dateStr, game) {
+    const teamName = TEAM_NICKNAMES[teamId] || '';
+    const homeName = game.isHome ? teamName : game.opponentFull;
+    const awayName = game.isHome ? game.opponentFull : teamName;
+    const dateLabel = new Date(dateStr + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+
+    const hasScore = game.homeScore != null && game.awayScore != null && (game.state === 'Final' || game.state === 'Live');
+    let statusHtml;
+    if (hasScore) {
+      const homeWon = game.state === 'Final' && game.homeScore > game.awayScore;
+      const awayWon = game.state === 'Final' && game.awayScore > game.homeScore;
+      const badgeClass = game.state === 'Final' ? 'badge-final' : 'badge-live';
+      const badgeLabel = game.state === 'Final' ? 'Final' : 'Live';
+      statusHtml = `
+        <div class="badge ${badgeClass}">${badgeLabel}</div>
+        <div class="game-summary-score">
+          <div class="gs-team-row${awayWon ? ' gs-winner' : ''}"><span class="gs-team-name">${awayName}</span><span class="gs-team-score">${game.awayScore}</span></div>
+          <div class="gs-team-row${homeWon ? ' gs-winner' : ''}"><span class="gs-team-name">${homeName}</span><span class="gs-team-score">${game.homeScore}</span></div>
+        </div>`;
+    } else {
+      const badgeLabel = game.detailedState && game.detailedState !== 'Scheduled' ? game.detailedState : 'Upcoming';
+      statusHtml = `
+        <div class="badge badge-preview">${badgeLabel}</div>
+        <div class="game-summary-time">First pitch: ${formatGameTime(game.gameDate)}</div>`;
+    }
+
+    return `
+      <div class="pitch-header">${awayName} @ ${homeName}</div>
+      <div class="pitch-subheader">${dateLabel}</div>
+      ${statusHtml}
+      <button type="button" class="modal-cta" data-date="${dateStr}" data-game-pk="${game.gamePk}">View Full Scorecard &#8594;</button>
+    `;
+  }
+
+  function showGameSummaryModal(dateStr, gamePk) {
+    if (!currentScheduleTeam) return;
+    const games = currentScheduleTeam.gamesByDate[dateStr];
+    const game = games && games.find(g => String(g.gamePk) === String(gamePk));
+    if (!game) return;
+    gameSummaryModalBody.innerHTML = renderGameSummaryContent(currentScheduleTeam.teamId, dateStr, game);
+    gameSummaryOverlay.classList.add('open');
+  }
+  function hideGameSummaryModal() {
+    gameSummaryOverlay.classList.remove('open');
   }
 
   scheduleTeamSelect.addEventListener('change', () => {
@@ -2335,12 +2453,20 @@
   });
   scheduleBody.addEventListener('click', (e) => {
     const cell = e.target.closest('.calendar-day.is-game');
-    if (cell) jumpToScorecardGame(cell.dataset.date, cell.dataset.gamePk);
+    if (cell) showGameSummaryModal(cell.dataset.date, cell.dataset.gamePk);
   });
   scheduleBody.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
     const cell = e.target.closest('.calendar-day.is-game');
-    if (cell) { e.preventDefault(); jumpToScorecardGame(cell.dataset.date, cell.dataset.gamePk); }
+    if (cell) { e.preventDefault(); showGameSummaryModal(cell.dataset.date, cell.dataset.gamePk); }
+  });
+  gameSummaryModalBody.addEventListener('click', (e) => {
+    const btn = e.target.closest('.modal-cta');
+    if (btn) jumpToScorecardGame(btn.dataset.date, btn.dataset.gamePk);
+  });
+  gameSummaryClose.addEventListener('click', hideGameSummaryModal);
+  gameSummaryOverlay.addEventListener('click', (e) => {
+    if (e.target === gameSummaryOverlay) hideGameSummaryModal();
   });
 
   async function loadSchedule(dateStr, preferredGamePk) {
@@ -2765,7 +2891,7 @@
     if (e.target === playerOverlay) hidePlayerModal();
   });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { hidePitchPopup(); hideRosterModal(); hideSprayModal(); hidePlayerModal(); }
+    if (e.key === 'Escape') { hidePitchPopup(); hideRosterModal(); hideSprayModal(); hidePlayerModal(); hideGameSummaryModal(); }
   });
 
   Tabs.init('scorecard');
