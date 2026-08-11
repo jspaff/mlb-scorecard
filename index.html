@@ -278,16 +278,47 @@
     margin-bottom: 2px;
   }
 
-  .daily-games-list { display: flex; flex-direction: column; gap: 10px; }
-  .daily-game-card {
+  .daily-games-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    gap: 8px;
+  }
+  .daily-tile {
+    aspect-ratio: 1 / 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
     border: 1px solid var(--paper-line);
     border-radius: 6px;
-    padding: 12px 14px;
+    padding: 8px 6px;
     cursor: pointer;
+    text-align: center;
   }
-  .daily-game-card:hover, .daily-game-card:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
-  .daily-game-card .game-summary-score,
-  .daily-game-card .game-summary-time { margin: 8px 0 0; }
+  .daily-tile:hover, .daily-tile:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+  .daily-tile-matchup {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: 11.5px;
+    color: var(--ink);
+  }
+  .daily-tile-stat {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--ink);
+  }
+  .daily-tile-state {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 9px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .daily-tile-state.is-live { color: var(--brick); }
+  .daily-tile-state.is-preview { color: var(--gold); }
 
   .count-board {
     display: flex;
@@ -2554,35 +2585,24 @@
     return state || '';
   }
 
-  function renderDailyGameCard(dateStr, game) {
-    let statusHtml;
+  function renderDailyGameTile(dateStr, game) {
+    let statHtml, stateHtml;
     if (game.state === 'Live') {
-      const badgeLabel = `${formatInningState(game.inningState)} ${game.inningOrdinal || ''}`.trim();
-      statusHtml = `
-        <div class="badge badge-live">${badgeLabel}</div>
-        <div class="game-summary-score">
-          <div class="gs-team-row"><span class="gs-team-name">${game.awayName}</span><span class="gs-team-score">${game.awayScore ?? 0}</span></div>
-          <div class="gs-team-row"><span class="gs-team-name">${game.homeName}</span><span class="gs-team-score">${game.homeScore ?? 0}</span></div>
-        </div>`;
+      const stateLabel = `${formatInningState(game.inningState)} ${game.inningOrdinal || ''}`.trim();
+      statHtml = `<div class="daily-tile-stat">${game.awayScore ?? 0}&#8211;${game.homeScore ?? 0}</div>`;
+      stateHtml = `<div class="daily-tile-state is-live">${stateLabel}</div>`;
     } else if (game.state === 'Final') {
-      const awayWon = game.awayScore > game.homeScore;
-      const homeWon = game.homeScore > game.awayScore;
-      statusHtml = `
-        <div class="badge badge-final">Final</div>
-        <div class="game-summary-score">
-          <div class="gs-team-row${awayWon ? ' gs-winner' : ''}"><span class="gs-team-name">${game.awayName}</span><span class="gs-team-score">${game.awayScore}</span></div>
-          <div class="gs-team-row${homeWon ? ' gs-winner' : ''}"><span class="gs-team-name">${game.homeName}</span><span class="gs-team-score">${game.homeScore}</span></div>
-        </div>`;
+      statHtml = `<div class="daily-tile-stat">${game.awayScore}&#8211;${game.homeScore}</div>`;
+      stateHtml = `<div class="daily-tile-state">Final</div>`;
     } else {
-      const badgeLabel = game.detailedState && game.detailedState !== 'Scheduled' ? game.detailedState : 'Upcoming';
-      statusHtml = `
-        <div class="badge badge-preview">${badgeLabel}</div>
-        <div class="game-summary-time">First pitch: ${formatGameTime(game.gameDate)}</div>`;
+      statHtml = `<div class="daily-tile-stat">${formatGameTime(game.gameDate)}</div>`;
+      stateHtml = '';
     }
     return `
-      <div class="daily-game-card" data-date="${dateStr}" data-game-pk="${game.gamePk}" tabindex="0" role="button">
-        <div class="gs-game-matchup">${game.awayName} @ ${game.homeName}</div>
-        ${statusHtml}
+      <div class="daily-tile" data-date="${dateStr}" data-game-pk="${game.gamePk}" tabindex="0" role="button">
+        <div class="daily-tile-matchup">${game.awayAbbr} @ ${game.homeAbbr}</div>
+        ${statHtml}
+        ${stateHtml}
       </div>`;
   }
 
@@ -2597,10 +2617,10 @@
         return;
       }
       const linescore = g => g.linescore || {};
-      const cards = games.map(g => renderDailyGameCard(dateStr, {
+      const tiles = games.map(g => renderDailyGameTile(dateStr, {
         gamePk: g.gamePk,
-        awayName: teamNickname(g.teams.away.team),
-        homeName: teamNickname(g.teams.home.team),
+        awayAbbr: teamAbbr(g.teams.away.team),
+        homeAbbr: teamAbbr(g.teams.home.team),
         awayScore: g.teams.away.score,
         homeScore: g.teams.home.score,
         state: g.status.abstractGameState,
@@ -2609,7 +2629,7 @@
         inningState: linescore(g).inningState,
         inningOrdinal: linescore(g).currentInningOrdinal
       })).join('');
-      summaryBody.innerHTML = `<div class="sheet"><div class="daily-games-list">${cards}</div></div>`;
+      summaryBody.innerHTML = `<div class="sheet"><div class="daily-games-grid">${tiles}</div></div>`;
     } catch (e) {
       summaryBody.innerHTML = '<div class="mlb-status-msg">Could not load today\'s games. The MLB API may be unreachable right now.</div>';
     }
@@ -2625,13 +2645,13 @@
     loadDailySummary(summaryDateInput.value);
   });
   summaryBody.addEventListener('click', (e) => {
-    const card = e.target.closest('.daily-game-card');
-    if (card) jumpToScorecardGame(card.dataset.date, card.dataset.gamePk);
+    const tile = e.target.closest('.daily-tile');
+    if (tile) jumpToScorecardGame(tile.dataset.date, tile.dataset.gamePk);
   });
   summaryBody.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
-    const card = e.target.closest('.daily-game-card');
-    if (card) { e.preventDefault(); jumpToScorecardGame(card.dataset.date, card.dataset.gamePk); }
+    const tile = e.target.closest('.daily-tile');
+    if (tile) { e.preventDefault(); jumpToScorecardGame(tile.dataset.date, tile.dataset.gamePk); }
   });
 
   const ROSTER_TAB_TEAM_KEY = 'mlb-roster-tab-team';
