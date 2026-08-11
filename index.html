@@ -2770,12 +2770,7 @@
     return `<div class="pitch-header">${teamName}</div>
       <div class="pitch-subheader">${season} Season &#8226; ${wins}-${losses}</div>
       ${svg}
-      <div class="spray-legend">
-        <span class="spray-key"><span class="dot" style="background:${gold}"></span>Above .500</span>
-        <span class="spray-key"><span class="dot" style="background:${ink}"></span>Now: ${fmtNet(finalNet)}</span>
-        <span class="spray-key"><span class="dot" style="background:${brick}"></span>Below .500</span>
-      </div>
-      <div class="pitch-final-desc">Best: ${fmtNet(netValues[peakIdx])} on ${fmtDate(played[peakIdx].date)} &#8226; Worst: ${fmtNet(netValues[troughIdx])} on ${fmtDate(played[troughIdx].date)}</div>`;
+      <div class="pitch-final-desc">Current: ${fmtNet(finalNet)} &#8226; Best: ${fmtNet(netValues[peakIdx])} on ${fmtDate(played[peakIdx].date)} &#8226; Worst: ${fmtNet(netValues[troughIdx])} on ${fmtDate(played[troughIdx].date)}</div>`;
   }
 
   function formatGameTime(iso) {
