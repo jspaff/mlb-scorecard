@@ -609,7 +609,6 @@
   }
   .spray-key .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
   .spray-key .dot.hr-dot { background: #fff8ea; border: 1.6px solid; box-sizing: border-box; }
-  .spray-key .dot.hit { background: var(--gold); }
   .spray-key .dot.out { background: #8a8478; }
 
   .view-toggle { display: flex; border: 1px solid var(--paper-line); border-radius: 6px; overflow: hidden; }
@@ -1243,7 +1242,10 @@
     padding: 20px;
   }
   .pitch-overlay.open { display: flex; }
-  #pitchOverlay { z-index: 110; }
+  /* The pitch-detail popup can be triggered from inside another already-open
+     modal (e.g. clicking a batted-ball dot in the spray chart), so it needs
+     to render above every other .pitch-overlay regardless of DOM order. */
+  #pitchOverlay { z-index: 200; }
   .pitch-modal {
     position: relative;
     background: var(--paper);
@@ -1475,6 +1477,9 @@
   let rosterStore = {};
   let sprayStore = {};
   let playerStore = {};
+  // Mirrors the --ink/--gold/--brick CSS variables, for the few spots (SVG
+  // strings) that can't reference a CSS custom property directly.
+  const PALETTE = { ink: '#f3ecdb', gold: '#d9a91a', brick: '#e0604a' };
   const gameLogCache = {};
   const standingsCache = {};
   let standingsView = 'division';
@@ -1500,13 +1505,9 @@
       const url = `https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=${season}&date=${date}`;
       const res = await fetch(url);
       const data = await res.json();
-      if (!res.ok || !data.records || !data.records.length) {
-        console.warn('[standings] empty/failed response', { url, status: res.status, data });
-      }
       standingsCache[key] = data.records || [];
       return standingsCache[key];
     } catch (e) {
-      console.warn('[standings] fetch threw', e);
       standingsCache[key] = [];
       return [];
     }
@@ -1623,9 +1624,7 @@
 
   function diamondSVG(reached, scored, code, isOut, outEdge, specialEdges, ghostStart, calledLooking) {
     const dim = 'rgba(243,236,219,0.22)';
-    const ink = '#f3ecdb';
-    const gold = '#d9a91a';
-    const brick = '#e0604a';
+    const { ink, gold, brick } = PALETTE;
     const blue = '#5b8fc0';
     const paper = '#3b4336';
     const isHR = code === 'HR';
@@ -2101,11 +2100,9 @@
   function renderSprayChart(balls, teamName) {
     if (!balls || !balls.length) return '';
     const home = [125, 205];
-    const ink = '#f3ecdb';
+    const { ink, gold, brick } = PALETTE;
     const grass = 'rgba(243,236,219,0.06)';
     const dirt = 'rgba(217,169,26,0.18)';
-    const gold = '#d9a91a';
-    const brick = '#e0604a';
 
     const batters = [];
     const seenBatters = new Set();
@@ -2766,9 +2763,7 @@
     });
 
     const clipId = `teamChartClip${teamId}`;
-    const gold = '#d9a91a';
-    const brick = '#e0604a';
-    const ink = '#f3ecdb';
+    const { ink, gold, brick } = PALETTE;
 
     let svg = `<svg viewBox="0 0 ${width} ${height}" width="100%" style="display:block; margin-top:4px;">`;
     svg += `<defs>
@@ -2932,12 +2927,19 @@
       </div>`;
   }
 
-  async function fetchGameHomeRuns(gamePk, awayAbbr, homeAbbr) {
+  function savantVideoUrl(playId) {
+    return playId ? `https://baseballsavant.mlb.com/sporty-videos?playId=${playId}` : null;
+  }
+
+  const gameHomeRunsCache = {};
+
+  async function fetchGameHomeRuns(gamePk, awayAbbr, homeAbbr, isFinal) {
+    if (isFinal && gameHomeRunsCache[gamePk] !== undefined) return gameHomeRunsCache[gamePk];
     try {
       const res = await fetch(`https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live`);
       const data = await res.json();
       const allPlays = (data.liveData && data.liveData.plays && data.liveData.plays.allPlays) || [];
-      return allPlays.filter(p => p.result && p.result.event === 'Home Run').map(p => {
+      const homeRuns = allPlays.filter(p => p.result && p.result.event === 'Home Run').map(p => {
         const isTop = p.about && p.about.isTopInning;
         let distance = null;
         const events = p.playEvents || [];
@@ -2954,9 +2956,11 @@
           pitchingAbbr: isTop ? homeAbbr : awayAbbr,
           isGrandSlam: p.result.rbi === 4,
           distance,
-          videoUrl: playId ? `https://baseballsavant.mlb.com/sporty-videos?playId=${playId}` : null
+          videoUrl: savantVideoUrl(playId)
         };
       });
+      if (isFinal) gameHomeRunsCache[gamePk] = homeRuns;
+      return homeRuns;
     } catch (e) {
       return [];
     }
@@ -3028,7 +3032,7 @@
 
       const startedGames = games.filter(g => g.status.abstractGameState === 'Live' || g.status.abstractGameState === 'Final');
       const homeRunLists = await Promise.all(startedGames.map(g =>
-        fetchGameHomeRuns(g.gamePk, teamAbbr(g.teams.away.team), teamAbbr(g.teams.home.team))
+        fetchGameHomeRuns(g.gamePk, teamAbbr(g.teams.away.team), teamAbbr(g.teams.home.team), g.status.abstractGameState === 'Final')
       ));
       if (requestId !== dailyRequestId) return;
       const homeRuns = homeRunLists.flat();
@@ -3401,13 +3405,11 @@
         const t = totals[key] || (totals[key] = { id: person.id, name: person.fullName, role, wpa: 0 });
         t.wpa += amount;
       };
-      let matchedCount = 0;
       let playOfGame = null;
       allPlays.forEach((play, i) => {
         const entry = wp[i];
         const homeAdded = entry && entry.homeTeamWinProbabilityAdded;
         if (homeAdded == null) return;
-        matchedCount++;
         const isTop = play.about && play.about.isTopInning;
         const battingWpa = isTop ? -homeAdded : homeAdded;
         credit(play.matchup && play.matchup.batter, 'batter', battingWpa);
@@ -3424,7 +3426,7 @@
             absWpa,
             description,
             inningLabel: inning ? `${isTop ? 'Top' : 'Bottom'} ${ordinalSuffix(inning)}` : '',
-            videoUrl: playId ? `https://baseballsavant.mlb.com/sporty-videos?playId=${playId}` : null
+            videoUrl: savantVideoUrl(playId)
           };
         }
       });
@@ -3438,15 +3440,9 @@
           : buildBatterStatLineParts(stats && stats.batting);
         return { id: p.id, name: p.name, statLine: renderStatLineParts(statParts) };
       });
-      const debug = `gamePk ${gamePk}: feed ${feedRes.status}, winProbability ${wpRes.status}\n` +
-        `  allPlays: ${allPlays.length}, winProbability entries: ${wp.length}, matched (non-null homeTeamWinProbabilityAdded): ${matchedCount}\n` +
-        `  wpData is array: ${Array.isArray(wpData)}\n` +
-        `  wp[0]: ${JSON.stringify(wp[0])}\n` +
-        `  wpData (if not array) keys: ${Array.isArray(wpData) ? 'n/a' : JSON.stringify(Object.keys(wpData || {}))}\n` +
-        `  allPlays[0].about: ${JSON.stringify(allPlays[0] && allPlays[0].about)}`;
-      return { leaders, playOfGame, debug };
+      return { leaders, playOfGame };
     } catch (e) {
-      return { leaders: [], playOfGame: null, debug: `gamePk ${gamePk}: FETCH/PARSE FAILED - ${e.message}` };
+      return { leaders: [], playOfGame: null };
     }
   }
 
@@ -3482,21 +3478,18 @@
       </div>`;
   }
 
-  function renderGameHighlights(playOfGame, leaders, debug) {
+  function renderGameHighlights(playOfGame, leaders) {
     if (!playOfGame && !leaders.length) {
-      const debugHtml = debug
-        ? `<pre style="margin-top:8px;padding:8px;background:#111;color:#7fdc7f;font-size:10px;line-height:1.4;white-space:pre-wrap;word-break:break-all;border-radius:6px;max-height:260px;overflow:auto;-webkit-user-select:text;user-select:text;">${debug.replace(/</g, '&lt;')}</pre>`
-        : '';
-      return `<div class="pog-section"><div class="potg-loading">Highlights unavailable for this game.</div>${debugHtml}</div>`;
+      return `<div class="pog-section"><div class="potg-loading">Highlights unavailable for this game.</div></div>`;
     }
     return renderPlayOfGame(playOfGame) + renderPlayersOfTheGame(leaders);
   }
 
   async function loadWpaLeadersInto(gamePk, requestId) {
-    const { leaders, playOfGame, debug } = await fetchGameHighlights(gamePk);
+    const { leaders, playOfGame } = await fetchGameHighlights(gamePk);
     if (requestId !== gameSummaryRequestId) return;
     const el = document.getElementById(`wpaLeaders-${gamePk}`);
-    if (el) el.outerHTML = renderGameHighlights(playOfGame, leaders, debug);
+    if (el) el.outerHTML = renderGameHighlights(playOfGame, leaders);
   }
 
   scheduleTeamSelect.addEventListener('change', () => {
@@ -3570,7 +3563,7 @@
         : renderStandingsContent(records, dateStr);
       standingsBody.innerHTML = `<div class="sheet">${content}</div>`;
     } catch (e) {
-      standingsBody.innerHTML = '<div class="mlb-status-msg">Standings not available.</div>';
+      standingsBody.innerHTML = '<div class="mlb-status-msg">Could not load standings. The MLB API may be unreachable right now.</div>';
     }
   }
 
@@ -3739,7 +3732,7 @@
         else hidePitchPopup();
       }
     } catch (e) {
-      body.innerHTML = '<div class="mlb-status-msg">Could not load game data.</div>';
+      body.innerHTML = '<div class="mlb-status-msg">Could not load game data. The MLB API may be unreachable right now.</div>';
     }
   }
 
