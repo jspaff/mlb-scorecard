@@ -457,6 +457,35 @@
     font-style: italic;
     padding: 4px 0;
   }
+  .roster-jersey {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    color: var(--ink-soft);
+    width: 26px;
+    flex-shrink: 0;
+  }
+  .roster-badge {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 8px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink);
+    background: rgba(243, 236, 219, 0.08);
+    border: 1px solid var(--paper-line);
+    padding: 2px 6px;
+    border-radius: 3px;
+    white-space: nowrap;
+  }
+  .roster-badge.roster-badge-il { color: #fbf3e3; background: var(--brick); border-color: var(--brick); }
+  .roster-detail {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    color: var(--ink-soft);
+    font-style: italic;
+    padding: 0 0 6px 34px;
+    margin-top: -3px;
+  }
   .standings-row {
     display: flex;
     align-items: center;
@@ -1011,6 +1040,7 @@
     <button type="button" class="tab-btn active" data-tab="scorecard">Scorecard</button>
     <button type="button" class="tab-btn" data-tab="standings">Standings</button>
     <button type="button" class="tab-btn" data-tab="schedule">Schedule</button>
+    <button type="button" class="tab-btn" data-tab="roster">Roster</button>
   </div>
   <div class="tab-panel" data-tab-panel="scorecard" id="scorecardPanel">
     <div class="mlb-controls">
@@ -1047,6 +1077,19 @@
     </div>
     <div id="scheduleBody">
       <div class="mlb-status-msg">Loading schedule&#8230;</div>
+    </div>
+  </div>
+  <div class="tab-panel" data-tab-panel="roster" id="rosterTabPanel" hidden>
+    <div class="mlb-controls schedule-controls">
+      <select id="rosterTabTeamPick"></select>
+      <div class="view-toggle" id="rosterTabViewToggle">
+        <button type="button" class="view-toggle-btn active" data-view="active">26-Man</button>
+        <button type="button" class="view-toggle-btn" data-view="40man">40-Man</button>
+        <button type="button" class="view-toggle-btn" data-view="il">Injured List</button>
+      </div>
+    </div>
+    <div id="rosterTabBody">
+      <div class="mlb-status-msg">Loading roster&#8230;</div>
     </div>
   </div>
   <div id="pitchOverlay" class="pitch-overlay">
@@ -2396,6 +2439,167 @@
     loadSchedule(dateStr, gamePk);
   }
 
+  const ROSTER_TAB_TEAM_KEY = 'mlb-roster-tab-team';
+  const rosterTabTeamSelect = document.getElementById('rosterTabTeamPick');
+  const rosterTabBody = document.getElementById('rosterTabBody');
+  const rosterTabViewToggle = document.getElementById('rosterTabViewToggle');
+  let rosterTabView = 'active';
+  const teamRosterCache = {};
+  const teamInjuryCache = {};
+
+  function populateRosterTabTeamSelect() {
+    const teams = Object.keys(TEAM_NICKNAMES)
+      .map(id => ({ id, name: TEAM_NICKNAMES[id] }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+    rosterTabTeamSelect.innerHTML = teams.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+    let saved = null;
+    try { saved = localStorage.getItem(ROSTER_TAB_TEAM_KEY); } catch (e) {}
+    rosterTabTeamSelect.value = (saved && TEAM_NICKNAMES[saved]) ? saved : teams[0].id;
+  }
+
+  async function fetchTeamRoster(teamId, rosterType) {
+    const key = `${teamId}-${rosterType}`;
+    if (teamRosterCache[key]) return teamRosterCache[key];
+    const url = `https://statsapi.mlb.com/api/v1/teams/${teamId}/roster?rosterType=${rosterType}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const roster = (data.roster || []).map(r => ({
+      id: r.person && r.person.id,
+      name: r.person && r.person.fullName,
+      jersey: r.jerseyNumber || '',
+      posAbbr: (r.position && r.position.abbreviation) || '',
+      posType: (r.position && r.position.type) || 'Other',
+      statusDesc: (r.status && r.status.description) || ''
+    }));
+    teamRosterCache[key] = roster;
+    return roster;
+  }
+
+  async function fetchTeamInjuryDetails(teamId) {
+    if (teamInjuryCache[teamId]) return teamInjuryCache[teamId];
+    try {
+      const end = todayStr();
+      const start = addDays(end, -180);
+      const url = `https://statsapi.mlb.com/api/v1/transactions?teamId=${teamId}&startDate=${start}&endDate=${end}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const txns = data.transactions || [];
+      const byPlayer = {};
+      txns.forEach(t => {
+        const pid = t.person && t.person.id;
+        const desc = t.description || '';
+        if (!pid || !/injured list/i.test(desc)) return;
+        const prev = byPlayer[pid];
+        if (!prev || t.date > prev.date) byPlayer[pid] = { date: t.date, description: desc };
+      });
+      teamInjuryCache[teamId] = byPlayer;
+      return byPlayer;
+    } catch (e) {
+      teamInjuryCache[teamId] = {};
+      return {};
+    }
+  }
+
+  function extractInjuryDetail(description) {
+    if (!description) return null;
+    const sentences = description.split(/\.\s+/).map(s => s.trim()).filter(Boolean);
+    return sentences.length > 1 ? sentences.slice(1).join('. ').replace(/\.$/, '') : null;
+  }
+
+  const ROSTER_POS_GROUP_ORDER = ['Pitcher', 'Catcher', 'Infielder', 'Outfielder', 'Hitter'];
+  const ROSTER_POS_GROUP_LABEL = {
+    Pitcher: 'Pitchers', Catcher: 'Catchers', Infielder: 'Infielders',
+    Outfielder: 'Outfielders', Hitter: 'Designated Hitter', Other: 'Other'
+  };
+
+  function groupRosterByPosition(list) {
+    const groups = {};
+    list.forEach(p => { (groups[p.posType] = groups[p.posType] || []).push(p); });
+    Object.values(groups).forEach(arr => arr.sort((a, b) => (a.name || '').localeCompare(b.name || '')));
+    return groups;
+  }
+
+  function rosterStatusBadge(p) {
+    const desc = p.statusDesc || '';
+    if (!desc || /^active$/i.test(desc)) return '';
+    if (/injured/i.test(desc)) return `<span class="roster-badge roster-badge-il">${desc}</span>`;
+    return `<span class="roster-badge">${desc}</span>`;
+  }
+
+  function renderRosterGroups(list, opts) {
+    opts = opts || {};
+    if (!list.length) return '<div class="roster-empty">No players found.</div>';
+    const groups = groupRosterByPosition(list);
+    const keys = ROSTER_POS_GROUP_ORDER.filter(g => groups[g])
+      .concat(Object.keys(groups).filter(g => !ROSTER_POS_GROUP_ORDER.includes(g)));
+    return keys.map(g => {
+      const rows = groups[g].map(p => `
+        <div class="roster-row">
+          <span class="roster-jersey">${p.jersey ? '#' + p.jersey : ''}</span>
+          <span class="roster-name">${p.name}</span>
+          <span class="roster-pos">${p.posAbbr}</span>
+          ${opts.badges ? rosterStatusBadge(p) : ''}
+        </div>`).join('');
+      return `<div class="roster-section-title">${ROSTER_POS_GROUP_LABEL[g] || g}</div>${rows}`;
+    }).join('');
+  }
+
+  function renderInjuredList(fortyMan, injuryMap) {
+    const ilPlayers = fortyMan.filter(p => /injured/i.test(p.statusDesc || ''));
+    if (!ilPlayers.length) return '<div class="roster-empty">No players currently on the injured list.</div>';
+    const groups = {};
+    ilPlayers.forEach(p => { (groups[p.statusDesc] = groups[p.statusDesc] || []).push(p); });
+    return Object.keys(groups).sort().map(status => {
+      const rows = groups[status].map(p => {
+        const txn = injuryMap[p.id];
+        const detail = txn ? extractInjuryDetail(txn.description) : null;
+        const since = txn ? new Date(txn.date + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : null;
+        return `
+          <div class="roster-row">
+            <span class="roster-jersey">${p.jersey ? '#' + p.jersey : ''}</span>
+            <span class="roster-name">${p.name}</span>
+            <span class="roster-pos">${p.posAbbr}</span>
+          </div>
+          ${(detail || since) ? `<div class="roster-detail">${detail || 'Injury details unavailable'}${since ? ' &#183; since ' + since : ''}</div>` : ''}`;
+      }).join('');
+      return `<div class="roster-section-title">${status}</div>${rows}`;
+    }).join('');
+  }
+
+  async function loadRosterTab(teamId) {
+    rosterTabBody.innerHTML = '<div class="mlb-status-msg">Loading roster&#8230;</div>';
+    try {
+      if (rosterTabView === 'active') {
+        const active = await fetchTeamRoster(teamId, 'active');
+        rosterTabBody.innerHTML = `<div class="sheet">${renderRosterGroups(active)}</div>`;
+      } else if (rosterTabView === '40man') {
+        const fortyMan = await fetchTeamRoster(teamId, '40Man');
+        rosterTabBody.innerHTML = `<div class="sheet">${renderRosterGroups(fortyMan, { badges: true })}</div>`;
+      } else {
+        const [fortyMan, injuryMap] = await Promise.all([
+          fetchTeamRoster(teamId, '40Man'),
+          fetchTeamInjuryDetails(teamId)
+        ]);
+        rosterTabBody.innerHTML = `<div class="sheet">${renderInjuredList(fortyMan, injuryMap)}</div>`;
+      }
+    } catch (e) {
+      rosterTabBody.innerHTML = '<div class="mlb-status-msg">Could not load roster. The MLB API may be unreachable right now.</div>';
+    }
+  }
+
+  rosterTabTeamSelect.addEventListener('change', () => {
+    const teamId = rosterTabTeamSelect.value;
+    try { localStorage.setItem(ROSTER_TAB_TEAM_KEY, teamId); } catch (e) {}
+    loadRosterTab(teamId);
+  });
+  rosterTabViewToggle.addEventListener('click', (e) => {
+    const btn = e.target.closest('.view-toggle-btn');
+    if (!btn || btn.dataset.view === rosterTabView) return;
+    rosterTabView = btn.dataset.view;
+    rosterTabViewToggle.querySelectorAll('.view-toggle-btn').forEach(b => b.classList.toggle('active', b === btn));
+    loadRosterTab(rosterTabTeamSelect.value);
+  });
+
   const gameSummaryOverlay = document.getElementById('gameSummaryOverlay');
   const gameSummaryModalBody = document.getElementById('gameSummaryModalBody');
   const gameSummaryClose = document.getElementById('gameSummaryClose');
@@ -2833,6 +3037,7 @@
   Tabs.register('scorecard');
   Tabs.register('standings', { init: () => loadStandings(standingsDateInput.value) });
   Tabs.register('schedule', { init: () => { populateScheduleTeamSelect(); loadTeamSchedule(scheduleTeamSelect.value); } });
+  Tabs.register('roster', { init: () => { populateRosterTabTeamSelect(); loadRosterTab(rosterTabTeamSelect.value); } });
 
   const playerOverlay = document.getElementById('playerOverlay');
   const playerModalBody = document.getElementById('playerModalBody');
