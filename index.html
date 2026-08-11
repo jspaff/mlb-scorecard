@@ -256,6 +256,28 @@
   }
   .modal-cta:hover, .modal-cta:focus-visible { filter: brightness(0.93); outline: none; }
 
+  .game-summary-game + .game-summary-game {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1.5px solid var(--paper-line);
+  }
+  .gs-game-label {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 4px;
+  }
+  .gs-game-matchup {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--ink);
+    margin-bottom: 2px;
+  }
+
   .count-board {
     display: flex;
     gap: 16px;
@@ -2390,6 +2412,7 @@
         const opponent = isHome ? g.teams.away.team : g.teams.home.team;
         return {
           gamePk: g.gamePk,
+          gameNumber: g.gameNumber || 1,
           isHome,
           opponent: teamAbbr(opponent),
           opponentFull: teamNickname(opponent),
@@ -2431,7 +2454,7 @@
       } else if (games && games.length) {
         const homeAway = games[0].isHome ? 'is-home' : 'is-away';
         const lines = games.map(g => `<div class="cal-game-opp">${g.opponent}</div><div class="cal-game-time">${formatGameTime(g.gameDate)}</div>`).join('');
-        cells += `<div class="calendar-day is-game ${homeAway}${today}" data-date="${dateStr}" data-game-pk="${games[0].gamePk}" tabindex="0" role="button">
+        cells += `<div class="calendar-day is-game ${homeAway}${today}" data-date="${dateStr}" tabindex="0" role="button">
           <div class="cal-daynum">${day}</div>
           ${lines}
         </div>`;
@@ -2697,11 +2720,10 @@
   const gameSummaryModalBody = document.getElementById('gameSummaryModalBody');
   const gameSummaryClose = document.getElementById('gameSummaryClose');
 
-  function renderGameSummaryContent(teamId, dateStr, game) {
+  function renderGameSummaryGame(teamId, dateStr, game, multi) {
     const teamName = TEAM_NICKNAMES[teamId] || '';
     const homeName = game.isHome ? teamName : game.opponentFull;
     const awayName = game.isHome ? game.opponentFull : teamName;
-    const dateLabel = new Date(dateStr + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
 
     const hasScore = game.homeScore != null && game.awayScore != null && (game.state === 'Final' || game.state === 'Live');
     let statusHtml;
@@ -2724,19 +2746,31 @@
     }
 
     return `
-      <div class="pitch-header">${awayName} @ ${homeName}</div>
+      <div class="game-summary-game">
+        ${multi ? `<div class="gs-game-label">Game ${game.gameNumber}</div>` : ''}
+        <div class="${multi ? 'gs-game-matchup' : 'pitch-header'}">${awayName} @ ${homeName}</div>
+        ${statusHtml}
+        <button type="button" class="modal-cta" data-date="${dateStr}" data-game-pk="${game.gamePk}">View Full Scorecard &#8594;</button>
+      </div>`;
+  }
+
+  function renderGameSummaryContent(teamId, dateStr, games) {
+    const dateLabel = new Date(dateStr + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+    const multi = games.length > 1;
+    const teamName = TEAM_NICKNAMES[teamId] || '';
+
+    return `
+      ${multi ? `<div class="pitch-header">${teamName} Doubleheader</div>` : ''}
       <div class="pitch-subheader">${dateLabel}</div>
-      ${statusHtml}
-      <button type="button" class="modal-cta" data-date="${dateStr}" data-game-pk="${game.gamePk}">View Full Scorecard &#8594;</button>
+      ${games.map(g => renderGameSummaryGame(teamId, dateStr, g, multi)).join('')}
     `;
   }
 
-  function showGameSummaryModal(dateStr, gamePk) {
+  function showGameSummaryModal(dateStr) {
     if (!currentScheduleTeam) return;
     const games = currentScheduleTeam.gamesByDate[dateStr];
-    const game = games && games.find(g => String(g.gamePk) === String(gamePk));
-    if (!game) return;
-    gameSummaryModalBody.innerHTML = renderGameSummaryContent(currentScheduleTeam.teamId, dateStr, game);
+    if (!games || !games.length) return;
+    gameSummaryModalBody.innerHTML = renderGameSummaryContent(currentScheduleTeam.teamId, dateStr, games);
     gameSummaryOverlay.classList.add('open');
   }
   function hideGameSummaryModal() {
@@ -2750,12 +2784,12 @@
   });
   scheduleBody.addEventListener('click', (e) => {
     const cell = e.target.closest('.calendar-day.is-game');
-    if (cell) showGameSummaryModal(cell.dataset.date, cell.dataset.gamePk);
+    if (cell) showGameSummaryModal(cell.dataset.date);
   });
   scheduleBody.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
     const cell = e.target.closest('.calendar-day.is-game');
-    if (cell) { e.preventDefault(); showGameSummaryModal(cell.dataset.date, cell.dataset.gamePk); }
+    if (cell) { e.preventDefault(); showGameSummaryModal(cell.dataset.date); }
   });
   gameSummaryModalBody.addEventListener('click', (e) => {
     const btn = e.target.closest('.modal-cta');
