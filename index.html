@@ -2622,32 +2622,38 @@
     return `<div class="roster-columns">${col('Pitchers', pitcherRows)}${col('Position Players', renderPositionPlayerColumn(positionPlayers, opts))}</div>`;
   }
 
-  function renderInjuredList(fortyMan, injuryMap) {
-    const ilPlayers = fortyMan.filter(p => /injured/i.test(p.statusDesc || ''));
-    if (!ilPlayers.length) return '<div class="roster-empty">No players currently on the injured list.</div>';
-    const rows = ilPlayers.map(p => {
+  function renderInjuredListRows(list, injuryMap) {
+    return list.map(p => {
       const txn = injuryMap[p.id];
       return { p, detail: txn ? extractInjuryDetail(txn.description) : null, date: txn ? txn.date : null };
     }).sort((a, b) => {
       if (a.date && b.date) return b.date.localeCompare(a.date);
       if (a.date || b.date) return a.date ? -1 : 1;
       return (a.p.name || '').localeCompare(b.p.name || '');
-    });
-    const trs = rows.map(({ p, detail, date }) => {
+    }).map(({ p, detail, date }) => {
       const dateLabel = date ? new Date(date + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '&#8212;';
       return `
         <tr>
           <td class="il-num">${p.jersey ? '#' + p.jersey : ''}</td>
-          <td class="il-name">${p.name} <span class="roster-badge roster-badge-il">${p.statusDesc}</span></td>
+          <td class="il-name">${p.name}</td>
           <td class="il-pos">${p.posAbbr}</td>
           <td class="il-injury">${detail || 'Details unavailable'}</td>
           <td class="il-date">${dateLabel}</td>
         </tr>`;
     }).join('');
-    return `<div class="table-scroll"><table class="il-table">
-      <thead><tr><th></th><th>Player</th><th>Pos</th><th>Injury</th><th>Since</th></tr></thead>
-      <tbody>${trs}</tbody>
-    </table></div>`;
+  }
+
+  function renderInjuredList(fortyMan, injuryMap) {
+    const ilPlayers = fortyMan.filter(p => /injured/i.test(p.statusDesc || ''));
+    if (!ilPlayers.length) return '<div class="roster-empty">No players currently on the injured list.</div>';
+    const groups = {};
+    ilPlayers.forEach(p => { (groups[p.statusDesc] = groups[p.statusDesc] || []).push(p); });
+    return Object.keys(groups).sort().map(status => `
+      <div class="roster-section-title">${status}</div>
+      <div class="table-scroll"><table class="il-table">
+        <thead><tr><th></th><th>Player</th><th>Pos</th><th>Injury</th><th>Since</th></tr></thead>
+        <tbody>${renderInjuredListRows(groups[status], injuryMap)}</tbody>
+      </table></div>`).join('');
   }
 
   async function loadRosterTab(teamId) {
