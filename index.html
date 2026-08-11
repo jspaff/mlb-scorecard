@@ -297,6 +297,9 @@
     text-align: center;
   }
   .daily-tile:hover, .daily-tile:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+  .daily-tile.is-live { border-color: var(--brick); background: rgba(224, 96, 74, 0.12); }
+  .daily-tile.is-final { border-color: var(--paper-line); background: rgba(11, 15, 12, 0.18); }
+  .daily-tile.is-preview { border-color: var(--gold); background: rgba(217, 169, 26, 0.1); }
   .daily-tile-matchup {
     font-family: 'Oswald', sans-serif;
     font-weight: 600;
@@ -2586,20 +2589,23 @@
   }
 
   function renderDailyGameTile(dateStr, game) {
-    let statHtml, stateHtml;
+    let statHtml, stateHtml, tileClass;
     if (game.state === 'Live') {
       const stateLabel = `${formatInningState(game.inningState)} ${game.inningOrdinal || ''}`.trim();
       statHtml = `<div class="daily-tile-stat">${game.awayScore ?? 0}&#8211;${game.homeScore ?? 0}</div>`;
       stateHtml = `<div class="daily-tile-state is-live">${stateLabel}</div>`;
+      tileClass = 'is-live';
     } else if (game.state === 'Final') {
       statHtml = `<div class="daily-tile-stat">${game.awayScore}&#8211;${game.homeScore}</div>`;
       stateHtml = `<div class="daily-tile-state">Final</div>`;
+      tileClass = 'is-final';
     } else {
       statHtml = `<div class="daily-tile-stat">${formatGameTime(game.gameDate)}</div>`;
       stateHtml = '';
+      tileClass = 'is-preview';
     }
     return `
-      <div class="daily-tile" data-date="${dateStr}" data-game-pk="${game.gamePk}" tabindex="0" role="button">
+      <div class="daily-tile ${tileClass}" data-date="${dateStr}" data-game-pk="${game.gamePk}" tabindex="0" role="button">
         <div class="daily-tile-matchup">${game.awayAbbr} @ ${game.homeAbbr}</div>
         ${statHtml}
         ${stateHtml}
