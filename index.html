@@ -365,6 +365,18 @@
     color: var(--ink-soft);
     white-space: nowrap;
   }
+  .hr-watch {
+    display: inline-block;
+    margin-top: 3px;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--gold);
+    text-decoration: none;
+  }
+  .hr-watch:hover, .hr-watch:focus-visible { text-decoration: underline; }
 
   .count-board {
     display: flex;
@@ -2655,12 +2667,31 @@
       </div>`;
   }
 
+  async function attachHomeRunVideos(gamePk, homeRuns) {
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/game/${gamePk}/content`);
+      const data = await res.json();
+      const items = (data.highlights && data.highlights.highlights && data.highlights.highlights.items) || [];
+      const urlByPlayId = {};
+      items.forEach(item => {
+        const playIdKeyword = (item.keywordsAll || []).find(k => k.type === 'play_id');
+        if (!playIdKeyword) return;
+        const playbacks = item.playbacks || [];
+        const playback = playbacks.find(pb => pb.name === 'mp4Avc') || playbacks[0];
+        if (playback) urlByPlayId[playIdKeyword.value] = playback.url;
+      });
+      homeRuns.forEach(hr => {
+        if (hr.playId && urlByPlayId[hr.playId]) hr.videoUrl = urlByPlayId[hr.playId];
+      });
+    } catch (e) {}
+  }
+
   async function fetchGameHomeRuns(gamePk, awayAbbr, homeAbbr) {
     try {
       const res = await fetch(`https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live`);
       const data = await res.json();
       const allPlays = (data.liveData && data.liveData.plays && data.liveData.plays.allPlays) || [];
-      return allPlays.filter(p => p.result && p.result.event === 'Home Run').map(p => {
+      const homeRuns = allPlays.filter(p => p.result && p.result.event === 'Home Run').map(p => {
         const isTop = p.about && p.about.isTopInning;
         let distance = null;
         const events = p.playEvents || [];
@@ -2668,15 +2699,20 @@
           const hd = events[i].hitData;
           if (hd && hd.totalDistance != null) { distance = hd.totalDistance; break; }
         }
+        const lastEvent = events[events.length - 1];
         return {
           batterName: (p.matchup && p.matchup.batter && p.matchup.batter.fullName) || '',
           pitcherName: (p.matchup && p.matchup.pitcher && p.matchup.pitcher.fullName) || '',
           battingAbbr: isTop ? awayAbbr : homeAbbr,
           pitchingAbbr: isTop ? homeAbbr : awayAbbr,
           isGrandSlam: p.result.rbi === 4,
-          distance
+          distance,
+          playId: lastEvent && lastEvent.playId,
+          videoUrl: null
         };
       });
+      if (homeRuns.length) await attachHomeRunVideos(gamePk, homeRuns);
+      return homeRuns;
     } catch (e) {
       return [];
     }
@@ -2685,12 +2721,14 @@
   function renderHomeRunRow(hr) {
     const grandSlamLabel = hr.isGrandSlam ? '<div class="hr-grand-slam-label">Grand Slam</div>' : '';
     const distanceHtml = hr.distance != null ? `<div class="hr-distance">${Math.round(hr.distance)} ft</div>` : '';
+    const watchHtml = hr.videoUrl ? `<a class="hr-watch" href="${hr.videoUrl}" target="_blank" rel="noopener noreferrer">Watch &#9654;</a>` : '';
     return `
       <div class="hr-row${hr.isGrandSlam ? ' is-grand-slam' : ''}">
         <div class="hr-main">
           ${grandSlamLabel}
           <div class="hr-batter">${hr.batterName} <span class="hr-team">${hr.battingAbbr}</span></div>
           <div class="hr-pitcher">vs ${hr.pitcherName} <span class="hr-team">${hr.pitchingAbbr}</span></div>
+          ${watchHtml}
         </div>
         ${distanceHtml}
       </div>`;
