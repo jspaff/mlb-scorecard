@@ -66,10 +66,10 @@
     border-bottom: 1px solid rgba(243, 236, 219, 0.15);
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
-  .tab-bar::-webkit-scrollbar { height: 7px; }
-  .tab-bar::-webkit-scrollbar-track { background: var(--paper-line); border-radius: 4px; }
-  .tab-bar::-webkit-scrollbar-thumb { background: var(--ink-soft); border-radius: 4px; }
+  .tab-bar::-webkit-scrollbar { display: none; }
   .tab-btn {
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
