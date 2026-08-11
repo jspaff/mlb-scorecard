@@ -3137,25 +3137,37 @@
         const t = totals[person.id] || (totals[person.id] = { id: person.id, name: person.fullName, wpa: 0 });
         t.wpa += amount;
       };
+      let matchedCount = 0;
       allPlays.forEach((play, i) => {
         const entry = wp[i];
         const homeAdded = entry && entry.homeTeamWinProbabilityAdded;
         if (homeAdded == null) return;
+        matchedCount++;
         const isTop = play.about && play.about.isTopInning;
         const battingWpa = isTop ? -homeAdded : homeAdded;
         credit(play.matchup && play.matchup.batter, battingWpa);
         credit(play.matchup && play.matchup.pitcher, -battingWpa);
       });
 
-      return Object.values(totals).sort((a, b) => b.wpa - a.wpa).slice(0, 3);
+      const leaders = Object.values(totals).sort((a, b) => b.wpa - a.wpa).slice(0, 3);
+      const debug = `gamePk ${gamePk}: feed ${feedRes.status}, winProbability ${wpRes.status}\n` +
+        `  allPlays: ${allPlays.length}, winProbability entries: ${wp.length}, matched (non-null homeTeamWinProbabilityAdded): ${matchedCount}\n` +
+        `  wpData is array: ${Array.isArray(wpData)}\n` +
+        `  wp[0]: ${JSON.stringify(wp[0])}\n` +
+        `  wpData (if not array) keys: ${Array.isArray(wpData) ? 'n/a' : JSON.stringify(Object.keys(wpData || {}))}\n` +
+        `  allPlays[0].about: ${JSON.stringify(allPlays[0] && allPlays[0].about)}`;
+      return { leaders, debug };
     } catch (e) {
-      return [];
+      return { leaders: [], debug: `gamePk ${gamePk}: FETCH/PARSE FAILED - ${e.message}` };
     }
   }
 
-  function renderWpaLeaders(leaders) {
+  function renderWpaLeaders(leaders, debug) {
     if (!leaders.length) {
-      return '<div class="wpa-section"><div class="wpa-loading">Top plays unavailable for this game.</div></div>';
+      const debugHtml = debug
+        ? `<pre style="margin-top:8px;padding:8px;background:#111;color:#7fdc7f;font-size:10px;line-height:1.4;white-space:pre-wrap;word-break:break-all;border-radius:6px;max-height:260px;overflow:auto;-webkit-user-select:text;user-select:text;">${debug.replace(/</g, '&lt;')}</pre>`
+        : '';
+      return `<div class="wpa-section"><div class="wpa-loading">Top plays unavailable for this game.</div>${debugHtml}</div>`;
     }
     const players = leaders.map(p => {
       const headshotUrl = `https://img.mlbstatic.com/mlb-photos/image/upload/w_112,q_100,f_auto/v1/people/${p.id}/headshot/67/current`;
@@ -3175,10 +3187,10 @@
   }
 
   async function loadWpaLeadersInto(gamePk, requestId) {
-    const leaders = await fetchGameWpaLeaders(gamePk);
+    const { leaders, debug } = await fetchGameWpaLeaders(gamePk);
     if (requestId !== gameSummaryRequestId) return;
     const el = document.getElementById(`wpaLeaders-${gamePk}`);
-    if (el) el.outerHTML = renderWpaLeaders(leaders);
+    if (el) el.outerHTML = renderWpaLeaders(leaders, debug);
   }
 
   scheduleTeamSelect.addEventListener('change', () => {
