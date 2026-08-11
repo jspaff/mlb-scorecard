@@ -3139,7 +3139,7 @@
   function buildBatterStatLineParts(stats) {
     if (!stats) return [];
     const parts = [];
-    if (stats.hits) parts.push(`${stats.hits} H`);
+    if (stats.atBats) parts.push(`${stats.hits ?? 0}-${stats.atBats}`);
     if (stats.doubles) parts.push(`${stats.doubles} 2B`);
     if (stats.triples) parts.push(`${stats.triples} 3B`);
     if (stats.homeRuns) parts.push(`${stats.homeRuns} HR`);
