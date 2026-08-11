@@ -19,6 +19,7 @@
     --gold: #d9a91a;
     --brick: #e0604a;
     --frame: #54796d;
+    --sky: #5b8fc0;
   }
 
   #mlb-root * { box-sizing: border-box; }
@@ -89,6 +90,8 @@
   }
   .date-nav-btn:hover { background: rgba(28, 58, 44, 0.1); }
   .date-nav-btn:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
+  .date-nav-btn:disabled { opacity: 0.35; cursor: default; }
+  .date-nav-btn:disabled:hover { background: var(--paper); }
   select, input[type=date] {
     background: var(--paper);
     color: var(--ink);
@@ -418,6 +421,92 @@
     border-bottom: 1px solid var(--paper-line);
   }
   .standings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 32px; }
+
+  .schedule-month-label {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--ink);
+    min-width: 130px;
+    text-align: center;
+  }
+  .calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+  .calendar-weekdays span {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    text-align: center;
+  }
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+  }
+  .calendar-day {
+    min-height: 72px;
+    border: 1px solid var(--paper-line);
+    border-radius: 6px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .calendar-day.is-empty { visibility: hidden; }
+  .calendar-day.is-outside { opacity: 0.35; }
+  .calendar-day.is-game {
+    cursor: pointer;
+  }
+  .calendar-day.is-game:hover,
+  .calendar-day.is-game:focus-visible {
+    outline: none;
+  }
+  .calendar-day.is-home {
+    border-left: 3px solid var(--gold);
+    background: rgba(217, 169, 26, 0.09);
+  }
+  .calendar-day.is-home:hover,
+  .calendar-day.is-home:focus-visible { border-color: var(--gold); }
+  .calendar-day.is-away {
+    border-left: 3px solid var(--sky);
+    background: rgba(91, 143, 192, 0.09);
+  }
+  .calendar-day.is-away:hover,
+  .calendar-day.is-away:focus-visible { border-color: var(--sky); }
+  .cal-daynum {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--ink);
+  }
+  .cal-game-opp {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 10.5px;
+    letter-spacing: 0.02em;
+    color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .cal-game-time {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-soft);
+  }
+  .cal-off {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    color: var(--ink-soft);
+    opacity: 0.7;
+  }
   .standings-team {
     flex: 1;
     font-family: 'Inter', sans-serif;
@@ -846,6 +935,9 @@
     .sheet { padding: 14px; }
     .sticky-top { margin: -2px -14px 0; padding-left: 14px; padding-right: 14px; }
     .standings-grid { grid-template-columns: 1fr; }
+    .calendar-day { min-height: 54px; padding: 4px; }
+    .cal-game-opp { font-size: 9px; }
+    .cal-game-time { font-size: 9px; }
   }
 </style>
 </head>
@@ -857,6 +949,7 @@
   <div class="tab-bar">
     <button type="button" class="tab-btn active" data-tab="scorecard">Scorecard</button>
     <button type="button" class="tab-btn" data-tab="standings">Standings</button>
+    <button type="button" class="tab-btn" data-tab="schedule">Schedule</button>
   </div>
   <div class="tab-panel" data-tab-panel="scorecard" id="scorecardPanel">
     <div class="mlb-controls">
@@ -885,6 +978,19 @@
     </div>
     <div id="standingsBody">
       <div class="mlb-status-msg">Loading standings&#8230;</div>
+    </div>
+  </div>
+  <div class="tab-panel" data-tab-panel="schedule" id="schedulePanel" hidden>
+    <div class="mlb-controls">
+      <select id="scheduleTeamPick"></select>
+      <div class="date-nav">
+        <button type="button" class="date-nav-btn" id="scheduleMonthPrev" aria-label="Previous month">&#8249;</button>
+        <span class="schedule-month-label" id="scheduleMonthLabel"></span>
+        <button type="button" class="date-nav-btn" id="scheduleMonthNext" aria-label="Next month">&#8250;</button>
+      </div>
+    </div>
+    <div id="scheduleBody">
+      <div class="mlb-status-msg">Loading schedule&#8230;</div>
     </div>
   </div>
   <div id="pitchOverlay" class="pitch-overlay">
@@ -2080,7 +2186,162 @@
     return TEAM_NICKNAMES[team && team.id] || (team && (team.teamName || team.name)) || '';
   }
 
-  async function loadSchedule(dateStr) {
+  const scheduleTeamSelect = document.getElementById('scheduleTeamPick');
+  const scheduleMonthLabel = document.getElementById('scheduleMonthLabel');
+  const scheduleMonthPrevBtn = document.getElementById('scheduleMonthPrev');
+  const scheduleMonthNextBtn = document.getElementById('scheduleMonthNext');
+  const scheduleBody = document.getElementById('scheduleBody');
+  const scheduleCache = {};
+  const SCHEDULE_TEAM_KEY = 'mlb-schedule-team';
+  const scheduleState = { seasonStart: null, seasonEnd: null, gamesByDate: {}, viewYear: null, viewMonth: null };
+  const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+  function populateScheduleTeamSelect() {
+    const teams = Object.keys(TEAM_NICKNAMES)
+      .map(id => ({ id, name: TEAM_NICKNAMES[id] }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+    scheduleTeamSelect.innerHTML = teams.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+    let saved = null;
+    try { saved = localStorage.getItem(SCHEDULE_TEAM_KEY); } catch (e) {}
+    scheduleTeamSelect.value = (saved && TEAM_NICKNAMES[saved]) ? saved : teams[0].id;
+  }
+
+  async function fetchTeamSchedule(teamId, season) {
+    const key = `${teamId}-${season}`;
+    if (scheduleCache[key]) return scheduleCache[key];
+    const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&teamId=${teamId}&season=${season}&gameType=R`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const dates = data.dates || [];
+    const gamesByDate = {};
+    dates.forEach(d => {
+      gamesByDate[d.date] = d.games.map(g => {
+        const isHome = g.teams.home.team.id === Number(teamId);
+        const opponent = isHome ? g.teams.away.team : g.teams.home.team;
+        return { gamePk: g.gamePk, isHome, opponent: teamNickname(opponent), gameDate: g.gameDate };
+      });
+    });
+    const result = {
+      gamesByDate,
+      seasonStart: dates.length ? dates[0].date : null,
+      seasonEnd: dates.length ? dates[dates.length - 1].date : null
+    };
+    scheduleCache[key] = result;
+    return result;
+  }
+
+  function formatGameTime(iso) {
+    return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  }
+
+  function clampMonthToSeason(year, month) {
+    const idx = year * 12 + month;
+    const minIdx = Number(scheduleState.seasonStart.slice(0, 4)) * 12 + Number(scheduleState.seasonStart.slice(5, 7)) - 1;
+    const maxIdx = Number(scheduleState.seasonEnd.slice(0, 4)) * 12 + Number(scheduleState.seasonEnd.slice(5, 7)) - 1;
+    const clamped = Math.min(Math.max(idx, minIdx), maxIdx);
+    return { year: Math.floor(clamped / 12), month: ((clamped % 12) + 12) % 12 };
+  }
+
+  function renderScheduleMonth() {
+    const { viewYear, viewMonth, gamesByDate, seasonStart, seasonEnd } = scheduleState;
+    scheduleMonthLabel.textContent = `${MONTH_NAMES[viewMonth]} ${viewYear}`;
+
+    const startIdx = Number(seasonStart.slice(0, 4)) * 12 + Number(seasonStart.slice(5, 7)) - 1;
+    const endIdx = Number(seasonEnd.slice(0, 4)) * 12 + Number(seasonEnd.slice(5, 7)) - 1;
+    const curIdx = viewYear * 12 + viewMonth;
+    scheduleMonthPrevBtn.disabled = curIdx <= startIdx;
+    scheduleMonthNextBtn.disabled = curIdx >= endIdx;
+
+    const leadBlanks = new Date(Date.UTC(viewYear, viewMonth, 1)).getUTCDay();
+    const daysInMonth = new Date(Date.UTC(viewYear, viewMonth + 1, 0)).getUTCDate();
+
+    let cells = '';
+    for (let i = 0; i < leadBlanks; i++) cells += '<div class="calendar-day is-empty"></div>';
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const games = gamesByDate[dateStr];
+      if (dateStr < seasonStart || dateStr > seasonEnd) {
+        cells += `<div class="calendar-day is-outside"><div class="cal-daynum">${day}</div></div>`;
+      } else if (games && games.length) {
+        const homeAway = games[0].isHome ? 'is-home' : 'is-away';
+        const lines = games.map(g => `<div class="cal-game-opp">${g.isHome ? 'vs' : '@'} ${g.opponent}</div><div class="cal-game-time">${formatGameTime(g.gameDate)}</div>`).join('');
+        cells += `<div class="calendar-day is-game ${homeAway}" data-date="${dateStr}" data-game-pk="${games[0].gamePk}" tabindex="0" role="button">
+          <div class="cal-daynum">${day}</div>
+          ${lines}
+        </div>`;
+      } else {
+        cells += `<div class="calendar-day"><div class="cal-daynum">${day}</div><div class="cal-off">Off</div></div>`;
+      }
+    }
+
+    const trailBlanks = (7 - ((leadBlanks + daysInMonth) % 7)) % 7;
+    for (let i = 0; i < trailBlanks; i++) cells += '<div class="calendar-day is-empty"></div>';
+
+    scheduleBody.innerHTML = `<div class="sheet">
+      <div class="calendar-weekdays"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
+      <div class="calendar-grid">${cells}</div>
+    </div>`;
+  }
+
+  async function loadTeamSchedule(teamId, resetMonth) {
+    scheduleBody.innerHTML = '<div class="mlb-status-msg">Loading schedule&#8230;</div>';
+    const season = new Date().getFullYear();
+    try {
+      const { gamesByDate, seasonStart, seasonEnd } = await fetchTeamSchedule(teamId, season);
+      if (!seasonStart) {
+        scheduleBody.innerHTML = '<div class="mlb-status-msg">No regular season schedule available.</div>';
+        return;
+      }
+      scheduleState.gamesByDate = gamesByDate;
+      scheduleState.seasonStart = seasonStart;
+      scheduleState.seasonEnd = seasonEnd;
+      if (resetMonth) {
+        const todayS = todayStr();
+        const targetDate = todayS < seasonStart ? seasonStart : (todayS > seasonEnd ? seasonEnd : todayS);
+        scheduleState.viewYear = Number(targetDate.slice(0, 4));
+        scheduleState.viewMonth = Number(targetDate.slice(5, 7)) - 1;
+      }
+      renderScheduleMonth();
+    } catch (e) {
+      scheduleBody.innerHTML = '<div class="mlb-status-msg">Could not load schedule. The MLB API may be unreachable right now.</div>';
+    }
+  }
+
+  function jumpToScorecardGame(dateStr, gamePk) {
+    Tabs.switchTo('scorecard');
+    dateInput.value = dateStr;
+    loadSchedule(dateStr, gamePk);
+  }
+
+  scheduleTeamSelect.addEventListener('change', () => {
+    const teamId = scheduleTeamSelect.value;
+    try { localStorage.setItem(SCHEDULE_TEAM_KEY, teamId); } catch (e) {}
+    loadTeamSchedule(teamId, true);
+  });
+  scheduleMonthPrevBtn.addEventListener('click', () => {
+    const { year, month } = clampMonthToSeason(scheduleState.viewYear, scheduleState.viewMonth - 1);
+    scheduleState.viewYear = year;
+    scheduleState.viewMonth = month;
+    renderScheduleMonth();
+  });
+  scheduleMonthNextBtn.addEventListener('click', () => {
+    const { year, month } = clampMonthToSeason(scheduleState.viewYear, scheduleState.viewMonth + 1);
+    scheduleState.viewYear = year;
+    scheduleState.viewMonth = month;
+    renderScheduleMonth();
+  });
+  scheduleBody.addEventListener('click', (e) => {
+    const cell = e.target.closest('.calendar-day.is-game');
+    if (cell) jumpToScorecardGame(cell.dataset.date, cell.dataset.gamePk);
+  });
+  scheduleBody.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const cell = e.target.closest('.calendar-day.is-game');
+    if (cell) { e.preventDefault(); jumpToScorecardGame(cell.dataset.date, cell.dataset.gamePk); }
+  });
+
+  async function loadSchedule(dateStr, preferredGamePk) {
     gameSelect.innerHTML = '<option>Loading games&#8230;</option>';
     body.innerHTML = '<div class="mlb-status-msg">Fetching schedule for ' + dateStr + '&#8230;</div>';
     clearInterval(pollTimer);
@@ -2103,8 +2364,9 @@
         return `<option value="${g.gamePk}">${away} @ ${home}${tag}</option>`;
       }).join('');
 
+      const preferred = preferredGamePk && games.find(g => String(g.gamePk) === String(preferredGamePk));
       const liveGame = games.find(g => g.status.abstractGameState === 'Live');
-      const chosen = liveGame ? liveGame.gamePk : games[0].gamePk;
+      const chosen = preferred ? preferred.gamePk : (liveGame ? liveGame.gamePk : games[0].gamePk);
       gameSelect.value = chosen;
       loadGame(chosen);
     } catch (e) {
@@ -2442,6 +2704,7 @@
 
   Tabs.register('scorecard');
   Tabs.register('standings', { init: () => loadStandings(standingsDateInput.value) });
+  Tabs.register('schedule', { init: () => { populateScheduleTeamSelect(); loadTeamSchedule(scheduleTeamSelect.value, true); } });
 
   const playerOverlay = document.getElementById('playerOverlay');
   const playerModalBody = document.getElementById('playerModalBody');
