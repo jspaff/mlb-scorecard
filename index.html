@@ -354,46 +354,71 @@
 
   .daily-games-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
     gap: 8px;
   }
   .daily-tile {
-    aspect-ratio: 1 / 1;
+    height: 92px;
     display: flex;
     flex-direction: column;
-    align-items: center;
     justify-content: center;
-    gap: 5px;
+    gap: 4px;
     border: 1px solid var(--paper-line);
     border-radius: 6px;
-    padding: 8px 6px;
+    padding: 10px 12px;
     cursor: pointer;
-    text-align: center;
   }
   .daily-tile:hover, .daily-tile:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
-  .daily-tile.is-live { border-width: 2px; border-color: var(--gold); }
-  .daily-tile.is-final { border-color: var(--gold); background: rgba(217, 169, 26, 0.1); }
-  .daily-tile-matchup {
+  .daily-tile.is-live {
+    border-width: 2px;
+    border-color: var(--gold);
+    background: rgba(84, 121, 109, 0.32);
+    animation: daily-tile-glow 1.6s ease-in-out infinite;
+  }
+  .daily-tile.is-final { border-color: #7ba296; background: rgba(84, 121, 109, 0.32); }
+  @keyframes daily-tile-glow {
+    0%, 100% { border-color: var(--gold); box-shadow: 0 0 0 0 rgba(217, 169, 26, 0); }
+    50% { border-color: #f0c94a; box-shadow: 0 0 9px 1px rgba(217, 169, 26, 0.55); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .daily-tile.is-live { animation: none; }
+  }
+  .daily-tile-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 6px;
+  }
+  .daily-tile-team {
     font-family: 'Oswald', sans-serif;
     font-weight: 600;
-    font-size: 14px;
-    color: var(--ink);
+    font-size: 12px;
+    color: var(--ink-soft);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
   }
-  .daily-tile-stat {
+  .daily-tile-score {
     font-family: 'IBM Plex Mono', monospace;
     font-weight: 600;
-    font-size: 14px;
-    color: var(--ink);
+    font-size: 13px;
+    color: var(--ink-soft);
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
   }
+  .daily-tile-team.is-winner, .daily-tile-score.is-winner { color: var(--ink); font-weight: 700; }
+  .daily-tile.is-live .daily-tile-team, .daily-tile.is-live .daily-tile-score { color: var(--ink); font-weight: 600; }
   .daily-tile-state {
+    margin-top: 2px;
+    text-align: center;
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
-    font-size: 9px;
+    font-size: 8.5px;
     letter-spacing: 0.05em;
     text-transform: uppercase;
     color: var(--ink-soft);
   }
-  .daily-tile-state.is-live { color: var(--gold); }
 
   .hr-list { display: flex; flex-direction: column; }
   .hr-row {
@@ -1319,17 +1344,17 @@
   </div>
   <div class="tab-header">
     <div class="tab-bar">
-      <button type="button" class="tab-btn" data-tab="summary">Summary</button>
+      <button type="button" class="tab-btn" data-tab="daily">Daily</button>
       <button type="button" class="tab-btn active" data-tab="scorecard">Scorecard</button>
       <button type="button" class="tab-btn" data-tab="standings">Standings</button>
       <button type="button" class="tab-btn" data-tab="schedule">Schedule</button>
       <button type="button" class="tab-btn" data-tab="roster">Roster</button>
     </div>
-    <div class="mlb-controls" data-tab-controls="summary" hidden>
+    <div class="mlb-controls" data-tab-controls="daily" hidden>
       <div class="date-nav">
-        <button type="button" class="date-nav-btn" id="summaryDatePrev" aria-label="Previous day">&#8249;</button>
-        <input type="date" id="summaryDatePick" />
-        <button type="button" class="date-nav-btn" id="summaryDateNext" aria-label="Next day">&#8250;</button>
+        <button type="button" class="date-nav-btn" id="dailyDatePrev" aria-label="Previous day">&#8249;</button>
+        <input type="date" id="dailyDatePick" />
+        <button type="button" class="date-nav-btn" id="dailyDateNext" aria-label="Next day">&#8250;</button>
       </div>
     </div>
     <div class="mlb-controls" data-tab-controls="scorecard">
@@ -1363,8 +1388,8 @@
       </div>
     </div>
   </div>
-  <div class="tab-panel" data-tab-panel="summary" id="summaryPanel" hidden>
-    <div id="summaryBody">
+  <div class="tab-panel" data-tab-panel="daily" id="dailyPanel" hidden>
+    <div id="dailyBody">
       <div class="mlb-status-msg">Loading today's games&#8230;</div>
     </div>
   </div>
@@ -1433,8 +1458,8 @@
   const body = document.getElementById('mlbBody');
   const standingsBody = document.getElementById('standingsBody');
   const standingsDateInput = document.getElementById('standingsDatePick');
-  const summaryBody = document.getElementById('summaryBody');
-  const summaryDateInput = document.getElementById('summaryDatePick');
+  const dailyBody = document.getElementById('dailyBody');
+  const dailyDateInput = document.getElementById('dailyDatePick');
   let pollTimer = null;
   let pitchStore = {};
   let rosterStore = {};
@@ -1508,7 +1533,7 @@
   }
   dateInput.value = todayStr();
   standingsDateInput.value = todayStr();
-  summaryDateInput.value = todayStr();
+  dailyDateInput.value = todayStr();
 
   const POS_PATTERNS = [
     [/pitcher/gi, 1], [/catcher/gi, 2], [/first baseman/gi, 3],
@@ -2866,26 +2891,31 @@
   }
 
   function renderDailyGameTile(dateStr, game) {
-    let statHtml, stateHtml, tileClass;
+    let rowsHtml, stateLabel, tileClass;
     if (game.state === 'Live') {
-      const stateLabel = `${formatInningState(game.inningState)} ${game.inningOrdinal || ''}`.trim();
-      statHtml = `<div class="daily-tile-stat">${game.awayScore ?? 0}&#8211;${game.homeScore ?? 0}</div>`;
-      stateHtml = `<div class="daily-tile-state is-live">${stateLabel}</div>`;
+      rowsHtml = `
+        <div class="daily-tile-row"><span class="daily-tile-team">${game.awayName}</span><span class="daily-tile-score">${game.awayScore ?? 0}</span></div>
+        <div class="daily-tile-row"><span class="daily-tile-team">${game.homeName}</span><span class="daily-tile-score">${game.homeScore ?? 0}</span></div>`;
+      stateLabel = `${formatInningState(game.inningState)} ${game.inningOrdinal || ''}`.trim();
       tileClass = 'is-live';
     } else if (game.state === 'Final') {
-      statHtml = `<div class="daily-tile-stat">${game.awayScore}&#8211;${game.homeScore}</div>`;
-      stateHtml = `<div class="daily-tile-state">Final</div>`;
+      const awayWon = game.awayScore > game.homeScore;
+      rowsHtml = `
+        <div class="daily-tile-row"><span class="daily-tile-team${awayWon ? ' is-winner' : ''}">${game.awayName}</span><span class="daily-tile-score${awayWon ? ' is-winner' : ''}">${game.awayScore}</span></div>
+        <div class="daily-tile-row"><span class="daily-tile-team${awayWon ? '' : ' is-winner'}">${game.homeName}</span><span class="daily-tile-score${awayWon ? '' : ' is-winner'}">${game.homeScore}</span></div>`;
+      stateLabel = 'Final';
       tileClass = 'is-final';
     } else {
-      statHtml = `<div class="daily-tile-stat">${formatGameTime(game.gameDate)}</div>`;
-      stateHtml = '';
+      rowsHtml = `
+        <div class="daily-tile-row"><span class="daily-tile-team">${game.awayName}</span></div>
+        <div class="daily-tile-row"><span class="daily-tile-team">${game.homeName}</span></div>`;
+      stateLabel = formatGameTime(game.gameDate);
       tileClass = 'is-preview';
     }
     return `
       <div class="daily-tile ${tileClass}" data-date="${dateStr}" data-game-pk="${game.gamePk}" data-state="${game.state}" tabindex="0" role="button">
-        <div class="daily-tile-matchup">${game.awayAbbr} @ ${game.homeAbbr}</div>
-        ${statHtml}
-        ${stateHtml}
+        ${rowsHtml}
+        <div class="daily-tile-state">${stateLabel}</div>
       </div>`;
   }
 
@@ -2935,8 +2965,8 @@
       </div>`;
   }
 
-  let summaryRequestId = 0;
-  let summaryGamesByPk = {};
+  let dailyRequestId = 0;
+  let dailyGamesByPk = {};
 
   function scheduleGameToNeutral(g) {
     return {
@@ -2953,23 +2983,23 @@
   }
 
   async function loadDailySummary(dateStr) {
-    const requestId = ++summaryRequestId;
-    summaryBody.innerHTML = '<div class="mlb-status-msg">Loading today&#8217;s games&#8230;</div>';
+    const requestId = ++dailyRequestId;
+    dailyBody.innerHTML = '<div class="mlb-status-msg">Loading today&#8217;s games&#8230;</div>';
     try {
       const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}&hydrate=linescore`);
       const data = await res.json();
       const games = (data.dates && data.dates[0] && data.dates[0].games) || [];
       if (!games.length) {
-        summaryBody.innerHTML = '<div class="mlb-status-msg">No MLB games scheduled on this date.</div>';
+        dailyBody.innerHTML = '<div class="mlb-status-msg">No MLB games scheduled on this date.</div>';
         return;
       }
-      summaryGamesByPk = {};
-      games.forEach(g => { summaryGamesByPk[g.gamePk] = g; });
+      dailyGamesByPk = {};
+      games.forEach(g => { dailyGamesByPk[g.gamePk] = g; });
       const linescore = g => g.linescore || {};
       const tiles = games.map(g => renderDailyGameTile(dateStr, {
         gamePk: g.gamePk,
-        awayAbbr: teamAbbr(g.teams.away.team),
-        homeAbbr: teamAbbr(g.teams.home.team),
+        awayName: teamNickname(g.teams.away.team),
+        homeName: teamNickname(g.teams.home.team),
         awayScore: g.teams.away.score,
         homeScore: g.teams.home.score,
         state: g.status.abstractGameState,
@@ -2978,50 +3008,50 @@
         inningState: linescore(g).inningState,
         inningOrdinal: linescore(g).currentInningOrdinal
       })).join('');
-      summaryBody.innerHTML = `<div class="sheet"><div class="daily-games-grid">${tiles}</div>
+      dailyBody.innerHTML = `<div class="sheet"><div class="daily-games-grid">${tiles}</div>
         <div class="roster-section-title">Home Runs</div>
-        <div id="summaryHomeRuns" class="mlb-status-msg">Loading home runs&#8230;</div>
+        <div id="dailyHomeRuns" class="mlb-status-msg">Loading home runs&#8230;</div>
       </div>`;
 
       const startedGames = games.filter(g => g.status.abstractGameState === 'Live' || g.status.abstractGameState === 'Final');
       const homeRunLists = await Promise.all(startedGames.map(g =>
         fetchGameHomeRuns(g.gamePk, teamAbbr(g.teams.away.team), teamAbbr(g.teams.home.team))
       ));
-      if (requestId !== summaryRequestId) return;
+      if (requestId !== dailyRequestId) return;
       const homeRuns = homeRunLists.flat();
-      const hrContainer = document.getElementById('summaryHomeRuns');
+      const hrContainer = document.getElementById('dailyHomeRuns');
       if (hrContainer) {
         hrContainer.outerHTML = homeRuns.length
           ? `<div class="hr-list">${homeRuns.map(renderHomeRunRow).join('')}</div>`
           : '<div class="roster-empty">No home runs on this date.</div>';
       }
     } catch (e) {
-      summaryBody.innerHTML = '<div class="mlb-status-msg">Could not load today\'s games. The MLB API may be unreachable right now.</div>';
+      dailyBody.innerHTML = '<div class="mlb-status-msg">Could not load today\'s games. The MLB API may be unreachable right now.</div>';
     }
   }
 
-  summaryDateInput.addEventListener('change', () => loadDailySummary(summaryDateInput.value));
-  document.getElementById('summaryDatePrev').addEventListener('click', () => {
-    summaryDateInput.value = addDays(summaryDateInput.value, -1);
-    loadDailySummary(summaryDateInput.value);
+  dailyDateInput.addEventListener('change', () => loadDailySummary(dailyDateInput.value));
+  document.getElementById('dailyDatePrev').addEventListener('click', () => {
+    dailyDateInput.value = addDays(dailyDateInput.value, -1);
+    loadDailySummary(dailyDateInput.value);
   });
-  document.getElementById('summaryDateNext').addEventListener('click', () => {
-    summaryDateInput.value = addDays(summaryDateInput.value, 1);
-    loadDailySummary(summaryDateInput.value);
+  document.getElementById('dailyDateNext').addEventListener('click', () => {
+    dailyDateInput.value = addDays(dailyDateInput.value, 1);
+    loadDailySummary(dailyDateInput.value);
   });
   function handleDailyTileActivate(tile) {
     if (!tile) return;
     if (tile.dataset.state === 'Final') {
-      const g = summaryGamesByPk[tile.dataset.gamePk];
+      const g = dailyGamesByPk[tile.dataset.gamePk];
       if (g) openGameSummaryModal(tile.dataset.date, [scheduleGameToNeutral(g)]);
     } else {
       jumpToScorecardGame(tile.dataset.date, tile.dataset.gamePk);
     }
   }
-  summaryBody.addEventListener('click', (e) => {
+  dailyBody.addEventListener('click', (e) => {
     handleDailyTileActivate(e.target.closest('.daily-tile'));
   });
-  summaryBody.addEventListener('keydown', (e) => {
+  dailyBody.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
     const tile = e.target.closest('.daily-tile');
     if (tile) e.preventDefault();
@@ -3872,7 +3902,7 @@
   if (window.ResizeObserver) new ResizeObserver(syncTabHeaderHeight).observe(tabHeaderEl);
   else window.addEventListener('resize', syncTabHeaderHeight);
 
-  Tabs.register('summary', { init: () => loadDailySummary(summaryDateInput.value) });
+  Tabs.register('daily', { init: () => loadDailySummary(dailyDateInput.value) });
   Tabs.register('scorecard');
   Tabs.register('standings', { init: () => loadStandings(standingsDateInput.value) });
   Tabs.register('schedule', { init: () => { populateScheduleTeamSelect(); loadTeamSchedule(scheduleTeamSelect.value); } });
