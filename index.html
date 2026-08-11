@@ -284,7 +284,6 @@
     gap: 8px;
   }
   .daily-tile {
-    position: relative;
     aspect-ratio: 1 / 1;
     display: flex;
     flex-direction: column;
@@ -298,19 +297,11 @@
     text-align: center;
   }
   .daily-tile:hover, .daily-tile:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
-  .daily-tile.is-final { background: rgba(11, 15, 12, 0.18); }
-  .daily-tile::after {
-    content: '';
-    position: absolute;
-    top: 7px;
-    right: 7px;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--ink-soft);
-  }
-  .daily-tile.is-live::after { background: var(--brick); }
-  .daily-tile.is-preview::after { background: var(--gold); }
+  .daily-tile.is-live { border-width: 2px; border-color: var(--gold); }
+  .daily-tile.is-final { background: var(--gold); border-color: var(--gold); }
+  .daily-tile.is-final .daily-tile-matchup,
+  .daily-tile.is-final .daily-tile-stat,
+  .daily-tile.is-final .daily-tile-state { color: var(--paper); }
   .daily-tile-matchup {
     font-family: 'Oswald', sans-serif;
     font-weight: 600;
@@ -331,8 +322,7 @@
     text-transform: uppercase;
     color: var(--ink-soft);
   }
-  .daily-tile-state.is-live { color: var(--brick); }
-  .daily-tile-state.is-preview { color: var(--gold); }
+  .daily-tile-state.is-live { color: var(--gold); }
 
   .count-board {
     display: flex;
