@@ -353,14 +353,11 @@
   }
 
   .daily-games-grid {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
     gap: 8px;
   }
   .daily-tile {
-    flex: 1 1 118px;
-    min-width: 105px;
-    max-width: 200px;
     height: 92px;
     display: flex;
     flex-direction: column;
