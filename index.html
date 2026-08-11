@@ -371,8 +371,20 @@
     text-align: center;
   }
   .daily-tile:hover, .daily-tile:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
-  .daily-tile.is-live { border-width: 2px; border-color: var(--gold); }
-  .daily-tile.is-final { border-color: var(--gold); background: rgba(217, 169, 26, 0.1); }
+  .daily-tile.is-live {
+    border-width: 2px;
+    border-color: var(--gold);
+    background: rgba(84, 121, 109, 0.32);
+    animation: daily-tile-glow 1.6s ease-in-out infinite;
+  }
+  .daily-tile.is-final { border-color: #7ba296; background: rgba(84, 121, 109, 0.32); }
+  @keyframes daily-tile-glow {
+    0%, 100% { border-color: var(--gold); box-shadow: 0 0 0 0 rgba(217, 169, 26, 0); }
+    50% { border-color: #f0c94a; box-shadow: 0 0 9px 1px rgba(217, 169, 26, 0.55); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .daily-tile.is-live { animation: none; }
+  }
   .daily-tile-matchup {
     font-family: 'Oswald', sans-serif;
     font-weight: 600;
