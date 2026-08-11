@@ -207,7 +207,6 @@
   .badge-live { background: var(--brick); color: var(--paper); }
   .badge-final { background: var(--ink); color: var(--paper); }
   .badge-preview { background: transparent; color: var(--gold); border: 1px solid var(--gold); }
-  .badge-grand-slam { background: var(--gold); color: var(--paper); }
 
   .game-summary-score {
     margin: 12px 0 16px;
@@ -331,12 +330,23 @@
     border-bottom: 1px dashed var(--paper-line);
   }
   .hr-row:last-child { border-bottom: none; }
+  .hr-row.is-grand-slam { border-left: 3px solid var(--gold); padding-left: 8px; margin-left: -11px; }
   .hr-main { flex: 1; min-width: 0; }
+  .hr-grand-slam-label {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 2px;
+  }
   .hr-batter {
     font-family: 'Special Elite', monospace;
     font-size: 13px;
     color: var(--ink);
   }
+  .hr-row.is-grand-slam .hr-batter { color: var(--gold); }
   .hr-pitcher {
     font-family: 'Inter', sans-serif;
     font-size: 11.5px;
@@ -2673,14 +2683,12 @@
   }
 
   function renderHomeRunRow(hr) {
-    const badge = hr.isGrandSlam
-      ? '<span class="badge badge-grand-slam">Grand Slam</span>'
-      : '<span class="badge badge-preview">Home Run</span>';
+    const grandSlamLabel = hr.isGrandSlam ? '<div class="hr-grand-slam-label">Grand Slam</div>' : '';
     const distanceHtml = hr.distance != null ? `<div class="hr-distance">${Math.round(hr.distance)} ft</div>` : '';
     return `
-      <div class="hr-row">
-        ${badge}
+      <div class="hr-row${hr.isGrandSlam ? ' is-grand-slam' : ''}">
         <div class="hr-main">
+          ${grandSlamLabel}
           <div class="hr-batter">${hr.batterName} <span class="hr-team">${hr.battingAbbr}</span></div>
           <div class="hr-pitcher">vs ${hr.pitcherName} <span class="hr-team">${hr.pitchingAbbr}</span></div>
         </div>
