@@ -1782,6 +1782,16 @@
       });
   }
 
+  // Which box the batter stood in and which arm the pitcher threw with for
+  // this plate appearance -- 'L' or 'R', or null if the feed omitted it.
+  function extractHandedness(play) {
+    const m = play.matchup || {};
+    return {
+      batSide: (m.batSide && m.batSide.code) || null,
+      pitchHand: (m.pitchHand && m.pitchHand.code) || null
+    };
+  }
+
   // Personnel changes mid-at-bat (a new pitcher, a defensive sub) are
   // worth keeping on the record once the at-bat is done. Procedural
   // pauses (a mound visit, a timeout, a replay review) aren't -- they
@@ -1922,6 +1932,7 @@
         if (pitcherId) lastPitcherId = pitcherId;
 
         const pitches = extractPitches(play);
+        const handedness = extractHandedness(play);
         const hitCoords = extractHitCoordinates(play);
         if (hitCoords) {
           const hitType =
@@ -1931,7 +1942,7 @@
             event === 'Home Run' ? 'homerun' : 'out';
           battedBalls.push({
             x: hitCoords.x, y: hitCoords.y, hitType, code,
-            pitches, events: extractEvents(play), batterId,
+            pitches, events: extractEvents(play), batterId, ...handedness,
             batterName: (play.matchup && play.matchup.batter && play.matchup.batter.fullName) || '',
             pitcherFullName: (play.matchup && play.matchup.pitcher && play.matchup.pitcher.fullName) || '',
             playDesc: (play.result && play.result.description) || ''
@@ -1942,7 +1953,7 @@
         row.cells[inning].push({
           code, reached: rb, scored: rb === 4, isOut: rb === 0, playerId: batterId,
           pitcherChanged, pitcherId, pitcherName, order, calledLooking,
-          pitches, events: extractEvents(play),
+          pitches, events: extractEvents(play), ...handedness,
           batterName: (play.matchup && play.matchup.batter && play.matchup.batter.fullName) || '',
           pitcherFullName: (pitcher && pitcher.fullName) || '',
           playDesc: (play.result && play.result.description) || ''
@@ -3836,6 +3847,7 @@
               team: battingTeam, rowSlot: nextRow.slot, inning: effInning, slotIndex,
               pitches: livePlay ? extractPitches(livePlay) : [],
               events: livePlay ? extractEvents(livePlay) : [],
+              ...(livePlay ? extractHandedness(livePlay) : { batSide: null, pitchHand: null }),
               currentInterruption: livePlay ? currentInterruption(livePlay) : null,
               batterName: (isFeedMatch && feedBatter.fullName) || nextRow.players[nextRow.players.length - 1].name,
               pitcherFullName: (linescore.defense && linescore.defense.pitcher && linescore.defense.pitcher.fullName) || ''
@@ -4013,8 +4025,10 @@
   // Catcher's-eye strike-zone plot: pX/pZ are feet from the plate's center
   // and feet off the ground respectively (see extractPitches). Renders
   // nothing if not one single pitch in the at-bat has location data, rather
-  // than showing an empty box.
-  function renderPitchLocation(pitches) {
+  // than showing an empty box. batSide places the batter's-box marker --
+  // negative pX is the third-base side (a right-handed batter's box), so in
+  // this catcher's-eye view an 'R' batter's box sits on the plot's left.
+  function renderPitchLocation(pitches, batSide) {
     const located = pitches.filter(p => typeof p.px === 'number' && typeof p.pz === 'number');
     if (!located.length) return '';
 
@@ -4039,9 +4053,12 @@
     const plateY = groundY + 6, plateW = 17;
     svg += `<path d="M ${cx - plateW},${plateY} L ${cx + plateW},${plateY} L ${cx + plateW},${plateY + 10} L ${cx},${plateY + 19} L ${cx - plateW},${plateY + 10} Z" fill="${PALETTE.paper}" stroke="${PALETTE.ink}" stroke-width="1" opacity="0.85"/>`;
 
-    if (located.length > 1) {
-      const d = located.map((p, i) => `${i === 0 ? 'M' : 'L'} ${x(p.px)},${y(p.pz)}`).join(' ');
-      svg += `<path d="${d}" fill="none" stroke="${PALETTE.ink}" stroke-width="1" stroke-dasharray="2,2" opacity="0.4"/>`;
+    if (batSide === 'L' || batSide === 'R') {
+      const boxW = 24, boxH = 32, gap = 4;
+      const boxX = batSide === 'R' ? (cx - plateW - gap - boxW) : (cx + plateW + gap);
+      const boxY = plateY - 4;
+      svg += `<rect x="${boxX}" y="${boxY}" width="${boxW}" height="${boxH}" rx="3" fill="rgba(243,236,219,0.04)" stroke="${PALETTE.ink}" stroke-width="1" stroke-dasharray="3,2" opacity="0.55"/>`;
+      svg += `<text x="${boxX + boxW / 2}" y="${boxY + boxH / 2 + 4}" text-anchor="middle" font-size="12" font-weight="700" font-family="Overpass, sans-serif" fill="${PALETTE.ink}" opacity="0.7">${batSide}</text>`;
     }
 
     located.forEach(p => {
@@ -4058,7 +4075,7 @@
 
     return `<div class="loc-section">
       <div class="loc-label"><span>Pitch Location</span><span class="view-tag">catcher's view</span></div>
-      <div class="loc-plot-wrap"><svg viewBox="0 0 200 260" width="200" height="260">${svg}</svg></div>
+      <div class="loc-plot-wrap"><svg viewBox="0 0 200 275" width="200" height="275">${svg}</svg></div>
     </div>`;
   }
 
@@ -4090,11 +4107,12 @@
       ? `<div class="pitch-events">${events.map(e => `<div class="pitch-event-tag">${e}</div>`).join('')}</div>`
       : '';
 
-    const locationHtml = pitches.length ? renderPitchLocation(pitches) : '';
+    const locationHtml = pitches.length ? renderPitchLocation(pitches, c.batSide) : '';
+    const handTag = c.pitchHand === 'L' ? ' (LHP)' : c.pitchHand === 'R' ? ' (RHP)' : '';
 
     pitchModalBody.innerHTML = `
       <div class="pitch-header">${c.batterName || 'Batter'}</div>
-      <div class="pitch-subheader">vs ${c.pitcherFullName || 'pitcher'}</div>
+      <div class="pitch-subheader">vs ${c.pitcherFullName || 'pitcher'}${handTag}</div>
       ${rows}
       ${locationHtml}
       ${eventsHtml}
