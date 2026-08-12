@@ -3680,28 +3680,52 @@
         columnsPerInning[i] = max;
       }
 
-      // if there's a batter up right now, find their row so we can show a
-      // live placeholder diamond even before this at-bat's result exists.
+      // find whoever's up next so we can show a live placeholder diamond
+      // even before this at-bat's result exists. Position (team/inning/
+      // slot) is derived structurally from each team's own last completed
+      // plate appearance rather than from linescore.offense.batter --
+      // that field goes stale/empty right at a half-inning handoff (the
+      // live-strip badge above works around the same gap by blanking
+      // "offense" once outs >= 3), which is exactly the moment we most
+      // want the next half's leadoff hitter to already show as on deck.
+      // linescore.offense is still consulted, when it's actually in sync,
+      // to know whether the at-bat has real pitch data yet (for the dot).
       // Deliberately never expands columnsPerInning for this -- only shown
       // if it fits within columns already needed by completed at-bats --
       // otherwise a transient state (e.g. during a mound visit) could
       // briefly force a column open and then collapse it again.
       let liveBatterInfo = null;
-      if (state === 'Live' && linescore.offense && linescore.offense.batter) {
-        const battingTeam = linescore.inningHalf === 'Top' ? 'away' : 'home';
+      if (state === 'Live' && linescore.currentInning) {
+        let effInning = linescore.currentInning;
+        let effHalf = (linescore.inningHalf || 'Top').toLowerCase();
+        if ((linescore.outs ?? 0) >= 3) {
+          if (effHalf === 'top') effHalf = 'bottom';
+          else { effHalf = 'top'; effInning += 1; }
+        }
+        const battingTeam = effHalf === 'top' ? 'away' : 'home';
         const battingRows = battingTeam === 'away' ? awayRows : homeRows;
-        const liveRow = battingRows.find(r => r.players.some(p => p.id === linescore.offense.batter.id));
-        if (liveRow) {
-          const inning = linescore.currentInning;
-          const slotIndex = (liveRow.cells[inning] || []).length;
-          if (slotIndex < (columnsPerInning[inning] || 1)) {
+
+        let lastRow = null, lastOrder = -1;
+        battingRows.forEach(row => {
+          Object.values(row.cells).forEach(cellArr => (cellArr || []).forEach(c => {
+            if (c.order > lastOrder) { lastOrder = c.order; lastRow = row; }
+          }));
+        });
+        const nextSlot = lastRow ? (lastRow.slot % battingRows.length) + 1 : 1;
+        const nextRow = battingRows.find(r => r.slot === nextSlot) || battingRows[0];
+
+        if (nextRow) {
+          const slotIndex = (nextRow.cells[effInning] || []).length;
+          if (slotIndex < (columnsPerInning[effInning] || 1)) {
+            const feedBatter = linescore.offense && linescore.offense.batter;
+            const isFeedMatch = feedBatter && nextRow.players.some(p => p.id === feedBatter.id);
             const livePlay = allPlays.length ? allPlays[allPlays.length - 1] : null;
-            const liveMatchesBatter = livePlay && livePlay.matchup && livePlay.matchup.batter
-              && livePlay.matchup.batter.id === linescore.offense.batter.id;
+            const liveMatchesBatter = isFeedMatch && livePlay && livePlay.matchup && livePlay.matchup.batter
+              && livePlay.matchup.batter.id === feedBatter.id;
             liveBatterInfo = {
-              team: battingTeam, rowSlot: liveRow.slot, inning, slotIndex,
+              team: battingTeam, rowSlot: nextRow.slot, inning: effInning, slotIndex,
               pitches: liveMatchesBatter ? extractPitches(livePlay) : [],
-              batterName: linescore.offense.batter.fullName || '',
+              batterName: (isFeedMatch && feedBatter.fullName) || nextRow.players[nextRow.players.length - 1].name,
               pitcherFullName: (linescore.defense && linescore.defense.pitcher && linescore.defense.pitcher.fullName) || ''
             };
           }
