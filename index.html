@@ -3710,7 +3710,7 @@
         if (!pitcherId) return '';
         const p = oppositeSideBoxscore.players && oppositeSideBoxscore.players['ID' + pitcherId];
         if (!p) return '';
-        return renderPitcherCard(lastNameOf(p.person, personIndex), p.stats && p.stats.pitching);
+        return renderPitcherCard(p.person && p.person.fullName, p.stats && p.stats.pitching);
       }
       const homePitcherCard = pitcherCardFor(away.starterPitcherId, liveData.boxscore.teams.home);
       const awayPitcherCard = pitcherCardFor(home.starterPitcherId, liveData.boxscore.teams.away);
