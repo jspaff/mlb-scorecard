@@ -1334,6 +1334,17 @@
     line-height: 1.5;
   }
   .pitch-empty { font-family: 'Inter', sans-serif; font-size: 12px; color: var(--ink-soft); padding: 6px 0; }
+  .pitch-events { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+  .pitch-event-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    font-style: italic;
+    color: var(--ink-soft);
+    background: rgba(243, 236, 219, 0.08);
+    border: 1px solid var(--paper-line);
+    border-radius: 3px;
+    padding: 2px 7px;
+  }
 
   @media (max-width: 520px) {
     .mlb-header { flex-direction: column; align-items: flex-start; }
@@ -1731,6 +1742,45 @@
       }));
   }
 
+  // Personnel changes mid-at-bat (a new pitcher, a defensive sub) are
+  // worth keeping on the record once the at-bat is done. Procedural
+  // pauses (a mound visit, a timeout, a replay review) aren't -- they
+  // only matter while they're actually happening.
+  const PERSISTENT_EVENT_RE = /pitching change|pitching sub|defensive sub|offensive sub|defensive switch/i;
+
+  // personnel-change events worth keeping in the at-bat's detail modal
+  // once it's done -- see PERSISTENT_EVENT_RE. Must never factor into
+  // whether the at-bat is "in progress" (that's extractPitches' job).
+  function extractEvents(play) {
+    return (play.playEvents || [])
+      .filter(pe => !pe.isPitch && pe.type !== 'pitch' && pe.details && pe.details.description
+        && PERSISTENT_EVENT_RE.test(pe.details.description))
+      .map(pe => pe.details.description);
+  }
+
+  // a procedural pause (mound visit, timeout, etc.) that's happening right
+  // now -- i.e. it's the most recent thing recorded for this at-bat, with
+  // no pitch since. Used to swap it in for "At bat in progress..." for as
+  // long as it lasts; once a pitch follows, this naturally goes back to
+  // null and the placeholder text returns.
+  function currentInterruption(play) {
+    const events = play.playEvents || [];
+    const last = events[events.length - 1];
+    if (!last || last.isPitch || last.type === 'pitch') return null;
+    const desc = last.details && last.details.description;
+    if (!desc || PERSISTENT_EVENT_RE.test(desc)) return null;
+    return desc;
+  }
+
+  // MLB's feed sometimes logs an interruption (mound visit, a timeout,
+  // a pitching change mid-count, etc.) as its own top-level play with
+  // result.type === 'atBat' and result.event set to the interruption's
+  // name, even though it isn't a real plate-appearance outcome. Left
+  // unfiltered, that play gets treated as a completed at-bat: it grabs a
+  // cell in the grid, and getPlayCode falls back to an initialism (e.g.
+  // "Batter Timeout" -> "BT") that shows up in place of the real result.
+  const NON_RESULT_EVENT_RE = /mound visit|pitching change|pitching sub|defensive sub|defensive switch|offensive sub|ejection|challenge|replay review|batter timeout|timeout/i;
+
   // MLB's own boxscoreName field is the correct source for a player's
   // display surname -- it keeps suffixes like "Jr."/"II" attached to the
   // actual last name (e.g. "Guerrero Jr."), unlike naively taking the last
@@ -1819,7 +1869,7 @@
         }
       }
 
-      if (row && isAtBat && event) {
+      if (row && isAtBat && event && !NON_RESULT_EVENT_RE.test(event)) {
         const rb = reachedBase(event);
         const code = getPlayCode(play);
         const calledLooking = isCalledStrikeout(play);
@@ -1841,7 +1891,7 @@
             event === 'Home Run' ? 'homerun' : 'out';
           battedBalls.push({
             x: hitCoords.x, y: hitCoords.y, hitType, code,
-            pitches, batterId,
+            pitches, events: extractEvents(play), batterId,
             batterName: (play.matchup && play.matchup.batter && play.matchup.batter.fullName) || '',
             pitcherFullName: (play.matchup && play.matchup.pitcher && play.matchup.pitcher.fullName) || '',
             playDesc: (play.result && play.result.description) || ''
@@ -1852,7 +1902,7 @@
         row.cells[inning].push({
           code, reached: rb, scored: rb === 4, isOut: rb === 0, playerId: batterId,
           pitcherChanged, pitcherId, pitcherName, order, calledLooking,
-          pitches,
+          pitches, events: extractEvents(play),
           batterName: (play.matchup && play.matchup.batter && play.matchup.batter.fullName) || '',
           pitcherFullName: (pitcher && pitcher.fullName) || '',
           playDesc: (play.result && play.result.description) || ''
@@ -2584,15 +2634,23 @@
           }
           let pitchAttr = '';
           const pitchSource = c || (isLiveCell ? {
-            pitches: liveBatterInfo.pitches, batterName: liveBatterInfo.batterName,
-            pitcherFullName: liveBatterInfo.pitcherFullName, playDesc: 'At bat in progress&#8230;'
+            pitches: liveBatterInfo.pitches, events: liveBatterInfo.events, batterName: liveBatterInfo.batterName,
+            pitcherFullName: liveBatterInfo.pitcherFullName,
+            // "in progress" is only true once a pitch has actually been
+            // thrown -- before that this is just the on-deck placeholder,
+            // with no claim to make unless a pause is happening right now
+            playDesc: liveBatterInfo.currentInterruption
+              || (liveBatterInfo.pitches.length ? 'At bat in progress&#8230;' : '')
           } : null);
           if (pitchSource) {
             const pkey = `${teamName}-${r.slot}-${i}-${k}`;
             pitchStore[pkey] = pitchSource;
             pitchAttr = ` data-pkey="${pkey}"`;
           }
-          const cellHtml = inner ? `<div class="cell-wrap${pitchSource && pitchSource.pitches && pitchSource.pitches.length ? ' clickable' : ''}"${pitchAttr}>${inner}</div>` : '';
+          const hasPitchDetail = pitchSource && (
+            (pitchSource.pitches && pitchSource.pitches.length) || (pitchSource.events && pitchSource.events.length)
+          );
+          const cellHtml = inner ? `<div class="cell-wrap${hasPitchDetail ? ' clickable' : ''}"${pitchAttr}>${inner}</div>` : '';
           const cls = 'cell'
             + (r.dividerInnings && r.dividerInnings.has(i) && k === 0 ? ' sub-divider' : '')
             + (c && c.pitcherChanged ? ' pitcher-change' : '')
@@ -3717,14 +3775,28 @@
         if (nextRow) {
           const slotIndex = (nextRow.cells[effInning] || []).length;
           if (slotIndex < (columnsPerInning[effInning] || 1)) {
+            const nextRowPlayerIds = new Set(nextRow.players.map(p => p.id));
+            // the batter's own in-progress plate appearance, found by
+            // identity rather than by trusting it's the last item in
+            // allPlays -- an interruption (mound visit, batter timeout,
+            // defensive substitution, etc.) can land its own entry after
+            // it, sharing the same matchup.batter and sometimes even
+            // isComplete: false, and that must not make the live dot
+            // disappear mid-at-bat. NON_RESULT_EVENT_RE excludes those
+            // regardless of their isComplete state, since it's not
+            // consistent across interruption types.
+            const livePlay = allPlays.slice().reverse().find(p =>
+              p.about && p.about.isComplete === false &&
+              p.matchup && p.matchup.batter && nextRowPlayerIds.has(p.matchup.batter.id) &&
+              !(p.result && NON_RESULT_EVENT_RE.test(p.result.event || ''))
+            );
             const feedBatter = linescore.offense && linescore.offense.batter;
-            const isFeedMatch = feedBatter && nextRow.players.some(p => p.id === feedBatter.id);
-            const livePlay = allPlays.length ? allPlays[allPlays.length - 1] : null;
-            const liveMatchesBatter = isFeedMatch && livePlay && livePlay.matchup && livePlay.matchup.batter
-              && livePlay.matchup.batter.id === feedBatter.id;
+            const isFeedMatch = feedBatter && nextRowPlayerIds.has(feedBatter.id);
             liveBatterInfo = {
               team: battingTeam, rowSlot: nextRow.slot, inning: effInning, slotIndex,
-              pitches: liveMatchesBatter ? extractPitches(livePlay) : [],
+              pitches: livePlay ? extractPitches(livePlay) : [],
+              events: livePlay ? extractEvents(livePlay) : [],
+              currentInterruption: livePlay ? currentInterruption(livePlay) : null,
               batterName: (isFeedMatch && feedBatter.fullName) || nextRow.players[nextRow.players.length - 1].name,
               pitcherFullName: (linescore.defense && linescore.defense.pitcher && linescore.defense.pitcher.fullName) || ''
             };
@@ -3795,7 +3867,7 @@
         const currentHalf = (linescore.inningHalf || '').toLowerCase();
         const completedAtBats = allPlays.filter(p =>
           p.result && p.result.type === 'atBat' && p.result.description &&
-          !/mound visit|pitching change|pitching substitution|defensive substitution|defensive switch|offensive substitution|ejection|challenge|replay review|batter timeout|timeout/i.test(p.result.event || '') &&
+          !NON_RESULT_EVENT_RE.test(p.result.event || '') &&
           p.about && p.about.inning === inningNum && (p.about.halfInning || '').toLowerCase() === currentHalf
         );
         const prevPlay = completedAtBats[completedAtBats.length - 1];
@@ -3914,10 +3986,16 @@
       rows = '<div class="pitch-empty">No pitch-by-pitch data available for this plate appearance.</div>';
     }
 
+    const events = c.events || [];
+    const eventsHtml = events.length
+      ? `<div class="pitch-events">${events.map(e => `<div class="pitch-event-tag">${e}</div>`).join('')}</div>`
+      : '';
+
     pitchModalBody.innerHTML = `
       <div class="pitch-header">${c.batterName || 'Batter'}</div>
       <div class="pitch-subheader">vs ${c.pitcherFullName || 'pitcher'}</div>
       ${rows}
+      ${eventsHtml}
       ${c.playDesc ? `<div class="pitch-final-desc">${c.playDesc}</div>` : ''}
     `;
     pitchOverlay.classList.add('open');
