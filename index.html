@@ -3766,6 +3766,11 @@
           ${startTime ? '<div>First pitch: ' + startTime.toLocaleString(undefined, {hour:'numeric', minute:'2-digit', month:'short', day:'numeric'}) + '</div>' : ''}`;
       }
 
+      // preserve horizontal scroll position of each team's innings grid --
+      // the rebuild below replaces the whole subtree, which would otherwise
+      // snap every table-scroll back to scrollLeft 0 on each poll
+      const scrollLefts = Array.from(body.querySelectorAll('.table-scroll')).map(el => el.scrollLeft);
+
       body.innerHTML = `
         <div class="sheet">
           <div class="sticky-top">
@@ -3778,6 +3783,10 @@
         </div>
         <div class="footnote">Source: MLB Stats API &#183; updated ${new Date().toLocaleTimeString()}</div>
       `;
+
+      body.querySelectorAll('.table-scroll').forEach((el, i) => {
+        if (scrollLefts[i]) el.scrollLeft = scrollLefts[i];
+      });
 
       clearInterval(pollTimer);
       if (state === 'Live') pollTimer = setInterval(() => fetchAndRender(gamePk), 15000);
