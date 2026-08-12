@@ -1095,7 +1095,7 @@
     padding-right: 0;
     width: 34px;
   }
-  table.scorecard-table td.cell { width: 52px; padding: 3px 1px 7px; }
+  table.scorecard-table td.cell { width: 52px; min-height: 62px; padding: 3px 1px 7px; }
   table.scorecard-table td.sub-divider { border-left: 1px dashed rgba(28,58,44,0.3); }
   table.scorecard-table td.pitcher-change { border-top: 1.5px solid var(--ink); padding-top: 5px; }
   table.scorecard-table th.starter-span,
@@ -2574,7 +2574,13 @@
           const isLiveCell = !c && liveBatterInfo && liveBatterInfo.team === teamKey
             && liveBatterInfo.rowSlot === r.slot && liveBatterInfo.inning === i && liveBatterInfo.slotIndex === k;
           if (isLiveCell) {
-            inner += diamondSVG(0, false, '', false, null, null, false) + '<div class="live-dot" title="At bat now"></div>';
+            // the diamond marks this batter as on deck the moment the prior
+            // at-bat ends; the pulsing dot only joins it once a pitch has
+            // actually been thrown, so "on deck" and "at bat now" read as
+            // distinct states
+            const abStarted = liveBatterInfo.pitches && liveBatterInfo.pitches.length > 0;
+            inner += diamondSVG(0, false, '', false, null, null, false)
+              + (abStarted ? '<div class="live-dot" title="At bat now"></div>' : '');
           }
           let pitchAttr = '';
           const pitchSource = c || (isLiveCell ? {
