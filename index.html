@@ -1731,7 +1731,19 @@
       }));
   }
 
-  function buildTeamRows(sideBoxscore, halfKey, allPlays) {
+  // MLB's own boxscoreName field is the correct source for a player's
+  // display surname -- it keeps suffixes like "Jr."/"II" attached to the
+  // actual last name (e.g. "Guerrero Jr."), unlike naively taking the last
+  // word of fullName, which grabs the suffix on its own for suffixed names.
+  // personIndex is gameData.players, keyed by "ID<id>", from the same feed.
+  function lastNameOf(person, personIndex) {
+    if (!person) return '';
+    const full = personIndex && personIndex['ID' + person.id];
+    if (full && (full.boxscoreName || full.lastName)) return full.boxscoreName || full.lastName;
+    return (person.fullName || '').trim().split(/\s+/).pop();
+  }
+
+  function buildTeamRows(sideBoxscore, halfKey, allPlays, personIndex) {
     const players = sideBoxscore.players || {};
     const battingPlayers = Object.values(players).filter(p => p.battingOrder);
 
@@ -1744,6 +1756,7 @@
       slots[slot].push({
         id: p.person.id,
         name: p.person.fullName,
+        lastName: lastNameOf(p.person, personIndex),
         pos: (p.position && p.position.abbreviation) || '',
         order,
         stats: (p.stats && p.stats.batting) || {}
@@ -1814,7 +1827,7 @@
         const pitcherId = pitcher && pitcher.id;
         const isStarterAppearance = lastPitcherId === null && !!pitcherId;
         const pitcherChanged = isStarterAppearance || (lastPitcherId !== null && pitcherId !== lastPitcherId);
-        const pitcherName = pitcherChanged && pitcher ? pitcher.fullName.split(' ').pop() : null;
+        const pitcherName = pitcherChanged && pitcher ? lastNameOf(pitcher, personIndex) : null;
         if (starterPitcherId === null && pitcherId) starterPitcherId = pitcherId;
         if (pitcherId) lastPitcherId = pitcherId;
 
@@ -2536,7 +2549,7 @@
     const bodyRows = rows.map(r => {
       const nameHtml = r.players.map((p, i) => {
         playerStore[p.id] = { id: p.id, name: p.name, pos: p.pos, team: teamName, season, todayStats: p.stats };
-        const btn = `<button type="button" class="player-name-btn" data-player-id="${p.id}">${p.name}</button>`;
+        const btn = `<button type="button" class="player-name-btn" data-player-id="${p.id}" title="${p.name}">${p.lastName}</button>`;
         return i === 0 ? btn : `<span class="sub-note">&#8594; ${btn}</span>`;
       }).join('<br/>');
       const posHtml = r.players.map((p, i) => i === 0 ? p.pos : `<span class="sub-note">${p.pos}</span>`).join('<br/>');
@@ -3640,10 +3653,11 @@
       const state = gameData.status.abstractGameState;
       const detailedState = gameData.status.detailedState;
       const allPlays = (liveData.plays && liveData.plays.allPlays) || [];
+      const personIndex = gameData.players || {};
 
       const numInnings = Math.max((linescore.innings || []).length, 9);
-      const away = buildTeamRows(liveData.boxscore.teams.away, 'top', allPlays);
-      const home = buildTeamRows(liveData.boxscore.teams.home, 'bottom', allPlays);
+      const away = buildTeamRows(liveData.boxscore.teams.away, 'top', allPlays, personIndex);
+      const home = buildTeamRows(liveData.boxscore.teams.home, 'bottom', allPlays, personIndex);
       const awayRows = away.rows, homeRows = home.rows;
 
       // if the batting order turns over within an inning, some rows will
