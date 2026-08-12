@@ -1324,6 +1324,31 @@
   .pitch-result-ball { color: #4f7a5f; font-weight: 600; }
   .pitch-result-strike { color: var(--gold); font-weight: 600; }
   .pitch-result-inplay { color: var(--brick); font-weight: 700; }
+  table.pitch-table tr.hl td { background: rgba(217, 169, 26, 0.14); }
+  .loc-section { margin-top: 14px; }
+  .loc-label {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .loc-label .view-tag {
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    font-size: 9px;
+    opacity: 0.75;
+  }
+  .loc-plot-wrap { display: flex; justify-content: center; }
+  .loc-plot-wrap svg { display: block; }
+  .loc-dot { cursor: pointer; }
+  .loc-dot.hl .loc-dot-core { stroke: var(--ink); stroke-width: 2; }
   .pitch-final-desc {
     margin-top: 12px;
     padding-top: 10px;
@@ -1493,9 +1518,10 @@
   let rosterStore = {};
   let sprayStore = {};
   let playerStore = {};
-  // Mirrors the --ink/--gold/--brick CSS variables, for the few spots (SVG
-  // strings) that can't reference a CSS custom property directly.
-  const PALETTE = { ink: '#f3ecdb', gold: '#d9a91a', brick: '#e0604a' };
+  // Mirrors the --ink/--gold/--brick/--paper CSS variables (plus the ball
+  // green that only exists as a literal on .pitch-result-ball), for the few
+  // spots (SVG strings) that can't reference a CSS custom property directly.
+  const PALETTE = { ink: '#f3ecdb', gold: '#d9a91a', brick: '#e0604a', ball: '#4f7a5f', paper: '#3b4336' };
   const gameLogCache = {};
   const standingsCache = {};
   let standingsView = 'division';
@@ -1732,14 +1758,28 @@
   function extractPitches(play) {
     return (play.playEvents || [])
       .filter(pe => pe.isPitch || pe.type === 'pitch')
-      .map(pe => ({
-        num: pe.pitchNumber || null,
-        type: (pe.details && pe.details.type && pe.details.type.description) || 'Pitch',
-        speed: pe.pitchData && pe.pitchData.startSpeed ? Math.round(pe.pitchData.startSpeed) : null,
-        result: (pe.details && pe.details.description) || '',
-        balls: pe.count && pe.count.balls,
-        strikes: pe.count && pe.count.strikes
-      }));
+      .map(pe => {
+        const coords = pe.pitchData && pe.pitchData.coordinates;
+        // pX/pZ are feet from the center of the plate (horizontal) and feet
+        // off the ground (vertical) as the pitch crosses the front of the
+        // plate -- the standard Statcast-era fields. Older games sometimes
+        // lack them entirely; when that happens we skip the dot rather than
+        // guess from the unrelated Gameday pixel-space x/y fields.
+        const px = coords && typeof coords.pX === 'number' ? coords.pX : null;
+        const pz = coords && typeof coords.pZ === 'number' ? coords.pZ : null;
+        return {
+          num: pe.pitchNumber || null,
+          type: (pe.details && pe.details.type && pe.details.type.description) || 'Pitch',
+          typeCode: (pe.details && pe.details.type && pe.details.type.code) || '',
+          speed: pe.pitchData && pe.pitchData.startSpeed ? Math.round(pe.pitchData.startSpeed) : null,
+          result: (pe.details && pe.details.description) || '',
+          balls: pe.count && pe.count.balls,
+          strikes: pe.count && pe.count.strikes,
+          px, pz,
+          szTop: pe.pitchData && typeof pe.pitchData.strikeZoneTop === 'number' ? pe.pitchData.strikeZoneTop : null,
+          szBot: pe.pitchData && typeof pe.pitchData.strikeZoneBottom === 'number' ? pe.pitchData.strikeZoneBottom : null
+        };
+      });
   }
 
   // Personnel changes mid-at-bat (a new pitcher, a defensive sub) are
@@ -3963,6 +4003,65 @@
     return '';
   };
 
+  const RESULT_DOT_COLOR = (result) => {
+    if (/ball/i.test(result) && !/in play/i.test(result)) return PALETTE.ball;
+    if (/strike|foul/i.test(result)) return PALETTE.gold;
+    if (/in play/i.test(result)) return PALETTE.brick;
+    return PALETTE.ink;
+  };
+
+  // Catcher's-eye strike-zone plot: pX/pZ are feet from the plate's center
+  // and feet off the ground respectively (see extractPitches). Renders
+  // nothing if not one single pitch in the at-bat has location data, rather
+  // than showing an empty box.
+  function renderPitchLocation(pitches) {
+    const located = pitches.filter(p => typeof p.px === 'number' && typeof p.pz === 'number');
+    if (!located.length) return '';
+
+    const withZone = located.find(p => typeof p.szTop === 'number' && typeof p.szBot === 'number');
+    const szTop = withZone ? withZone.szTop : 3.5;
+    const szBot = withZone ? withZone.szBot : 1.5;
+
+    const scale = 48, cx = 100, groundY = 235, halfPlate = 0.708;
+    const x = px => cx + px * scale;
+    const y = pz => groundY - pz * scale;
+    const zoneLeft = x(-halfPlate), zoneRight = x(halfPlate);
+    const zoneTop = y(szTop), zoneBot = y(szBot);
+    const lastPitch = pitches[pitches.length - 1];
+
+    let svg = `<rect x="${zoneLeft}" y="${zoneTop}" width="${zoneRight - zoneLeft}" height="${zoneBot - zoneTop}" fill="rgba(243,236,219,0.05)" stroke="${PALETTE.ink}" stroke-width="1.4"/>`;
+    for (let i = 1; i < 3; i++) {
+      const gx = zoneLeft + i * (zoneRight - zoneLeft) / 3;
+      const gy = zoneTop + i * (zoneBot - zoneTop) / 3;
+      svg += `<line x1="${gx}" y1="${zoneTop}" x2="${gx}" y2="${zoneBot}" stroke="${PALETTE.ink}" stroke-width="0.6" opacity="0.35"/>`;
+      svg += `<line x1="${zoneLeft}" y1="${gy}" x2="${zoneRight}" y2="${gy}" stroke="${PALETTE.ink}" stroke-width="0.6" opacity="0.35"/>`;
+    }
+    const plateY = groundY + 6, plateW = 17;
+    svg += `<path d="M ${cx - plateW},${plateY} L ${cx + plateW},${plateY} L ${cx + plateW},${plateY + 10} L ${cx},${plateY + 19} L ${cx - plateW},${plateY + 10} Z" fill="${PALETTE.paper}" stroke="${PALETTE.ink}" stroke-width="1" opacity="0.85"/>`;
+
+    if (located.length > 1) {
+      const d = located.map((p, i) => `${i === 0 ? 'M' : 'L'} ${x(p.px)},${y(p.pz)}`).join(' ');
+      svg += `<path d="${d}" fill="none" stroke="${PALETTE.ink}" stroke-width="1" stroke-dasharray="2,2" opacity="0.4"/>`;
+    }
+
+    located.forEach(p => {
+      const c = RESULT_DOT_COLOR(p.result);
+      const isLast = p === lastPitch;
+      svg += `<g class="loc-dot" data-num="${p.num || ''}">`;
+      if (isLast) {
+        svg += `<circle cx="${x(p.px)}" cy="${y(p.pz)}" r="10.5" fill="none" stroke="${c}" stroke-width="1.2" opacity="0.6"/>`;
+      }
+      svg += `<circle class="loc-dot-core" cx="${x(p.px)}" cy="${y(p.pz)}" r="7.5" fill="${c}" stroke="${PALETTE.paper}" stroke-width="1.2"/>`;
+      svg += `<text x="${x(p.px)}" y="${y(p.pz) + 3}" text-anchor="middle" font-size="8.5" font-weight="700" font-family="IBM Plex Mono, monospace" fill="${PALETTE.paper}">${p.num || ''}</text>`;
+      svg += '</g>';
+    });
+
+    return `<div class="loc-section">
+      <div class="loc-label"><span>Pitch Location</span><span class="view-tag">catcher's view</span></div>
+      <div class="loc-plot-wrap"><svg viewBox="0 0 200 260" width="200" height="260">${svg}</svg></div>
+    </div>`;
+  }
+
   function showPitchPopup(pkey) {
     const c = pitchStore[pkey];
     if (!c) return;
@@ -3971,7 +4070,7 @@
     let rows = '';
     if (pitches.length) {
       rows = pitches.map(p => `
-        <tr>
+        <tr data-num="${p.num || ''}">
           <td class="pnum">${p.num || ''}</td>
           <td>${p.type}${p.speed ? ' &#183; ' + p.speed + ' mph' : ''}</td>
           <td class="${RESULT_CLASS(p.result)}">${p.result || ''}</td>
@@ -3991,14 +4090,42 @@
       ? `<div class="pitch-events">${events.map(e => `<div class="pitch-event-tag">${e}</div>`).join('')}</div>`
       : '';
 
+    const locationHtml = pitches.length ? renderPitchLocation(pitches) : '';
+
     pitchModalBody.innerHTML = `
       <div class="pitch-header">${c.batterName || 'Batter'}</div>
       <div class="pitch-subheader">vs ${c.pitcherFullName || 'pitcher'}</div>
       ${rows}
+      ${locationHtml}
       ${eventsHtml}
       ${c.playDesc ? `<div class="pitch-final-desc">${c.playDesc}</div>` : ''}
     `;
     pitchOverlay.classList.add('open');
+    wirePitchLocationSync();
+  }
+
+  // Hovering a table row highlights its dot in the location plot and vice
+  // versa -- both sides carry the pitch number in data-num so no extra
+  // state is needed to find the match.
+  function wirePitchLocationSync() {
+    const rows = pitchModalBody.querySelectorAll('table.pitch-table tr[data-num]');
+    const dots = pitchModalBody.querySelectorAll('.loc-dot[data-num]');
+    if (!rows.length || !dots.length) return;
+    const setActive = (num, on) => {
+      if (!num) return;
+      rows.forEach(r => { if (r.getAttribute('data-num') === num) r.classList.toggle('hl', on); });
+      dots.forEach(d => { if (d.getAttribute('data-num') === num) d.classList.toggle('hl', on); });
+    };
+    rows.forEach(r => {
+      const num = r.getAttribute('data-num');
+      r.addEventListener('mouseenter', () => setActive(num, true));
+      r.addEventListener('mouseleave', () => setActive(num, false));
+    });
+    dots.forEach(d => {
+      const num = d.getAttribute('data-num');
+      d.addEventListener('mouseenter', () => setActive(num, true));
+      d.addEventListener('mouseleave', () => setActive(num, false));
+    });
   }
 
   function hidePitchPopup() {
