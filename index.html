@@ -1537,6 +1537,11 @@
   const dailyBody = document.getElementById('dailyBody');
   const dailyDateInput = document.getElementById('dailyDatePick');
   let pollTimer = null;
+  // Self-rescheduling (not setInterval) so a fresh call -- whether from the
+  // user changing dates or the poll tick itself -- can always cancel
+  // whatever's pending with one clearTimeout at the top, with no risk of a
+  // stale date's cycle silently surviving a race with a newer one.
+  let dailyPollTimer = null;
   let pitchStore = {};
   let rosterStore = {};
   let sprayStore = {};
@@ -3198,15 +3203,21 @@
     };
   }
 
-  async function loadDailySummary(dateStr) {
+  // isPoll distinguishes a silent background refresh from a real navigation
+  // (tab open, date change, prev/next click): a poll reuses the page that's
+  // already there and just swaps in fresh tile content, rather than flashing
+  // back through the loading messages every 15 seconds.
+  async function loadDailySummary(dateStr, isPoll) {
     const requestId = ++dailyRequestId;
-    dailyBody.innerHTML = '<div class="mlb-status-msg">Loading today&#8217;s games&#8230;</div>';
+    clearTimeout(dailyPollTimer);
+    dailyPollTimer = null;
+    if (!isPoll) dailyBody.innerHTML = '<div class="mlb-status-msg">Loading today&#8217;s games&#8230;</div>';
     try {
       const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}&hydrate=linescore`);
       const data = await res.json();
       const games = (data.dates && data.dates[0] && data.dates[0].games) || [];
       if (!games.length) {
-        dailyBody.innerHTML = '<div class="mlb-status-msg">No MLB games scheduled on this date.</div>';
+        if (!isPoll) dailyBody.innerHTML = '<div class="mlb-status-msg">No MLB games scheduled on this date.</div>';
         return;
       }
       dailyGamesByPk = {};
@@ -3225,10 +3236,12 @@
         inningOrdinal: linescore(g).currentInningOrdinal
       })).join('');
       dailyStatsData = { tilesHtml: tiles, homeRuns: [], strikeoutLeaders: [] };
-      dailyBody.innerHTML = '<div class="sheet"><div id="dailyViewSection"></div></div>';
+      if (!isPoll) {
+        dailyBody.innerHTML = '<div class="sheet"><div id="dailyViewSection"></div></div>';
+      }
       if (dailyView === 'games') {
         renderDailyView();
-      } else {
+      } else if (!isPoll) {
         document.getElementById('dailyViewSection').innerHTML = '<div class="mlb-status-msg">Loading game stats&#8230;</div>';
       }
 
@@ -3247,8 +3260,15 @@
       const strikeoutLeaders = Object.values(strikeoutTotals).sort((a, b) => b.count - a.count).slice(0, 10);
       dailyStatsData = { tilesHtml: tiles, homeRuns, strikeoutLeaders };
       renderDailyView();
+
+      // Only while something's actually live, same as the single-game
+      // poller -- a past date is all Final and a future one is all Preview,
+      // so this naturally never polls a date with nothing left to change.
+      if (requestId === dailyRequestId && games.some(g => g.status.abstractGameState === 'Live')) {
+        dailyPollTimer = setTimeout(() => loadDailySummary(dateStr, true), 15000);
+      }
     } catch (e) {
-      dailyBody.innerHTML = '<div class="mlb-status-msg">Could not load today\'s games. The MLB API may be unreachable right now.</div>';
+      if (!isPoll) dailyBody.innerHTML = '<div class="mlb-status-msg">Could not load today\'s games. The MLB API may be unreachable right now.</div>';
     }
   }
 
