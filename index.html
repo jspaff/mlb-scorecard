@@ -2697,6 +2697,7 @@
           const pitchSource = c || (isLiveCell ? {
             pitches: liveBatterInfo.pitches, events: liveBatterInfo.events, batterName: liveBatterInfo.batterName,
             pitcherFullName: liveBatterInfo.pitcherFullName,
+            batSide: liveBatterInfo.batSide, pitchHand: liveBatterInfo.pitchHand,
             // "in progress" is only true once a pitch has actually been
             // thrown -- before that this is just the on-deck placeholder,
             // with no claim to make unless a pause is happening right now
