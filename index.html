@@ -1820,19 +1820,30 @@
     };
   }
 
-  // Personnel changes mid-at-bat (a new pitcher, a defensive sub) are
-  // worth keeping on the record once the at-bat is done. Procedural
-  // pauses (a mound visit, a timeout, a replay review) aren't -- they
-  // only matter while they're actually happening.
-  const PERSISTENT_EVENT_RE = /pitching change|pitching sub|defensive sub|offensive sub|defensive switch/i;
+  // The small, well-defined set of events that actually halt play -- worth
+  // showing as the current status while they're happening (see
+  // currentInterruption), and NOT worth keeping once the at-bat is done
+  // (they're procedural, not part of what happened in the at-bat). Deliberately
+  // an allowlist rather than a blocklist: anything not on it (a personnel
+  // change, a stolen base, a wild pitch, a passed ball, or any other
+  // mid-at-bat event MLB's feed throws in) is assumed to NOT pause play, so
+  // it can never override the live in-progress display, and IS kept as a
+  // permanent record -- see extractEvents. A blocklist approach means every
+  // new kind of mid-at-bat event defaults to "treated as a pause" until
+  // someone notices and hardcodes an exception for it, which is exactly the
+  // bug a stolen base used to trigger (it briefly replaced "At bat in
+  // progress..." as if the game were paused, when the at-bat was still live).
+  const GENUINE_PAUSE_RE = /mound visit|batter timeout|timeout|replay review|challenge|ejection/i;
 
-  // personnel-change events worth keeping in the at-bat's detail modal
-  // once it's done -- see PERSISTENT_EVENT_RE. Must never factor into
-  // whether the at-bat is "in progress" (that's extractPitches' job).
+  // Non-pitch events worth keeping on the at-bat's record once it's done --
+  // everything except a genuine pause (see GENUINE_PAUSE_RE), so a personnel
+  // change, a stolen base, a wild pitch, etc. all show up in the at-bat's
+  // event summary. Must never factor into whether the at-bat is "in
+  // progress" (that's extractPitches' job).
   function extractEvents(play) {
     return (play.playEvents || [])
       .filter(pe => !pe.isPitch && pe.type !== 'pitch' && pe.details && pe.details.description
-        && PERSISTENT_EVENT_RE.test(pe.details.description))
+        && !GENUINE_PAUSE_RE.test(pe.details.description))
       .map(pe => pe.details.description);
   }
 
@@ -1840,13 +1851,15 @@
   // now -- i.e. it's the most recent thing recorded for this at-bat, with
   // no pitch since. Used to swap it in for "At bat in progress..." for as
   // long as it lasts; once a pitch follows, this naturally goes back to
-  // null and the placeholder text returns.
+  // null and the placeholder text returns. Anything that isn't a genuine
+  // pause (a stolen base, a personnel change, etc.) never qualifies here --
+  // the at-bat is still actually live through it.
   function currentInterruption(play) {
     const events = play.playEvents || [];
     const last = events[events.length - 1];
     if (!last || last.isPitch || last.type === 'pitch') return null;
     const desc = last.details && last.details.description;
-    if (!desc || PERSISTENT_EVENT_RE.test(desc)) return null;
+    if (!desc || !GENUINE_PAUSE_RE.test(desc)) return null;
     return desc;
   }
 
