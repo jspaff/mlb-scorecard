@@ -1359,6 +1359,19 @@
      it on hover without disturbing a hollow marker's hue, which lives in
      the stroke itself. */
   .loc-dot.hl { transform: scale(1.25); }
+  .loc-dot-glow {
+    transform-box: fill-box;
+    transform-origin: center;
+    pointer-events: none;
+    animation: locDotGlow 0.8s ease-out forwards;
+  }
+  @keyframes locDotGlow {
+    0% { transform: scale(1); opacity: 0.9; }
+    100% { transform: scale(2.6); opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .loc-dot-glow { animation: none; opacity: 0; }
+  }
   .pitch-final-desc {
     margin-top: 12px;
     padding-top: 10px;
@@ -1952,7 +1965,7 @@
             event === 'Home Run' ? 'homerun' : 'out';
           battedBalls.push({
             x: hitCoords.x, y: hitCoords.y, hitType, code,
-            pitches, events: extractEvents(play), batterId, ...handedness,
+            pitches, events: extractEvents(play), batterId, ...handedness, isComplete: true,
             batterName: (play.matchup && play.matchup.batter && play.matchup.batter.fullName) || '',
             pitcherFullName: (play.matchup && play.matchup.pitcher && play.matchup.pitcher.fullName) || '',
             playDesc: (play.result && play.result.description) || ''
@@ -1963,7 +1976,7 @@
         row.cells[inning].push({
           code, reached: rb, scored: rb === 4, isOut: rb === 0, playerId: batterId,
           pitcherChanged, pitcherId, pitcherName, order, calledLooking,
-          pitches, events: extractEvents(play), ...handedness,
+          pitches, events: extractEvents(play), ...handedness, isComplete: true,
           batterName: (play.matchup && play.matchup.batter && play.matchup.batter.fullName) || '',
           pitcherFullName: (pitcher && pitcher.fullName) || '',
           playDesc: (play.result && play.result.description) || ''
@@ -2697,7 +2710,7 @@
           const pitchSource = c || (isLiveCell ? {
             pitches: liveBatterInfo.pitches, events: liveBatterInfo.events, batterName: liveBatterInfo.batterName,
             pitcherFullName: liveBatterInfo.pitcherFullName,
-            batSide: liveBatterInfo.batSide, pitchHand: liveBatterInfo.pitchHand,
+            batSide: liveBatterInfo.batSide, pitchHand: liveBatterInfo.pitchHand, isComplete: false,
             // "in progress" is only true once a pitch has actually been
             // thrown -- before that this is just the on-deck placeholder,
             // with no claim to make unless a pause is happening right now
@@ -4016,6 +4029,10 @@
 
   const pitchOverlay = document.getElementById('pitchOverlay');
   let currentOpenPkey = null;
+  // Highest pitch number already rendered for the currently open popup, so a
+  // poll refresh can tell which pitch(es) just arrived. Reset whenever the
+  // popup closes so reopening any at-bat later starts without stale state.
+  let lastRenderedPitchNum = 0;
   const pitchModalBody = document.getElementById('pitchModalBody');
   const pitchClose = document.getElementById('pitchClose');
 
@@ -4090,11 +4107,19 @@
       `<text x="${dotX}" y="${dotY + 4}" text-anchor="middle" font-size="10.5" font-weight="700" font-family="Overpass, sans-serif" fill="${PALETTE.ink}" opacity="0.85">${pitchHand}</text>`;
   }
 
-  function pitchLocationMarker(p, px, py, isLast) {
+  // ringed: only the pitch that actually ended the at-bat gets the persistent
+  // ring -- during a live at-bat the most recent pitch is not that, it's
+  // just the newest one so far. justArrived: true for a split-second on
+  // whichever pitch(es) newly showed up since this popup was last rendered,
+  // regardless of whether the at-bat is done -- see showPitchPopup.
+  function pitchLocationMarker(p, px, py, ringed, justArrived) {
     const spec = RESULT_MARKER[classifyResult(p.result)] || RESULT_MARKER.other;
     let svg = `<g class="loc-dot" data-num="${p.num || ''}">`;
-    if (isLast) {
+    if (ringed) {
       svg += `<circle cx="${px}" cy="${py}" r="10.5" fill="none" stroke="${spec.hue}" stroke-width="1.2" opacity="0.6"/>`;
+    }
+    if (justArrived) {
+      svg += `<circle class="loc-dot-glow" cx="${px}" cy="${py}" r="7.5" fill="none" stroke="${spec.hue}" stroke-width="2.5"/>`;
     }
     if (spec.hollow) {
       svg += `<circle cx="${px}" cy="${py}" r="7.5" fill="${PALETTE.paper}" stroke="${spec.hue}" stroke-width="1.8"/>`;
@@ -4110,8 +4135,11 @@
   // Catcher's-eye strike-zone plot: pX/pZ are feet from the plate's center
   // and feet off the ground respectively (see extractPitches). Renders
   // nothing if not one single pitch in the at-bat has location data, rather
-  // than showing an empty box.
-  function renderPitchLocation(pitches, batSide, pitchHand) {
+  // than showing an empty box. newPitchNums is the set of pitch numbers that
+  // just arrived since the last render of this same popup (see
+  // showPitchPopup) -- empty on a fresh open, so nothing glows just from
+  // clicking into an at-bat that already has a full pitch history.
+  function renderPitchLocation(pitches, batSide, pitchHand, isComplete, newPitchNums) {
     const located = pitches.filter(p => typeof p.px === 'number' && typeof p.pz === 'number');
     if (!located.length) return '';
 
@@ -4144,7 +4172,9 @@
     }
 
     located.forEach(p => {
-      svg += pitchLocationMarker(p, x(p.px), y(p.pz), p === lastPitch);
+      const ringed = isComplete && p === lastPitch;
+      const justArrived = !!newPitchNums && newPitchNums.has(p.num);
+      svg += pitchLocationMarker(p, x(p.px), y(p.pz), ringed, justArrived);
     });
 
     return `<div class="loc-section">
@@ -4156,8 +4186,18 @@
   function showPitchPopup(pkey) {
     const c = pitchStore[pkey];
     if (!c) return;
+    // A poll refresh re-renders whatever popup is already open by calling
+    // this again with the same pkey -- that's the only time a newly-arrived
+    // pitch should glow. Opening a pkey fresh (or a different one) shows its
+    // full pitch history at once, with nothing to call out as "just arrived".
+    const isRefresh = pkey === currentOpenPkey;
     currentOpenPkey = pkey;
     const pitches = c.pitches || [];
+    const newPitchNums = new Set();
+    if (isRefresh) {
+      pitches.forEach(p => { if ((p.num || 0) > lastRenderedPitchNum) newPitchNums.add(p.num); });
+    }
+    lastRenderedPitchNum = pitches.reduce((max, p) => Math.max(max, p.num || 0), 0);
     let rows = '';
     if (pitches.length) {
       rows = pitches.map(p => `
@@ -4181,12 +4221,11 @@
       ? `<div class="pitch-events">${events.map(e => `<div class="pitch-event-tag">${e}</div>`).join('')}</div>`
       : '';
 
-    const locationHtml = pitches.length ? renderPitchLocation(pitches, c.batSide, c.pitchHand) : '';
-    const handTag = c.pitchHand === 'L' ? ' (LHP)' : c.pitchHand === 'R' ? ' (RHP)' : '';
+    const locationHtml = pitches.length ? renderPitchLocation(pitches, c.batSide, c.pitchHand, c.isComplete, newPitchNums) : '';
 
     pitchModalBody.innerHTML = `
       <div class="pitch-header">${c.batterName || 'Batter'}</div>
-      <div class="pitch-subheader">vs ${c.pitcherFullName || 'pitcher'}${handTag}</div>
+      <div class="pitch-subheader">vs ${c.pitcherFullName || 'pitcher'}</div>
       ${rows}
       ${locationHtml}
       ${eventsHtml}
@@ -4223,6 +4262,7 @@
   function hidePitchPopup() {
     pitchOverlay.classList.remove('open');
     currentOpenPkey = null;
+    lastRenderedPitchNum = 0;
   }
 
   const rosterOverlay = document.getElementById('rosterOverlay');
