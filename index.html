@@ -1581,6 +1581,11 @@
   // stale date's cycle silently surviving a race with a newer one.
   let dailyPollTimer = null;
   let pitchStore = {};
+  // per-team ABS challenge tallies for whichever game is currently loaded,
+  // keyed by team id -- set once in fetchAndRender (see gameData.absChallenges)
+  // and read back in showPitchPopup, since the popup only has the pitch/team
+  // id to work with, not the full gameData.
+  let absChallengeInfo = null;
   let rosterStore = {};
   let sprayStore = {};
   let playerStore = {};
@@ -1865,7 +1870,8 @@
           review: pe.reviewDetails ? {
             isOverturned: !!pe.reviewDetails.isOverturned,
             inProgress: !!pe.reviewDetails.inProgress,
-            playerName: (pe.reviewDetails.player && pe.reviewDetails.player.fullName) || null
+            playerName: (pe.reviewDetails.player && pe.reviewDetails.player.fullName) || null,
+            challengeTeamId: pe.reviewDetails.challengeTeamId || null
           } : null
         };
       });
@@ -3957,6 +3963,11 @@
       const awayName = gameData.teams.away.name;
       const homeName = gameData.teams.home.name;
       const state = gameData.status.abstractGameState;
+      const abs = gameData.absChallenges;
+      absChallengeInfo = abs && abs.hasChallenges ? {
+        [gameData.teams.away.id]: { remaining: abs.away.remaining, locationName: gameData.teams.away.locationName || teamNickname(gameData.teams.away) },
+        [gameData.teams.home.id]: { remaining: abs.home.remaining, locationName: gameData.teams.home.locationName || teamNickname(gameData.teams.home) }
+      } : null;
       const detailedState = gameData.status.detailedState;
       const allPlays = (liveData.plays && liveData.plays.allPlays) || [];
       const personIndex = gameData.players || {};
@@ -4402,13 +4413,18 @@
       ? `<div class="pitch-events">${events.map(e => `<div class="pitch-event-tag">${e}</div>`).join('')}</div>`
       : '';
 
+    const NUMBER_WORDS = ['zero', 'one', 'two', 'three'];
     const reviewedPitches = pitches.filter(p => p.hasReview);
     const reviewsHtml = reviewedPitches.length
       ? `<div class="pitch-events">${reviewedPitches.map(p => {
           const rd = p.review;
           const who = rd && rd.playerName ? rd.playerName : 'Player';
           const outcome = rd && rd.isOverturned ? 'call overturned' : 'call stands';
-          return `<div class="pitch-event-tag challenge-tag"><span class="abs-tag">ABS</span>Pitch ${p.num || ''}: ${who} challenged &#8212; ${outcome}</div>`;
+          const teamInfo = rd && absChallengeInfo && absChallengeInfo[rd.challengeTeamId];
+          const remainingText = teamInfo
+            ? ` ${teamInfo.locationName} has ${NUMBER_WORDS[teamInfo.remaining] || teamInfo.remaining} challenge${teamInfo.remaining === 1 ? '' : 's'} remaining.`
+            : '';
+          return `<div class="pitch-event-tag challenge-tag"><span class="abs-tag">ABS</span>Pitch ${p.num || ''}: ${who} challenged &#8212; ${outcome}.${remainingText}</div>`;
         }).join('')}</div>`
       : '';
 
