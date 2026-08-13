@@ -3891,6 +3891,7 @@
         let tag = '';
         if (state === 'Live') tag = ' &#8212; LIVE';
         else if (state === 'Final') tag = ' &#8212; Final';
+        else tag = ` &#8212; ${formatGameTime(g.gameDate)}`;
         return `<option value="${g.gamePk}">${away} @ ${home}${tag}</option>`;
       }).join('');
 
