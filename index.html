@@ -3843,10 +3843,15 @@
       // want the next half's leadoff hitter to already show as on deck.
       // linescore.offense is still consulted, when it's actually in sync,
       // to know whether the at-bat has real pitch data yet (for the dot).
-      // Deliberately never expands columnsPerInning for this -- only shown
-      // if it fits within columns already needed by completed at-bats --
-      // otherwise a transient state (e.g. during a mound visit) could
-      // briefly force a column open and then collapse it again.
+      // Before any pitch exists, this is just a structural guess at who's
+      // on deck -- stays gated to columns already needed by completed
+      // at-bats, so a transient state (e.g. during a mound visit) can't
+      // briefly force a column open and then collapse it again. Once a real
+      // pitch has actually been thrown, though, it's no longer a guess, and
+      // columnsPerInning IS expanded for it below -- otherwise a lineup
+      // turning over mid-inning would hide the live dot for anyone's second
+      // at-bat until the inning's earlier at-bats happened to complete and
+      // establish that column first.
       let liveBatterInfo = null;
       if (state === 'Live' && linescore.currentInning) {
         let effInning = linescore.currentInning;
@@ -3869,27 +3874,31 @@
 
         if (nextRow) {
           const slotIndex = (nextRow.cells[effInning] || []).length;
+          const nextRowPlayerIds = new Set(nextRow.players.map(p => p.id));
+          // the batter's own in-progress plate appearance, found by
+          // identity rather than by trusting it's the last item in
+          // allPlays -- an interruption (mound visit, batter timeout,
+          // defensive substitution, etc.) can land its own entry after
+          // it, sharing the same matchup.batter and sometimes even
+          // isComplete: false, and that must not make the live dot
+          // disappear mid-at-bat. NON_RESULT_EVENT_RE excludes those
+          // regardless of their isComplete state, since it's not
+          // consistent across interruption types.
+          const livePlay = allPlays.slice().reverse().find(p =>
+            p.about && p.about.isComplete === false &&
+            p.matchup && p.matchup.batter && nextRowPlayerIds.has(p.matchup.batter.id) &&
+            !(p.result && NON_RESULT_EVENT_RE.test(p.result.event || ''))
+          );
+          const livePitches = livePlay ? extractPitches(livePlay) : [];
+          if (livePitches.length && slotIndex >= (columnsPerInning[effInning] || 1)) {
+            columnsPerInning[effInning] = slotIndex + 1;
+          }
           if (slotIndex < (columnsPerInning[effInning] || 1)) {
-            const nextRowPlayerIds = new Set(nextRow.players.map(p => p.id));
-            // the batter's own in-progress plate appearance, found by
-            // identity rather than by trusting it's the last item in
-            // allPlays -- an interruption (mound visit, batter timeout,
-            // defensive substitution, etc.) can land its own entry after
-            // it, sharing the same matchup.batter and sometimes even
-            // isComplete: false, and that must not make the live dot
-            // disappear mid-at-bat. NON_RESULT_EVENT_RE excludes those
-            // regardless of their isComplete state, since it's not
-            // consistent across interruption types.
-            const livePlay = allPlays.slice().reverse().find(p =>
-              p.about && p.about.isComplete === false &&
-              p.matchup && p.matchup.batter && nextRowPlayerIds.has(p.matchup.batter.id) &&
-              !(p.result && NON_RESULT_EVENT_RE.test(p.result.event || ''))
-            );
             const feedBatter = linescore.offense && linescore.offense.batter;
             const isFeedMatch = feedBatter && nextRowPlayerIds.has(feedBatter.id);
             liveBatterInfo = {
               team: battingTeam, rowSlot: nextRow.slot, inning: effInning, slotIndex,
-              pitches: livePlay ? extractPitches(livePlay) : [],
+              pitches: livePitches,
               events: livePlay ? extractEvents(livePlay) : [],
               ...(livePlay ? extractHandedness(livePlay) : { batSide: null, pitchHand: null }),
               currentInterruption: livePlay ? currentInterruption(livePlay) : null,
