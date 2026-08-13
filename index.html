@@ -2982,16 +2982,17 @@
     return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
   }
 
-  function renderMonthGrid(viewYear, viewMonth, gamesByDate, seasonStart, seasonEnd) {
-    const leadBlanks = new Date(Date.UTC(viewYear, viewMonth, 1)).getUTCDay();
-    const daysInMonth = new Date(Date.UTC(viewYear, viewMonth + 1, 0)).getUTCDate();
+  function renderMonthGrid(startDate, endDate, gamesByDate, seasonStart, seasonEnd) {
+    const leadBlanks = startDate.getUTCDay();
     const todayS = todayStr();
 
     let cells = '';
     for (let i = 0; i < leadBlanks; i++) cells += '<div class="calendar-day is-empty"></div>';
 
-    for (let day = 1; day <= daysInMonth; day++) {
-      const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    let dayCount = 0;
+    for (let cur = new Date(startDate); cur <= endDate; cur.setUTCDate(cur.getUTCDate() + 1)) {
+      const dateStr = cur.toISOString().slice(0, 10);
+      const day = cur.getUTCDate();
       const games = gamesByDate[dateStr];
       const today = dateStr === todayS ? ' is-today' : '';
       if (dateStr < seasonStart || dateStr > seasonEnd) {
@@ -3009,9 +3010,10 @@
       } else {
         cells += `<div class="calendar-day${today}"><div class="cal-daynum">${day}</div></div>`;
       }
+      dayCount++;
     }
 
-    const trailBlanks = (7 - ((leadBlanks + daysInMonth) % 7)) % 7;
+    const trailBlanks = (7 - ((leadBlanks + dayCount) % 7)) % 7;
     for (let i = 0; i < trailBlanks; i++) cells += '<div class="calendar-day is-empty"></div>';
 
     return `<div class="calendar-weekdays"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
@@ -3027,13 +3029,36 @@
 
     let blocks = '';
     let y = startYear, m = startMonth;
+    let isFirst = true;
     while (y * 12 + m <= endYear * 12 + endMonth) {
-      const isCurrentMonth = todayS.slice(0, 4) === String(y) && Number(todayS.slice(5, 7)) - 1 === m;
+      let blockStart, blockEnd, title;
+      let blockEndM = m, blockEndY = y;
+
+      if (isFirst && (y * 12 + m) < (endYear * 12 + endMonth)) {
+        // Season opens partway through its first month (e.g. late March) —
+        // combine that tail end with the following month to avoid a mostly-empty grid.
+        blockEndM = m + 1;
+        blockEndY = y;
+        if (blockEndM > 11) { blockEndM = 0; blockEndY++; }
+        blockStart = new Date(seasonStart + 'T00:00:00Z');
+        blockEnd = new Date(Date.UTC(blockEndY, blockEndM + 1, 0));
+        title = `${MONTH_NAMES[m]}/${MONTH_NAMES[blockEndM]} ${blockEndY}`;
+      } else {
+        blockStart = new Date(Date.UTC(y, m, 1));
+        blockEnd = new Date(Date.UTC(y, m + 1, 0));
+        title = `${MONTH_NAMES[m]} ${y}`;
+      }
+
+      const isCurrentMonth = (todayS.slice(0, 4) === String(y) && Number(todayS.slice(5, 7)) - 1 === m) ||
+        (todayS.slice(0, 4) === String(blockEndY) && Number(todayS.slice(5, 7)) - 1 === blockEndM);
+
       blocks += `<div class="schedule-month-block"${isCurrentMonth ? ' data-current-month="1"' : ''}>
-        <div class="schedule-month-title">${MONTH_NAMES[m]} ${y}</div>
-        ${renderMonthGrid(y, m, gamesByDate, seasonStart, seasonEnd)}
+        <div class="schedule-month-title">${title}</div>
+        ${renderMonthGrid(blockStart, blockEnd, gamesByDate, seasonStart, seasonEnd)}
       </div>`;
-      m++;
+
+      isFirst = false;
+      m = blockEndM + 1; y = blockEndY;
       if (m > 11) { m = 0; y++; }
     }
 
