@@ -1349,6 +1349,22 @@
   .pitch-result-out { color: #8a8478; font-weight: 700; }
   .pitch-result-hbp { color: #4f7a5f; font-weight: 700; font-style: italic; }
   table.pitch-table tr.hl td { background: rgba(217, 169, 26, 0.14); }
+  table.pitch-table tr.challenged td { border-bottom-style: dashed; }
+  .abs-tag {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 700;
+    font-size: 8.5px;
+    letter-spacing: 0.04em;
+    color: var(--paper);
+    background: var(--ink);
+    border-radius: 3px;
+    padding: 1px 4px;
+    vertical-align: middle;
+    margin-left: 4px;
+  }
+  .pitch-event-tag.challenge-tag { border-style: dashed; }
+  .pitch-event-tag.challenge-tag .abs-tag { margin-left: 0; margin-right: 5px; }
   .loc-section { margin-top: 14px; }
   .loc-label {
     font-family: 'Overpass', sans-serif;
@@ -1565,6 +1581,11 @@
   // stale date's cycle silently surviving a race with a newer one.
   let dailyPollTimer = null;
   let pitchStore = {};
+  // per-team ABS challenge tallies for whichever game is currently loaded,
+  // keyed by team id -- set once in fetchAndRender (see gameData.absChallenges)
+  // and read back in showPitchPopup, since the popup only has the pitch/team
+  // id to work with, not the full gameData.
+  let absChallengeInfo = null;
   let rosterStore = {};
   let sprayStore = {};
   let playerStore = {};
@@ -1844,7 +1865,14 @@
           strikes: pe.count && pe.count.strikes,
           px, pz,
           szTop: pe.pitchData && typeof pe.pitchData.strikeZoneTop === 'number' ? pe.pitchData.strikeZoneTop : null,
-          szBot: pe.pitchData && typeof pe.pitchData.strikeZoneBottom === 'number' ? pe.pitchData.strikeZoneBottom : null
+          szBot: pe.pitchData && typeof pe.pitchData.strikeZoneBottom === 'number' ? pe.pitchData.strikeZoneBottom : null,
+          hasReview: !!(pe.details && pe.details.hasReview),
+          review: pe.reviewDetails ? {
+            isOverturned: !!pe.reviewDetails.isOverturned,
+            inProgress: !!pe.reviewDetails.inProgress,
+            playerName: (pe.reviewDetails.player && pe.reviewDetails.player.fullName) || null,
+            challengeTeamId: pe.reviewDetails.challengeTeamId || null
+          } : null
         };
       });
   }
@@ -3935,6 +3963,11 @@
       const awayName = gameData.teams.away.name;
       const homeName = gameData.teams.home.name;
       const state = gameData.status.abstractGameState;
+      const abs = gameData.absChallenges;
+      absChallengeInfo = abs && abs.hasChallenges ? {
+        [gameData.teams.away.id]: { remaining: abs.away.remaining, locationName: gameData.teams.away.locationName || teamNickname(gameData.teams.away) },
+        [gameData.teams.home.id]: { remaining: abs.home.remaining, locationName: gameData.teams.home.locationName || teamNickname(gameData.teams.home) }
+      } : null;
       const detailedState = gameData.status.detailedState;
       const allPlays = (liveData.plays && liveData.plays.allPlays) || [];
       const personIndex = gameData.players || {};
@@ -4274,6 +4307,9 @@
     if (ringed) {
       svg += `<circle cx="${px}" cy="${py}" r="10.5" fill="none" stroke="${spec.hue}" stroke-width="1.2" opacity="0.6"/>`;
     }
+    if (p.hasReview) {
+      svg += `<circle cx="${px}" cy="${py}" r="13" fill="none" stroke="${PALETTE.ink}" stroke-width="1.3" stroke-dasharray="2.5 2.5" opacity="0.75"/>`;
+    }
     if (justArrived) {
       svg += `<circle class="loc-dot-glow" cx="${px}" cy="${py}" r="7.5" fill="none" stroke="${spec.hue}" stroke-width="2.5"/>`;
     }
@@ -4357,10 +4393,10 @@
     let rows = '';
     if (pitches.length) {
       rows = pitches.map(p => `
-        <tr data-num="${p.num || ''}">
+        <tr data-num="${p.num || ''}"${p.hasReview ? ' class="challenged"' : ''}>
           <td class="pnum">${p.num || ''}</td>
           <td>${p.type}${p.speed ? ' &#183; ' + p.speed + ' mph' : ''}</td>
-          <td class="${RESULT_CLASS(p.result)}">${p.result || ''}</td>
+          <td class="${RESULT_CLASS(p.result)}">${p.result || ''}${p.hasReview ? ' <span class="abs-tag" title="ABS challenge">ABS</span>' : ''}</td>
           <td class="pcount">${p.balls != null ? p.balls : ''}-${p.strikes != null ? p.strikes : ''}</td>
         </tr>
       `).join('');
@@ -4377,6 +4413,21 @@
       ? `<div class="pitch-events">${events.map(e => `<div class="pitch-event-tag">${e}</div>`).join('')}</div>`
       : '';
 
+    const NUMBER_WORDS = ['zero', 'one', 'two', 'three'];
+    const reviewedPitches = pitches.filter(p => p.hasReview);
+    const reviewsHtml = reviewedPitches.length
+      ? `<div class="pitch-events">${reviewedPitches.map(p => {
+          const rd = p.review;
+          const who = rd && rd.playerName ? rd.playerName : 'Player';
+          const outcome = rd && rd.isOverturned ? 'call overturned' : 'call stands';
+          const teamInfo = rd && absChallengeInfo && absChallengeInfo[rd.challengeTeamId];
+          const remainingText = teamInfo
+            ? ` ${teamInfo.locationName} has ${NUMBER_WORDS[teamInfo.remaining] || teamInfo.remaining} challenge${teamInfo.remaining === 1 ? '' : 's'} remaining.`
+            : '';
+          return `<div class="pitch-event-tag challenge-tag"><span class="abs-tag">ABS</span>Pitch ${p.num || ''}: ${who} challenged &#8212; ${outcome}.${remainingText}</div>`;
+        }).join('')}</div>`
+      : '';
+
     const locationHtml = pitches.length ? renderPitchLocation(pitches, c.batSide, c.pitchHand, c.isComplete, newPitchNums) : '';
 
     pitchModalBody.innerHTML = `
@@ -4384,6 +4435,7 @@
       <div class="pitch-subheader">vs ${c.pitcherFullName || 'pitcher'}</div>
       ${rows}
       ${locationHtml}
+      ${reviewsHtml}
       ${eventsHtml}
       ${c.playDesc ? `<div class="pitch-final-desc">${c.playDesc}</div>` : ''}
     `;
