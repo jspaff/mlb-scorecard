@@ -151,6 +151,22 @@
   }
 
 
+  .venue-header { margin-bottom: 10px; }
+  .venue-name {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 500;
+    font-size: 13.5px;
+    letter-spacing: 0.02em;
+    color: var(--ink-soft);
+  }
+  .venue-details {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    opacity: 0.8;
+    margin-top: 2px;
+  }
+
   .box-score { margin-bottom: 14px; }
   table.box-table {
     border-collapse: collapse;
@@ -1552,6 +1568,24 @@
   const PALETTE = { ink: '#f3ecdb', gold: '#d9a91a', brick: '#e0604a', ball: '#4f7a5f', paper: '#3b4336', gray: '#8a8478' };
   const gameLogCache = {};
   const standingsCache = {};
+  const venueCache = {};
+  // The live-feed's gameData.venue is often just {id, name, link} -- city
+  // and roof type live on the dedicated venue endpoint instead. Cached by
+  // venue id since a park's location/roof type never changes game to game.
+  async function getVenueInfo(venueId) {
+    if (!venueId) return null;
+    if (venueCache[venueId] !== undefined) return venueCache[venueId];
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/venues/${venueId}`);
+      const data = await res.json();
+      const venue = (data.venues && data.venues[0]) || null;
+      venueCache[venueId] = venue;
+      return venue;
+    } catch (e) {
+      venueCache[venueId] = null;
+      return null;
+    }
+  }
   let standingsView = 'division';
   const playerSeasonCache = {};
   async function getPlayerSeasonStats(personId, season) {
@@ -2643,6 +2677,42 @@
         ${stat('R', r)}
         ${stat('Game Score', gameScore)}
       </div>
+    </div>`;
+  }
+
+  // venue is the fuller /api/v1/venues/{id} record (location + fieldInfo.roofType),
+  // fetched separately since the live feed's own gameData.venue is often just
+  // {id, name, link}. gameData.weather's condition string is the more reliable,
+  // per-game signal for a retractable roof's actual state (e.g. "Roof Closed") --
+  // fieldInfo.roofType is only the park's static classification, used as a
+  // fallback so a dome/retractable park still shows something even when the
+  // feed hasn't attached a roof-specific weather condition to this game yet.
+  function renderVenueHeader(gameData, venue) {
+    const venueName = (venue && venue.name) || (gameData.venue && gameData.venue.name);
+    if (!venueName) return '';
+    const location = venue && venue.location;
+    const cityState = location ? [location.city, location.stateAbbrev || location.state].filter(Boolean).join(', ') : '';
+
+    const startTime = gameData.datetime && gameData.datetime.dateTime ? new Date(gameData.datetime.dateTime) : null;
+    const timeStr = startTime ? startTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '';
+
+    const weather = gameData.weather || {};
+    const temp = weather.temp ? `${weather.temp}&#176;F` : '';
+    const wind = weather.wind || '';
+
+    const roofType = venue && venue.fieldInfo && venue.fieldInfo.roofType;
+    const roofFromWeather = /roof|dome/i.test(weather.condition || '') ? weather.condition : null;
+    const roofLabel = roofFromWeather || (roofType && roofType !== 'Open' ? `Roof: ${roofType}` : null);
+
+    const parts = [];
+    if (timeStr) parts.push(`First pitch ${timeStr}`);
+    if (temp) parts.push(temp);
+    if (wind) parts.push(`Wind ${wind}`);
+    if (roofLabel) parts.push(roofLabel);
+
+    return `<div class="venue-header">
+      <div class="venue-name">${venueName}${cityState ? ` &#183; ${cityState}` : ''}</div>
+      ${parts.length ? `<div class="venue-details">${parts.join(' &nbsp;&#183;&nbsp; ')}</div>` : ''}
     </div>`;
   }
 
@@ -3861,6 +3931,7 @@
       const detailedState = gameData.status.detailedState;
       const allPlays = (liveData.plays && liveData.plays.allPlays) || [];
       const personIndex = gameData.players || {};
+      const venue = await getVenueInfo(gameData.venue && gameData.venue.id);
 
       const numInnings = Math.max((linescore.innings || []).length, 9);
       const away = buildTeamRows(liveData.boxscore.teams.away, 'top', allPlays, personIndex);
@@ -4043,6 +4114,7 @@
       body.innerHTML = `
         <div class="sheet">
           <div class="sticky-top">
+            ${renderVenueHeader(gameData, venue)}
             ${renderBoxScore(linescore, awayName, homeName)}
             <div class="live-strip">${stripHtml}</div>
             ${lastPlayHtml}
