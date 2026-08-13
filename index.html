@@ -1322,8 +1322,10 @@
   table.pitch-table td.pnum { color: var(--ink-soft); width: 20px; }
   table.pitch-table td.pcount { color: var(--ink-soft); white-space: nowrap; }
   .pitch-result-ball { color: #4f7a5f; font-weight: 600; }
-  .pitch-result-strike { color: var(--gold); font-weight: 600; }
-  .pitch-result-inplay { color: var(--brick); font-weight: 700; }
+  .pitch-result-strike { color: var(--brick); font-weight: 600; }
+  .pitch-result-foulhit { color: var(--gold); font-weight: 600; }
+  .pitch-result-out { color: #8a8478; font-weight: 700; }
+  .pitch-result-hbp { color: #4f7a5f; font-weight: 700; font-style: italic; }
   table.pitch-table tr.hl td { background: rgba(217, 169, 26, 0.14); }
   .loc-section { margin-top: 14px; }
   .loc-label {
@@ -1347,8 +1349,16 @@
   }
   .loc-plot-wrap { display: flex; justify-content: center; }
   .loc-plot-wrap svg { display: block; }
-  .loc-dot { cursor: pointer; }
-  .loc-dot.hl .loc-dot-core { stroke: var(--ink); stroke-width: 2; }
+  .loc-dot {
+    cursor: pointer;
+    transform-box: fill-box;
+    transform-origin: center;
+    transition: transform 0.1s ease;
+  }
+  /* Scaling the whole marker (rather than recoloring its stroke) highlights
+     it on hover without disturbing a hollow marker's hue, which lives in
+     the stroke itself. */
+  .loc-dot.hl { transform: scale(1.25); }
   .pitch-final-desc {
     margin-top: 12px;
     padding-top: 10px;
@@ -1521,7 +1531,7 @@
   // Mirrors the --ink/--gold/--brick/--paper CSS variables (plus the ball
   // green that only exists as a literal on .pitch-result-ball), for the few
   // spots (SVG strings) that can't reference a CSS custom property directly.
-  const PALETTE = { ink: '#f3ecdb', gold: '#d9a91a', brick: '#e0604a', ball: '#4f7a5f', paper: '#3b4336' };
+  const PALETTE = { ink: '#f3ecdb', gold: '#d9a91a', brick: '#e0604a', ball: '#4f7a5f', paper: '#3b4336', gray: '#8a8478' };
   const gameLogCache = {};
   const standingsCache = {};
   let standingsView = 'division';
@@ -4008,27 +4018,99 @@
   const pitchModalBody = document.getElementById('pitchModalBody');
   const pitchClose = document.getElementById('pitchClose');
 
+  // Which of the 7 result categories a pitch's raw description falls into.
+  // Shared by the table text color and the location-plot marker so the two
+  // can never drift out of sync with each other.
+  function classifyResult(result) {
+    if (/hit by pitch/i.test(result)) return 'hbp';
+    if (/in play/i.test(result)) return /out\(s\)/i.test(result) ? 'inplay-out' : 'inplay-safe';
+    if (/foul/i.test(result)) return 'foul';
+    if (/called strike/i.test(result)) return 'strike-called';
+    if (/strike/i.test(result)) return 'strike-swinging';
+    if (/ball/i.test(result)) return 'ball';
+    return 'other';
+  }
+
   const RESULT_CLASS = (result) => {
-    if (/ball/i.test(result) && !/in play/i.test(result)) return 'pitch-result-ball';
-    if (/strike|foul/i.test(result)) return 'pitch-result-strike';
-    if (/in play/i.test(result)) return 'pitch-result-inplay';
-    return '';
+    switch (classifyResult(result)) {
+      case 'ball': return 'pitch-result-ball';
+      case 'strike-called': case 'strike-swinging': return 'pitch-result-strike';
+      case 'foul': case 'inplay-safe': return 'pitch-result-foulhit';
+      case 'inplay-out': return 'pitch-result-out';
+      case 'hbp': return 'pitch-result-hbp';
+      default: return '';
+    }
   };
 
-  const RESULT_DOT_COLOR = (result) => {
-    if (/ball/i.test(result) && !/in play/i.test(result)) return PALETTE.ball;
-    if (/strike|foul/i.test(result)) return PALETTE.gold;
-    if (/in play/i.test(result)) return PALETTE.brick;
-    return PALETTE.ink;
+  // Hue + fill state for each category's location-plot marker. Hollow marks
+  // the "lesser/passive" half of a pair -- a called strike vs. a swinging
+  // one, a foul vs. a ball actually put in play safely -- everything else
+  // (including the ring drawn on an at-bat's final pitch) uses this same hue.
+  const RESULT_MARKER = {
+    ball: { hue: PALETTE.ball, hollow: false },
+    'strike-called': { hue: PALETTE.brick, hollow: true },
+    'strike-swinging': { hue: PALETTE.brick, hollow: false },
+    foul: { hue: PALETTE.gold, hollow: true },
+    'inplay-safe': { hue: PALETTE.gold, hollow: false },
+    'inplay-out': { hue: PALETTE.gray, hollow: false },
+    hbp: { hue: PALETTE.ball, hollow: true },
+    other: { hue: PALETTE.ink, hollow: false }
   };
+
+  // Batter's-box marker: an open bracket hugging the outer edge of a tab
+  // beside the zone (open side facing the zone), with the batting side
+  // spelled out and rotated to run the tab's height. Negative pX is the
+  // third-base side, so a right-handed batter's box sits on the plot's left
+  // in this catcher's-eye view.
+  function battersBoxMarker(zoneLeft, zoneRight, zoneTop, zoneBot, batSide) {
+    const gap = 5, tabW = 20;
+    const batX = batSide === 'R' ? (zoneLeft - gap - tabW) : (zoneRight + gap);
+    const midX = batX + tabW / 2, midY = (zoneTop + zoneBot) / 2;
+    const label = batSide === 'R' ? 'RIGHTY' : 'LEFTY';
+    const outerX = batSide === 'R' ? batX : batX + tabW;
+    const tickDir = batSide === 'R' ? 1 : -1, tickLen = 7;
+    let svg = `<line x1="${outerX}" y1="${zoneTop}" x2="${outerX}" y2="${zoneBot}" stroke="${PALETTE.ink}" stroke-width="1.3" opacity="0.7"/>`;
+    svg += `<line x1="${outerX}" y1="${zoneTop}" x2="${outerX + tickDir * tickLen}" y2="${zoneTop}" stroke="${PALETTE.ink}" stroke-width="1.3" opacity="0.7"/>`;
+    svg += `<line x1="${outerX}" y1="${zoneBot}" x2="${outerX + tickDir * tickLen}" y2="${zoneBot}" stroke="${PALETTE.ink}" stroke-width="1.3" opacity="0.7"/>`;
+    svg += `<text x="${midX}" y="${midY}" text-anchor="middle" dominant-baseline="middle" font-size="10.5" font-weight="700" letter-spacing="0.06em" font-family="Overpass, sans-serif" fill="${PALETTE.ink}" opacity="0.85" transform="rotate(-90 ${midX} ${midY})">${label}</text>`;
+    return svg;
+  }
+
+  // Pitcher release-point marker: a hollow circle flush to the side above
+  // the zone the pitch actually comes from -- third-base side (left, in
+  // this view) for a righty, first-base side (right) for a lefty, matching
+  // real release-point data.
+  function pitcherReleaseMarker(zoneLeft, zoneRight, zoneTop, pitchHand) {
+    const cornerX = pitchHand === 'R' ? zoneLeft : zoneRight;
+    const r = 9.5, gapAboveZone = 8;
+    const dotX = cornerX + (pitchHand === 'R' ? 1 : -1) * 12;
+    const dotY = zoneTop - gapAboveZone - r;
+    return `<circle cx="${dotX}" cy="${dotY}" r="${r}" fill="rgba(243,236,219,0.04)" stroke="${PALETTE.ink}" stroke-width="1.3" opacity="0.75"/>` +
+      `<text x="${dotX}" y="${dotY + 4}" text-anchor="middle" font-size="10.5" font-weight="700" font-family="Overpass, sans-serif" fill="${PALETTE.ink}" opacity="0.85">${pitchHand}</text>`;
+  }
+
+  function pitchLocationMarker(p, px, py, isLast) {
+    const spec = RESULT_MARKER[classifyResult(p.result)] || RESULT_MARKER.other;
+    let svg = `<g class="loc-dot" data-num="${p.num || ''}">`;
+    if (isLast) {
+      svg += `<circle cx="${px}" cy="${py}" r="10.5" fill="none" stroke="${spec.hue}" stroke-width="1.2" opacity="0.6"/>`;
+    }
+    if (spec.hollow) {
+      svg += `<circle cx="${px}" cy="${py}" r="7.5" fill="${PALETTE.paper}" stroke="${spec.hue}" stroke-width="1.8"/>`;
+      svg += `<text x="${px}" y="${py + 3}" text-anchor="middle" font-size="8.5" font-weight="700" font-family="IBM Plex Mono, monospace" fill="${spec.hue}">${p.num || ''}</text>`;
+    } else {
+      svg += `<circle cx="${px}" cy="${py}" r="7.5" fill="${spec.hue}" stroke="${PALETTE.paper}" stroke-width="1.2"/>`;
+      svg += `<text x="${px}" y="${py + 3}" text-anchor="middle" font-size="8.5" font-weight="700" font-family="IBM Plex Mono, monospace" fill="${PALETTE.paper}">${p.num || ''}</text>`;
+    }
+    svg += '</g>';
+    return svg;
+  }
 
   // Catcher's-eye strike-zone plot: pX/pZ are feet from the plate's center
   // and feet off the ground respectively (see extractPitches). Renders
   // nothing if not one single pitch in the at-bat has location data, rather
-  // than showing an empty box. batSide places the batter's-box marker --
-  // negative pX is the third-base side (a right-handed batter's box), so in
-  // this catcher's-eye view an 'R' batter's box sits on the plot's left.
-  function renderPitchLocation(pitches, batSide) {
+  // than showing an empty box.
+  function renderPitchLocation(pitches, batSide, pitchHand) {
     const located = pitches.filter(p => typeof p.px === 'number' && typeof p.pz === 'number');
     if (!located.length) return '';
 
@@ -4054,23 +4136,14 @@
     svg += `<path d="M ${cx - plateW},${plateY} L ${cx + plateW},${plateY} L ${cx + plateW},${plateY + 10} L ${cx},${plateY + 19} L ${cx - plateW},${plateY + 10} Z" fill="${PALETTE.paper}" stroke="${PALETTE.ink}" stroke-width="1" opacity="0.85"/>`;
 
     if (batSide === 'L' || batSide === 'R') {
-      const boxW = 24, boxH = 32, gap = 4;
-      const boxX = batSide === 'R' ? (cx - plateW - gap - boxW) : (cx + plateW + gap);
-      const boxY = plateY - 4;
-      svg += `<rect x="${boxX}" y="${boxY}" width="${boxW}" height="${boxH}" rx="3" fill="rgba(243,236,219,0.04)" stroke="${PALETTE.ink}" stroke-width="1" stroke-dasharray="3,2" opacity="0.55"/>`;
-      svg += `<text x="${boxX + boxW / 2}" y="${boxY + boxH / 2 + 4}" text-anchor="middle" font-size="12" font-weight="700" font-family="Overpass, sans-serif" fill="${PALETTE.ink}" opacity="0.7">${batSide}</text>`;
+      svg += battersBoxMarker(zoneLeft, zoneRight, zoneTop, zoneBot, batSide);
+    }
+    if (pitchHand === 'L' || pitchHand === 'R') {
+      svg += pitcherReleaseMarker(zoneLeft, zoneRight, zoneTop, pitchHand);
     }
 
     located.forEach(p => {
-      const c = RESULT_DOT_COLOR(p.result);
-      const isLast = p === lastPitch;
-      svg += `<g class="loc-dot" data-num="${p.num || ''}">`;
-      if (isLast) {
-        svg += `<circle cx="${x(p.px)}" cy="${y(p.pz)}" r="10.5" fill="none" stroke="${c}" stroke-width="1.2" opacity="0.6"/>`;
-      }
-      svg += `<circle class="loc-dot-core" cx="${x(p.px)}" cy="${y(p.pz)}" r="7.5" fill="${c}" stroke="${PALETTE.paper}" stroke-width="1.2"/>`;
-      svg += `<text x="${x(p.px)}" y="${y(p.pz) + 3}" text-anchor="middle" font-size="8.5" font-weight="700" font-family="IBM Plex Mono, monospace" fill="${PALETTE.paper}">${p.num || ''}</text>`;
-      svg += '</g>';
+      svg += pitchLocationMarker(p, x(p.px), y(p.pz), p === lastPitch);
     });
 
     return `<div class="loc-section">
@@ -4107,7 +4180,7 @@
       ? `<div class="pitch-events">${events.map(e => `<div class="pitch-event-tag">${e}</div>`).join('')}</div>`
       : '';
 
-    const locationHtml = pitches.length ? renderPitchLocation(pitches, c.batSide) : '';
+    const locationHtml = pitches.length ? renderPitchLocation(pitches, c.batSide, c.pitchHand) : '';
     const handTag = c.pitchHand === 'L' ? ' (LHP)' : c.pitchHand === 'R' ? ' (RHP)' : '';
 
     pitchModalBody.innerHTML = `
