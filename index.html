@@ -154,10 +154,11 @@
   .venue-header { margin-bottom: 10px; }
   .venue-name {
     font-family: 'Oswald', sans-serif;
-    font-weight: 500;
-    font-size: 13.5px;
-    letter-spacing: 0.02em;
-    color: var(--ink-soft);
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ink);
   }
   .venue-details {
     font-family: 'IBM Plex Mono', monospace;
@@ -1576,7 +1577,7 @@
     if (!venueId) return null;
     if (venueCache[venueId] !== undefined) return venueCache[venueId];
     try {
-      const res = await fetch(`https://statsapi.mlb.com/api/v1/venues/${venueId}`);
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/venues/${venueId}?hydrate=location,fieldInfo`);
       const data = await res.json();
       const venue = (data.venues && data.venues[0]) || null;
       venueCache[venueId] = venue;
