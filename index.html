@@ -1695,7 +1695,6 @@
   function diamondSVG(reached, scored, code, isOut, outEdge, specialEdges, ghostStart, calledLooking) {
     const dim = 'rgba(243,236,219,0.22)';
     const { ink, gold, brick } = PALETTE;
-    const blue = '#5b8fc0';
     const paper = '#3b4336';
     const isHR = code === 'HR';
     const isK = code === 'K';
@@ -1713,21 +1712,21 @@
     edges.forEach(([name, p1, p2, on]) => {
       if (isK || on) {
         const special = !isK && specialMap[name];
-        const color = isK ? brick : (special ? blue : gold);
+        const color = isK ? brick : gold;
         svg += `<line x1="${p1[0]}" y1="${p1[1]}" x2="${p2[0]}" y2="${p2[1]}" stroke="${color}" stroke-width="2.4" stroke-linecap="square"/>`;
         if (special) {
           const midX = (p1[0] + p2[0]) / 2, midY = (p1[1] + p2[1]) / 2;
           const outFactor = 1.55;
           const labelX = 20 + (midX - 20) * outFactor;
           const labelY = 20 + (midY - 20) * outFactor;
-          labelSvg += `<rect x="${labelX - 6.5}" y="${labelY - 4.5}" width="13" height="9" rx="1.5" fill="${paper}" stroke="${blue}" stroke-width="0.8"/>`;
-          labelSvg += `<text x="${labelX}" y="${labelY + 2.8}" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="6.5" font-weight="700" fill="${blue}">${special}</text>`;
+          labelSvg += `<rect x="${labelX - 6.5}" y="${labelY - 4.5}" width="13" height="9" rx="1.5" fill="${paper}" stroke="${gold}" stroke-width="0.8"/>`;
+          labelSvg += `<text x="${labelX}" y="${labelY + 2.8}" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="6.5" font-weight="700" fill="${gold}">${special}</text>`;
         }
       } else if (outEdge === name) {
         const stopX = p1[0] + (p2[0] - p1[0]) * 0.55;
         const stopY = p1[1] + (p2[1] - p1[1]) * 0.55;
         const outLabel = specialMap[name] === 'CS' || specialMap[name] === 'PO' ? specialMap[name] : null;
-        svg += `<line x1="${p1[0]}" y1="${p1[1]}" x2="${stopX}" y2="${stopY}" stroke="${outLabel ? blue : gold}" stroke-width="2.4" stroke-linecap="square"/>`;
+        svg += `<line x1="${p1[0]}" y1="${p1[1]}" x2="${stopX}" y2="${stopY}" stroke="${gold}" stroke-width="2.4" stroke-linecap="square"/>`;
         svg += `<line x1="${stopX}" y1="${stopY}" x2="${p2[0]}" y2="${p2[1]}" stroke="${dim}" stroke-width="1.2" stroke-linecap="square"/>`;
         const dx = p2[0] - p1[0], dy = p2[1] - p1[1];
         const len = Math.sqrt(dx * dx + dy * dy) || 1;
@@ -1738,8 +1737,8 @@
           const outFactor = 1.55;
           const labelX = 20 + (stopX - 20) * outFactor;
           const labelY = 20 + (stopY - 20) * outFactor;
-          labelSvg += `<rect x="${labelX - 6.5}" y="${labelY - 4.5}" width="13" height="9" rx="1.5" fill="${paper}" stroke="${blue}" stroke-width="0.8"/>`;
-          labelSvg += `<text x="${labelX}" y="${labelY + 2.8}" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="6.5" font-weight="700" fill="${blue}">${outLabel}</text>`;
+          labelSvg += `<rect x="${labelX - 6.5}" y="${labelY - 4.5}" width="13" height="9" rx="1.5" fill="${paper}" stroke="${gold}" stroke-width="0.8"/>`;
+          labelSvg += `<text x="${labelX}" y="${labelY + 2.8}" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="6.5" font-weight="700" fill="${gold}">${outLabel}</text>`;
         }
       } else {
         svg += `<line x1="${p1[0]}" y1="${p1[1]}" x2="${p2[0]}" y2="${p2[1]}" stroke="${dim}" stroke-width="1.2" stroke-linecap="square"/>`;
@@ -2048,9 +2047,8 @@
           // on a fielder's choice / double play during another batter's
           // play -- marks the runner's OWN diamond: a line up to where
           // they were retired, with a red tick showing the cutoff. Caught
-          // stealing specifically gets a blue line (matching a successful
-          // steal) and a "CS" label, since it's still worth distinguishing
-          // from a fielder's-choice/double-play out.
+          // stealing specifically gets a "CS" label, since it's still worth
+          // distinguishing from a fielder's-choice/double-play out.
           // Rather than parse MLB's out-movement fields (which are
           // inconsistent -- null start/end with the base tucked into
           // outBase for some out types), use target.reached: our own
