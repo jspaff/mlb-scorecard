@@ -2680,6 +2680,17 @@
     </table></div></div>`;
   }
 
+  // Before a lineup is posted (future games have no battingOrder data yet),
+  // buildTeamRows has nothing to return -- fill in 9 empty slots so the grid
+  // still renders at its normal height instead of collapsing to no rows.
+  function placeholderLineupRows() {
+    return Array.from({ length: 9 }, (_, i) => ({
+      slot: i + 1,
+      players: [{ id: '', name: '', lastName: '', pos: '', order: (i + 1) * 100, stats: {} }],
+      cells: {}
+    }));
+  }
+
   function renderTeamTable(teamName, rows, numInnings, pitcherByInning, starterPitcherId, columnsPerInning, pitcherCardHtml, teamKey, liveBatterInfo, season) {
     let head = `<tr><th class="ply">Player</th><th class="pos">Pos</th>`;
     for (let i = 1; i <= numInnings; i++) {
@@ -2690,6 +2701,7 @@
 
     const bodyRows = rows.map(r => {
       const nameHtml = r.players.map((p, i) => {
+        if (!p.id) return '';
         playerStore[p.id] = { id: p.id, name: p.name, pos: p.pos, team: teamName, season, todayStats: p.stats };
         const btn = `<button type="button" class="player-name-btn" data-player-id="${p.id}" title="${p.name}">${p.lastName}</button>`;
         return i === 0 ? btn : `<span class="sub-note">&#8594; ${btn}</span>`;
@@ -4037,8 +4049,8 @@
             <div class="live-strip">${stripHtml}</div>
             ${lastPlayHtml}
           </div>
-          ${renderTeamTable(awayName, awayRows, numInnings, away.pitcherByInning, away.starterPitcherId, columnsPerInning, homePitcherCard, 'away', liveBatterInfo, season)}
-          ${renderTeamTable(homeName, homeRows, numInnings, home.pitcherByInning, home.starterPitcherId, columnsPerInning, awayPitcherCard, 'home', liveBatterInfo, season)}
+          ${renderTeamTable(awayName, awayRows.length ? awayRows : placeholderLineupRows(), numInnings, away.pitcherByInning, away.starterPitcherId, columnsPerInning, homePitcherCard, 'away', liveBatterInfo, season)}
+          ${renderTeamTable(homeName, homeRows.length ? homeRows : placeholderLineupRows(), numInnings, home.pitcherByInning, home.starterPitcherId, columnsPerInning, awayPitcherCard, 'home', liveBatterInfo, season)}
         </div>
         <div class="footnote">Source: MLB Stats API &#183; updated ${new Date().toLocaleTimeString()}</div>
       `;
