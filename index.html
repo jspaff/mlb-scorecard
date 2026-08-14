@@ -3719,12 +3719,12 @@
 
     // game.linescore is only ever supplied by the Scorecard tab's "Box
     // Score" link, which already has the full live feed loaded -- Daily
-    // and Schedule tabs only know the final score, so their Final games
+    // and Schedule tabs only know the score, so their Live/Final games
     // fetch the inning-by-inning grid lazily into this same slot (see
     // loadGameSummaryExtrasInto), alongside the WPA highlights below.
     const boxScoreHtml = game.linescore
       ? renderBoxScore(game.linescore, game.awayName, game.homeName)
-      : (game.state === 'Final'
+      : ((game.state === 'Final' || game.state === 'Live')
           ? `<div id="boxScore-${game.gamePk}" class="box-score-slot"><div class="potg-loading">Loading box score&#8230;</div></div>`
           : '');
 
@@ -3764,7 +3764,7 @@
     const requestId = ++gameSummaryRequestId;
     gameSummaryModalBody.innerHTML = renderGameSummaryContent(dateStr, games, headerLabel);
     gameSummaryOverlay.classList.add('open');
-    games.filter(g => g.state === 'Final').forEach(g => loadGameSummaryExtrasInto(g, requestId));
+    games.filter(g => g.state === 'Final' || g.state === 'Live').forEach(g => loadGameSummaryExtrasInto(g, requestId));
   }
 
   function showGameSummaryModal(dateStr) {
@@ -3829,13 +3829,18 @@
     return n + 'th';
   }
 
-  async function fetchGameHighlights(gamePk) {
+  // includeHighlights skips the winProbability fetch and WPA leaderboard
+  // math entirely for Live games -- their box score is still worth fetching
+  // eagerly (see openGameSummaryModal), but WPA swings mid-game aren't a
+  // "top play/players" verdict yet, so there's no point paying for that call.
+  async function fetchGameHighlights(gamePk, includeHighlights) {
     try {
-      const [feedRes, wpRes] = await Promise.all([
-        fetch(`https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live`),
-        fetch(`https://statsapi.mlb.com/api/v1/game/${gamePk}/winProbability`)
-      ]);
+      const feedRes = await fetch(`https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live`);
       const feedData = await feedRes.json();
+      const linescore = feedData.liveData && feedData.liveData.linescore;
+      if (!includeHighlights) return { leaders: [], playOfGame: null, linescore };
+
+      const wpRes = await fetch(`https://statsapi.mlb.com/api/v1/game/${gamePk}/winProbability`);
       const wpData = await wpRes.json();
       const allPlays = (feedData.liveData && feedData.liveData.plays && feedData.liveData.plays.allPlays) || [];
       const wp = Array.isArray(wpData) ? wpData : [];
@@ -3882,7 +3887,7 @@
           : buildBatterStatLineParts(stats && stats.batting);
         return { id: p.id, name: p.name, statLine: renderStatLineParts(statParts) };
       });
-      return { leaders, playOfGame, linescore: feedData.liveData && feedData.liveData.linescore };
+      return { leaders, playOfGame, linescore };
     } catch (e) {
       return { leaders: [], playOfGame: null, linescore: null };
     }
@@ -3928,10 +3933,13 @@
   }
 
   async function loadGameSummaryExtrasInto(game, requestId) {
-    const { leaders, playOfGame, linescore } = await fetchGameHighlights(game.gamePk);
+    const includeHighlights = game.state === 'Final';
+    const { leaders, playOfGame, linescore } = await fetchGameHighlights(game.gamePk, includeHighlights);
     if (requestId !== gameSummaryRequestId) return;
-    const wpaEl = document.getElementById(`wpaLeaders-${game.gamePk}`);
-    if (wpaEl) wpaEl.outerHTML = renderGameHighlights(playOfGame, leaders);
+    if (includeHighlights) {
+      const wpaEl = document.getElementById(`wpaLeaders-${game.gamePk}`);
+      if (wpaEl) wpaEl.outerHTML = renderGameHighlights(playOfGame, leaders);
+    }
     if (!game.linescore) {
       const boxEl = document.getElementById(`boxScore-${game.gamePk}`);
       if (boxEl) boxEl.outerHTML = linescore ? renderBoxScore(linescore, game.awayName, game.homeName) : '';
