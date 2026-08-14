@@ -387,7 +387,7 @@
     gap: 8px;
   }
   .daily-tile {
-    height: 92px;
+    height: 108px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -396,6 +396,8 @@
     border-radius: 6px;
     padding: 10px 12px;
     cursor: pointer;
+    position: relative;
+    overflow: hidden;
   }
   .daily-tile:hover, .daily-tile:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
   .daily-tile.is-live {
@@ -404,7 +406,7 @@
     background: rgba(84, 121, 109, 0.32);
     animation: daily-tile-glow 1.6s ease-in-out infinite;
   }
-  .daily-tile.is-final { border-color: #7ba296; background: rgba(84, 121, 109, 0.32); }
+  .daily-tile.is-final { border-color: var(--ink); border-width: 1.5px; background: rgba(84, 121, 109, 0.32); }
   @keyframes daily-tile-glow {
     0%, 100% { border-color: var(--gold); box-shadow: 0 0 0 0 rgba(217, 169, 26, 0); }
     50% { border-color: #f0c94a; box-shadow: 0 0 9px 1px rgba(217, 169, 26, 0.55); }
@@ -412,12 +414,32 @@
   @media (prefers-reduced-motion: reduce) {
     .daily-tile.is-live { animation: none; }
   }
+  .daily-tile-watermark {
+    position: absolute;
+    right: -12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 92px;
+    height: 92px;
+    opacity: 0.14;
+    z-index: 0;
+    pointer-events: none;
+  }
   .daily-tile-row {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
     gap: 6px;
+    position: relative;
+    z-index: 1;
   }
+  .daily-tile-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+  .daily-tile-logo { width: 24px; height: 24px; flex-shrink: 0; }
   .daily-tile-team {
     font-family: 'Oswald', sans-serif;
     font-weight: 600;
@@ -439,6 +461,8 @@
   .daily-tile-team.is-winner, .daily-tile-score.is-winner { color: var(--ink); font-weight: 700; }
   .daily-tile.is-live .daily-tile-team, .daily-tile.is-live .daily-tile-score { color: var(--ink); font-weight: 600; }
   .daily-tile-state {
+    position: relative;
+    z-index: 1;
     margin-top: 2px;
     text-align: center;
     font-family: 'Overpass', sans-serif;
@@ -3212,30 +3236,41 @@
     return state || '';
   }
 
+  function capLogoUrl(teamId) {
+    return `https://www.mlbstatic.com/team-logos/team-cap-on-dark/${teamId}.svg`;
+  }
+
+  function dailyTileRow(name, teamId, score, won) {
+    const nameBlock = `<span class="daily-tile-team${won ? ' is-winner' : ''}">${name}</span>`;
+    const logo = teamId ? `<img class="daily-tile-logo" src="${capLogoUrl(teamId)}" alt="">` : '';
+    const scoreHtml = score == null ? '' : `<span class="daily-tile-score${won ? ' is-winner' : ''}">${score}</span>`;
+    return `<div class="daily-tile-row"><span class="daily-tile-left">${logo}${nameBlock}</span>${scoreHtml}</div>`;
+  }
+
   function renderDailyGameTile(dateStr, game) {
-    let rowsHtml, stateLabel, tileClass;
+    let rowsHtml, stateLabel, tileClass, watermarkHtml = '';
     if (game.state === 'Live') {
-      rowsHtml = `
-        <div class="daily-tile-row"><span class="daily-tile-team">${game.awayName}</span><span class="daily-tile-score">${game.awayScore ?? 0}</span></div>
-        <div class="daily-tile-row"><span class="daily-tile-team">${game.homeName}</span><span class="daily-tile-score">${game.homeScore ?? 0}</span></div>`;
+      rowsHtml = dailyTileRow(game.awayName, game.awayId, game.awayScore ?? 0, false)
+        + dailyTileRow(game.homeName, game.homeId, game.homeScore ?? 0, false);
       stateLabel = `${formatInningState(game.inningState)} ${game.inningOrdinal || ''}`.trim();
       tileClass = 'is-live';
     } else if (game.state === 'Final') {
       const awayWon = game.awayScore > game.homeScore;
-      rowsHtml = `
-        <div class="daily-tile-row"><span class="daily-tile-team${awayWon ? ' is-winner' : ''}">${game.awayName}</span><span class="daily-tile-score${awayWon ? ' is-winner' : ''}">${game.awayScore}</span></div>
-        <div class="daily-tile-row"><span class="daily-tile-team${awayWon ? '' : ' is-winner'}">${game.homeName}</span><span class="daily-tile-score${awayWon ? '' : ' is-winner'}">${game.homeScore}</span></div>`;
+      rowsHtml = dailyTileRow(game.awayName, game.awayId, game.awayScore, awayWon)
+        + dailyTileRow(game.homeName, game.homeId, game.homeScore, !awayWon);
       stateLabel = 'Final';
       tileClass = 'is-final';
+      const winnerId = awayWon ? game.awayId : game.homeId;
+      if (winnerId) watermarkHtml = `<img class="daily-tile-watermark" src="${capLogoUrl(winnerId)}" alt="">`;
     } else {
-      rowsHtml = `
-        <div class="daily-tile-row"><span class="daily-tile-team">${game.awayName}</span></div>
-        <div class="daily-tile-row"><span class="daily-tile-team">${game.homeName}</span></div>`;
+      rowsHtml = dailyTileRow(game.awayName, game.awayId, null, false)
+        + dailyTileRow(game.homeName, game.homeId, null, false);
       stateLabel = formatGameTime(game.gameDate);
       tileClass = 'is-preview';
     }
     return `
       <div class="daily-tile ${tileClass}" data-date="${dateStr}" data-game-pk="${game.gamePk}" data-state="${game.state}" tabindex="0" role="button">
+        ${watermarkHtml}
         ${rowsHtml}
         <div class="daily-tile-state">${stateLabel}</div>
       </div>`;
@@ -3379,6 +3414,8 @@
         gamePk: g.gamePk,
         awayName: teamNickname(g.teams.away.team),
         homeName: teamNickname(g.teams.home.team),
+        awayId: g.teams.away.team && g.teams.away.team.id,
+        homeId: g.teams.home.team && g.teams.home.team.id,
         awayScore: g.teams.away.score,
         homeScore: g.teams.home.score,
         state: g.status.abstractGameState,
