@@ -31,23 +31,6 @@
     min-height: 100%;
   }
 
-  .mlb-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 14px;
-  }
-  .mlb-title {
-    font-family: 'Overpass', sans-serif;
-    font-weight: 800;
-    font-size: 21px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--ink);
-  }
-
   .mlb-controls { display: flex; gap: 8px; flex-wrap: wrap; }
 
   .tab-header {
@@ -150,24 +133,17 @@
     box-shadow: 0 6px 8px -6px rgba(11, 15, 12, 0.35);
   }
 
-  /* Compact bar is always visible; everything else (venue info, inning-by-
-     inning box score, at-bat detail) lives in .score-strip-detail and is
-     only shown once .sticky-top carries .is-expanded, so the scorecard
-     grid keeps most of the viewport by default. */
-  .score-strip-toggle {
+  /* The scorecard grid is the point of this tab, so the header stays down
+     to a single-line score strip -- venue info and the inning-by-inning
+     box score live in the game summary modal (shared with Daily/Schedule)
+     instead of taking up permanent space here. */
+  .score-strip {
     display: flex;
     align-items: center;
     gap: 10px;
-    width: 100%;
-    background: none;
-    border: none;
     padding: 7px 0;
-    margin: 0;
-    cursor: pointer;
-    text-align: left;
     font-family: 'IBM Plex Mono', monospace;
   }
-  .score-strip-toggle:hover .chevron, .score-strip-toggle:focus-visible .chevron { opacity: 1; }
   .score-strip-teams {
     font-family: 'Oswald', sans-serif;
     font-weight: 600;
@@ -194,26 +170,29 @@
     color: var(--ink-soft);
     white-space: nowrap;
   }
-  .score-strip .chevron {
+  .box-score-link {
     margin-left: auto;
-    font-size: 10px;
-    color: var(--ink-soft);
-    opacity: 0.75;
-    transition: transform 0.15s ease;
     flex-shrink: 0;
+    background: none;
+    border: 1px solid var(--paper-line);
+    border-radius: 5px;
+    color: var(--ink-soft);
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 5px 8px;
+    cursor: pointer;
+    white-space: nowrap;
   }
-  .sticky-top.is-expanded .score-strip .chevron { transform: rotate(180deg); }
-  .sticky-top.is-expanded .score-strip-toggle { padding-bottom: 6px; }
-  .score-strip-detail {
-    display: none;
-    padding-bottom: 4px;
-    border-top: 1px solid var(--paper-line);
-    padding-top: 10px;
+  .box-score-link:hover, .box-score-link:focus-visible { color: var(--ink); border-color: var(--ink-soft); }
+  .score-strip-sub {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: var(--ink-soft);
+    padding-bottom: 8px;
   }
-  .sticky-top.is-expanded .score-strip-detail { display: block; }
-
-  .diamond-mini.small { width: 15px; height: 15px; }
-  .diamond-mini.small .base-mini { width: 5.5px; height: 5.5px; border-width: 1.1px; }
 
   .venue-header { margin-bottom: 10px; }
   .venue-name {
@@ -276,18 +255,6 @@
   table.box-table td.box-stat { border-left: 1px solid var(--paper-line); font-weight: 700; }
   .run-scored { font-weight: 700; color: var(--ink); }
 
-  .live-strip {
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
-    align-items: center;
-    padding-bottom: 12px;
-    margin-bottom: 14px;
-    border-bottom: 1.5px solid var(--paper-line);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 12.5px;
-    color: var(--ink);
-  }
   .badge {
     font-family: 'Oswald', sans-serif;
     font-weight: 600;
@@ -594,34 +561,8 @@
   }
   .hr-watch:hover, .hr-watch:focus-visible { text-decoration: underline; }
 
-  .count-board {
-    display: flex;
-    gap: 16px;
-    padding: 2px 0;
-  }
-  .count-col { display: flex; flex-direction: column; align-items: center; gap: 5px; }
-  .count-label {
-    font-family: 'Overpass', sans-serif;
-    font-weight: 800;
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--ink);
-  }
-  .count-lights { display: flex; gap: 4px; }
-  .light-bulb {
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    background: transparent;
-    border: 1px solid var(--ink-soft);
-    display: inline-block;
-  }
-  .light-bulb.lit-green { background: #4f9e57; border-color: #4f9e57; }
-  .light-bulb.lit-red { background: var(--brick); border-color: var(--brick); }
-
-  .diamond-mini { width: 26px; height: 26px; position: relative; transform: rotate(45deg); vertical-align: middle; }
-  .base-mini { position: absolute; width: 10px; height: 10px; border: 1.4px solid var(--ink-soft); }
+  .diamond-mini { width: 15px; height: 15px; position: relative; transform: rotate(45deg); vertical-align: middle; }
+  .base-mini { position: absolute; width: 5.5px; height: 5.5px; border: 1.1px solid var(--ink-soft); }
   .base-mini.on { background: var(--gold); border-color: var(--gold); }
   .base-mini.first { top: 0; right: 0; }
   .base-mini.second { top: 0; left: 0; }
@@ -1521,7 +1462,6 @@
   }
 
   @media (max-width: 520px) {
-    .mlb-header { flex-direction: column; align-items: flex-start; }
     .sheet { padding: 14px; }
     .sticky-top { margin: -2px -14px 0; padding-left: 14px; padding-right: 14px; }
     .standings-grid { grid-template-columns: 1fr; }
@@ -1536,9 +1476,6 @@
 </head>
 <body>
 <div id="mlb-root">
-  <div class="mlb-header">
-    <div class="mlb-title">Take Me Out to the Ballgame</div>
-  </div>
   <div class="tab-header">
     <div class="tab-bar">
       <button type="button" class="tab-btn" data-tab="daily">Daily</button>
@@ -1663,11 +1600,12 @@
   const dailyBody = document.getElementById('dailyBody');
   const dailyDateInput = document.getElementById('dailyDatePick');
   let pollTimer = null;
-  // Whether the sticky-top's box score / venue / live detail is expanded
-  // below the compact score strip. Lives outside fetchAndRender since that
-  // function rebuilds body.innerHTML from scratch on every poll -- without
-  // this the user's expand/collapse choice would reset every 15s.
-  let scoreStripExpanded = false;
+  // The currently loaded game, in the same shape renderGameSummaryGame()
+  // expects, so the Scorecard tab's "Box Score" link can reuse the exact
+  // modal the Daily/Schedule tabs open rather than duplicating it. Lives
+  // outside fetchAndRender since the link is clicked well after that call
+  // returns, on whatever the latest poll last rendered.
+  let currentGameSummary = null;
   // Self-rescheduling (not setInterval) so a fresh call -- whether from the
   // user changing dates or the poll tick itself -- can always cancel
   // whatever's pending with one clearTimeout at the top, with no risk of a
@@ -2993,15 +2931,6 @@
     </div>`;
   }
 
-  function countBoard(balls, strikes, outs) {
-    const col = (label, count, max, cls) => {
-      let lights = '';
-      for (let i = 0; i < max; i++) lights += `<span class="light-bulb ${i < count ? cls : ''}"></span>`;
-      return `<div class="count-col"><div class="count-label">${label}</div><div class="count-lights">${lights}</div></div>`;
-    };
-    return `<div class="count-board">${col('Balls', balls, 3, 'lit-green')}${col('Strikes', strikes, 2, 'lit-red')}${col('Outs', outs, 2, 'lit-red')}</div>`;
-  }
-
   const TEAM_NICKNAMES = {
     108: 'Angels', 109: 'Diamondbacks', 110: 'Orioles', 111: 'Red Sox', 112: 'Cubs',
     113: 'Reds', 114: 'Guardians', 115: 'Rockies', 116: 'Tigers', 117: 'Astros',
@@ -3788,6 +3717,19 @@
         <div class="game-summary-time">First pitch: ${formatGameTime(game.gameDate)}</div>`;
     }
 
+    // game.linescore is only ever supplied by the Scorecard tab's "Box
+    // Score" link, which already has the full live feed loaded -- Daily
+    // and Schedule tabs only know the final score, so their Final games
+    // fetch the inning-by-inning grid lazily into this same slot (see
+    // loadGameSummaryExtrasInto), alongside the WPA highlights below.
+    const boxScoreHtml = game.linescore
+      ? renderBoxScore(game.linescore, game.awayName, game.homeName)
+      : (game.state === 'Final'
+          ? `<div id="boxScore-${game.gamePk}" class="box-score-slot"><div class="potg-loading">Loading box score&#8230;</div></div>`
+          : '');
+
+    // Top play/players highlights only make sense once a game is over --
+    // a Live game's WPA swings are still in motion.
     const wpaHtml = game.state === 'Final'
       ? `<div class="pog-section" id="wpaLeaders-${game.gamePk}"><div class="potg-loading">Loading game highlights&#8230;</div></div>`
       : '';
@@ -3796,7 +3738,9 @@
       <div class="game-summary-game">
         ${multi ? `<div class="gs-game-label">Game ${game.gameNumber}</div>` : ''}
         <div class="${multi ? 'gs-game-matchup' : 'pitch-header'}">${game.awayName} @ ${game.homeName}</div>
+        ${game.venueHtml || ''}
         ${statusHtml}
+        ${boxScoreHtml}
         ${wpaHtml}
         <button type="button" class="modal-cta" data-date="${dateStr}" data-game-pk="${game.gamePk}">View Full Scorecard &#8594;</button>
       </div>`;
@@ -3820,7 +3764,7 @@
     const requestId = ++gameSummaryRequestId;
     gameSummaryModalBody.innerHTML = renderGameSummaryContent(dateStr, games, headerLabel);
     gameSummaryOverlay.classList.add('open');
-    games.filter(g => g.state === 'Final').forEach(g => loadWpaLeadersInto(g.gamePk, requestId));
+    games.filter(g => g.state === 'Final').forEach(g => loadGameSummaryExtrasInto(g, requestId));
   }
 
   function showGameSummaryModal(dateStr) {
@@ -3834,6 +3778,14 @@
       homeName: g.isHome ? teamName : g.opponentFull
     }));
     openGameSummaryModal(dateStr, neutralGames, teamName);
+  }
+  // Scorecard tab's "Box Score" link -- reuses the exact same modal as
+  // the Daily/Schedule tabs, just fed the one game already loaded there
+  // (with linescore attached, so the box score renders instantly instead
+  // of needing the lazy fetch Final tiles from other tabs rely on).
+  function showCurrentGameSummary() {
+    if (!currentGameSummary) return;
+    openGameSummaryModal(currentGameSummary.dateStr, [currentGameSummary]);
   }
   function hideGameSummaryModal() {
     gameSummaryOverlay.classList.remove('open');
@@ -3930,9 +3882,9 @@
           : buildBatterStatLineParts(stats && stats.batting);
         return { id: p.id, name: p.name, statLine: renderStatLineParts(statParts) };
       });
-      return { leaders, playOfGame };
+      return { leaders, playOfGame, linescore: feedData.liveData && feedData.liveData.linescore };
     } catch (e) {
-      return { leaders: [], playOfGame: null };
+      return { leaders: [], playOfGame: null, linescore: null };
     }
   }
 
@@ -3975,11 +3927,15 @@
     return renderPlayOfGame(playOfGame) + renderPlayersOfTheGame(leaders);
   }
 
-  async function loadWpaLeadersInto(gamePk, requestId) {
-    const { leaders, playOfGame } = await fetchGameHighlights(gamePk);
+  async function loadGameSummaryExtrasInto(game, requestId) {
+    const { leaders, playOfGame, linescore } = await fetchGameHighlights(game.gamePk);
     if (requestId !== gameSummaryRequestId) return;
-    const el = document.getElementById(`wpaLeaders-${gamePk}`);
-    if (el) el.outerHTML = renderGameHighlights(playOfGame, leaders);
+    const wpaEl = document.getElementById(`wpaLeaders-${game.gamePk}`);
+    if (wpaEl) wpaEl.outerHTML = renderGameHighlights(playOfGame, leaders);
+    if (!game.linescore) {
+      const boxEl = document.getElementById(`boxScore-${game.gamePk}`);
+      if (boxEl) boxEl.outerHTML = linescore ? renderBoxScore(linescore, game.awayName, game.homeName) : '';
+    }
   }
 
   scheduleTeamSelect.addEventListener('change', () => {
@@ -4204,18 +4160,14 @@
       sprayStore[awayName] = renderSprayChart(away.battedBalls, awayName);
       sprayStore[homeName] = renderSprayChart(home.battedBalls, homeName);
 
-      let badgeClass = 'badge-preview';
-      if (state === 'Live') badgeClass = 'badge-live';
-      else if (state === 'Final') badgeClass = 'badge-final';
-
-      let stripHtml = '';
-      let lastPlayHtml = '';
-      // Text/markup for the always-visible compact score strip -- kept in
-      // sync with stripHtml below rather than derived from it, since the
-      // compact bar needs a shorter inning label and a mini bases/count
-      // readout instead of the full countBoard() lights.
+      // Text for the always-visible compact score strip. The venue header,
+      // inning-by-inning box score, and top-play highlights all live in the
+      // game summary modal (opened via the "Box Score" link) instead of
+      // here, so the scorecard grid keeps the viewport.
       let compactStateHtml = '';
       let compactCountHtml = '';
+      let subLineHtml = '';
+      let lastPlayHtml = '';
       if (state === 'Live') {
         const halfOver = (linescore.outs ?? 0) >= 3;
         const balls = halfOver ? 0 : (linescore.balls ?? 0);
@@ -4231,24 +4183,17 @@
         const pitcher = halfOver ? '' : ((linescore.defense && linescore.defense.pitcher) ? linescore.defense.pitcher.fullName : '');
 
         const basesMiniHtml = `
-          <span class="diamond-mini small">
+          <span class="diamond-mini">
             <span class="base-mini second ${onSecond ? 'on' : ''}"></span>
             <span class="base-mini third ${onThird ? 'on' : ''}"></span>
             <span class="base-mini first ${onFirst ? 'on' : ''}"></span>
           </span>`;
         compactStateHtml = `${inningHalf} ${inningNum}`;
         compactCountHtml = `<span class="score-strip-count">${balls}-${strikes}, ${outs} out ${basesMiniHtml}</span>`;
+        subLineHtml = (batter || pitcher)
+          ? `${batter ? 'At bat: ' + batter : ''}${pitcher ? ' &nbsp;&#183;&nbsp; Pitching: ' + pitcher : ''}`
+          : '';
 
-        stripHtml = `
-          <div class="badge ${badgeClass}">${inningHalf} ${inningNum}</div>
-          ${countBoard(balls, strikes, outs)}
-          <div class="diamond-mini">
-            <span class="base-mini second ${onSecond ? 'on' : ''}"></span>
-            <span class="base-mini third ${onThird ? 'on' : ''}"></span>
-            <span class="base-mini first ${onFirst ? 'on' : ''}"></span>
-          </div>
-          <div>${batter ? 'At bat: ' + batter : ''}${pitcher ? ' &nbsp;&#183;&nbsp; Pitching: ' + pitcher : ''}</div>
-        `;
         const currentHalf = (linescore.inningHalf || '').toLowerCase();
         const completedAtBats = allPlays.filter(p =>
           p.result && p.result.type === 'atBat' && p.result.description &&
@@ -4260,27 +4205,42 @@
           lastPlayHtml = `<div class="last-play"><span class="last-play-label">Previous Batter</span>${prevPlay.result.description}</div>`;
         }
       } else if (state === 'Final') {
-        stripHtml = `<div class="badge ${badgeClass}">Final</div>`;
         compactStateHtml = 'Final';
       } else {
         const startTime = gameData.datetime && gameData.datetime.dateTime ? new Date(gameData.datetime.dateTime) : null;
-        stripHtml = `<div class="badge ${badgeClass}">${detailedState}</div>
-          ${startTime ? '<div>First pitch: ' + startTime.toLocaleString(undefined, {hour:'numeric', minute:'2-digit', month:'short', day:'numeric'}) + '</div>' : ''}`;
         compactStateHtml = detailedState;
+        subLineHtml = startTime
+          ? 'First pitch: ' + startTime.toLocaleString(undefined, {hour:'numeric', minute:'2-digit', month:'short', day:'numeric'})
+          : '';
       }
 
       const awayAbbr = (gameData.teams.away.abbreviation) || awayName;
       const homeAbbr = (gameData.teams.home.abbreviation) || homeName;
+      const showRuns = state === 'Live' || state === 'Final';
       const awayRuns = (linescore.teams && linescore.teams.away && linescore.teams.away.runs) ?? 0;
       const homeRuns = (linescore.teams && linescore.teams.home && linescore.teams.home.runs) ?? 0;
       const scoreStripHtml = `
-        <button type="button" class="score-strip-toggle" aria-expanded="${scoreStripExpanded}" title="${scoreStripExpanded ? 'Collapse' : 'Expand'} box score &amp; game detail">
-          <span class="score-strip-teams">${awayAbbr} <span class="score-strip-run">${awayRuns}</span> @ ${homeAbbr} <span class="score-strip-run">${homeRuns}</span></span>
-          <span class="score-strip-state">${compactStateHtml}</span>
-          ${compactCountHtml}
-          <span class="chevron">&#9662;</span>
-        </button>
+        <span class="score-strip-teams">${awayAbbr}${showRuns ? ` <span class="score-strip-run">${awayRuns}</span>` : ''} @ ${homeAbbr}${showRuns ? ` <span class="score-strip-run">${homeRuns}</span>` : ''}</span>
+        <span class="score-strip-state">${compactStateHtml}</span>
+        ${compactCountHtml}
+        <button type="button" class="box-score-link">Box Score</button>
       `;
+
+      // Fed to showCurrentGameSummary() when the link above is clicked --
+      // reuses the exact same modal the Daily/Schedule tabs open, just with
+      // this game's linescore already attached so its box score renders
+      // instantly instead of needing the lazy fetch those tabs rely on.
+      currentGameSummary = {
+        gamePk,
+        dateStr: officialDate,
+        awayName, homeName,
+        awayScore: showRuns ? awayRuns : null,
+        homeScore: showRuns ? homeRuns : null,
+        state, detailedState,
+        gameDate: gameData.datetime && gameData.datetime.dateTime,
+        linescore: showRuns ? linescore : null,
+        venueHtml: renderVenueHeader(gameData, venue)
+      };
 
       // preserve horizontal scroll position of each team's innings grid --
       // the rebuild below replaces the whole subtree, which would otherwise
@@ -4289,14 +4249,10 @@
 
       body.innerHTML = `
         <div class="sheet">
-          <div class="sticky-top${scoreStripExpanded ? ' is-expanded' : ''}">
+          <div class="sticky-top">
             <div class="score-strip">${scoreStripHtml}</div>
-            <div class="score-strip-detail">
-              ${renderVenueHeader(gameData, venue)}
-              ${renderBoxScore(linescore, awayName, homeName)}
-              <div class="live-strip">${stripHtml}</div>
-              ${lastPlayHtml}
-            </div>
+            ${subLineHtml ? `<div class="score-strip-sub">${subLineHtml}</div>` : ''}
+            ${lastPlayHtml}
           </div>
           ${renderTeamTable(awayName, awayRows.length ? awayRows : placeholderLineupRows(), numInnings, away.pitcherByInning, away.starterPitcherId, columnsPerInning, homePitcherCard, 'away', liveBatterInfo, season)}
           ${renderTeamTable(homeName, homeRows.length ? homeRows : placeholderLineupRows(), numInnings, home.pitcherByInning, home.starterPitcherId, columnsPerInning, awayPitcherCard, 'home', liveBatterInfo, season)}
@@ -4729,14 +4685,8 @@
   }
 
   document.addEventListener('click', (e) => {
-    const stripToggle = e.target.closest('.score-strip-toggle');
-    if (stripToggle) {
-      scoreStripExpanded = !scoreStripExpanded;
-      const stickyTop = stripToggle.closest('.sticky-top');
-      if (stickyTop) stickyTop.classList.toggle('is-expanded', scoreStripExpanded);
-      stripToggle.setAttribute('aria-expanded', String(scoreStripExpanded));
-      stripToggle.title = scoreStripExpanded ? 'Collapse box score & game detail' : 'Expand box score & game detail';
-    }
+    const boxScoreLink = e.target.closest('.box-score-link');
+    if (boxScoreLink) showCurrentGameSummary();
     const target = e.target.closest('[data-pkey]');
     if (target) showPitchPopup(target.getAttribute('data-pkey'));
     const rosterBtn = e.target.closest('.roster-btn');
