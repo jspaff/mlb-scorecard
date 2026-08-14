@@ -3267,7 +3267,7 @@
       tileClass = 'is-preview';
     }
     return `
-      <div class="daily-tile ${tileClass}" data-date="${dateStr}" data-game-pk="${game.gamePk}" data-state="${game.state}" tabindex="0" role="button">
+      <div class="daily-tile ${tileClass}" data-date="${dateStr}" data-game-pk="${game.gamePk}" tabindex="0" role="button">
         ${watermarkHtml}
         ${rowsHtml}
         <div class="daily-tile-state">${stateLabel}</div>
@@ -3475,14 +3475,14 @@
     document.querySelectorAll('#dailyViewToggle .view-toggle-btn').forEach(b => b.classList.toggle('active', b === btn));
     renderDailyView();
   });
+  // Matches the Schedule tab: every tile opens the game summary modal
+  // regardless of state, with "View Full Scorecard" inside it as the one
+  // path to the Scorecard tab, rather than Live/Preview tiles jumping
+  // straight there and only Final tiles showing the modal.
   function handleDailyTileActivate(tile) {
     if (!tile) return;
-    if (tile.dataset.state === 'Final') {
-      const g = dailyGamesByPk[tile.dataset.gamePk];
-      if (g) openGameSummaryModal(tile.dataset.date, [scheduleGameToNeutral(g)]);
-    } else {
-      jumpToScorecardGame(tile.dataset.date, tile.dataset.gamePk);
-    }
+    const g = dailyGamesByPk[tile.dataset.gamePk];
+    if (g) openGameSummaryModal(tile.dataset.date, [scheduleGameToNeutral(g)]);
   }
   dailyBody.addEventListener('click', (e) => {
     handleDailyTileActivate(e.target.closest('.daily-tile'));
