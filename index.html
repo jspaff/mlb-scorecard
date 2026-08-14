@@ -150,6 +150,70 @@
     box-shadow: 0 6px 8px -6px rgba(11, 15, 12, 0.35);
   }
 
+  /* Compact bar is always visible; everything else (venue info, inning-by-
+     inning box score, at-bat detail) lives in .score-strip-detail and is
+     only shown once .sticky-top carries .is-expanded, so the scorecard
+     grid keeps most of the viewport by default. */
+  .score-strip-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 7px 0;
+    margin: 0;
+    cursor: pointer;
+    text-align: left;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .score-strip-toggle:hover .chevron, .score-strip-toggle:focus-visible .chevron { opacity: 1; }
+  .score-strip-teams {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: 14.5px;
+    letter-spacing: 0.02em;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  .score-strip-run { color: var(--gold); font-weight: 700; padding: 0 1px; }
+  .score-strip-state {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+  .score-strip-count {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+  .score-strip .chevron {
+    margin-left: auto;
+    font-size: 10px;
+    color: var(--ink-soft);
+    opacity: 0.75;
+    transition: transform 0.15s ease;
+    flex-shrink: 0;
+  }
+  .sticky-top.is-expanded .score-strip .chevron { transform: rotate(180deg); }
+  .sticky-top.is-expanded .score-strip-toggle { padding-bottom: 6px; }
+  .score-strip-detail {
+    display: none;
+    padding-bottom: 4px;
+    border-top: 1px solid var(--paper-line);
+    padding-top: 10px;
+  }
+  .sticky-top.is-expanded .score-strip-detail { display: block; }
+
+  .diamond-mini.small { width: 15px; height: 15px; }
+  .diamond-mini.small .base-mini { width: 5.5px; height: 5.5px; border-width: 1.1px; }
 
   .venue-header { margin-bottom: 10px; }
   .venue-name {
@@ -1599,6 +1663,11 @@
   const dailyBody = document.getElementById('dailyBody');
   const dailyDateInput = document.getElementById('dailyDatePick');
   let pollTimer = null;
+  // Whether the sticky-top's box score / venue / live detail is expanded
+  // below the compact score strip. Lives outside fetchAndRender since that
+  // function rebuilds body.innerHTML from scratch on every poll -- without
+  // this the user's expand/collapse choice would reset every 15s.
+  let scoreStripExpanded = false;
   // Self-rescheduling (not setInterval) so a fresh call -- whether from the
   // user changing dates or the poll tick itself -- can always cancel
   // whatever's pending with one clearTimeout at the top, with no risk of a
@@ -4141,6 +4210,12 @@
 
       let stripHtml = '';
       let lastPlayHtml = '';
+      // Text/markup for the always-visible compact score strip -- kept in
+      // sync with stripHtml below rather than derived from it, since the
+      // compact bar needs a shorter inning label and a mini bases/count
+      // readout instead of the full countBoard() lights.
+      let compactStateHtml = '';
+      let compactCountHtml = '';
       if (state === 'Live') {
         const halfOver = (linescore.outs ?? 0) >= 3;
         const balls = halfOver ? 0 : (linescore.balls ?? 0);
@@ -4154,6 +4229,15 @@
         const onFirst = !!offense.first, onSecond = !!offense.second, onThird = !!offense.third;
         const batter = offense.batter ? offense.batter.fullName : '';
         const pitcher = halfOver ? '' : ((linescore.defense && linescore.defense.pitcher) ? linescore.defense.pitcher.fullName : '');
+
+        const basesMiniHtml = `
+          <span class="diamond-mini small">
+            <span class="base-mini second ${onSecond ? 'on' : ''}"></span>
+            <span class="base-mini third ${onThird ? 'on' : ''}"></span>
+            <span class="base-mini first ${onFirst ? 'on' : ''}"></span>
+          </span>`;
+        compactStateHtml = `${inningHalf} ${inningNum}`;
+        compactCountHtml = `<span class="score-strip-count">${balls}-${strikes}, ${outs} out ${basesMiniHtml}</span>`;
 
         stripHtml = `
           <div class="badge ${badgeClass}">${inningHalf} ${inningNum}</div>
@@ -4177,11 +4261,26 @@
         }
       } else if (state === 'Final') {
         stripHtml = `<div class="badge ${badgeClass}">Final</div>`;
+        compactStateHtml = 'Final';
       } else {
         const startTime = gameData.datetime && gameData.datetime.dateTime ? new Date(gameData.datetime.dateTime) : null;
         stripHtml = `<div class="badge ${badgeClass}">${detailedState}</div>
           ${startTime ? '<div>First pitch: ' + startTime.toLocaleString(undefined, {hour:'numeric', minute:'2-digit', month:'short', day:'numeric'}) + '</div>' : ''}`;
+        compactStateHtml = detailedState;
       }
+
+      const awayAbbr = (gameData.teams.away.abbreviation) || awayName;
+      const homeAbbr = (gameData.teams.home.abbreviation) || homeName;
+      const awayRuns = (linescore.teams && linescore.teams.away && linescore.teams.away.runs) ?? 0;
+      const homeRuns = (linescore.teams && linescore.teams.home && linescore.teams.home.runs) ?? 0;
+      const scoreStripHtml = `
+        <button type="button" class="score-strip-toggle" aria-expanded="${scoreStripExpanded}" title="${scoreStripExpanded ? 'Collapse' : 'Expand'} box score &amp; game detail">
+          <span class="score-strip-teams">${awayAbbr} <span class="score-strip-run">${awayRuns}</span> @ ${homeAbbr} <span class="score-strip-run">${homeRuns}</span></span>
+          <span class="score-strip-state">${compactStateHtml}</span>
+          ${compactCountHtml}
+          <span class="chevron">&#9662;</span>
+        </button>
+      `;
 
       // preserve horizontal scroll position of each team's innings grid --
       // the rebuild below replaces the whole subtree, which would otherwise
@@ -4190,11 +4289,14 @@
 
       body.innerHTML = `
         <div class="sheet">
-          <div class="sticky-top">
-            ${renderVenueHeader(gameData, venue)}
-            ${renderBoxScore(linescore, awayName, homeName)}
-            <div class="live-strip">${stripHtml}</div>
-            ${lastPlayHtml}
+          <div class="sticky-top${scoreStripExpanded ? ' is-expanded' : ''}">
+            <div class="score-strip">${scoreStripHtml}</div>
+            <div class="score-strip-detail">
+              ${renderVenueHeader(gameData, venue)}
+              ${renderBoxScore(linescore, awayName, homeName)}
+              <div class="live-strip">${stripHtml}</div>
+              ${lastPlayHtml}
+            </div>
           </div>
           ${renderTeamTable(awayName, awayRows.length ? awayRows : placeholderLineupRows(), numInnings, away.pitcherByInning, away.starterPitcherId, columnsPerInning, homePitcherCard, 'away', liveBatterInfo, season)}
           ${renderTeamTable(homeName, homeRows.length ? homeRows : placeholderLineupRows(), numInnings, home.pitcherByInning, home.starterPitcherId, columnsPerInning, awayPitcherCard, 'home', liveBatterInfo, season)}
@@ -4627,6 +4729,14 @@
   }
 
   document.addEventListener('click', (e) => {
+    const stripToggle = e.target.closest('.score-strip-toggle');
+    if (stripToggle) {
+      scoreStripExpanded = !scoreStripExpanded;
+      const stickyTop = stripToggle.closest('.sticky-top');
+      if (stickyTop) stickyTop.classList.toggle('is-expanded', scoreStripExpanded);
+      stripToggle.setAttribute('aria-expanded', String(scoreStripExpanded));
+      stripToggle.title = scoreStripExpanded ? 'Collapse box score & game detail' : 'Expand box score & game detail';
+    }
     const target = e.target.closest('[data-pkey]');
     if (target) showPitchPopup(target.getAttribute('data-pkey'));
     const rosterBtn = e.target.closest('.roster-btn');
