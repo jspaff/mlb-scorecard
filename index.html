@@ -91,7 +91,7 @@
   .date-nav-btn:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
   .date-nav-btn:disabled { opacity: 0.35; cursor: default; }
   .date-nav-btn:disabled:hover { background: var(--paper); }
-  select, input[type=date] {
+  select, input[type=date], input[type=text] {
     background: var(--paper);
     color: var(--ink);
     border: 1px solid var(--paper-line);
@@ -1356,6 +1356,74 @@
     border-radius: 3px;
     white-space: nowrap;
   }
+  .player-search-wrap { position: relative; }
+  #playerSearchInput { width: 220px; max-width: 220px; }
+  .player-search-results {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    min-width: 260px;
+    max-height: 320px;
+    overflow-y: auto;
+    background: var(--paper);
+    border: 1px solid var(--paper-line);
+    border-radius: 6px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+    z-index: 30;
+  }
+  .player-search-results[hidden] { display: none; }
+  .player-search-result {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    padding: 8px 10px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    color: var(--ink);
+    border-bottom: 1px solid var(--paper-line);
+  }
+  .player-search-result:last-child { border-bottom: none; }
+  .player-search-result:hover { background: rgba(217, 169, 26, 0.12); }
+  .player-search-result .psr-meta {
+    color: var(--ink-soft);
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .player-search-empty {
+    padding: 10px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .player-profile-head {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .player-profile-photo {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--paper-line);
+    border: 1px solid var(--paper-line);
+    flex-shrink: 0;
+  }
+  .player-profile-name {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: 22px;
+    color: var(--ink);
+  }
+  .player-profile-meta {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-top: 2px;
+  }
   table.pitch-table { width: 100%; border-collapse: collapse; font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
   table.pitch-table th {
     font-family: 'Overpass', sans-serif;
@@ -1486,6 +1554,7 @@
       <button type="button" class="tab-btn" data-tab="standings">Standings</button>
       <button type="button" class="tab-btn" data-tab="schedule">Schedule</button>
       <button type="button" class="tab-btn" data-tab="roster">Roster</button>
+      <button type="button" class="tab-btn" data-tab="players">Players</button>
     </div>
     <div class="mlb-controls" data-tab-controls="daily">
       <div class="date-nav">
@@ -1529,6 +1598,12 @@
         <button type="button" class="view-toggle-btn" data-view="il">Injured List</button>
       </div>
     </div>
+    <div class="mlb-controls" data-tab-controls="players" hidden>
+      <div class="player-search-wrap">
+        <input type="text" id="playerSearchInput" placeholder="Search players&#8230;" autocomplete="off">
+        <div id="playerSearchResults" class="player-search-results" hidden></div>
+      </div>
+    </div>
   </div>
   <div class="tab-panel" data-tab-panel="daily" id="dailyPanel">
     <div id="dailyBody">
@@ -1553,6 +1628,11 @@
   <div class="tab-panel" data-tab-panel="roster" id="rosterTabPanel" hidden>
     <div id="rosterTabBody">
       <div class="mlb-status-msg">Loading roster&#8230;</div>
+    </div>
+  </div>
+  <div class="tab-panel" data-tab-panel="players" id="playersPanel" hidden>
+    <div id="playersBody">
+      <div class="mlb-status-msg">Search for a player above to see their profile.</div>
     </div>
   </div>
   <div id="pitchOverlay" class="pitch-overlay">
@@ -4782,6 +4862,107 @@
   if (window.ResizeObserver) new ResizeObserver(syncTabHeaderHeight).observe(tabHeaderEl);
   else window.addEventListener('resize', syncTabHeaderHeight);
 
+  const playerSearchInput = document.getElementById('playerSearchInput');
+  const playerSearchResults = document.getElementById('playerSearchResults');
+  const playersBody = document.getElementById('playersBody');
+  let playerSearchDebounce = null;
+  let playerSearchRequestId = 0;
+  let playerProfileRequestId = 0;
+  // Holds the last search response so selecting a result can reuse the
+  // fields already returned (name, position, team) instead of a second
+  // fetch to /people/{id} for the same data.
+  let currentPlayerSearchResults = [];
+
+  async function searchPlayers(query) {
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/people/search?names=${encodeURIComponent(query)}&hydrate=currentTeam`);
+      const data = await res.json();
+      return data.people || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function playerMetaLine(person) {
+    return [
+      person.primaryPosition && person.primaryPosition.abbreviation,
+      person.currentTeam && person.currentTeam.name
+    ].filter(Boolean).join(' &#183; ');
+  }
+
+  function renderPlayerSearchResults(people) {
+    if (!people.length) {
+      playerSearchResults.innerHTML = '<div class="player-search-empty">No players found.</div>';
+      return;
+    }
+    playerSearchResults.innerHTML = people.map(p => {
+      const meta = playerMetaLine(p);
+      return `<div class="player-search-result" data-player-id="${p.id}">
+        <span>${p.fullName}</span>
+        ${meta ? `<span class="psr-meta">${meta}</span>` : ''}
+      </div>`;
+    }).join('');
+  }
+
+  playerSearchInput.addEventListener('input', () => {
+    const query = playerSearchInput.value.trim();
+    clearTimeout(playerSearchDebounce);
+    if (query.length < 2) {
+      playerSearchResults.hidden = true;
+      return;
+    }
+    playerSearchDebounce = setTimeout(async () => {
+      const requestId = ++playerSearchRequestId;
+      const people = await searchPlayers(query);
+      if (requestId !== playerSearchRequestId) return;
+      currentPlayerSearchResults = people;
+      renderPlayerSearchResults(people);
+      playerSearchResults.hidden = false;
+    }, 300);
+  });
+
+  playerSearchResults.addEventListener('click', (e) => {
+    const item = e.target.closest('.player-search-result');
+    if (!item) return;
+    const person = currentPlayerSearchResults.find(p => String(p.id) === item.getAttribute('data-player-id'));
+    playerSearchResults.hidden = true;
+    if (!person) return;
+    playerSearchInput.value = person.fullName;
+    showPlayerProfile(person);
+  });
+
+  function renderPlayerProfile(person, seasonStat, season) {
+    const headshotUrl = `https://img.mlbstatic.com/mlb-photos/image/upload/w_180,q_100,f_auto/v1/people/${person.id}/headshot/67/current`;
+    const meta = playerMetaLine(person);
+    const seasonHtml = seasonStat
+      ? `<div class="player-stat-line"><span class="psl-label">AVG</span><span>${seasonStat.avg ?? '&#8212;'}</span></div>
+         <div class="player-stat-line"><span class="psl-label">OBP</span><span>${seasonStat.obp ?? '&#8212;'}</span></div>
+         <div class="player-stat-line"><span class="psl-label">SLG</span><span>${seasonStat.slg ?? '&#8212;'}</span></div>
+         <div class="player-stat-line"><span class="psl-label">HR</span><span>${seasonStat.homeRuns ?? '&#8212;'}</span></div>
+         <div class="player-stat-line"><span class="psl-label">RBI</span><span>${seasonStat.rbi ?? '&#8212;'}</span></div>`
+      : `<div class="pitch-empty">Season stats not available.</div>`;
+    return `<div class="sheet">
+      <div class="player-profile-head">
+        <img class="player-profile-photo" src="${headshotUrl}" alt="" loading="lazy" onerror="this.style.display='none'">
+        <div>
+          <div class="player-profile-name">${person.fullName}</div>
+          ${meta ? `<div class="player-profile-meta">${meta}</div>` : ''}
+        </div>
+      </div>
+      <div class="roster-section-title">${season} Season</div>
+      ${seasonHtml}
+    </div>`;
+  }
+
+  async function showPlayerProfile(person) {
+    const season = new Date().getFullYear();
+    const requestId = ++playerProfileRequestId;
+    playersBody.innerHTML = renderPlayerProfile(person, null, season);
+    const seasonStat = await getPlayerSeasonStats(person.id, season);
+    if (requestId !== playerProfileRequestId) return;
+    playersBody.innerHTML = renderPlayerProfile(person, seasonStat, season);
+  }
+
   Tabs.register('daily', {
     init: () => {
       findLastStartedDate().then(dateStr => {
@@ -4794,6 +4975,7 @@
   Tabs.register('standings', { init: () => loadStandings(standingsDateInput.value) });
   Tabs.register('schedule', { init: () => { populateScheduleTeamSelect(); loadTeamSchedule(scheduleTeamSelect.value); } });
   Tabs.register('roster', { init: () => { populateRosterTabTeamSelect(); loadRosterTab(rosterTabTeamSelect.value); } });
+  Tabs.register('players');
 
   const playerOverlay = document.getElementById('playerOverlay');
   const playerModalBody = document.getElementById('playerModalBody');
@@ -4833,6 +5015,7 @@
       const teamSeason = standingsDateInput.value.slice(0, 4);
       showTeamChartModal(teamId, teamName, teamSeason, standingsDateInput.value);
     }
+    if (!e.target.closest('.player-search-wrap')) playerSearchResults.hidden = true;
   });
   document.addEventListener('change', (e) => {
     const sel = e.target.closest('select.spray-filter');
@@ -4868,7 +5051,7 @@
     if (e.target === teamChartOverlay) hideTeamChartModal();
   });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { hidePitchPopup(); hideRosterModal(); hideSprayModal(); hidePlayerModal(); hideGameSummaryModal(); hideTeamChartModal(); }
+    if (e.key === 'Escape') { hidePitchPopup(); hideRosterModal(); hideSprayModal(); hidePlayerModal(); hideGameSummaryModal(); hideTeamChartModal(); playerSearchResults.hidden = true; }
   });
 
   Tabs.init('daily');
