@@ -248,49 +248,38 @@
   .run-scored { font-weight: 700; color: var(--ink); }
 
   .badge {
+    display: inline-block;
     font-family: 'Oswald', sans-serif;
     font-weight: 600;
-    font-size: 12px;
+    font-size: 11px;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    padding: 3px 9px;
+    padding: 3px 8px;
     border-radius: 4px;
+    flex-shrink: 0;
   }
   .badge-live { background: var(--brick); color: var(--paper); }
   .badge-final { background: var(--ink); color: var(--paper); }
   .badge-preview { background: transparent; color: var(--gold); border: 1px solid var(--gold); }
 
-  .game-summary-score {
-    margin: 12px 0 16px;
-    border: 1px solid var(--paper-line);
-    border-radius: 6px;
-    overflow: hidden;
-  }
-  .gs-team-row {
+  .gs-status-line {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 9px 12px;
-    font-family: 'Oswald', sans-serif;
-    font-weight: 500;
-    font-size: 14px;
-    color: var(--ink-soft);
+    gap: 10px;
+    margin: 10px 0 14px;
   }
-  .gs-team-row + .gs-team-row { border-top: 1px solid var(--paper-line); }
-  .gs-team-score {
+  .gs-score-line {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
     font-family: 'IBM Plex Mono', monospace;
     font-weight: 600;
-    font-size: 15px;
+    font-size: 17px;
     color: var(--ink-soft);
   }
-  .gs-team-row.gs-winner { color: var(--ink); font-weight: 700; }
-  .gs-team-row.gs-winner .gs-team-score { color: var(--gold); }
-  .game-summary-time {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 13px;
-    color: var(--ink);
-    margin: 12px 0 16px;
-  }
+  .gs-score-sep { color: var(--ink-soft); opacity: 0.6; }
+  .gs-score-team.gs-winner { color: var(--ink); }
+  .gs-score-num.gs-winner { color: var(--gold); }
   .pog-section {
     margin-top: 14px;
     padding-top: 12px;
@@ -3352,6 +3341,8 @@
       gameNumber: g.gameNumber,
       awayName: teamNickname(g.teams.away.team),
       homeName: teamNickname(g.teams.home.team),
+      awayAbbr: teamAbbr(g.teams.away.team),
+      homeAbbr: teamAbbr(g.teams.home.team),
       awayScore: g.teams.away.score,
       homeScore: g.teams.home.score,
       state: g.status.abstractGameState,
@@ -3672,6 +3663,11 @@
 
   function renderGameSummaryGame(dateStr, game, multi) {
     const hasScore = game.homeScore != null && game.awayScore != null && (game.state === 'Final' || game.state === 'Live');
+    // Falls back to the full name wherever an abbreviation isn't known --
+    // it always is for Daily/Schedule/Scorecard's own games, but stays
+    // graceful if renderGameSummaryGame is ever fed something else.
+    const awayAbbr = game.awayAbbr || game.awayName;
+    const homeAbbr = game.homeAbbr || game.homeName;
     let statusHtml;
     if (hasScore) {
       const homeWon = game.state === 'Final' && game.homeScore > game.awayScore;
@@ -3679,16 +3675,19 @@
       const badgeClass = game.state === 'Final' ? 'badge-final' : 'badge-live';
       const badgeLabel = game.state === 'Final' ? 'Final' : 'Live';
       statusHtml = `
-        <div class="badge ${badgeClass}">${badgeLabel}</div>
-        <div class="game-summary-score">
-          <div class="gs-team-row${awayWon ? ' gs-winner' : ''}"><span class="gs-team-name">${game.awayName}</span><span class="gs-team-score">${game.awayScore}</span></div>
-          <div class="gs-team-row${homeWon ? ' gs-winner' : ''}"><span class="gs-team-name">${game.homeName}</span><span class="gs-team-score">${game.homeScore}</span></div>
+        <div class="gs-status-line">
+          <span class="badge ${badgeClass}">${badgeLabel}</span>
+          <span class="gs-score-line">
+            <span class="gs-score-team${awayWon ? ' gs-winner' : ''}">${awayAbbr}</span>
+            <span class="gs-score-num${awayWon ? ' gs-winner' : ''}">${game.awayScore}</span>
+            <span class="gs-score-sep">&#8211;</span>
+            <span class="gs-score-num${homeWon ? ' gs-winner' : ''}">${game.homeScore}</span>
+            <span class="gs-score-team${homeWon ? ' gs-winner' : ''}">${homeAbbr}</span>
+          </span>
         </div>`;
     } else {
       const badgeLabel = game.detailedState && game.detailedState !== 'Scheduled' ? game.detailedState : 'Upcoming';
-      statusHtml = `
-        <div class="badge badge-preview">${badgeLabel}</div>
-        <div class="game-summary-time">First pitch: ${formatGameTime(game.gameDate)}</div>`;
+      statusHtml = `<div class="gs-status-line"><span class="badge badge-preview">${badgeLabel}</span></div>`;
     }
 
     // game.venueHtml is only ever supplied by the Scorecard tab's "Box
@@ -3739,10 +3738,15 @@
   function renderGameSummaryContent(dateStr, games, headerLabel) {
     const dateLabel = new Date(dateStr + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
     const multi = games.length > 1;
+    // A doubleheader's two games can start at different times, so the
+    // shared subheader only carries one when there's a single game to
+    // attribute it to -- each game's own status line already has its
+    // score/badge regardless.
+    const timeLabel = (!multi && games[0] && games[0].gameDate) ? formatGameTime(games[0].gameDate) : '';
 
     return `
       ${multi ? `<div class="pitch-header">${headerLabel ? headerLabel + ' ' : ''}Doubleheader</div>` : ''}
-      <div class="pitch-subheader">${dateLabel}</div>
+      <div class="pitch-subheader">${dateLabel}${timeLabel ? ` &#183; ${timeLabel}` : ''}</div>
       ${games.map(g => renderGameSummaryGame(dateStr, g, multi)).join('')}
     `;
   }
@@ -3766,10 +3770,13 @@
     const games = currentScheduleTeam.gamesByDate[dateStr];
     if (!games || !games.length) return;
     const teamName = TEAM_NICKNAMES[currentScheduleTeam.teamId] || '';
+    const selectedAbbr = TEAM_ABBR[currentScheduleTeam.teamId] || teamName;
     const neutralGames = games.map(g => ({
       ...g,
       awayName: g.isHome ? g.opponentFull : teamName,
-      homeName: g.isHome ? teamName : g.opponentFull
+      homeName: g.isHome ? teamName : g.opponentFull,
+      awayAbbr: g.isHome ? g.opponent : selectedAbbr,
+      homeAbbr: g.isHome ? selectedAbbr : g.opponent
     }));
     openGameSummaryModal(dateStr, neutralGames, teamName);
   }
@@ -4246,6 +4253,7 @@
         gamePk,
         dateStr: officialDate,
         awayName, homeName,
+        awayAbbr, homeAbbr,
         awayScore: showRuns ? awayRuns : null,
         homeScore: showRuns ? homeRuns : null,
         state, detailedState,
