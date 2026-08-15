@@ -194,7 +194,13 @@
     padding-bottom: 8px;
   }
 
-  .venue-header { margin-bottom: 10px; }
+  .gs-top-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 2px;
+  }
   .venue-name {
     font-family: 'Oswald', sans-serif;
     font-weight: 600;
@@ -248,36 +254,41 @@
   .run-scored { font-weight: 700; color: var(--ink); }
 
   .badge {
-    display: inline-block;
-    font-family: 'Oswald', sans-serif;
-    font-weight: 600;
-    font-size: 11px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    padding: 3px 8px;
-    border-radius: 4px;
-    flex-shrink: 0;
-  }
-  .badge-live { background: var(--gold); color: var(--paper); }
-  .badge-final { background: var(--ink); color: var(--paper); }
-  .badge-preview { background: transparent; color: var(--gold); border: 1px solid var(--gold); }
-
-  .gs-status-line {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin: 10px 0 14px;
+    gap: 5px;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    flex-shrink: 0;
+  }
+  .badge-live { color: var(--gold); }
+  .badge-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-soft); flex-shrink: 0; }
+  .badge-live .badge-dot { background: var(--gold); }
+  .badge-final .badge-dot { background: var(--ink); }
+
+  .gs-date-line {
+    font-family: 'Inter', sans-serif;
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    margin-bottom: 10px;
   }
   .gs-score-line {
     display: flex;
     align-items: baseline;
-    gap: 6px;
-    font-family: 'IBM Plex Mono', monospace;
+    gap: 7px;
+    font-family: 'Oswald', sans-serif;
     font-weight: 600;
-    font-size: 17px;
+    font-size: 21px;
+    text-transform: uppercase;
     color: var(--ink-soft);
+    margin-bottom: 10px;
   }
-  .gs-score-sep { color: var(--ink-soft); opacity: 0.6; }
+  .gs-score-num { font-family: 'IBM Plex Mono', monospace; font-weight: 700; }
+  .gs-score-sep { font-family: 'IBM Plex Mono', monospace; opacity: 0.45; }
   .gs-score-team.gs-winner { color: var(--ink); }
   .gs-score-num.gs-winner { color: var(--gold); }
   .pog-section {
@@ -385,14 +396,6 @@
     color: var(--gold);
     margin-bottom: 4px;
   }
-  .gs-game-matchup {
-    font-family: 'Oswald', sans-serif;
-    font-weight: 600;
-    font-size: 14px;
-    color: var(--ink);
-    margin-bottom: 2px;
-  }
-
   .daily-games-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
@@ -2729,15 +2732,26 @@
   // venue is the detailed /v1/venues record (city/state) -- optional, since
   // this also renders the placeholder before that fetch resolves (see
   // loadVenueInto). gamePk, when passed, tags the placeholder with an id so
-  // loadVenueInto's outerHTML swap can find it once the city is in.
-  function renderVenueHeader(venueName, venue, gamePk) {
-    if (!venueName) return '';
+  // loadVenueInto's outerHTML swap can find it once the city is in. badgeHtml
+  // rides along in the same row (venue left, status tag right) so the swap
+  // doesn't have to separately preserve it.
+  function renderVenueHeader(venueName, venue, gamePk, badgeHtml) {
+    if (!venueName) return badgeHtml ? `<div class="gs-top-row"><span></span>${badgeHtml}</div>` : '';
     const location = venue && venue.location;
     const cityState = location ? [location.city, location.stateAbbrev || location.state].filter(Boolean).join(', ') : '';
     const idAttr = gamePk ? ` id="venue-${gamePk}"` : '';
-    return `<div class="venue-header"${idAttr}>
+    return `<div class="gs-top-row"${idAttr}>
       <div class="venue-name">${venueName}${cityState ? ` <span class="venue-city">&#183; ${cityState}</span>` : ''}</div>
+      ${badgeHtml || ''}
     </div>`;
+  }
+
+  // Dot + label for the top-row status tag next to the venue name.
+  function renderStateBadge(game) {
+    if (game.state === 'Final') return `<span class="badge badge-final"><span class="badge-dot"></span>Final</span>`;
+    if (game.state === 'Live') return `<span class="badge badge-live"><span class="badge-dot"></span>Live</span>`;
+    const label = game.detailedState && game.detailedState !== 'Scheduled' ? game.detailedState : 'Upcoming';
+    return `<span class="badge badge-preview"><span class="badge-dot"></span>${label}</span>`;
   }
 
   function renderBoxScore(linescore, awayName, homeName) {
@@ -3668,34 +3682,31 @@
     // graceful if renderGameSummaryGame is ever fed something else.
     const awayAbbr = game.awayAbbr || game.awayName;
     const homeAbbr = game.homeAbbr || game.homeName;
-    let statusHtml;
-    if (hasScore) {
-      const homeWon = game.state === 'Final' && game.homeScore > game.awayScore;
-      const awayWon = game.state === 'Final' && game.awayScore > game.homeScore;
-      const badgeClass = game.state === 'Final' ? 'badge-final' : 'badge-live';
-      const badgeLabel = game.state === 'Final' ? 'Final' : 'Live';
-      statusHtml = `
-        <div class="gs-status-line">
-          <span class="badge ${badgeClass}">${badgeLabel}</span>
-          <span class="gs-score-line">
-            <span class="gs-score-team${awayWon ? ' gs-winner' : ''}">${awayAbbr}</span>
-            <span class="gs-score-num${awayWon ? ' gs-winner' : ''}">${game.awayScore}</span>
-            <span class="gs-score-sep">&#8211;</span>
-            <span class="gs-score-num${homeWon ? ' gs-winner' : ''}">${game.homeScore}</span>
-            <span class="gs-score-team${homeWon ? ' gs-winner' : ''}">${homeAbbr}</span>
-          </span>
-        </div>`;
-    } else {
-      const badgeLabel = game.detailedState && game.detailedState !== 'Scheduled' ? game.detailedState : 'Upcoming';
-      statusHtml = `<div class="gs-status-line"><span class="badge badge-preview">${badgeLabel}</span></div>`;
-    }
+    const homeWon = game.state === 'Final' && game.homeScore > game.awayScore;
+    const awayWon = game.state === 'Final' && game.awayScore > game.homeScore;
+
+    // The score line doubles as the matchup line -- it names both teams
+    // via abbreviation whether or not there's a result yet ("NYY - BOS"
+    // pre-game, "NYY 3 - 2 BOS" once there's a score), so there's no
+    // separate "Team @ Team" heading to keep in sync with it.
+    const scoreHtml = `
+      <div class="gs-score-line">
+        <span class="gs-score-team${awayWon ? ' gs-winner' : ''}">${awayAbbr}</span>
+        ${hasScore ? `<span class="gs-score-num${awayWon ? ' gs-winner' : ''}">${game.awayScore}</span>` : ''}
+        <span class="gs-score-sep">&#8211;</span>
+        ${hasScore ? `<span class="gs-score-num${homeWon ? ' gs-winner' : ''}">${game.homeScore}</span>` : ''}
+        <span class="gs-score-team${homeWon ? ' gs-winner' : ''}">${homeAbbr}</span>
+      </div>`;
+
+    const dateLineHtml = game.gameDate ? `<div class="gs-date-line">${formatGameTime(game.gameDate)}</div>` : '';
 
     // game.venueHtml is only ever supplied by the Scorecard tab's "Box
     // Score" link, which already has the venue name and detailed record
     // fetched -- Daily/Schedule only know the venue's name+id from the
     // schedule payload, so they render just the name here and let
-    // loadVenueInto swap in the city once its own fetch resolves.
-    const venueHtml = game.venueHtml || renderVenueHeader(game.venueName, null, game.gamePk);
+    // loadVenueInto swap in the city once its own fetch resolves. The
+    // status tag rides along in this same row (see renderVenueHeader).
+    const topRowHtml = game.venueHtml || renderVenueHeader(game.venueName, null, game.gamePk, renderStateBadge(game));
 
     // game.linescore is only ever supplied by the Scorecard tab's "Box
     // Score" link, which already has the full live feed loaded -- Daily
@@ -3726,9 +3737,9 @@
     return `
       <div class="game-summary-game">
         ${multi ? `<div class="gs-game-label">Game ${game.gameNumber}</div>` : ''}
-        <div class="${multi ? 'gs-game-matchup' : 'pitch-header'}">${game.awayName} @ ${game.homeName}</div>
-        ${venueHtml}
-        ${statusHtml}
+        ${topRowHtml}
+        ${dateLineHtml}
+        ${scoreHtml}
         ${boxScoreHtml}
         ${wpaHtml}
         ${ctaHtml}
@@ -3738,15 +3749,10 @@
   function renderGameSummaryContent(dateStr, games, headerLabel) {
     const dateLabel = new Date(dateStr + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
     const multi = games.length > 1;
-    // A doubleheader's two games can start at different times, so the
-    // shared subheader only carries one when there's a single game to
-    // attribute it to -- each game's own status line already has its
-    // score/badge regardless.
-    const timeLabel = (!multi && games[0] && games[0].gameDate) ? formatGameTime(games[0].gameDate) : '';
 
     return `
       ${multi ? `<div class="pitch-header">${headerLabel ? headerLabel + ' ' : ''}Doubleheader</div>` : ''}
-      <div class="pitch-subheader">${dateLabel}${timeLabel ? ` &#183; ${timeLabel}` : ''}</div>
+      <div class="pitch-subheader">${dateLabel}</div>
       ${games.map(g => renderGameSummaryGame(dateStr, g, multi)).join('')}
     `;
   }
@@ -3940,7 +3946,7 @@
     const venue = await getVenueInfo(game.venueId);
     if (requestId !== gameSummaryRequestId) return;
     const el = document.getElementById(`venue-${game.gamePk}`);
-    if (el) el.outerHTML = renderVenueHeader(game.venueName, venue, game.gamePk);
+    if (el) el.outerHTML = renderVenueHeader(game.venueName, venue, game.gamePk, renderStateBadge(game));
   }
 
   async function loadGameSummaryExtrasInto(game, requestId) {
@@ -4259,7 +4265,7 @@
         state, detailedState,
         gameDate: gameData.datetime && gameData.datetime.dateTime,
         linescore: showRuns ? linescore : null,
-        venueHtml: renderVenueHeader(gameData.venue && gameData.venue.name, venue)
+        venueHtml: renderVenueHeader(gameData.venue && gameData.venue.name, venue, undefined, renderStateBadge({ state, detailedState }))
       };
 
       // preserve horizontal scroll position of each team's innings grid --
