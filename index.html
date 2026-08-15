@@ -31,23 +31,6 @@
     min-height: 100%;
   }
 
-  .mlb-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 14px;
-  }
-  .mlb-title {
-    font-family: 'Overpass', sans-serif;
-    font-weight: 800;
-    font-size: 21px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--ink);
-  }
-
   .mlb-controls { display: flex; gap: 8px; flex-wrap: wrap; }
 
   .tab-header {
@@ -150,8 +133,74 @@
     box-shadow: 0 6px 8px -6px rgba(11, 15, 12, 0.35);
   }
 
+  /* The scorecard grid is the point of this tab, so the header stays down
+     to a single-line score strip -- venue info and the inning-by-inning
+     box score live in the game summary modal (shared with Daily/Schedule)
+     instead of taking up permanent space here. */
+  .score-strip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 0;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .score-strip-teams {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: 14.5px;
+    letter-spacing: 0.02em;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  .score-strip-run { color: var(--gold); font-weight: 700; padding: 0 1px; }
+  .score-strip-state {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+  .score-strip-count {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+  .box-score-link {
+    margin-left: auto;
+    flex-shrink: 0;
+    background: none;
+    border: 1px solid var(--paper-line);
+    border-radius: 5px;
+    color: var(--ink-soft);
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 5px 8px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .box-score-link:hover, .box-score-link:focus-visible { color: var(--ink); border-color: var(--ink-soft); }
+  .score-strip-sub {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: var(--ink-soft);
+    padding-bottom: 8px;
+  }
 
-  .venue-header { margin-bottom: 10px; }
+  .gs-top-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 2px;
+  }
   .venue-name {
     font-family: 'Oswald', sans-serif;
     font-weight: 600;
@@ -165,14 +214,6 @@
     letter-spacing: 0.02em;
     color: var(--ink-soft);
   }
-  .venue-details {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11.5px;
-    color: var(--ink-soft);
-    opacity: 0.8;
-    margin-top: 2px;
-  }
-
   .box-score { margin-bottom: 14px; }
   table.box-table {
     border-collapse: collapse;
@@ -212,62 +253,44 @@
   table.box-table td.box-stat { border-left: 1px solid var(--paper-line); font-weight: 700; }
   .run-scored { font-weight: 700; color: var(--ink); }
 
-  .live-strip {
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
-    align-items: center;
-    padding-bottom: 12px;
-    margin-bottom: 14px;
-    border-bottom: 1.5px solid var(--paper-line);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 12.5px;
-    color: var(--ink);
-  }
   .badge {
-    font-family: 'Oswald', sans-serif;
-    font-weight: 600;
-    font-size: 12px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    padding: 3px 9px;
-    border-radius: 4px;
-  }
-  .badge-live { background: var(--brick); color: var(--paper); }
-  .badge-final { background: var(--ink); color: var(--paper); }
-  .badge-preview { background: transparent; color: var(--gold); border: 1px solid var(--gold); }
-
-  .game-summary-score {
-    margin: 12px 0 16px;
-    border: 1px solid var(--paper-line);
-    border-radius: 6px;
-    overflow: hidden;
-  }
-  .gs-team-row {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 9px 12px;
+    gap: 5px;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    flex-shrink: 0;
+  }
+  .badge-live { color: var(--gold); }
+  .badge-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-soft); flex-shrink: 0; }
+  .badge-live .badge-dot { background: var(--gold); }
+  .badge-final .badge-dot { background: var(--ink); }
+
+  .gs-date-line {
+    font-family: 'Inter', sans-serif;
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    margin-bottom: 10px;
+  }
+  .gs-score-line {
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
     font-family: 'Oswald', sans-serif;
-    font-weight: 500;
-    font-size: 14px;
-    color: var(--ink-soft);
-  }
-  .gs-team-row + .gs-team-row { border-top: 1px solid var(--paper-line); }
-  .gs-team-score {
-    font-family: 'IBM Plex Mono', monospace;
     font-weight: 600;
-    font-size: 15px;
+    font-size: 21px;
+    text-transform: uppercase;
     color: var(--ink-soft);
+    margin-bottom: 10px;
   }
-  .gs-team-row.gs-winner { color: var(--ink); font-weight: 700; }
-  .gs-team-row.gs-winner .gs-team-score { color: var(--gold); }
-  .game-summary-time {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 13px;
-    color: var(--ink);
-    margin: 12px 0 16px;
-  }
+  .gs-score-num { font-family: 'IBM Plex Mono', monospace; font-weight: 700; }
+  .gs-score-sep { font-family: 'IBM Plex Mono', monospace; opacity: 0.45; }
+  .gs-score-team.gs-winner { color: var(--ink); }
+  .gs-score-num.gs-winner { color: var(--gold); }
   .pog-section {
     margin-top: 14px;
     padding-top: 12px;
@@ -373,14 +396,6 @@
     color: var(--gold);
     margin-bottom: 4px;
   }
-  .gs-game-matchup {
-    font-family: 'Oswald', sans-serif;
-    font-weight: 600;
-    font-size: 14px;
-    color: var(--ink);
-    margin-bottom: 2px;
-  }
-
   .daily-games-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
@@ -530,34 +545,8 @@
   }
   .hr-watch:hover, .hr-watch:focus-visible { text-decoration: underline; }
 
-  .count-board {
-    display: flex;
-    gap: 16px;
-    padding: 2px 0;
-  }
-  .count-col { display: flex; flex-direction: column; align-items: center; gap: 5px; }
-  .count-label {
-    font-family: 'Overpass', sans-serif;
-    font-weight: 800;
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--ink);
-  }
-  .count-lights { display: flex; gap: 4px; }
-  .light-bulb {
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    background: transparent;
-    border: 1px solid var(--ink-soft);
-    display: inline-block;
-  }
-  .light-bulb.lit-green { background: #4f9e57; border-color: #4f9e57; }
-  .light-bulb.lit-red { background: var(--brick); border-color: var(--brick); }
-
-  .diamond-mini { width: 26px; height: 26px; position: relative; transform: rotate(45deg); vertical-align: middle; }
-  .base-mini { position: absolute; width: 10px; height: 10px; border: 1.4px solid var(--ink-soft); }
+  .diamond-mini { width: 15px; height: 15px; position: relative; transform: rotate(45deg); vertical-align: middle; }
+  .base-mini { position: absolute; width: 5.5px; height: 5.5px; border: 1.1px solid var(--ink-soft); }
   .base-mini.on { background: var(--gold); border-color: var(--gold); }
   .base-mini.first { top: 0; right: 0; }
   .base-mini.second { top: 0; left: 0; }
@@ -1457,7 +1446,6 @@
   }
 
   @media (max-width: 520px) {
-    .mlb-header { flex-direction: column; align-items: flex-start; }
     .sheet { padding: 14px; }
     .sticky-top { margin: -2px -14px 0; padding-left: 14px; padding-right: 14px; }
     .standings-grid { grid-template-columns: 1fr; }
@@ -1472,9 +1460,6 @@
 </head>
 <body>
 <div id="mlb-root">
-  <div class="mlb-header">
-    <div class="mlb-title">Take Me Out to the Ballgame</div>
-  </div>
   <div class="tab-header">
     <div class="tab-bar">
       <button type="button" class="tab-btn" data-tab="daily">Daily</button>
@@ -1599,6 +1584,12 @@
   const dailyBody = document.getElementById('dailyBody');
   const dailyDateInput = document.getElementById('dailyDatePick');
   let pollTimer = null;
+  // The currently loaded game, in the same shape renderGameSummaryGame()
+  // expects, so the Scorecard tab's "Box Score" link can reuse the exact
+  // modal the Daily/Schedule tabs open rather than duplicating it. Lives
+  // outside fetchAndRender since the link is clicked well after that call
+  // returns, on whatever the latest poll last rendered.
+  let currentGameSummary = null;
   // Self-rescheduling (not setInterval) so a fresh call -- whether from the
   // user changing dates or the poll tick itself -- can always cancel
   // whatever's pending with one clearTimeout at the top, with no risk of a
@@ -1621,13 +1612,13 @@
   const standingsCache = {};
   const venueCache = {};
   // The live-feed's gameData.venue is often just {id, name, link} -- city
-  // and roof type live on the dedicated venue endpoint instead. Cached by
-  // venue id since a park's location/roof type never changes game to game.
+  // lives on the dedicated venue endpoint instead. Cached by venue id since
+  // a park's location never changes game to game.
   async function getVenueInfo(venueId) {
     if (!venueId) return null;
     if (venueCache[venueId] !== undefined) return venueCache[venueId];
     try {
-      const res = await fetch(`https://statsapi.mlb.com/api/v1/venues/${venueId}?hydrate=location,fieldInfo`);
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/venues/${venueId}?hydrate=location`);
       const data = await res.json();
       const venue = (data.venues && data.venues[0]) || null;
       venueCache[venueId] = venue;
@@ -2738,40 +2729,29 @@
     </div>`;
   }
 
-  // venue is the fuller /api/v1/venues/{id} record (location + fieldInfo.roofType),
-  // fetched separately since the live feed's own gameData.venue is often just
-  // {id, name, link}. gameData.weather's condition string is the more reliable,
-  // per-game signal for a retractable roof's actual state (e.g. "Roof Closed") --
-  // fieldInfo.roofType is only the park's static classification, used as a
-  // fallback so a dome/retractable park still shows something even when the
-  // feed hasn't attached a roof-specific weather condition to this game yet.
-  function renderVenueHeader(gameData, venue) {
-    const venueName = (venue && venue.name) || (gameData.venue && gameData.venue.name);
-    if (!venueName) return '';
+  // venue is the detailed /v1/venues record (city/state) -- optional, since
+  // this also renders the placeholder before that fetch resolves (see
+  // loadVenueInto). gamePk, when passed, tags the placeholder with an id so
+  // loadVenueInto's outerHTML swap can find it once the city is in. badgeHtml
+  // rides along in the same row (venue left, status tag right) so the swap
+  // doesn't have to separately preserve it.
+  function renderVenueHeader(venueName, venue, gamePk, badgeHtml) {
+    if (!venueName) return badgeHtml ? `<div class="gs-top-row"><span></span>${badgeHtml}</div>` : '';
     const location = venue && venue.location;
     const cityState = location ? [location.city, location.stateAbbrev || location.state].filter(Boolean).join(', ') : '';
-
-    const startTime = gameData.datetime && gameData.datetime.dateTime ? new Date(gameData.datetime.dateTime) : null;
-    const timeStr = startTime ? startTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '';
-
-    const weather = gameData.weather || {};
-    const temp = weather.temp ? `${weather.temp}&#176;F` : '';
-    const wind = weather.wind || '';
-
-    const roofType = venue && venue.fieldInfo && venue.fieldInfo.roofType;
-    const roofFromWeather = /roof|dome/i.test(weather.condition || '') ? weather.condition : null;
-    const roofLabel = roofFromWeather || (roofType && roofType !== 'Open' ? `Roof: ${roofType}` : null);
-
-    const parts = [];
-    if (timeStr) parts.push(`First pitch ${timeStr}`);
-    if (temp) parts.push(temp);
-    if (wind) parts.push(`Wind ${wind}`);
-    if (roofLabel) parts.push(roofLabel);
-
-    return `<div class="venue-header">
+    const idAttr = gamePk ? ` id="venue-${gamePk}"` : '';
+    return `<div class="gs-top-row"${idAttr}>
       <div class="venue-name">${venueName}${cityState ? ` <span class="venue-city">&#183; ${cityState}</span>` : ''}</div>
-      ${parts.length ? `<div class="venue-details">${parts.join(' &nbsp;&#183;&nbsp; ')}</div>` : ''}
+      ${badgeHtml || ''}
     </div>`;
+  }
+
+  // Dot + label for the top-row status tag next to the venue name.
+  function renderStateBadge(game) {
+    if (game.state === 'Final') return `<span class="badge badge-final"><span class="badge-dot"></span>Final</span>`;
+    if (game.state === 'Live') return `<span class="badge badge-live"><span class="badge-dot"></span>Live</span>`;
+    const label = game.detailedState && game.detailedState !== 'Scheduled' ? game.detailedState : 'Upcoming';
+    return `<span class="badge badge-preview"><span class="badge-dot"></span>${label}</span>`;
   }
 
   function renderBoxScore(linescore, awayName, homeName) {
@@ -2924,15 +2904,6 @@
     </div>`;
   }
 
-  function countBoard(balls, strikes, outs) {
-    const col = (label, count, max, cls) => {
-      let lights = '';
-      for (let i = 0; i < max; i++) lights += `<span class="light-bulb ${i < count ? cls : ''}"></span>`;
-      return `<div class="count-col"><div class="count-label">${label}</div><div class="count-lights">${lights}</div></div>`;
-    };
-    return `<div class="count-board">${col('Balls', balls, 3, 'lit-green')}${col('Strikes', strikes, 2, 'lit-red')}${col('Outs', outs, 2, 'lit-red')}</div>`;
-  }
-
   const TEAM_NICKNAMES = {
     108: 'Angels', 109: 'Diamondbacks', 110: 'Orioles', 111: 'Red Sox', 112: 'Cubs',
     113: 'Reds', 114: 'Guardians', 115: 'Rockies', 116: 'Tigers', 117: 'Astros',
@@ -2995,7 +2966,9 @@
           state: g.status.abstractGameState,
           detailedState: g.status.detailedState,
           homeScore: g.teams.home.score,
-          awayScore: g.teams.away.score
+          awayScore: g.teams.away.score,
+          venueId: g.venue && g.venue.id,
+          venueName: g.venue && g.venue.name
         };
       });
     });
@@ -3269,7 +3242,7 @@
       tileClass = 'is-preview';
     }
     return `
-      <div class="daily-tile ${tileClass}" data-date="${dateStr}" data-game-pk="${game.gamePk}" data-state="${game.state}" tabindex="0" role="button">
+      <div class="daily-tile ${tileClass}" data-date="${dateStr}" data-game-pk="${game.gamePk}" tabindex="0" role="button">
         ${watermarkHtml}
         ${rowsHtml}
         <div class="daily-tile-state">${stateLabel}</div>
@@ -3382,11 +3355,15 @@
       gameNumber: g.gameNumber,
       awayName: teamNickname(g.teams.away.team),
       homeName: teamNickname(g.teams.home.team),
+      awayAbbr: teamAbbr(g.teams.away.team),
+      homeAbbr: teamAbbr(g.teams.home.team),
       awayScore: g.teams.away.score,
       homeScore: g.teams.home.score,
       state: g.status.abstractGameState,
       detailedState: g.status.detailedState,
-      gameDate: g.gameDate
+      gameDate: g.gameDate,
+      venueId: g.venue && g.venue.id,
+      venueName: g.venue && g.venue.name
     };
   }
 
@@ -3477,14 +3454,14 @@
     document.querySelectorAll('#dailyViewToggle .view-toggle-btn').forEach(b => b.classList.toggle('active', b === btn));
     renderDailyView();
   });
+  // Matches the Schedule tab: every tile opens the game summary modal
+  // regardless of state, with "View Full Scorecard" inside it as the one
+  // path to the Scorecard tab, rather than Live/Preview tiles jumping
+  // straight there and only Final tiles showing the modal.
   function handleDailyTileActivate(tile) {
     if (!tile) return;
-    if (tile.dataset.state === 'Final') {
-      const g = dailyGamesByPk[tile.dataset.gamePk];
-      if (g) openGameSummaryModal(tile.dataset.date, [scheduleGameToNeutral(g)]);
-    } else {
-      jumpToScorecardGame(tile.dataset.date, tile.dataset.gamePk);
-    }
+    const g = dailyGamesByPk[tile.dataset.gamePk];
+    if (g) openGameSummaryModal(tile.dataset.date, [scheduleGameToNeutral(g)]);
   }
   dailyBody.addEventListener('click', (e) => {
     handleDailyTileActivate(e.target.closest('.daily-tile'));
@@ -3700,36 +3677,72 @@
 
   function renderGameSummaryGame(dateStr, game, multi) {
     const hasScore = game.homeScore != null && game.awayScore != null && (game.state === 'Final' || game.state === 'Live');
-    let statusHtml;
-    if (hasScore) {
-      const homeWon = game.state === 'Final' && game.homeScore > game.awayScore;
-      const awayWon = game.state === 'Final' && game.awayScore > game.homeScore;
-      const badgeClass = game.state === 'Final' ? 'badge-final' : 'badge-live';
-      const badgeLabel = game.state === 'Final' ? 'Final' : 'Live';
-      statusHtml = `
-        <div class="badge ${badgeClass}">${badgeLabel}</div>
-        <div class="game-summary-score">
-          <div class="gs-team-row${awayWon ? ' gs-winner' : ''}"><span class="gs-team-name">${game.awayName}</span><span class="gs-team-score">${game.awayScore}</span></div>
-          <div class="gs-team-row${homeWon ? ' gs-winner' : ''}"><span class="gs-team-name">${game.homeName}</span><span class="gs-team-score">${game.homeScore}</span></div>
-        </div>`;
-    } else {
-      const badgeLabel = game.detailedState && game.detailedState !== 'Scheduled' ? game.detailedState : 'Upcoming';
-      statusHtml = `
-        <div class="badge badge-preview">${badgeLabel}</div>
-        <div class="game-summary-time">First pitch: ${formatGameTime(game.gameDate)}</div>`;
-    }
+    // Falls back to the full name wherever an abbreviation isn't known --
+    // it always is for Daily/Schedule/Scorecard's own games, but stays
+    // graceful if renderGameSummaryGame is ever fed something else.
+    const awayAbbr = game.awayAbbr || game.awayName;
+    const homeAbbr = game.homeAbbr || game.homeName;
+    const homeWon = game.state === 'Final' && game.homeScore > game.awayScore;
+    const awayWon = game.state === 'Final' && game.awayScore > game.homeScore;
 
+    // The score line doubles as the matchup line -- it names both teams
+    // via abbreviation whether or not there's a result yet ("NYY - BOS"
+    // pre-game, "NYY 3 - 2 BOS" once there's a score), so there's no
+    // separate "Team @ Team" heading to keep in sync with it.
+    const scoreHtml = `
+      <div class="gs-score-line">
+        <span class="gs-score-team${awayWon ? ' gs-winner' : ''}">${awayAbbr}</span>
+        ${hasScore ? `<span class="gs-score-num${awayWon ? ' gs-winner' : ''}">${game.awayScore}</span>` : ''}
+        <span class="gs-score-sep">&#8211;</span>
+        ${hasScore ? `<span class="gs-score-num${homeWon ? ' gs-winner' : ''}">${game.homeScore}</span>` : ''}
+        <span class="gs-score-team${homeWon ? ' gs-winner' : ''}">${homeAbbr}</span>
+      </div>`;
+
+    const dateLineHtml = game.gameDate ? `<div class="gs-date-line">${formatGameTime(game.gameDate)}</div>` : '';
+
+    // game.venueHtml is only ever supplied by the Scorecard tab's "Box
+    // Score" link, which already has the venue name and detailed record
+    // fetched -- Daily/Schedule only know the venue's name+id from the
+    // schedule payload, so they render just the name here and let
+    // loadVenueInto swap in the city once its own fetch resolves. The
+    // status tag rides along in this same row (see renderVenueHeader).
+    const topRowHtml = game.venueHtml || renderVenueHeader(game.venueName, null, game.gamePk, renderStateBadge(game));
+
+    // game.linescore is only ever supplied by the Scorecard tab's "Box
+    // Score" link, which already has the full live feed loaded -- Daily
+    // and Schedule tabs only know the score, so their Live/Final games
+    // fetch the inning-by-inning grid lazily into this same slot (see
+    // loadGameSummaryExtrasInto), alongside the WPA highlights below.
+    const boxScoreHtml = game.linescore
+      ? renderBoxScore(game.linescore, game.awayName, game.homeName)
+      : ((game.state === 'Final' || game.state === 'Live')
+          ? `<div id="boxScore-${game.gamePk}" class="box-score-slot"><div class="potg-loading">Loading box score&#8230;</div></div>`
+          : '');
+
+    // Top play/players highlights only make sense once a game is over --
+    // a Live game's WPA swings are still in motion.
     const wpaHtml = game.state === 'Final'
       ? `<div class="pog-section" id="wpaLeaders-${game.gamePk}"><div class="potg-loading">Loading game highlights&#8230;</div></div>`
       : '';
 
+    // The Scorecard tab's own "Box Score" link always points at the game
+    // already on screen there, so a "View Full Scorecard" CTA in that one
+    // context would just reload the same game -- suppressed via this flag
+    // rather than a gamePk comparison, since it should only ever apply to
+    // that exact entry point, not any modal that happens to share a gamePk.
+    const ctaHtml = game.hideScorecardCta
+      ? ''
+      : `<button type="button" class="modal-cta" data-date="${dateStr}" data-game-pk="${game.gamePk}">View Full Scorecard &#8594;</button>`;
+
     return `
       <div class="game-summary-game">
         ${multi ? `<div class="gs-game-label">Game ${game.gameNumber}</div>` : ''}
-        <div class="${multi ? 'gs-game-matchup' : 'pitch-header'}">${game.awayName} @ ${game.homeName}</div>
-        ${statusHtml}
+        ${topRowHtml}
+        ${dateLineHtml}
+        ${scoreHtml}
+        ${boxScoreHtml}
         ${wpaHtml}
-        <button type="button" class="modal-cta" data-date="${dateStr}" data-game-pk="${game.gamePk}">View Full Scorecard &#8594;</button>
+        ${ctaHtml}
       </div>`;
   }
 
@@ -3751,7 +3764,11 @@
     const requestId = ++gameSummaryRequestId;
     gameSummaryModalBody.innerHTML = renderGameSummaryContent(dateStr, games, headerLabel);
     gameSummaryOverlay.classList.add('open');
-    games.filter(g => g.state === 'Final').forEach(g => loadWpaLeadersInto(g.gamePk, requestId));
+    // Venue (name+city) applies to every game regardless of state; box
+    // score and highlights only make sense once a game has actually
+    // started, so those stay gated to Live/Final.
+    games.filter(g => !g.venueHtml && g.venueId).forEach(g => loadVenueInto(g, requestId));
+    games.filter(g => g.state === 'Final' || g.state === 'Live').forEach(g => loadGameSummaryExtrasInto(g, requestId));
   }
 
   function showGameSummaryModal(dateStr) {
@@ -3759,12 +3776,23 @@
     const games = currentScheduleTeam.gamesByDate[dateStr];
     if (!games || !games.length) return;
     const teamName = TEAM_NICKNAMES[currentScheduleTeam.teamId] || '';
+    const selectedAbbr = TEAM_ABBR[currentScheduleTeam.teamId] || teamName;
     const neutralGames = games.map(g => ({
       ...g,
       awayName: g.isHome ? g.opponentFull : teamName,
-      homeName: g.isHome ? teamName : g.opponentFull
+      homeName: g.isHome ? teamName : g.opponentFull,
+      awayAbbr: g.isHome ? g.opponent : selectedAbbr,
+      homeAbbr: g.isHome ? selectedAbbr : g.opponent
     }));
     openGameSummaryModal(dateStr, neutralGames, teamName);
+  }
+  // Scorecard tab's "Box Score" link -- reuses the exact same modal as
+  // the Daily/Schedule tabs, just fed the one game already loaded there
+  // (with linescore attached, so the box score renders instantly instead
+  // of needing the lazy fetch Final tiles from other tabs rely on).
+  function showCurrentGameSummary() {
+    if (!currentGameSummary) return;
+    openGameSummaryModal(currentGameSummary.dateStr, [{ ...currentGameSummary, hideScorecardCta: true }]);
   }
   function hideGameSummaryModal() {
     gameSummaryOverlay.classList.remove('open');
@@ -3808,13 +3836,18 @@
     return n + 'th';
   }
 
-  async function fetchGameHighlights(gamePk) {
+  // includeHighlights skips the winProbability fetch and WPA leaderboard
+  // math entirely for Live games -- their box score is still worth fetching
+  // eagerly (see openGameSummaryModal), but WPA swings mid-game aren't a
+  // "top play/players" verdict yet, so there's no point paying for that call.
+  async function fetchGameHighlights(gamePk, includeHighlights) {
     try {
-      const [feedRes, wpRes] = await Promise.all([
-        fetch(`https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live`),
-        fetch(`https://statsapi.mlb.com/api/v1/game/${gamePk}/winProbability`)
-      ]);
+      const feedRes = await fetch(`https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live`);
       const feedData = await feedRes.json();
+      const linescore = feedData.liveData && feedData.liveData.linescore;
+      if (!includeHighlights) return { leaders: [], playOfGame: null, linescore };
+
+      const wpRes = await fetch(`https://statsapi.mlb.com/api/v1/game/${gamePk}/winProbability`);
       const wpData = await wpRes.json();
       const allPlays = (feedData.liveData && feedData.liveData.plays && feedData.liveData.plays.allPlays) || [];
       const wp = Array.isArray(wpData) ? wpData : [];
@@ -3861,9 +3894,9 @@
           : buildBatterStatLineParts(stats && stats.batting);
         return { id: p.id, name: p.name, statLine: renderStatLineParts(statParts) };
       });
-      return { leaders, playOfGame };
+      return { leaders, playOfGame, linescore };
     } catch (e) {
-      return { leaders: [], playOfGame: null };
+      return { leaders: [], playOfGame: null, linescore: null };
     }
   }
 
@@ -3906,11 +3939,28 @@
     return renderPlayOfGame(playOfGame) + renderPlayersOfTheGame(leaders);
   }
 
-  async function loadWpaLeadersInto(gamePk, requestId) {
-    const { leaders, playOfGame } = await fetchGameHighlights(gamePk);
+  // getVenueInfo is cached by venue id, so this is cheap on repeat opens of
+  // the same park -- swaps the name-only placeholder for the full name+city
+  // once the detailed /v1/venues record resolves.
+  async function loadVenueInto(game, requestId) {
+    const venue = await getVenueInfo(game.venueId);
     if (requestId !== gameSummaryRequestId) return;
-    const el = document.getElementById(`wpaLeaders-${gamePk}`);
-    if (el) el.outerHTML = renderGameHighlights(playOfGame, leaders);
+    const el = document.getElementById(`venue-${game.gamePk}`);
+    if (el) el.outerHTML = renderVenueHeader(game.venueName, venue, game.gamePk, renderStateBadge(game));
+  }
+
+  async function loadGameSummaryExtrasInto(game, requestId) {
+    const includeHighlights = game.state === 'Final';
+    const { leaders, playOfGame, linescore } = await fetchGameHighlights(game.gamePk, includeHighlights);
+    if (requestId !== gameSummaryRequestId) return;
+    if (includeHighlights) {
+      const wpaEl = document.getElementById(`wpaLeaders-${game.gamePk}`);
+      if (wpaEl) wpaEl.outerHTML = renderGameHighlights(playOfGame, leaders);
+    }
+    if (!game.linescore) {
+      const boxEl = document.getElementById(`boxScore-${game.gamePk}`);
+      if (boxEl) boxEl.outerHTML = linescore ? renderBoxScore(linescore, game.awayName, game.homeName) : '';
+    }
   }
 
   scheduleTeamSelect.addEventListener('change', () => {
@@ -4135,11 +4185,13 @@
       sprayStore[awayName] = renderSprayChart(away.battedBalls, awayName);
       sprayStore[homeName] = renderSprayChart(home.battedBalls, homeName);
 
-      let badgeClass = 'badge-preview';
-      if (state === 'Live') badgeClass = 'badge-live';
-      else if (state === 'Final') badgeClass = 'badge-final';
-
-      let stripHtml = '';
+      // Text for the always-visible compact score strip. The venue header,
+      // inning-by-inning box score, and top-play highlights all live in the
+      // game summary modal (opened via the "Box Score" link) instead of
+      // here, so the scorecard grid keeps the viewport.
+      let compactStateHtml = '';
+      let compactCountHtml = '';
+      let subLineHtml = '';
       let lastPlayHtml = '';
       if (state === 'Live') {
         const halfOver = (linescore.outs ?? 0) >= 3;
@@ -4155,16 +4207,18 @@
         const batter = offense.batter ? offense.batter.fullName : '';
         const pitcher = halfOver ? '' : ((linescore.defense && linescore.defense.pitcher) ? linescore.defense.pitcher.fullName : '');
 
-        stripHtml = `
-          <div class="badge ${badgeClass}">${inningHalf} ${inningNum}</div>
-          ${countBoard(balls, strikes, outs)}
-          <div class="diamond-mini">
+        const basesMiniHtml = `
+          <span class="diamond-mini">
             <span class="base-mini second ${onSecond ? 'on' : ''}"></span>
             <span class="base-mini third ${onThird ? 'on' : ''}"></span>
             <span class="base-mini first ${onFirst ? 'on' : ''}"></span>
-          </div>
-          <div>${batter ? 'At bat: ' + batter : ''}${pitcher ? ' &nbsp;&#183;&nbsp; Pitching: ' + pitcher : ''}</div>
-        `;
+          </span>`;
+        compactStateHtml = `${inningHalf} ${inningNum}`;
+        compactCountHtml = `<span class="score-strip-count">${balls}-${strikes}, ${outs} out ${basesMiniHtml}</span>`;
+        subLineHtml = (batter || pitcher)
+          ? `${batter ? 'At bat: ' + batter : ''}${pitcher ? ' &nbsp;&#183;&nbsp; Pitching: ' + pitcher : ''}`
+          : '';
+
         const currentHalf = (linescore.inningHalf || '').toLowerCase();
         const completedAtBats = allPlays.filter(p =>
           p.result && p.result.type === 'atBat' && p.result.description &&
@@ -4176,12 +4230,43 @@
           lastPlayHtml = `<div class="last-play"><span class="last-play-label">Previous Batter</span>${prevPlay.result.description}</div>`;
         }
       } else if (state === 'Final') {
-        stripHtml = `<div class="badge ${badgeClass}">Final</div>`;
+        compactStateHtml = 'Final';
       } else {
         const startTime = gameData.datetime && gameData.datetime.dateTime ? new Date(gameData.datetime.dateTime) : null;
-        stripHtml = `<div class="badge ${badgeClass}">${detailedState}</div>
-          ${startTime ? '<div>First pitch: ' + startTime.toLocaleString(undefined, {hour:'numeric', minute:'2-digit', month:'short', day:'numeric'}) + '</div>' : ''}`;
+        compactStateHtml = detailedState;
+        subLineHtml = startTime
+          ? 'First pitch: ' + startTime.toLocaleString(undefined, {hour:'numeric', minute:'2-digit', month:'short', day:'numeric'})
+          : '';
       }
+
+      const awayAbbr = (gameData.teams.away.abbreviation) || awayName;
+      const homeAbbr = (gameData.teams.home.abbreviation) || homeName;
+      const showRuns = state === 'Live' || state === 'Final';
+      const awayRuns = (linescore.teams && linescore.teams.away && linescore.teams.away.runs) ?? 0;
+      const homeRuns = (linescore.teams && linescore.teams.home && linescore.teams.home.runs) ?? 0;
+      const scoreStripHtml = `
+        <span class="score-strip-teams">${awayAbbr}${showRuns ? ` <span class="score-strip-run">${awayRuns}</span>` : ''} @ ${homeAbbr}${showRuns ? ` <span class="score-strip-run">${homeRuns}</span>` : ''}</span>
+        <span class="score-strip-state">${compactStateHtml}</span>
+        ${compactCountHtml}
+        <button type="button" class="box-score-link">Box Score</button>
+      `;
+
+      // Fed to showCurrentGameSummary() when the link above is clicked --
+      // reuses the exact same modal the Daily/Schedule tabs open, just with
+      // this game's linescore already attached so its box score renders
+      // instantly instead of needing the lazy fetch those tabs rely on.
+      currentGameSummary = {
+        gamePk,
+        dateStr: officialDate,
+        awayName, homeName,
+        awayAbbr, homeAbbr,
+        awayScore: showRuns ? awayRuns : null,
+        homeScore: showRuns ? homeRuns : null,
+        state, detailedState,
+        gameDate: gameData.datetime && gameData.datetime.dateTime,
+        linescore: showRuns ? linescore : null,
+        venueHtml: renderVenueHeader(gameData.venue && gameData.venue.name, venue, undefined, renderStateBadge({ state, detailedState }))
+      };
 
       // preserve horizontal scroll position of each team's innings grid --
       // the rebuild below replaces the whole subtree, which would otherwise
@@ -4191,9 +4276,8 @@
       body.innerHTML = `
         <div class="sheet">
           <div class="sticky-top">
-            ${renderVenueHeader(gameData, venue)}
-            ${renderBoxScore(linescore, awayName, homeName)}
-            <div class="live-strip">${stripHtml}</div>
+            <div class="score-strip">${scoreStripHtml}</div>
+            ${subLineHtml ? `<div class="score-strip-sub">${subLineHtml}</div>` : ''}
             ${lastPlayHtml}
           </div>
           ${renderTeamTable(awayName, awayRows.length ? awayRows : placeholderLineupRows(), numInnings, away.pitcherByInning, away.starterPitcherId, columnsPerInning, homePitcherCard, 'away', liveBatterInfo, season)}
@@ -4627,6 +4711,8 @@
   }
 
   document.addEventListener('click', (e) => {
+    const boxScoreLink = e.target.closest('.box-score-link');
+    if (boxScoreLink) showCurrentGameSummary();
     const target = e.target.closest('[data-pkey]');
     if (target) showPitchPopup(target.getAttribute('data-pkey'));
     const rosterBtn = e.target.closest('.roster-btn');
