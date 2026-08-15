@@ -1686,7 +1686,7 @@
   // long career doesn't turn the tag row into a wall of text. The MVP check
   // excludes series/game MVPs, which also contain "Most Valuable Player".
   function categorizeAward(name) {
-    if (/most valuable player/i.test(name) && !/world series|championship series|all-star/i.test(name)) return 'MVP';
+    if (/most valuable player/i.test(name) && !/world series|championship series|all.?star/i.test(name)) return 'MVP';
     if (/rookie of the year/i.test(name)) return 'Rookie of the Year';
     if (/gold glove/i.test(name)) return 'Gold Glove';
     if (/silver slugger/i.test(name)) return 'Silver Slugger';
