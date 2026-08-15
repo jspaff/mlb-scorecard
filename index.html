@@ -1672,6 +1672,7 @@
       const res = await fetch(`https://statsapi.mlb.com/api/v1/people/${personId}?hydrate=awards`);
       const data = await res.json();
       const awards = (data.people && data.people[0] && data.people[0].awards) || [];
+      console.log('awards for', personId, awards); // TEMP debug -- remove once award field shape is confirmed
       playerAwardsCache[personId] = awards;
       return awards;
     } catch (e) {
