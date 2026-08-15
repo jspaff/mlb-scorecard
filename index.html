@@ -1462,13 +1462,13 @@
 <div id="mlb-root">
   <div class="tab-header">
     <div class="tab-bar">
-      <button type="button" class="tab-btn" data-tab="daily">Daily</button>
-      <button type="button" class="tab-btn active" data-tab="scorecard">Scorecard</button>
+      <button type="button" class="tab-btn active" data-tab="daily">Daily</button>
+      <button type="button" class="tab-btn" data-tab="scorecard">Scorecard</button>
       <button type="button" class="tab-btn" data-tab="standings">Standings</button>
       <button type="button" class="tab-btn" data-tab="schedule">Schedule</button>
       <button type="button" class="tab-btn" data-tab="roster">Roster</button>
     </div>
-    <div class="mlb-controls" data-tab-controls="daily" hidden>
+    <div class="mlb-controls" data-tab-controls="daily">
       <div class="date-nav">
         <button type="button" class="date-nav-btn" id="dailyDatePrev" aria-label="Previous day">&#8249;</button>
         <input type="date" id="dailyDatePick" />
@@ -1480,7 +1480,7 @@
         <button type="button" class="view-toggle-btn" data-view="strikeouts">Strikeouts</button>
       </div>
     </div>
-    <div class="mlb-controls" data-tab-controls="scorecard">
+    <div class="mlb-controls" data-tab-controls="scorecard" hidden>
       <div class="date-nav">
         <button type="button" class="date-nav-btn" id="datePrev" aria-label="Previous day">&#8249;</button>
         <input type="date" id="datePick" />
@@ -1511,12 +1511,12 @@
       </div>
     </div>
   </div>
-  <div class="tab-panel" data-tab-panel="daily" id="dailyPanel" hidden>
+  <div class="tab-panel" data-tab-panel="daily" id="dailyPanel">
     <div id="dailyBody">
       <div class="mlb-status-msg">Loading today's games&#8230;</div>
     </div>
   </div>
-  <div class="tab-panel" data-tab-panel="scorecard" id="scorecardPanel">
+  <div class="tab-panel" data-tab-panel="scorecard" id="scorecardPanel" hidden>
     <div id="mlbBody">
       <div class="mlb-status-msg">Loading today's schedule&#8230;</div>
     </div>
@@ -1691,6 +1691,29 @@
   dateInput.value = todayStr();
   standingsDateInput.value = todayStr();
   dailyDateInput.value = todayStr();
+
+  async function dateHasStartedGame(dateStr) {
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}`);
+      const data = await res.json();
+      const games = (data.dates && data.dates[0] && data.dates[0].games) || [];
+      return games.some(g => g.status.abstractGameState === 'Live' || g.status.abstractGameState === 'Final');
+    } catch (e) {
+      return false;
+    }
+  }
+  // Walk backward from today for the Daily tab's initial date, so the page
+  // opens on yesterday's (finished) slate instead of an empty "today" until
+  // the first game of the day actually starts. Bounded in case of a
+  // multi-day gap in the schedule (All-Star break, offseason).
+  async function findLastStartedDate() {
+    let dateStr = todayStr();
+    for (let i = 0; i < 7; i++) {
+      if (await dateHasStartedGame(dateStr)) return dateStr;
+      dateStr = addDays(dateStr, -1);
+    }
+    return dateStr;
+  }
 
   const POS_PATTERNS = [
     [/pitcher/gi, 1], [/catcher/gi, 2], [/first baseman/gi, 3],
@@ -4687,7 +4710,14 @@
   if (window.ResizeObserver) new ResizeObserver(syncTabHeaderHeight).observe(tabHeaderEl);
   else window.addEventListener('resize', syncTabHeaderHeight);
 
-  Tabs.register('daily', { init: () => loadDailySummary(dailyDateInput.value) });
+  Tabs.register('daily', {
+    init: () => {
+      findLastStartedDate().then(dateStr => {
+        dailyDateInput.value = dateStr;
+        loadDailySummary(dateStr);
+      });
+    }
+  });
   Tabs.register('scorecard');
   Tabs.register('standings', { init: () => loadStandings(standingsDateInput.value) });
   Tabs.register('schedule', { init: () => { populateScheduleTeamSelect(); loadTeamSchedule(scheduleTeamSelect.value); } });
@@ -4766,7 +4796,7 @@
     if (e.key === 'Escape') { hidePitchPopup(); hideRosterModal(); hideSprayModal(); hidePlayerModal(); hideGameSummaryModal(); hideTeamChartModal(); }
   });
 
-  Tabs.init('scorecard');
+  Tabs.init('daily');
   loadSchedule(dateInput.value);
 })();
 </script>
