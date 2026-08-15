@@ -1697,15 +1697,7 @@
   // honors, etc.) is left off the player modal so a long career doesn't turn
   // the tag row into a wall of text.
   function categorizeAward(award) {
-    const id = (award.id || '').toUpperCase();
-    if (AWARD_ID_TAGS[id]) return AWARD_ID_TAGS[id];
-    // No confirmed id for these three yet -- name matching stays as a best
-    // guess since the phrases are distinctive enough to be low-risk.
-    const name = award.name || '';
-    if (/hank aaron/i.test(name)) return 'Hank Aaron Award';
-    if (/lou gehrig/i.test(name)) return 'Lou Gehrig Award';
-    if (/roberto clemente/i.test(name)) return 'Roberto Clemente Award';
-    return null;
+    return AWARD_ID_TAGS[(award.id || '').toUpperCase()] || null;
   }
   // Collapses repeat wins of the same award (e.g. three Gold Gloves at
   // different positions) into one "Gold Glove 3x" tag instead of three rows.
