@@ -1679,12 +1679,30 @@
       return [];
     }
   }
+  // Maps a raw award name (which the API often prefixes with the league,
+  // e.g. "National League Most Valuable Player") down to one of the "main"
+  // honors worth a tag -- everything else (monthly/weekly awards, TSN
+  // awards, All-Star selections, etc.) is left off the player modal so a
+  // long career doesn't turn the tag row into a wall of text. The MVP check
+  // excludes series/game MVPs, which also contain "Most Valuable Player".
+  function categorizeAward(name) {
+    if (/most valuable player/i.test(name) && !/world series|championship series|all-star/i.test(name)) return 'MVP';
+    if (/rookie of the year/i.test(name)) return 'Rookie of the Year';
+    if (/gold glove/i.test(name)) return 'Gold Glove';
+    if (/silver slugger/i.test(name)) return 'Silver Slugger';
+    if (/cy young/i.test(name)) return 'Cy Young';
+    if (/reliever of the year/i.test(name)) return 'Reliever of the Year';
+    if (/hank aaron/i.test(name)) return 'Hank Aaron Award';
+    if (/lou gehrig/i.test(name)) return 'Lou Gehrig Award';
+    if (/roberto clemente/i.test(name)) return 'Roberto Clemente Award';
+    return null;
+  }
   // Collapses repeat wins of the same award (e.g. three Gold Gloves at
   // different positions) into one "Gold Glove 3x" tag instead of three rows.
   function summarizeAwardTags(awards) {
     const counts = {};
     awards.forEach(a => {
-      const label = a.name;
+      const label = a.name && categorizeAward(a.name);
       if (!label) return;
       counts[label] = (counts[label] || 0) + 1;
     });
