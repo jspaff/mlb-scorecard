@@ -1679,26 +1679,29 @@
       return [];
     }
   }
+  // Real MLB-wide season awards use a clean AL/NL + short-suffix id
+  // (ALMVP, NLCY, ALGG, ...) -- confirmed via the /v1/awards catalog rather
+  // than guessed, unlike `name`, which org-specific and minor/winter-league
+  // honors reuse freely (e.g. "PWL Finals Most Valuable Player").
+  const AWARD_ID_TAGS = {
+    ALMVP: 'MVP', NLMVP: 'MVP',
+    ALAS: 'All-Star', NLAS: 'All-Star',
+    ALGG: 'Gold Glove', NLGG: 'Gold Glove',
+    ALSS: 'Silver Slugger', NLSS: 'Silver Slugger',
+    ALCY: 'Cy Young', NLCY: 'Cy Young',
+    ALROY: 'Rookie of the Year', NLROY: 'Rookie of the Year',
+    ALREL: 'Reliever of the Year', NLREL: 'Reliever of the Year'
+  };
   // Maps a raw award to one of the "main" honors worth a tag -- everything
   // else (monthly/weekly awards, minor/winter-league All-Stars, org-specific
   // honors, etc.) is left off the player modal so a long career doesn't turn
-  // the tag row into a wall of text. Matched primarily on `id` rather than
-  // `name`: real MLB-wide season awards use a clean AL/NL + short-suffix id
-  // (ALMVP, NLCY, ALGG, ...), confirmed against a real player's award list,
-  // while org-specific honors reuse words like "MVP" and "All-Star" freely
-  // in their `name` (e.g. "PWL Finals Most Valuable Player", "Ted Williams
-  // All-Star MVP") and previously slipped through a name-only regex.
+  // the tag row into a wall of text.
   function categorizeAward(award) {
-    const id = award.id || '';
+    const id = (award.id || '').toUpperCase();
+    if (AWARD_ID_TAGS[id]) return AWARD_ID_TAGS[id];
+    // No confirmed id for these three yet -- name matching stays as a best
+    // guess since the phrases are distinctive enough to be low-risk.
     const name = award.name || '';
-    if (/^(al|nl)mvp$/i.test(id)) return 'MVP';
-    if (/^(al|nl)roy$/i.test(id)) return 'Rookie of the Year';
-    if (/^(al|nl)gg$/i.test(id)) return 'Gold Glove';
-    if (/^(al|nl)ss$/i.test(id)) return 'Silver Slugger';
-    if (/^(al|nl)cy$/i.test(id)) return 'Cy Young';
-    // No confirmed id pattern for these four yet -- name matching stays as
-    // a best guess since the phrases are distinctive enough to be low-risk.
-    if (/reliever of the year/i.test(name)) return 'Reliever of the Year';
     if (/hank aaron/i.test(name)) return 'Hank Aaron Award';
     if (/lou gehrig/i.test(name)) return 'Lou Gehrig Award';
     if (/roberto clemente/i.test(name)) return 'Roberto Clemente Award';
