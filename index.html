@@ -1672,7 +1672,6 @@
       const res = await fetch(`https://statsapi.mlb.com/api/v1/people/${personId}?hydrate=awards`);
       const data = await res.json();
       const awards = (data.people && data.people[0] && data.people[0].awards) || [];
-      console.log('awards for', personId, awards); // TEMP debug -- remove once award field shape is confirmed
       playerAwardsCache[personId] = awards;
       return awards;
     } catch (e) {
@@ -1680,18 +1679,25 @@
       return [];
     }
   }
-  // Maps a raw award name (which the API often prefixes with the league,
-  // e.g. "National League Most Valuable Player") down to one of the "main"
-  // honors worth a tag -- everything else (monthly/weekly awards, TSN
-  // awards, All-Star selections, etc.) is left off the player modal so a
-  // long career doesn't turn the tag row into a wall of text. The MVP check
-  // excludes series/game MVPs, which also contain "Most Valuable Player".
-  function categorizeAward(name) {
-    if (/most valuable player/i.test(name) && !/world series|championship series|all.?star/i.test(name)) return 'MVP';
-    if (/rookie of the year/i.test(name)) return 'Rookie of the Year';
-    if (/gold glove/i.test(name)) return 'Gold Glove';
-    if (/silver slugger/i.test(name)) return 'Silver Slugger';
-    if (/cy young/i.test(name)) return 'Cy Young';
+  // Maps a raw award to one of the "main" honors worth a tag -- everything
+  // else (monthly/weekly awards, minor/winter-league All-Stars, org-specific
+  // honors, etc.) is left off the player modal so a long career doesn't turn
+  // the tag row into a wall of text. Matched primarily on `id` rather than
+  // `name`: real MLB-wide season awards use a clean AL/NL + short-suffix id
+  // (ALMVP, NLCY, ALGG, ...), confirmed against a real player's award list,
+  // while org-specific honors reuse words like "MVP" and "All-Star" freely
+  // in their `name` (e.g. "PWL Finals Most Valuable Player", "Ted Williams
+  // All-Star MVP") and previously slipped through a name-only regex.
+  function categorizeAward(award) {
+    const id = award.id || '';
+    const name = award.name || '';
+    if (/^(al|nl)mvp$/i.test(id)) return 'MVP';
+    if (/^(al|nl)roy$/i.test(id)) return 'Rookie of the Year';
+    if (/^(al|nl)gg$/i.test(id)) return 'Gold Glove';
+    if (/^(al|nl)ss$/i.test(id)) return 'Silver Slugger';
+    if (/^(al|nl)cy$/i.test(id)) return 'Cy Young';
+    // No confirmed id pattern for these four yet -- name matching stays as
+    // a best guess since the phrases are distinctive enough to be low-risk.
     if (/reliever of the year/i.test(name)) return 'Reliever of the Year';
     if (/hank aaron/i.test(name)) return 'Hank Aaron Award';
     if (/lou gehrig/i.test(name)) return 'Lou Gehrig Award';
@@ -1703,7 +1709,7 @@
   function summarizeAwardTags(awards) {
     const counts = {};
     awards.forEach(a => {
-      const label = a.name && categorizeAward(a.name);
+      const label = categorizeAward(a);
       if (!label) return;
       counts[label] = (counts[label] || 0) + 1;
     });
