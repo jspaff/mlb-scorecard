@@ -1743,6 +1743,42 @@
       return null;
     }
   }
+  // Full person record (position, current team, etc.) -- separate from the
+  // lightweight fields the search endpoint returns, since a search result
+  // that hasn't been hydrated with a team may otherwise leave the profile's
+  // team/position blank. Cached by id; this doesn't change within a session.
+  const playerDetailsCache = {};
+  async function getPlayerDetails(personId) {
+    if (playerDetailsCache[personId] !== undefined) return playerDetailsCache[personId];
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/people/${personId}`);
+      const data = await res.json();
+      const person = (data.people && data.people[0]) || null;
+      playerDetailsCache[personId] = person;
+      return person;
+    } catch (e) {
+      playerDetailsCache[personId] = null;
+      return null;
+    }
+  }
+  // One split per season (and per team within a season a player was
+  // traded), oldest first -- cached by id alone since a career's past
+  // seasons don't change, only whatever season is still in progress.
+  const playerCareerStatsCache = {};
+  async function getPlayerCareerStats(personId) {
+    if (playerCareerStatsCache[personId] !== undefined) return playerCareerStatsCache[personId];
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/people/${personId}/stats?stats=yearByYear&group=hitting`);
+      const data = await res.json();
+      const splits = (data.stats && data.stats[0] && data.stats[0].splits) || [];
+      splits.sort((a, b) => Number(a.season) - Number(b.season));
+      playerCareerStatsCache[personId] = splits;
+      return splits;
+    } catch (e) {
+      playerCareerStatsCache[personId] = [];
+      return [];
+    }
+  }
   // Career-spanning, so cached by player id alone (no season) -- a player's
   // past awards don't change once the season they were won in is over.
   const playerAwardsCache = {};
@@ -4931,16 +4967,21 @@
     showPlayerProfile(person);
   });
 
-  function renderPlayerProfile(person, seasonStat, season) {
+  function renderPlayerProfile(person, careerSplits) {
     const headshotUrl = `https://img.mlbstatic.com/mlb-photos/image/upload/w_180,q_100,f_auto/v1/people/${person.id}/headshot/67/current`;
     const meta = playerMetaLine(person);
-    const seasonHtml = seasonStat
-      ? `<div class="player-stat-line"><span class="psl-label">AVG</span><span>${seasonStat.avg ?? '&#8212;'}</span></div>
-         <div class="player-stat-line"><span class="psl-label">OBP</span><span>${seasonStat.obp ?? '&#8212;'}</span></div>
-         <div class="player-stat-line"><span class="psl-label">SLG</span><span>${seasonStat.slg ?? '&#8212;'}</span></div>
-         <div class="player-stat-line"><span class="psl-label">HR</span><span>${seasonStat.homeRuns ?? '&#8212;'}</span></div>
-         <div class="player-stat-line"><span class="psl-label">RBI</span><span>${seasonStat.rbi ?? '&#8212;'}</span></div>`
-      : `<div class="pitch-empty">Season stats not available.</div>`;
+    const careerHtml = careerSplits === null
+      ? '<div class="mlb-status-msg">Loading career stats&#8230;</div>'
+      : careerSplits.length
+        ? `<div class="table-scroll"><table class="pitch-table">
+            <thead><tr><th>Year</th><th>Team</th><th>AVG</th><th>OBP</th><th>SLG</th><th>HR</th><th>RBI</th></tr></thead>
+            <tbody>${careerSplits.map(s => {
+              const stat = s.stat || {};
+              const team = (s.team && (s.team.abbreviation || s.team.name)) || '&#8212;';
+              return `<tr><td>${s.season}</td><td>${team}</td><td>${stat.avg ?? '&#8212;'}</td><td>${stat.obp ?? '&#8212;'}</td><td>${stat.slg ?? '&#8212;'}</td><td>${stat.homeRuns ?? '&#8212;'}</td><td>${stat.rbi ?? '&#8212;'}</td></tr>`;
+            }).join('')}</tbody>
+          </table></div>`
+        : '<div class="pitch-empty">Career stats not available.</div>';
     return `<div class="sheet">
       <div class="player-profile-head">
         <img class="player-profile-photo" src="${headshotUrl}" alt="" loading="lazy" onerror="this.style.display='none'">
@@ -4949,18 +4990,20 @@
           ${meta ? `<div class="player-profile-meta">${meta}</div>` : ''}
         </div>
       </div>
-      <div class="roster-section-title">${season} Season</div>
-      ${seasonHtml}
+      <div class="roster-section-title">Career</div>
+      ${careerHtml}
     </div>`;
   }
 
   async function showPlayerProfile(person) {
-    const season = new Date().getFullYear();
     const requestId = ++playerProfileRequestId;
-    playersBody.innerHTML = renderPlayerProfile(person, null, season);
-    const seasonStat = await getPlayerSeasonStats(person.id, season);
+    playersBody.innerHTML = renderPlayerProfile(person, null);
+    const [fullPerson, careerSplits] = await Promise.all([
+      getPlayerDetails(person.id),
+      getPlayerCareerStats(person.id)
+    ]);
     if (requestId !== playerProfileRequestId) return;
-    playersBody.innerHTML = renderPlayerProfile(person, seasonStat, season);
+    playersBody.innerHTML = renderPlayerProfile(fullPerson || person, careerSplits);
   }
 
   Tabs.register('daily', {
