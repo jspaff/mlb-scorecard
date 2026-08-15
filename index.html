@@ -2892,6 +2892,7 @@
       ${seasonHtml}
       <div class="roster-section-title">This Game</div>
       ${todayHtml}
+      <button type="button" class="modal-cta" data-player-id="${info.id}">View Full Profile &#8594;</button>
     `;
   }
 
@@ -5027,6 +5028,17 @@
     playersBody.innerHTML = renderPlayerProfile(fullPerson || person, careerSplits, summarizeAwardTags(awards));
   }
 
+  // Mirrors jumpToScorecardGame: leave the modal, switch tabs, load the
+  // full page there. playerStore only has the name/pos/team the scorecard
+  // grid already had on hand -- showPlayerProfile re-fetches everything
+  // else (team, bio, career stats) the same as a normal search selection.
+  function jumpToPlayerProfile(playerId) {
+    const info = playerStore[playerId];
+    hidePlayerModal();
+    Tabs.switchTo('players');
+    showPlayerProfile({ id: playerId, fullName: (info && info.name) || '' });
+  }
+
   Tabs.register('daily', {
     init: () => {
       findLastStartedDate().then(dateStr => {
@@ -5109,6 +5121,10 @@
   playerClose.addEventListener('click', hidePlayerModal);
   playerOverlay.addEventListener('click', (e) => {
     if (e.target === playerOverlay) hidePlayerModal();
+  });
+  playerModalBody.addEventListener('click', (e) => {
+    const btn = e.target.closest('.modal-cta');
+    if (btn) jumpToPlayerProfile(btn.dataset.playerId);
   });
   teamChartClose.addEventListener('click', hideTeamChartModal);
   teamChartOverlay.addEventListener('click', (e) => {
