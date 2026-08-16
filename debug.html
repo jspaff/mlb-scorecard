@@ -101,9 +101,27 @@
 </div>
 <button id="run" class="secondary">Find at-bat</button>
 
-<h3 class="divider">or explore possible values of any API field</h3>
+<h3 class="divider">or look up a full catalog of values (the awards-style fast path)</h3>
 <div style="font-size:12px;color:#8a8478;margin-bottom:8px;">
-  Generalizes the ad-hoc probing we've done before (e.g. confirming the real award ID codes via the /v1/awards catalog). Give it an endpoint and a dot-path to a field, and it tallies every distinct value it finds — across one JSON response, or across every game on a date range if the endpoint has a <code>{gamePk}</code> placeholder.
+  The reason the awards lookup was smooth: <code>/v1/awards</code> IS the complete, authoritative list of every award -- no sampling needed. MLB's Stats API publishes a couple dozen of these catalogs (event types, pitch types, positions, review reasons, sky/wind conditions, stat groups, ...) at <code>/v1/&lt;type&gt;</code>. Pick one and get the whole list back instantly, the same way.
+</div>
+<div class="row">
+  <div class="field">
+    <label for="catalogType">Catalog type</label>
+    <select id="catalogType"></select>
+  </div>
+  <div class="field">
+    <label for="catalogCustom">...or a custom type name</label>
+    <input id="catalogCustom" placeholder="overrides the dropdown if set">
+  </div>
+</div>
+<button id="catalogRun" class="secondary">Look up catalog</button>
+<div id="catalogStatus" style="margin:10px 0;font-size:14px;color:#c3c8bb;white-space:pre-wrap;"></div>
+<div id="catalogResults"></div>
+
+<h3 class="divider">or statistically explore a field that has no catalog</h3>
+<div style="font-size:12px;color:#8a8478;margin-bottom:8px;">
+  For fields that aren't one of the clean lookup catalogs above (e.g. anything nested inside a game feed, like per-pitch call codes or hit-trajectory tags as they actually appear on real plays). Give it an endpoint and a dot-path to a field, and it tallies every distinct value it finds by sampling real responses — across one JSON response, or across every game on a date range if the endpoint has a <code>{gamePk}</code> placeholder. Less authoritative than a catalog (only shows values that occurred in what got sampled) but works for anything.
 </div>
 <div class="row">
   <div class="field" style="flex-basis:100%;">
@@ -568,6 +586,111 @@
   }
 
   document.getElementById('fxRun').addEventListener('click', exploreFieldValues);
+
+  // Catalog lookup: MLB publishes complete, authoritative lookup tables for
+  // a couple dozen coded fields at /v1/<type> -- this is what made the
+  // awards catalog so much better than guessing at award IDs. /v1/meta
+  // itself lists which types exist; fall back to a hardcoded list of the
+  // known ones in case that endpoint's shape changes or 404s.
+  const KNOWN_META_TYPES = [
+    'awards', 'baseballStats', 'eventTypes', 'gameStatus', 'gameTypes',
+    'hitTrajectories', 'jobTypes', 'languages', 'leagueLeaderTypes',
+    'logicalEvents', 'metrics', 'pitchCodes', 'pitchTypes', 'platforms',
+    'positions', 'reviewReasons', 'rosterTypes', 'scheduleEventTypes',
+    'situationCodes', 'sky', 'standingsTypes', 'statGroups', 'statTypes',
+    'windDirection',
+  ];
+  const catalogTypeEl = document.getElementById('catalogType');
+  const catalogStatusEl = document.getElementById('catalogStatus');
+  const catalogResultsEl = document.getElementById('catalogResults');
+
+  function fillCatalogTypes(types) {
+    catalogTypeEl.innerHTML = types.slice().sort()
+      .map(t => `<option value="${t}">${t}</option>`).join('');
+  }
+  fillCatalogTypes(KNOWN_META_TYPES);
+
+  (async function loadMetaTypesFromApi() {
+    try {
+      const data = await fetch('https://statsapi.mlb.com/api/v1/meta').then(r => r.json());
+      const list = Array.isArray(data) ? data : (data && data.meta);
+      if (Array.isArray(list) && list.length) {
+        const types = list.map(t => (typeof t === 'string' ? t : (t.type || t.name || ''))).filter(Boolean);
+        fillCatalogTypes(Array.from(new Set(types.concat(KNOWN_META_TYPES))));
+      }
+    } catch (e) { /* /v1/meta is unconfirmed to exist -- the hardcoded list above already covers the known catalogs */ }
+  })();
+
+  // Catalogs come back shaped inconsistently (bare array vs. {type: [...]}
+  // vs. {copyright, <type>: [...]}) -- find whichever array actually holds
+  // the entries rather than assuming one wrapper shape.
+  function findCatalogArray(data, type) {
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === 'object') {
+      if (Array.isArray(data[type])) return data[type];
+      for (const [k, v] of Object.entries(data)) {
+        if (k === 'copyright') continue;
+        if (Array.isArray(v)) return v;
+      }
+    }
+    return null;
+  }
+
+  function summarizeCatalogItem(item) {
+    if (item === null || typeof item !== 'object') return String(item);
+    const code = item.code || item.id || item.abbreviation || '';
+    const label = item.name || item.description || item.displayName || item.fullName || '';
+    if (code && label) return `${code} — ${label}`;
+    return label || code || JSON.stringify(item);
+  }
+
+  async function lookupCatalog() {
+    const type = document.getElementById('catalogCustom').value.trim() || catalogTypeEl.value;
+    if (!type) {
+      catalogStatusEl.textContent = 'Pick a catalog type or enter a custom one.';
+      return;
+    }
+    catalogResultsEl.innerHTML = '';
+    catalogStatusEl.textContent = `Fetching /v1/${type}...`;
+    let data;
+    try {
+      data = await fetch(`https://statsapi.mlb.com/api/v1/${type}`).then(r => r.json());
+    } catch (e) {
+      catalogStatusEl.textContent = `Fetch failed: ${e.message}`;
+      return;
+    }
+    const list = findCatalogArray(data, type);
+    if (!list) {
+      catalogStatusEl.textContent = `Got a response but couldn't find a list inside it -- see raw JSON below.`;
+      const div = document.createElement('div');
+      div.className = 'match';
+      div.innerHTML = `<pre>${JSON.stringify(data, null, 2).replace(/</g, '&lt;')}</pre>`;
+      catalogResultsEl.appendChild(div);
+      return;
+    }
+    catalogStatusEl.textContent = `${list.length} entr${list.length === 1 ? 'y' : 'ies'} in the "${type}" catalog.`;
+    const div = document.createElement('div');
+    div.className = 'match';
+    div.innerHTML = `
+      <h2>${type}</h2>
+      ${list.map(item => `<div class="keyhit">${summarizeCatalogItem(item).replace(/</g, '&lt;')}</div>`).join('')}
+      <button class="copybtn" id="catalogCopy">Copy full list as JSON</button>
+      <details><summary>Raw response</summary><pre>${JSON.stringify(data, null, 2).replace(/</g, '&lt;')}</pre></details>
+    `;
+    catalogResultsEl.appendChild(div);
+    document.getElementById('catalogCopy').addEventListener('click', () => {
+      const text = JSON.stringify(list, null, 2);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          const btn = document.getElementById('catalogCopy');
+          btn.textContent = 'Copied!';
+          setTimeout(() => { btn.textContent = 'Copy full list as JSON'; }, 1500);
+        });
+      }
+    });
+  }
+
+  document.getElementById('catalogRun').addEventListener('click', lookupCatalog);
 })();
 </script>
 </body>
