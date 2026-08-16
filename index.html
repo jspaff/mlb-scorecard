@@ -19,6 +19,7 @@
     --gold: #d9a91a;
     --brick: #e0604a;
     --frame: #54796d;
+    --gray: #8a8478;
   }
 
   #mlb-root * { box-sizing: border-box; }
@@ -991,11 +992,11 @@
     letter-spacing: 0.05em;
     text-transform: uppercase;
     color: #fff8ea;
-    background: var(--gold);
+    background: var(--gray);
     padding: 2px 5px;
     border-radius: 3px;
   }
-  .bp-badge.bp-badge-starter { background: var(--ink); color: var(--paper); }
+  .bp-badge.bp-badge-starter { background: var(--gold); color: #fff8ea; }
   .bp-recent { display: flex; gap: 10px; }
   .bp-recent-item {
     display: flex;
@@ -2932,7 +2933,7 @@
       return `<div class="roster-row"><span class="roster-order">${i + 1}</span><span class="roster-name">${starter.name}</span><span class="roster-pos">${starter.pos}</span></div>`;
     }).join('');
     const benchHtml = benchPlayers.length
-      ? benchPlayers.map(p => `<div class="roster-row"><span class="roster-name">${p.name}${p.entered ? ' <span class="bp-badge">ENTERED</span>' : ''}</span><span class="roster-pos">${p.pos}</span></div>`).join('')
+      ? benchPlayers.map(p => `<div class="roster-row"><span class="roster-name">${p.name}${p.entered ? ' <span class="bp-badge">SUBSTITUTE</span>' : ''}</span><span class="roster-pos">${p.pos}</span></div>`).join('')
       : '<div class="roster-empty">None</div>';
 
     return `
@@ -4438,7 +4439,10 @@
         return Object.values(sideBoxscore.players || {})
           .filter(p => p.person && p.position && p.position.abbreviation !== 'P'
             && (!p.battingOrder || parseInt(p.battingOrder) % 100 !== 0))
-          .map(p => ({ name: p.person.fullName, pos: p.position.abbreviation, entered: !!p.battingOrder }));
+          .map(p => ({ name: p.person.fullName, pos: p.position.abbreviation, entered: !!p.battingOrder }))
+          // entered substitutes float to the top, same as relievers who've
+          // entered sort above the rest of the bullpen in buildBullpenList
+          .sort((a, b) => (b.entered ? 1 : 0) - (a.entered ? 1 : 0));
       }
       rosterStore[awayName] = renderRosterContent(awayName, awayBullpen, awayRows, getBenchPlayers(liveData.boxscore.teams.away));
       rosterStore[homeName] = renderRosterContent(homeName, homeBullpen, homeRows, getBenchPlayers(liveData.boxscore.teams.home));
