@@ -1411,6 +1411,25 @@
     color: var(--ink-soft);
     font-family: 'IBM Plex Mono', monospace;
   }
+  /* z-index: 0 (not auto) turns this into its own stacking context, so the
+     watermark's negative z-index stays pinned behind this card's content
+     instead of sinking behind the overlay/tab panel underneath it. */
+  .player-profile-sheet {
+    position: relative;
+    z-index: 0;
+    overflow: hidden;
+  }
+  .player-profile-watermark {
+    position: absolute;
+    top: -18px;
+    right: -18px;
+    z-index: -1;
+    width: 200px;
+    height: 200px;
+    object-fit: contain;
+    opacity: 0.14;
+    pointer-events: none;
+  }
   .player-profile-head {
     display: flex;
     align-items: center;
@@ -5026,6 +5045,8 @@
 
   function renderPlayerProfile(person, careerSplits, awardTags) {
     const headshotUrl = `https://img.mlbstatic.com/mlb-photos/image/upload/w_180,q_100,f_auto/v1/people/${person.id}/headshot/67/current`;
+    const teamId = person.currentTeam && person.currentTeam.id;
+    const watermarkHtml = teamId ? `<img class="player-profile-watermark" src="${capLogoUrl(teamId)}" alt="" aria-hidden="true">` : '';
     const meta = playerMetaLine(person);
     const bio = playerBioLine(person);
     const awardsHtml = awardTags && awardTags.length
@@ -5043,7 +5064,8 @@
             }).join('')}</tbody>
           </table></div>`
         : '<div class="pitch-empty">Career stats not available.</div>';
-    return `<div class="sheet">
+    return `<div class="sheet player-profile-sheet">
+      ${watermarkHtml}
       <div class="player-profile-head">
         <img class="player-profile-photo" src="${headshotUrl}" alt="" loading="lazy" onerror="this.style.display='none'">
         <div>
