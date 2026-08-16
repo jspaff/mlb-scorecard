@@ -702,38 +702,16 @@
     padding-bottom: 3px;
     border-bottom: 1px solid var(--paper-line);
   }
-  /* Header row for the career table -- the title and toggle share the
-     section's bottom rule, so the title's own margin/border are cleared
-     here instead of doubling up. */
-  .career-section-header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 10px;
-    margin: 16px 0 6px;
-    padding-bottom: 3px;
-    border-bottom: 1px solid var(--paper-line);
+  /* Team stints under a traded year -- indented and muted so the combined
+     year row above them still reads as the primary line. */
+  table.career-table tr.career-team-subrow td {
+    color: var(--ink-soft);
+    font-size: 11px;
+    border-bottom-style: dashed;
   }
-  .career-section-header .roster-section-title {
-    margin: 0;
-    padding-bottom: 0;
-    border-bottom: none;
+  table.career-table tr.career-team-subrow td:nth-child(2) {
+    padding-left: 16px;
   }
-  .career-toggle-btn {
-    font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 9.5px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--ink);
-    background: rgba(28, 58, 44, 0.05);
-    border: 1px solid var(--paper-line);
-    border-radius: 5px;
-    padding: 3px 9px;
-    cursor: pointer;
-    flex-shrink: 0;
-  }
-  .career-toggle-btn:hover { background: rgba(28, 58, 44, 0.1); }
   .roster-row {
     display: flex;
     align-items: center;
@@ -5008,13 +4986,6 @@
   // fields already returned (name, position, team) instead of a second
   // fetch to /people/{id} for the same data.
   let currentPlayerSearchResults = [];
-  // 'team' shows one row per team stint (splits a traded player's season in
-  // two); 'year' collapses those into one combined row. Persists across
-  // profile views in a session so the choice doesn't reset every lookup.
-  let careerViewMode = 'team';
-  // Cached inputs from the last renderPlayerProfile call so the career-view
-  // toggle can repaint instantly without refetching career stats.
-  let lastProfileRender = null;
 
   async function searchPlayers(query) {
     try {
@@ -5128,20 +5099,28 @@
   }
 
   function renderCareerTable(splits) {
-    const rows = careerViewMode === 'year'
-      ? collapseCareerByYear(splits).map(y => {
-          const team = y.teams.length > 1 ? y.teams.join('/') : (y.teams[0] || '&#8212;');
-          const avg = formatRate(y.hits, y.atBats);
-          const obp = formatRate(y.hits + y.baseOnBalls + y.hitByPitch, y.atBats + y.baseOnBalls + y.hitByPitch + y.sacFlies);
-          const slg = formatRate(y.totalBases, y.atBats);
-          return `<tr><td>${y.season}</td><td>${team}</td><td>${y.gamesPlayed}</td><td>${avg}</td><td>${obp}</td><td>${slg}</td><td>${y.doubles}</td><td>${y.triples}</td><td>${y.homeRuns}</td><td>${y.stolenBases}</td><td>${y.caughtStealing}</td></tr>`;
-        })
-      : splits.map(s => {
-          const stat = s.stat || {};
-          const team = (s.team && (s.team.abbreviation || s.team.name)) || '&#8212;';
-          return `<tr><td>${s.season}</td><td>${team}</td><td>${stat.gamesPlayed ?? '&#8212;'}</td><td>${stat.avg ?? '&#8212;'}</td><td>${stat.obp ?? '&#8212;'}</td><td>${stat.slg ?? '&#8212;'}</td><td>${stat.doubles ?? '&#8212;'}</td><td>${stat.triples ?? '&#8212;'}</td><td>${stat.homeRuns ?? '&#8212;'}</td><td>${stat.stolenBases ?? '&#8212;'}</td><td>${stat.caughtStealing ?? '&#8212;'}</td></tr>`;
-        });
-    return `<div class="table-scroll"><table class="pitch-table">
+    const stintsBySeason = new Map();
+    splits.forEach(s => {
+      if (!stintsBySeason.has(s.season)) stintsBySeason.set(s.season, []);
+      stintsBySeason.get(s.season).push(s);
+    });
+    const rows = collapseCareerByYear(splits).map(y => {
+      const team = y.teams.length > 1 ? y.teams.join('/') : (y.teams[0] || '&#8212;');
+      const avg = formatRate(y.hits, y.atBats);
+      const obp = formatRate(y.hits + y.baseOnBalls + y.hitByPitch, y.atBats + y.baseOnBalls + y.hitByPitch + y.sacFlies);
+      const slg = formatRate(y.totalBases, y.atBats);
+      const yearRow = `<tr class="career-year-row"><td>${y.season}</td><td>${team}</td><td>${y.gamesPlayed}</td><td>${avg}</td><td>${obp}</td><td>${slg}</td><td>${y.doubles}</td><td>${y.triples}</td><td>${y.homeRuns}</td><td>${y.stolenBases}</td><td>${y.caughtStealing}</td></tr>`;
+      const stints = stintsBySeason.get(y.season) || [];
+      const subRows = stints.length > 1
+        ? stints.map(s => {
+            const stat = s.stat || {};
+            const teamName = (s.team && (s.team.abbreviation || s.team.name)) || '&#8212;';
+            return `<tr class="career-team-subrow"><td></td><td>${teamName}</td><td>${stat.gamesPlayed ?? '&#8212;'}</td><td>${stat.avg ?? '&#8212;'}</td><td>${stat.obp ?? '&#8212;'}</td><td>${stat.slg ?? '&#8212;'}</td><td>${stat.doubles ?? '&#8212;'}</td><td>${stat.triples ?? '&#8212;'}</td><td>${stat.homeRuns ?? '&#8212;'}</td><td>${stat.stolenBases ?? '&#8212;'}</td><td>${stat.caughtStealing ?? '&#8212;'}</td></tr>`;
+          }).join('')
+        : '';
+      return yearRow + subRows;
+    });
+    return `<div class="table-scroll"><table class="pitch-table career-table">
         <thead><tr><th>Year</th><th>Team</th><th>G</th><th>AVG</th><th>OBP</th><th>SLG</th><th>2B</th><th>3B</th><th>HR</th><th>SB</th><th>CS</th></tr></thead>
         <tbody>${rows.join('')}</tbody>
       </table></div>`;
@@ -5161,9 +5140,6 @@
       : careerSplits.length
         ? renderCareerTable(careerSplits)
         : '<div class="pitch-empty">Career stats not available.</div>';
-    const toggleHtml = careerSplits && careerSplits.length
-      ? `<button type="button" class="career-toggle-btn">${careerViewMode === 'year' ? 'By Team' : 'By Year'}</button>`
-      : '';
     return `<div class="sheet player-profile-sheet">
       ${watermarkHtml}
       <div class="player-profile-head">
@@ -5175,37 +5151,22 @@
         </div>
       </div>
       ${awardsHtml}
-      <div class="career-section-header">
-        <div class="roster-section-title">Career</div>
-        ${toggleHtml}
-      </div>
+      <div class="roster-section-title">Career</div>
       ${careerHtml}
     </div>`;
   }
 
-  function paintPlayerProfile(person, careerSplits, awardTags) {
-    lastProfileRender = { person, careerSplits, awardTags };
-    playersBody.innerHTML = renderPlayerProfile(person, careerSplits, awardTags);
-  }
-
   async function showPlayerProfile(person) {
     const requestId = ++playerProfileRequestId;
-    paintPlayerProfile(person, null, []);
+    playersBody.innerHTML = renderPlayerProfile(person, null, []);
     const [fullPerson, careerSplits, awards] = await Promise.all([
       getPlayerDetails(person.id),
       getPlayerCareerStats(person.id),
       getPlayerAwards(person.id)
     ]);
     if (requestId !== playerProfileRequestId) return;
-    paintPlayerProfile(fullPerson || person, careerSplits, summarizeAwardTags(awards));
+    playersBody.innerHTML = renderPlayerProfile(fullPerson || person, careerSplits, summarizeAwardTags(awards));
   }
-
-  playersBody.addEventListener('click', (e) => {
-    const toggleBtn = e.target.closest('.career-toggle-btn');
-    if (!toggleBtn || !lastProfileRender) return;
-    careerViewMode = careerViewMode === 'year' ? 'team' : 'year';
-    paintPlayerProfile(lastProfileRender.person, lastProfileRender.careerSplits, lastProfileRender.awardTags);
-  });
 
   // Mirrors jumpToScorecardGame: leave the modal, switch tabs, load the
   // full page there. playerStore only has the name/pos/team the scorecard
