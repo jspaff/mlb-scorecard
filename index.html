@@ -1411,6 +1411,25 @@
     color: var(--ink-soft);
     font-family: 'IBM Plex Mono', monospace;
   }
+  /* z-index: 0 (not auto) turns this into its own stacking context, so the
+     watermark's negative z-index stays pinned behind this card's content
+     instead of sinking behind the overlay/tab panel underneath it. */
+  .player-profile-sheet {
+    position: relative;
+    z-index: 0;
+    overflow: hidden;
+  }
+  .player-profile-watermark {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: -1;
+    width: 130px;
+    height: 130px;
+    object-fit: contain;
+    opacity: 0.14;
+    pointer-events: none;
+  }
   .player-profile-head {
     display: flex;
     align-items: center;
@@ -4975,11 +4994,17 @@
     ].filter(Boolean).join(' &#183; ');
   }
   function playerBioLine(person) {
+    const bats = person.batSide && person.batSide.code;
+    const throwsHand = person.pitchHand && person.pitchHand.code;
+    const handedness = bats && throwsHand ? `Bats/Throws: ${bats}/${throwsHand}`
+      : bats ? `Bats: ${bats}`
+      : throwsHand ? `Throws: ${throwsHand}`
+      : null;
     return [
       person.currentAge != null ? `${person.currentAge} yrs` : null,
       person.height,
       person.weight != null ? `${person.weight} lbs` : null,
-      person.batSide && person.batSide.code ? `Bats: ${person.batSide.code}` : null
+      handedness
     ].filter(Boolean).join(' &#183; ');
   }
 
@@ -5026,6 +5051,8 @@
 
   function renderPlayerProfile(person, careerSplits, awardTags) {
     const headshotUrl = `https://img.mlbstatic.com/mlb-photos/image/upload/w_180,q_100,f_auto/v1/people/${person.id}/headshot/67/current`;
+    const teamId = person.currentTeam && person.currentTeam.id;
+    const watermarkHtml = teamId ? `<img class="player-profile-watermark" src="${capLogoUrl(teamId)}" alt="" aria-hidden="true">` : '';
     const meta = playerMetaLine(person);
     const bio = playerBioLine(person);
     const awardsHtml = awardTags && awardTags.length
@@ -5035,15 +5062,16 @@
       ? '<div class="mlb-status-msg">Loading career stats&#8230;</div>'
       : careerSplits.length
         ? `<div class="table-scroll"><table class="pitch-table">
-            <thead><tr><th>Year</th><th>Team</th><th>AVG</th><th>OBP</th><th>SLG</th><th>HR</th><th>RBI</th></tr></thead>
+            <thead><tr><th>Year</th><th>Team</th><th>G</th><th>AVG</th><th>OBP</th><th>SLG</th><th>HR</th><th>RBI</th></tr></thead>
             <tbody>${careerSplits.map(s => {
               const stat = s.stat || {};
               const team = (s.team && (s.team.abbreviation || s.team.name)) || '&#8212;';
-              return `<tr><td>${s.season}</td><td>${team}</td><td>${stat.avg ?? '&#8212;'}</td><td>${stat.obp ?? '&#8212;'}</td><td>${stat.slg ?? '&#8212;'}</td><td>${stat.homeRuns ?? '&#8212;'}</td><td>${stat.rbi ?? '&#8212;'}</td></tr>`;
+              return `<tr><td>${s.season}</td><td>${team}</td><td>${stat.gamesPlayed ?? '&#8212;'}</td><td>${stat.avg ?? '&#8212;'}</td><td>${stat.obp ?? '&#8212;'}</td><td>${stat.slg ?? '&#8212;'}</td><td>${stat.homeRuns ?? '&#8212;'}</td><td>${stat.rbi ?? '&#8212;'}</td></tr>`;
             }).join('')}</tbody>
           </table></div>`
         : '<div class="pitch-empty">Career stats not available.</div>';
-    return `<div class="sheet">
+    return `<div class="sheet player-profile-sheet">
+      ${watermarkHtml}
       <div class="player-profile-head">
         <img class="player-profile-photo" src="${headshotUrl}" alt="" loading="lazy" onerror="this.style.display='none'">
         <div>
