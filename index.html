@@ -121,16 +121,16 @@
     box-shadow: 0 2px 0 rgba(0,0,0,0.25) inset, 0 4px 14px rgba(0,0,0,0.35);
   }
 
-  /* Lives inside .tab-header itself (see #scorecardStickyBar in the markup)
-     rather than as its own independently-sticky element -- two separately
-     `position: sticky` boxes stacked on top of each other can visibly
-     desync by a frame during fast/composited scrolling, showing a sliver of
-     whatever's behind. Nesting it in the header means there's only ever one
-     sticky calculation, so the two can never drift apart. */
-  .score-strip-bar {
+  .sticky-top {
+    position: sticky;
+    top: var(--tabbar-h, 42px);
+    z-index: 20;
     background: var(--paper);
-    margin: 10px -18px -16px;
-    padding: 0 18px;
+    padding-top: 2px;
+    margin: -2px -18px 0;
+    padding-left: 18px;
+    padding-right: 18px;
+    box-shadow: 0 6px 8px -6px rgba(11, 15, 12, 0.35);
   }
 
   /* The scorecard grid is the point of this tab, so the header stays down
@@ -1540,6 +1540,7 @@
 
   @media (max-width: 520px) {
     .sheet { padding: 14px; }
+    .sticky-top { margin: -2px -14px 0; padding-left: 14px; padding-right: 14px; }
     .standings-grid { grid-template-columns: 1fr; }
     .roster-columns { flex-direction: column; gap: 14px 0; }
     .calendar-day { min-height: 52px; padding: 2px 1px 3px; }
@@ -1581,7 +1582,6 @@
       </div>
       <select id="gamePick"><option>Loading games&#8230;</option></select>
     </div>
-    <div class="score-strip-bar" id="scorecardStickyBar" data-tab-controls="scorecard" hidden></div>
     <div class="mlb-controls" data-tab-controls="standings" hidden>
       <div class="date-nav">
         <button type="button" class="date-nav-btn" id="standingsDatePrev" aria-label="Previous day">&#8249;</button>
@@ -1684,7 +1684,6 @@
   const dateInput = document.getElementById('datePick');
   const gameSelect = document.getElementById('gamePick');
   const body = document.getElementById('mlbBody');
-  const scorecardStickyBar = document.getElementById('scorecardStickyBar');
   const standingsBody = document.getElementById('standingsBody');
   const standingsDateInput = document.getElementById('standingsDatePick');
   const dailyBody = document.getElementById('dailyBody');
@@ -4226,7 +4225,6 @@
   async function loadSchedule(dateStr, preferredGamePk) {
     gameSelect.innerHTML = '<option>Loading games&#8230;</option>';
     body.innerHTML = '<div class="mlb-status-msg">Fetching schedule for ' + dateStr + '&#8230;</div>';
-    scorecardStickyBar.innerHTML = '';
     clearInterval(pollTimer);
     try {
       const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}`);
@@ -4513,16 +4511,13 @@
       // snap every table-scroll back to scrollLeft 0 on each poll
       const scrollLefts = Array.from(body.querySelectorAll('.table-scroll')).map(el => el.scrollLeft);
 
-      // Lives in the sticky tab header itself (#scorecardStickyBar), not in
-      // .sheet below -- see .score-strip-bar for why.
-      scorecardStickyBar.innerHTML = `
-        <div class="score-strip">${scoreStripHtml}</div>
-        ${subLineHtml ? `<div class="score-strip-sub">${subLineHtml}</div>` : ''}
-        ${lastPlayHtml}
-      `;
-
       body.innerHTML = `
         <div class="sheet">
+          <div class="sticky-top">
+            <div class="score-strip">${scoreStripHtml}</div>
+            ${subLineHtml ? `<div class="score-strip-sub">${subLineHtml}</div>` : ''}
+            ${lastPlayHtml}
+          </div>
           ${renderTeamTable(awayName, awayRows.length ? awayRows : placeholderLineupRows(), numInnings, away.pitcherByInning, away.starterPitcherId, columnsPerInning, homePitcherCard, 'away', liveBatterInfo, season)}
           ${renderTeamTable(homeName, homeRows.length ? homeRows : placeholderLineupRows(), numInnings, home.pitcherByInning, home.starterPitcherId, columnsPerInning, awayPitcherCard, 'home', liveBatterInfo, season)}
         </div>
@@ -4547,7 +4542,6 @@
       }
     } catch (e) {
       body.innerHTML = '<div class="mlb-status-msg">Could not load game data. The MLB API may be unreachable right now.</div>';
-      scorecardStickyBar.innerHTML = '';
     }
   }
 
@@ -4919,6 +4913,23 @@
 
     return { register, switchTo, init };
   })();
+
+  // Keep the scorecard's sticky box score pinned just below the sticky tab
+  // header instead of underneath it, whatever height the header happens to
+  // render at (font loading, wrapping, which tab's controls are showing, etc).
+  // Rounds up from the fractional getBoundingClientRect height rather than
+  // using offsetHeight's own rounding -- offsetHeight can round DOWN from
+  // the true (subpixel) height, leaving --tabbar-h a hair short and opening
+  // a sliver of gap between the two sticky elements that the content
+  // scrolling underneath shows through. Rounding up instead means the worst
+  // case is a sub-pixel overlap, hidden under the header's own background.
+  const tabHeaderEl = document.querySelector('.tab-header');
+  function syncTabHeaderHeight() {
+    document.documentElement.style.setProperty('--tabbar-h', Math.ceil(tabHeaderEl.getBoundingClientRect().height) + 'px');
+  }
+  syncTabHeaderHeight();
+  if (window.ResizeObserver) new ResizeObserver(syncTabHeaderHeight).observe(tabHeaderEl);
+  else window.addEventListener('resize', syncTabHeaderHeight);
 
   const playerSearchInput = document.getElementById('playerSearchInput');
   const playerSearchResults = document.getElementById('playerSearchResults');
