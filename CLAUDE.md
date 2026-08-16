@@ -4,15 +4,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A single self-contained HTML file (`index.html`, ~4,700 lines) implementing a live MLB scorecard widget styled after a traditional paper scorecard. There is no backend, no build step, and no dependencies — all data comes from the public MLB Stats API, fetched directly from the browser at runtime.
+A self-contained HTML app (`index.html`, ~4,700 lines) implementing a live MLB scorecard widget styled after a traditional paper scorecard, installable as a PWA on mobile home screens. There is no backend, no build step, and no dependencies — all data comes from the public MLB Stats API, fetched directly from the browser at runtime.
 
-The whole file is one page: `<style>` (lines ~9-1471), then the markup (`#mlb-root` and its tab panels/overlays), then a single `<script>` IIFE (from ~1592 to the end) containing all the JS. There is no test suite, linter, or package manager config in this repo.
+The whole page is one file: `<style>` (lines ~9-1471), then the markup (`#mlb-root` and its tab panels/overlays), then a single `<script>` IIFE (from ~1592 to the end) containing all the JS. There is no test suite, linter, or package manager config in this repo.
+
+Alongside `index.html` sit the PWA support files: `manifest.json` (name, theme colors, icons), `sw.js` (an app-shell service worker — same-origin GET requests only; it never touches `statsapi.mlb.com` or Google Fonts, so it can't go stale on live data), and `icons/` (generated PNGs, see `sizes` in `manifest.json`). These are separate files by necessity (a manifest must be linked, a service worker must be its own script with its own scope) — the JS/CSS/markup itself stays single-file.
 
 ## Running it
 
-There's nothing to install or build. Open `index.html` directly in a browser, or serve it locally (e.g. `python3 -m http.server`) if you need it on `http://` rather than `file://`. All calls to `statsapi.mlb.com` are made client-side with plain `fetch()`; there's no proxy or API key involved.
+There's nothing to install or build. Serve the directory locally (e.g. `python3 -m http.server`) and open `index.html` over `http://`/`https://` — the service worker only registers on http(s), not `file://`, so PWA install/offline behavior needs a server. All calls to `statsapi.mlb.com` are made client-side with plain `fetch()`; there's no proxy or API key involved.
 
-There's no automated way to verify a change — after editing, open the file in a browser and click through the affected tab/overlay to confirm it still works, including a live or in-progress game if the change touches polling or the scorecard grid.
+There's no automated way to verify a change — after editing, open the file in a browser and click through the affected tab/overlay to confirm it still works, including a live or in-progress game if the change touches polling or the scorecard grid. If you touch `sw.js`, bump `CACHE_NAME` so installed clients pick up the new app shell instead of serving a stale cached copy, and confirm via DevTools → Application → Service Workers that it updates/activates as expected.
 
 ## Structure
 
