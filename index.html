@@ -5109,7 +5109,7 @@
       stintsBySeason.get(s.season).push(s);
     });
     const rows = collapseCareerByYear(splits).map(y => {
-      const team = y.teams.length > 1 ? y.teams.join('/') : (y.teams[0] || '&#8212;');
+      const team = y.teams.length > 1 ? 'Multiple' : (y.teams[0] || '&#8212;');
       const avg = formatRate(y.hits, y.atBats);
       const obp = formatRate(y.hits + y.baseOnBalls + y.hitByPitch, y.atBats + y.baseOnBalls + y.hitByPitch + y.sacFlies);
       const slg = formatRate(y.totalBases, y.atBats);
