@@ -14,13 +14,9 @@
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
   h1 { font-size: 18px; margin: 0 0 14px; }
-  h3.divider {
-    font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em;
-    color: #8a8478; margin: 18px 0 8px; border-top: 1px solid #545e4d; padding-top: 14px;
-  }
   .row { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
   label { display: block; font-size: 12px; color: #c3c8bb; margin-bottom: 3px; }
-  input {
+  input, select {
     background: #54796d; color: #f3ecdb; border: 1px solid #6b8c80;
     border-radius: 6px; padding: 10px; font-size: 16px; width: 100%;
   }
@@ -34,20 +30,24 @@
   button.secondary {
     background: #54796d; color: #f3ecdb; border: 1px solid #6b8c80;
   }
-  #status { margin: 14px 0; font-size: 14px; color: #c3c8bb; white-space: pre-wrap; }
+  .tool {
+    margin: 0 0 4px;
+  }
+  .tool > summary {
+    font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em;
+    color: #8a8478; margin: 18px 0 8px; border-top: 1px solid #545e4d; padding-top: 14px;
+    cursor: pointer; list-style: none; display: block;
+  }
+  .tool > summary::-webkit-details-marker { display: none; }
+  .tool > summary::before { content: '▸ '; }
+  .tool[open] > summary::before { content: '▾ '; }
+  .tool-desc { font-size: 12px; color: #8a8478; margin: 0 0 8px; }
   .match {
     background: #2f362b; border: 1px solid #545e4d; border-radius: 8px;
     padding: 12px; margin-bottom: 14px;
   }
-  .match.interesting { border-color: #e0604a; }
   .match h2 { font-size: 15px; margin: 0 0 4px; color: #d9a91a; }
   .match .sub { font-size: 12px; color: #c3c8bb; margin-bottom: 8px; }
-  .badge {
-    display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 6px;
-    border-radius: 4px; margin-left: 6px; vertical-align: middle;
-  }
-  .badge.ended-on-call { background: #54796d; color: #f3ecdb; }
-  .badge.ended-on-contact { background: #e0604a; color: #f3ecdb; }
   .keyhit { font-size: 13px; color: #e0604a; margin: 2px 0; word-break: break-word; }
   .keyhit b { color: #f3ecdb; }
   pre {
@@ -56,12 +56,9 @@
     max-height: 260px; overflow-y: auto;
   }
   .copybtn { font-size: 13px; padding: 8px 12px; width: auto; margin: 6px 0 0; }
-  .probebtn { font-size: 13px; padding: 8px 12px; width: auto; margin: 6px 0 0 6px; background: #d9a91a; }
   details summary { cursor: pointer; font-size: 13px; color: #c3c8bb; margin-top: 8px; }
   .probe-log { margin-top: 8px; font-size: 12px; }
   .probe-row { padding: 3px 0; border-bottom: 1px solid #3b4336; }
-  .probe-row.hit { color: #d9a91a; font-weight: 700; }
-  .probe-row.miss { color: #8a8478; }
 </style>
 </head>
 <body>
@@ -73,84 +70,75 @@
     <input id="date" type="date">
   </div>
 </div>
-<button id="scanAll">Scan all ABS reviews on this date</button>
-<div style="font-size:12px;color:#8a8478;margin-top:6px;">
-  Checks every play in every game and lists every at-bat with a review, no matter which pitch it landed on. Plays flagged <span class="badge ended-on-contact">ended on contact</span> are the useful ones — the review must have happened on an earlier taken pitch, not the last one, so those are exactly the cases we need a raw example of.
-</div>
 
-<h3 class="divider">or watch pre-game status transitions</h3>
-<button id="statusScan" class="secondary">Show today's game statuses</button>
-<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#c3c8bb;margin-top:8px;">
-  <input type="checkbox" id="statusAutoRefresh"> auto-refresh every 10s (watch a game approach first pitch)
-</label>
-<div style="font-size:12px;color:#8a8478;margin-top:6px;">
-  Lists every game's abstractGameState + detailedState straight from the schedule endpoint. Useful for catching the exact detailedState strings during Pre-Game/Warmup/Delayed Start, and exactly when abstractGameState flips to Live relative to those.
-</div>
-<div id="statusResults"></div>
+<details class="tool" open>
+  <summary>Look up a catalog of values</summary>
+  <p class="tool-desc">
+    MLB publishes complete, authoritative lookup tables for its coded fields — event types, pitch types, positions, review reasons, stat groups, game status, sky/wind conditions, and more — at <code>/v1/&lt;type&gt;</code>. Pick one to see every value it can take, straight from the source.
+  </p>
+  <div class="row">
+    <div class="field">
+      <label for="catalogType">Catalog type</label>
+      <select id="catalogType"></select>
+    </div>
+    <div class="field">
+      <label for="catalogCustom">...or a custom type name</label>
+      <input id="catalogCustom" placeholder="overrides the dropdown if set">
+    </div>
+  </div>
+  <button id="catalogRun" class="secondary">Look up catalog</button>
+  <div id="catalogStatus" style="margin:10px 0;font-size:14px;color:#c3c8bb;white-space:pre-wrap;"></div>
+  <div id="catalogResults"></div>
+</details>
 
-<h3 class="divider">or find one specific at-bat</h3>
-<div class="row">
-  <div class="field">
-    <label for="name">Batter last name</label>
-    <input id="name" placeholder="e.g. Seigler">
-  </div>
-  <div class="field">
-    <label for="inning">Inning (optional)</label>
-    <input id="inning" type="number" placeholder="any">
-  </div>
-</div>
-<button id="run" class="secondary">Find at-bat</button>
+<details class="tool">
+  <summary>Show today's game statuses</summary>
+  <p class="tool-desc">
+    Lists every game's abstractGameState + detailedState straight from the schedule endpoint. Useful for catching the exact detailedState strings during Pre-Game/Warmup/Delayed Start, and exactly when abstractGameState flips to Live relative to those.
+  </p>
+  <button id="statusScan" class="secondary">Show today's game statuses</button>
+  <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#c3c8bb;margin-top:8px;">
+    <input type="checkbox" id="statusAutoRefresh" style="width:auto;"> auto-refresh every 10s (watch a game approach first pitch)
+  </label>
+  <div id="statusResults"></div>
+</details>
 
-<h3 class="divider">or look up a full catalog of values (the awards-style fast path)</h3>
-<div style="font-size:12px;color:#8a8478;margin-bottom:8px;">
-  The reason the awards lookup was smooth: <code>/v1/awards</code> IS the complete, authoritative list of every award -- no sampling needed. MLB's Stats API publishes a couple dozen of these catalogs (event types, pitch types, positions, review reasons, sky/wind conditions, stat groups, ...) at <code>/v1/&lt;type&gt;</code>. Pick one and get the whole list back instantly, the same way.
-</div>
-<div class="row">
-  <div class="field">
-    <label for="catalogType">Catalog type</label>
-    <select id="catalogType"></select>
+<details class="tool">
+  <summary>Inspect a play's API values</summary>
+  <p class="tool-desc">
+    Pick a game, then a play, to see every field the live feed reports for that at-bat — no need to already know a JSON path. Handy for answering "what does this field actually look like on a real play" for anything that doesn't have a clean catalog above.
+  </p>
+  <div class="row">
+    <div class="field">
+      <label for="playGame">Game</label>
+      <select id="playGame"><option value="">Load games for the date above ↓</option></select>
+    </div>
   </div>
-  <div class="field">
-    <label for="catalogCustom">...or a custom type name</label>
-    <input id="catalogCustom" placeholder="overrides the dropdown if set">
-  </div>
-</div>
-<button id="catalogRun" class="secondary">Look up catalog</button>
-<div id="catalogStatus" style="margin:10px 0;font-size:14px;color:#c3c8bb;white-space:pre-wrap;"></div>
-<div id="catalogResults"></div>
+  <button id="playLoadGames" class="secondary">Load games for this date</button>
 
-<h3 class="divider">or statistically explore a field that has no catalog</h3>
-<div style="font-size:12px;color:#8a8478;margin-bottom:8px;">
-  For fields that aren't one of the clean lookup catalogs above (e.g. anything nested inside a game feed, like per-pitch call codes or hit-trajectory tags as they actually appear on real plays). Give it an endpoint and a dot-path to a field, and it tallies every distinct value it finds by sampling real responses — across one JSON response, or across every game on a date range if the endpoint has a <code>{gamePk}</code> placeholder. Less authoritative than a catalog (only shows values that occurred in what got sampled) but works for anything.
-</div>
-<div class="row">
-  <div class="field" style="flex-basis:100%;">
-    <label for="fxUrl">Endpoint (use <code>{gamePk}</code> to scan games)</label>
-    <input id="fxUrl" value="https://statsapi.mlb.com/api/v1.1/game/{gamePk}/feed/live">
+  <div class="row" style="margin-top:10px;">
+    <div class="field">
+      <label for="playBatterFilter">Filter plays by batter name (optional)</label>
+      <input id="playBatterFilter" placeholder="e.g. Judge">
+    </div>
   </div>
-</div>
-<div class="row">
-  <div class="field" style="flex-basis:100%;">
-    <label for="fxPath">Field path (dot-separated; append <code>[]</code> to a key to iterate its array)</label>
-    <input id="fxPath" value="liveData.plays.allPlays[].result.event">
+  <div class="row">
+    <div class="field">
+      <label for="playAtBat">Play</label>
+      <select id="playAtBat"><option value="">Pick a game first</option></select>
+    </div>
   </div>
-</div>
-<div class="row">
-  <div class="field">
-    <label for="fxDays">Days to scan (ending on the Date field above, only used with {gamePk})</label>
-    <input id="fxDays" type="number" min="1" value="1">
-  </div>
-  <div class="field">
-    <label for="fxGamePks">Or specific gamePks (comma-separated, overrides Days)</label>
-    <input id="fxGamePks" placeholder="e.g. 745804, 745805">
-  </div>
-</div>
-<button id="fxRun" class="secondary">Explore field values</button>
-<div id="fxStatus" style="margin:10px 0;font-size:14px;color:#c3c8bb;white-space:pre-wrap;"></div>
-<div id="fxResults"></div>
 
-<div id="status"></div>
-<div id="results"></div>
+  <div class="row">
+    <div class="field">
+      <label for="playValueFilter">Filter fields by key or value (optional)</label>
+      <input id="playValueFilter" placeholder="e.g. review, call, code">
+    </div>
+  </div>
+
+  <div id="playStatus" style="margin:10px 0;font-size:14px;color:#c3c8bb;white-space:pre-wrap;"></div>
+  <div id="playResults"></div>
+</details>
 
 <script>
 (function () {
@@ -159,439 +147,11 @@
   document.getElementById('date').value =
     `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
 
-  const statusEl = document.getElementById('status');
-  const resultsEl = document.getElementById('results');
-  const reviewKeyRe = /review|challenge|abs/i;
-  const TAKEN_PITCH_CALLS = ['Ball', 'Called Strike', 'Hit By Pitch'];
-  let matchCounter = 0;
-
-  function scanForReviewKeys(obj, path, out) {
-    if (!obj || typeof obj !== 'object') return;
-    for (const [k, v] of Object.entries(obj)) {
-      const p = path ? `${path}.${k}` : k;
-      if (reviewKeyRe.test(k)) out.push([p, v]);
-      if (v && typeof v === 'object') scanForReviewKeys(v, p, out);
-    }
-  }
-
-  function lastPitchResult(play) {
-    const pitches = (play.playEvents || []).filter(pe => pe.isPitch || pe.type === 'pitch');
-    const last = pitches[pitches.length - 1];
-    return (last && last.details && last.details.description) || null;
-  }
-
-  function renderMatch(play, gamePk) {
-    const idx = matchCounter++;
-    window[`__abMatch${idx}`] = play;
-    const hits = [];
-    scanForReviewKeys(play, '', hits);
-    const lastResult = lastPitchResult(play);
-    const endedOnContact = lastResult && !TAKEN_PITCH_CALLS.includes(lastResult);
-    const badge = lastResult
-      ? (endedOnContact
-          ? `<span class="badge ended-on-contact">ended on contact (${lastResult})</span>`
-          : `<span class="badge ended-on-call">ended on taken pitch (${lastResult})</span>`)
-      : '';
-    const hitsHtml = hits.length
-      ? hits.map(([p, v]) => `<div class="keyhit"><b>${p}</b> = ${JSON.stringify(v)}</div>`).join('')
-      : '<div class="keyhit" style="color:#c3c8bb">No review/challenge/abs-named keys found on this play.</div>';
-    const json = JSON.stringify(play, null, 2);
-    const batterName = (play.matchup && play.matchup.batter && play.matchup.batter.fullName) || 'Unknown batter';
-    const inning = play.about ? play.about.inning : '?';
-    const pitchCount = (play.playEvents || []).filter(pe => pe.isPitch || pe.type === 'pitch').length;
-    const div = document.createElement('div');
-    div.className = 'match' + (endedOnContact ? ' interesting' : '');
-    div.innerHTML = `
-      <h2>${batterName} — inning ${inning} ${badge}</h2>
-      <div class="sub">gamePk ${gamePk} &middot; ${pitchCount} pitch(es) &middot; result: ${(play.result && play.result.event) || '?'}</div>
-      ${hitsHtml}
-      <button class="copybtn" data-idx="${idx}">Copy full play JSON</button>
-      <button class="probebtn" data-idx="${idx}" data-gamepk="${gamePk}">Probe timecodes for the moment this was reviewed</button>
-      <div class="probe-log" data-idx="${idx}"></div>
-      <details><summary>Raw play JSON</summary><pre>${json.replace(/</g, '&lt;')}</pre></details>
-    `;
-    resultsEl.appendChild(div);
-  }
-
-  const statusResultsEl = document.getElementById('statusResults');
-  let statusAutoTimer = null;
-
-  async function scanStatuses() {
-    const dateStr = document.getElementById('date').value;
-    let sched;
-    try {
-      sched = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}`).then(r => r.json());
-    } catch (e) {
-      statusResultsEl.textContent = 'Schedule fetch failed: ' + e.message;
-      return;
-    }
-    const games = (sched.dates[0] && sched.dates[0].games) || [];
-    if (!games.length) {
-      statusResultsEl.textContent = `No games found on ${dateStr}.`;
-      return;
-    }
-    const now = new Date();
-    const rows = games.map(g => {
-      const away = g.teams.away.team.name, home = g.teams.home.team.name;
-      const abs = g.status.abstractGameState;
-      const detailed = g.status.detailedState;
-      const first = g.gameDate ? new Date(g.gameDate) : null;
-      const untilFirst = first ? Math.round((first - now) / 60000) : null;
-      const timing = first
-        ? (untilFirst > 0 ? `first pitch in ~${untilFirst}m` : `first pitch was ~${-untilFirst}m ago`)
-        : '';
-      return `<div class="probe-row"><b>${away} @ ${home}</b> &mdash; abstractGameState=<b>${abs}</b>, detailedState=<b>${detailed}</b> &middot; ${timing}</div>`;
-    });
-    statusResultsEl.innerHTML = `<div class="probe-log">Checked ${new Date().toLocaleTimeString()}:${rows.join('')}</div>`;
-  }
-
-  document.getElementById('statusScan').addEventListener('click', scanStatuses);
-  document.getElementById('statusAutoRefresh').addEventListener('change', (e) => {
-    clearInterval(statusAutoTimer);
-    statusAutoTimer = null;
-    if (e.target.checked) {
-      scanStatuses();
-      statusAutoTimer = setInterval(scanStatuses, 10000);
-    }
-  });
-
-  function parseTimecode(t) {
-    // MLB timecodes are "YYYYMMDD_HHMMSS" in UTC.
-    const y = t.slice(0, 4), mo = t.slice(4, 6), d = t.slice(6, 8);
-    const h = t.slice(9, 11), mi = t.slice(11, 13), s = t.slice(13, 15);
-    return Date.parse(`${y}-${mo}-${d}T${h}:${mi}:${s}Z`);
-  }
-
-  async function probeTimecodes(gamePk, play, logEl) {
-    logEl.textContent = 'Fetching timecode list...';
-    let timestamps;
-    try {
-      timestamps = await fetch(`https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live/timestamps`).then(r => r.json());
-    } catch (e) {
-      logEl.textContent = 'Timestamps fetch failed: ' + e.message;
-      return;
-    }
-    if (!Array.isArray(timestamps) || !timestamps.length) {
-      logEl.textContent = 'No timecodes returned for this game.';
-      return;
-    }
-
-    const startMs = play.about && play.about.startTime ? Date.parse(play.about.startTime) : null;
-    const endMs = play.about && play.about.endTime ? Date.parse(play.about.endTime) : startMs;
-    if (!startMs) {
-      logEl.textContent = 'This play has no about.startTime to anchor the search window.';
-      return;
-    }
-    const windowStart = startMs - 60000;
-    const windowEnd = endMs + 5 * 60000;
-
-    let candidates = timestamps
-      .map(t => ({ t, ms: parseTimecode(t) }))
-      .filter(x => !isNaN(x.ms) && x.ms >= windowStart && x.ms <= windowEnd)
-      .sort((a, b) => a.ms - b.ms);
-
-    if (!candidates.length) {
-      logEl.textContent = `No timecodes found in the window ${new Date(windowStart).toISOString()} to ${new Date(windowEnd).toISOString()}.`;
-      return;
-    }
-
-    const MAX_PROBES = 30;
-    if (candidates.length > MAX_PROBES) {
-      const step = candidates.length / MAX_PROBES;
-      candidates = Array.from({ length: MAX_PROBES }, (_, i) => candidates[Math.floor(i * step)]);
-    }
-
-    logEl.innerHTML = `Probing ${candidates.length} timecode(s)...`;
-    const rows = [];
-    let firstHit = null;
-    for (let i = 0; i < candidates.length; i++) {
-      const { t } = candidates[i];
-      logEl.innerHTML = rows.join('') + `<div class="probe-row">Checking ${i + 1}/${candidates.length} (${t})...</div>`;
-      let feed;
-      try {
-        feed = await fetch(`https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live?timecode=${t}`).then(r => r.json());
-      } catch (e) {
-        rows.push(`<div class="probe-row miss">${t}: fetch failed</div>`);
-        continue;
-      }
-      const plays = (feed.liveData && feed.liveData.plays && feed.liveData.plays.allPlays) || [];
-      const snapPlay = plays.find(p => p.atBatIndex === play.atBatIndex);
-      if (!snapPlay) {
-        rows.push(`<div class="probe-row miss">${t}: play not present yet</div>`);
-        continue;
-      }
-      const pitches = (snapPlay.playEvents || []).filter(pe => pe.isPitch || pe.type === 'pitch');
-      const reviewedPitch = pitches.find(pe => pe.details && pe.details.hasReview);
-      if (reviewedPitch) {
-        rows.push(`<div class="probe-row hit">${t}: pitch ${reviewedPitch.pitchNumber} hasReview=true (${(reviewedPitch.details.description)})</div>`);
-        if (!firstHit) {
-          firstHit = { t, snapPlay, reviewedPitch };
-          window.__probeHit = snapPlay;
-        }
-      } else {
-        rows.push(`<div class="probe-row miss">${t}: no per-pitch hasReview among ${pitches.length} pitch(es)</div>`);
-      }
-    }
-    const summary = firstHit
-      ? `<div class="probe-row hit">CONFIRMED at ${firstHit.t} -- pitch ${firstHit.reviewedPitch.pitchNumber}. Full snapshot play stashed on window.__probeHit; run copy(JSON.stringify(window.__probeHit, null, 2)) to grab it.</div>`
-      : `<div class="probe-row miss">No timecode in this window showed a per-pitch hasReview=true.</div>`;
-    logEl.innerHTML = summary + rows.join('');
-  }
-
-  async function scanAll() {
-    resultsEl.innerHTML = '';
-    matchCounter = 0;
-    const dateStr = document.getElementById('date').value;
-
-    statusEl.textContent = `Fetching schedule for ${dateStr}...`;
-    let sched;
-    try {
-      sched = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}`).then(r => r.json());
-    } catch (e) {
-      statusEl.textContent = 'Schedule fetch failed: ' + e.message;
-      return;
-    }
-    const games = (sched.dates[0] && sched.dates[0].games) || [];
-    if (!games.length) {
-      statusEl.textContent = `No games found on ${dateStr}.`;
-      return;
-    }
-
-    let totalReviews = 0;
-    for (let i = 0; i < games.length; i++) {
-      const gamePk = games[i].gamePk;
-      const label = `${games[i].teams.away.team.name} @ ${games[i].teams.home.team.name}`;
-      statusEl.textContent = `Checking game ${i + 1}/${games.length} (${label})...`;
-      let feed;
-      try {
-        feed = await fetch(`https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live`).then(r => r.json());
-      } catch (e) {
-        continue;
-      }
-      const plays = (feed.liveData && feed.liveData.plays && feed.liveData.plays.allPlays) || [];
-      const reviewed = plays.filter(p => p.about && p.about.hasReview);
-      reviewed.forEach(p => renderMatch(p, gamePk));
-      totalReviews += reviewed.length;
-    }
-    statusEl.textContent = totalReviews
-      ? `Found ${totalReviews} reviewed at-bat(s) across ${games.length} game(s) on ${dateStr}.`
-      : `No ABS reviews found in ${games.length} game(s) on ${dateStr}.`;
-  }
-
-  async function run() {
-    resultsEl.innerHTML = '';
-    matchCounter = 0;
-    const lastName = document.getElementById('name').value.trim();
-    const inningRaw = document.getElementById('inning').value.trim();
-    const inningNum = inningRaw === '' ? null : Number(inningRaw);
-    const dateStr = document.getElementById('date').value;
-    const nameRe = new RegExp(lastName, 'i');
-
-    statusEl.textContent = `Fetching schedule for ${dateStr}...`;
-    let sched;
-    try {
-      sched = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}`).then(r => r.json());
-    } catch (e) {
-      statusEl.textContent = 'Schedule fetch failed: ' + e.message;
-      return;
-    }
-    const gamePks = (sched.dates[0] && sched.dates[0].games || []).map(g => g.gamePk);
-    if (!gamePks.length) {
-      statusEl.textContent = `No games found on ${dateStr}.`;
-      return;
-    }
-
-    let totalFound = 0;
-    for (let i = 0; i < gamePks.length; i++) {
-      const gamePk = gamePks[i];
-      statusEl.textContent = `Checking game ${i + 1}/${gamePks.length} (gamePk ${gamePk})...`;
-      let feed;
-      try {
-        feed = await fetch(`https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live`).then(r => r.json());
-      } catch (e) {
-        continue;
-      }
-      const plays = (feed.liveData && feed.liveData.plays && feed.liveData.plays.allPlays) || [];
-      const matches = plays.filter(p =>
-        (inningNum === null || (p.about && p.about.inning === inningNum)) &&
-        p.matchup && p.matchup.batter && nameRe.test(p.matchup.batter.fullName || '')
-      );
-      matches.forEach(match => renderMatch(match, gamePk));
-      totalFound += matches.length;
-    }
-    statusEl.textContent = totalFound
-      ? `Found ${totalFound} at-bat(s) for "${lastName}"${inningNum === null ? '' : ` in inning ${inningNum}`} on ${dateStr}.`
-      : `No play found for "${lastName}"${inningNum === null ? '' : ` in inning ${inningNum}`} on ${dateStr}.`;
-  }
-
-  resultsEl.addEventListener('click', (e) => {
-    const copyBtn = e.target.closest('.copybtn');
-    if (copyBtn) {
-      const match = window[`__abMatch${copyBtn.dataset.idx}`];
-      const text = JSON.stringify(match, null, 2);
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(() => {
-          copyBtn.textContent = 'Copied!';
-          setTimeout(() => { copyBtn.textContent = 'Copy full play JSON'; }, 1500);
-        });
-      }
-      return;
-    }
-    const probeBtn = e.target.closest('.probebtn');
-    if (probeBtn) {
-      const match = window[`__abMatch${probeBtn.dataset.idx}`];
-      const logEl = resultsEl.querySelector(`.probe-log[data-idx="${probeBtn.dataset.idx}"]`);
-      probeTimecodes(probeBtn.dataset.gamepk, match, logEl);
-      return;
-    }
-  });
-
-  document.getElementById('scanAll').addEventListener('click', scanAll);
-  document.getElementById('run').addEventListener('click', run);
-
-  // Generic field-value explorer: walks a dot-path (with `key[]` array
-  // iteration) through one or more fetched JSON responses and tallies every
-  // distinct value found, so "what are the possible values of X" no longer
-  // has to be answered by guessing or by one-off scripts like scanAll/run above.
-  const fxStatusEl = document.getElementById('fxStatus');
-  const fxResultsEl = document.getElementById('fxResults');
-
-  function parseFieldPath(path) {
-    return path.split('.').map(tok => {
-      const iterate = tok.endsWith('[]');
-      return { key: iterate ? tok.slice(0, -2) : tok, iterate };
-    });
-  }
-
-  // Walks `tokens` through `obj`, calling onValue(value, contextPath) for
-  // every leaf reached. `[]` tokens fan out into every array element.
-  function walkFieldPath(obj, tokens, tokenIdx, contextPath, onValue) {
-    if (obj === null || obj === undefined) return;
-    if (tokenIdx === tokens.length) {
-      onValue(obj, contextPath);
-      return;
-    }
-    const { key, iterate } = tokens[tokenIdx];
-    const next = key === '' ? obj : obj[key];
-    const nextPath = contextPath + (contextPath ? '.' : '') + (key || '[]');
-    if (iterate) {
-      if (!Array.isArray(next)) return;
-      next.forEach((el, i) => walkFieldPath(el, tokens, tokenIdx + 1, `${nextPath}[${i}]`, onValue));
-    } else {
-      walkFieldPath(next, tokens, tokenIdx + 1, nextPath, onValue);
-    }
-  }
-
-  async function gamePksForExplore(dateStr, days) {
-    const pks = [];
-    const d = new Date(dateStr + 'T12:00:00');
-    for (let i = 0; i < days; i++) {
-      const ds = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-      try {
-        const sched = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${ds}`).then(r => r.json());
-        (sched.dates[0] && sched.dates[0].games || []).forEach(g => pks.push(g.gamePk));
-      } catch (e) { /* skip a day whose schedule fetch failed */ }
-      d.setDate(d.getDate() - 1);
-    }
-    return pks;
-  }
-
-  async function exploreFieldValues() {
-    fxResultsEl.innerHTML = '';
-    const urlTemplate = document.getElementById('fxUrl').value.trim();
-    const fieldPath = document.getElementById('fxPath').value.trim();
-    if (!urlTemplate || !fieldPath) {
-      fxStatusEl.textContent = 'Endpoint and field path are both required.';
-      return;
-    }
-    const tokens = parseFieldPath(fieldPath);
-    const usesGamePk = urlTemplate.includes('{gamePk}');
-
-    let urls;
-    if (usesGamePk) {
-      const explicit = document.getElementById('fxGamePks').value.trim();
-      let gamePks;
-      if (explicit) {
-        gamePks = explicit.split(',').map(s => s.trim()).filter(Boolean);
-      } else {
-        const days = Math.max(1, Number(document.getElementById('fxDays').value) || 1);
-        fxStatusEl.textContent = `Collecting gamePks for the last ${days} day(s)...`;
-        gamePks = await gamePksForExplore(document.getElementById('date').value, days);
-      }
-      if (!gamePks.length) {
-        fxStatusEl.textContent = 'No gamePks found to scan.';
-        return;
-      }
-      urls = gamePks.map(pk => ({ url: urlTemplate.replace('{gamePk}', pk), label: `gamePk ${pk}` }));
-    } else {
-      urls = [{ url: urlTemplate, label: urlTemplate }];
-    }
-
-    // value (as JSON) -> { value, count, examples: [label] }
-    const tally = new Map();
-    let fetchErrors = 0;
-    for (let i = 0; i < urls.length; i++) {
-      fxStatusEl.textContent = `Fetching ${i + 1}/${urls.length} (${urls[i].label})...`;
-      let data;
-      try {
-        data = await fetch(urls[i].url).then(r => r.json());
-      } catch (e) {
-        fetchErrors++;
-        continue;
-      }
-      walkFieldPath(data, tokens, 0, '', (value, contextPath) => {
-        const vkey = JSON.stringify(value);
-        let entry = tally.get(vkey);
-        if (!entry) {
-          entry = { value, count: 0, examples: [] };
-          tally.set(vkey, entry);
-        }
-        entry.count++;
-        if (entry.examples.length < 3) entry.examples.push(`${urls[i].label} @ ${contextPath}`);
-      });
-    }
-
-    const distinct = Array.from(tally.values()).sort((a, b) => b.count - a.count);
-    const totalHits = distinct.reduce((s, e) => s + e.count, 0);
-    fxStatusEl.textContent = `Scanned ${urls.length} URL(s)${fetchErrors ? ` (${fetchErrors} failed)` : ''}. `
-      + `Found ${totalHits} value(s) at "${fieldPath}", ${distinct.length} distinct.`;
-
-    if (!distinct.length) return;
-
-    const asArray = distinct.map(e => JSON.stringify(e.value));
-    const div = document.createElement('div');
-    div.className = 'match';
-    div.innerHTML = `
-      <h2>${distinct.length} distinct value(s)</h2>
-      <div class="sub">sorted by frequency, most common first</div>
-      ${distinct.map(e => `
-        <div class="keyhit">
-          <b>${JSON.stringify(e.value)}</b> &times; ${e.count}
-          <span style="color:#8a8478;"> — e.g. ${e.examples.join('; ')}</span>
-        </div>
-      `).join('')}
-      <button class="copybtn" id="fxCopy">Copy as JS array</button>
-    `;
-    fxResultsEl.appendChild(div);
-    document.getElementById('fxCopy').addEventListener('click', () => {
-      const text = `[${asArray.join(', ')}]`;
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(() => {
-          const btn = document.getElementById('fxCopy');
-          btn.textContent = 'Copied!';
-          setTimeout(() => { btn.textContent = 'Copy as JS array'; }, 1500);
-        });
-      }
-    });
-  }
-
-  document.getElementById('fxRun').addEventListener('click', exploreFieldValues);
-
-  // Catalog lookup: MLB publishes complete, authoritative lookup tables for
-  // a couple dozen coded fields at /v1/<type> -- this is what made the
-  // awards catalog so much better than guessing at award IDs. /v1/meta
-  // itself lists which types exist; fall back to a hardcoded list of the
-  // known ones in case that endpoint's shape changes or 404s.
+  // ---- Catalog lookup ------------------------------------------------
+  // MLB publishes complete, authoritative lookup tables for a couple dozen
+  // coded fields at /v1/<type>. /v1/meta itself lists which types exist;
+  // fall back to a hardcoded list of the known ones in case that endpoint's
+  // shape changes or 404s.
   const KNOWN_META_TYPES = [
     'awards', 'baseballStats', 'eventTypes', 'gameStatus', 'gameTypes',
     'hitTrajectories', 'jobTypes', 'languages', 'leagueLeaderTypes',
@@ -691,6 +251,192 @@
   }
 
   document.getElementById('catalogRun').addEventListener('click', lookupCatalog);
+
+  // ---- Today's game statuses -----------------------------------------
+  const statusResultsEl = document.getElementById('statusResults');
+  let statusAutoTimer = null;
+
+  async function scanStatuses() {
+    const dateStr = document.getElementById('date').value;
+    let sched;
+    try {
+      sched = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}`).then(r => r.json());
+    } catch (e) {
+      statusResultsEl.textContent = 'Schedule fetch failed: ' + e.message;
+      return;
+    }
+    const games = (sched.dates[0] && sched.dates[0].games) || [];
+    if (!games.length) {
+      statusResultsEl.textContent = `No games found on ${dateStr}.`;
+      return;
+    }
+    const now = new Date();
+    const rows = games.map(g => {
+      const away = g.teams.away.team.name, home = g.teams.home.team.name;
+      const abs = g.status.abstractGameState;
+      const detailed = g.status.detailedState;
+      const first = g.gameDate ? new Date(g.gameDate) : null;
+      const untilFirst = first ? Math.round((first - now) / 60000) : null;
+      const timing = first
+        ? (untilFirst > 0 ? `first pitch in ~${untilFirst}m` : `first pitch was ~${-untilFirst}m ago`)
+        : '';
+      return `<div class="probe-row"><b>${away} @ ${home}</b> &mdash; abstractGameState=<b>${abs}</b>, detailedState=<b>${detailed}</b> &middot; ${timing}</div>`;
+    });
+    statusResultsEl.innerHTML = `<div class="probe-log">Checked ${new Date().toLocaleTimeString()}:${rows.join('')}</div>`;
+  }
+
+  document.getElementById('statusScan').addEventListener('click', scanStatuses);
+  document.getElementById('statusAutoRefresh').addEventListener('change', (e) => {
+    clearInterval(statusAutoTimer);
+    statusAutoTimer = null;
+    if (e.target.checked) {
+      scanStatuses();
+      statusAutoTimer = setInterval(scanStatuses, 10000);
+    }
+  });
+
+  // ---- Inspect a play's API values ------------------------------------
+  // Pick a game, then a play, and see every leaf field the live feed
+  // reports for it -- friendlier than requiring a JSON path up front,
+  // and useful for anything that doesn't have a clean catalog above.
+  const playGameEl = document.getElementById('playGame');
+  const playAtBatEl = document.getElementById('playAtBat');
+  const playBatterFilterEl = document.getElementById('playBatterFilter');
+  const playValueFilterEl = document.getElementById('playValueFilter');
+  const playStatusEl = document.getElementById('playStatus');
+  const playResultsEl = document.getElementById('playResults');
+
+  let currentGames = [];
+  let currentGamePlays = [];
+  let currentPlay = null;
+
+  function playLabel(p) {
+    const half = p.about && p.about.halfInning === 'top' ? 'T' : 'B';
+    const inning = p.about ? p.about.inning : '?';
+    const batter = (p.matchup && p.matchup.batter && p.matchup.batter.fullName) || '?';
+    const event = (p.result && p.result.event) || '(in progress)';
+    return `${half}${inning} — ${batter} (${event})`;
+  }
+
+  async function loadGamesForDate() {
+    const dateStr = document.getElementById('date').value;
+    playStatusEl.textContent = `Fetching schedule for ${dateStr}...`;
+    playResultsEl.innerHTML = '';
+    currentPlay = null;
+    try {
+      const sched = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}`).then(r => r.json());
+      currentGames = (sched.dates[0] && sched.dates[0].games) || [];
+    } catch (e) {
+      playStatusEl.textContent = 'Schedule fetch failed: ' + e.message;
+      return;
+    }
+    if (!currentGames.length) {
+      playGameEl.innerHTML = '<option value="">No games found</option>';
+      playStatusEl.textContent = `No games found on ${dateStr}.`;
+      return;
+    }
+    playGameEl.innerHTML = currentGames
+      .map(g => `<option value="${g.gamePk}">${g.teams.away.team.name} @ ${g.teams.home.team.name}</option>`)
+      .join('');
+    playStatusEl.textContent = `${currentGames.length} game(s) loaded.`;
+    await loadPlaysForSelectedGame();
+  }
+
+  async function loadPlaysForSelectedGame() {
+    const gamePk = playGameEl.value;
+    currentGamePlays = [];
+    currentPlay = null;
+    playResultsEl.innerHTML = '';
+    if (!gamePk) {
+      playAtBatEl.innerHTML = '<option value="">Pick a game first</option>';
+      return;
+    }
+    playStatusEl.textContent = `Fetching plays for gamePk ${gamePk}...`;
+    try {
+      const feed = await fetch(`https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live`).then(r => r.json());
+      currentGamePlays = (feed.liveData && feed.liveData.plays && feed.liveData.plays.allPlays) || [];
+    } catch (e) {
+      playStatusEl.textContent = 'Feed fetch failed: ' + e.message;
+      return;
+    }
+    playStatusEl.textContent = `${currentGamePlays.length} play(s) loaded.`;
+    renderAtBatOptions();
+  }
+
+  function renderAtBatOptions() {
+    const filter = playBatterFilterEl.value.trim().toLowerCase();
+    const filtered = currentGamePlays
+      .map((p, i) => ({ p, i }))
+      .filter(({ p }) => !filter || ((p.matchup && p.matchup.batter && p.matchup.batter.fullName) || '').toLowerCase().includes(filter));
+    if (!filtered.length) {
+      playAtBatEl.innerHTML = '<option value="">No plays match that filter</option>';
+      currentPlay = null;
+      playResultsEl.innerHTML = '';
+      return;
+    }
+    playAtBatEl.innerHTML = filtered.map(({ p, i }) => `<option value="${i}">${playLabel(p)}</option>`).join('');
+    inspectSelectedPlay();
+  }
+
+  function flattenLeaves(obj, path, out) {
+    if (obj === null || typeof obj !== 'object') {
+      out.push([path, obj]);
+      return;
+    }
+    if (Array.isArray(obj)) {
+      if (!obj.length) { out.push([path, '[]']); return; }
+      obj.forEach((v, i) => flattenLeaves(v, `${path}[${i}]`, out));
+      return;
+    }
+    const keys = Object.keys(obj);
+    if (!keys.length) { out.push([path, '{}']); return; }
+    keys.forEach(k => flattenLeaves(obj[k], path ? `${path}.${k}` : k, out));
+  }
+
+  function renderPlayFields() {
+    playResultsEl.innerHTML = '';
+    if (!currentPlay) return;
+    const filter = playValueFilterEl.value.trim().toLowerCase();
+    const leaves = [];
+    flattenLeaves(currentPlay, '', leaves);
+    const filtered = filter
+      ? leaves.filter(([p, v]) => p.toLowerCase().includes(filter) || String(v).toLowerCase().includes(filter))
+      : leaves;
+    const json = JSON.stringify(currentPlay, null, 2);
+    const div = document.createElement('div');
+    div.className = 'match';
+    div.innerHTML = `
+      <h2>${playLabel(currentPlay)}</h2>
+      <div class="sub">${filtered.length} of ${leaves.length} field(s) shown</div>
+      ${filtered.length
+        ? filtered.map(([p, v]) => `<div class="keyhit"><b>${p}</b> = ${JSON.stringify(v)}</div>`).join('')
+        : '<div class="keyhit" style="color:#c3c8bb">No fields match that filter.</div>'}
+      <button class="copybtn" id="playCopy">Copy full play JSON</button>
+      <details><summary>Raw play JSON</summary><pre>${json.replace(/</g, '&lt;')}</pre></details>
+    `;
+    playResultsEl.appendChild(div);
+    document.getElementById('playCopy').addEventListener('click', () => {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(json).then(() => {
+          const btn = document.getElementById('playCopy');
+          btn.textContent = 'Copied!';
+          setTimeout(() => { btn.textContent = 'Copy full play JSON'; }, 1500);
+        });
+      }
+    });
+  }
+
+  function inspectSelectedPlay() {
+    const idx = playAtBatEl.value;
+    currentPlay = idx !== '' ? currentGamePlays[Number(idx)] : null;
+    renderPlayFields();
+  }
+
+  document.getElementById('playLoadGames').addEventListener('click', loadGamesForDate);
+  playGameEl.addEventListener('change', loadPlaysForSelectedGame);
+  playBatterFilterEl.addEventListener('input', renderAtBatOptions);
+  playAtBatEl.addEventListener('change', inspectSelectedPlay);
+  playValueFilterEl.addEventListener('input', renderPlayFields);
 })();
 </script>
 </body>
