@@ -5326,6 +5326,26 @@
     if (e.key === 'Escape') { hidePitchPopup(); hideRosterModal(); hideSprayModal(); hidePlayerModal(); hideGameSummaryModal(); hideTeamChartModal(); playerSearchResults.hidden = true; }
   });
 
+  // Backgrounding the tab (or the installed PWA) gets setTimeout/setInterval
+  // throttled or fully suspended by the browser, so a 15s poll can silently
+  // stop firing while it's not visible -- returning to a live game or the
+  // Daily tab could otherwise sit on a stale fetch from before backgrounding
+  // for an unpredictable stretch, until whatever's left of the suspended
+  // timer eventually fires. Catch up immediately instead, the same way a
+  // fresh navigation would: clear whatever poll is pending and refetch now.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    if (pollTimer && gameSelect.value) {
+      clearInterval(pollTimer);
+      fetchAndRender(gameSelect.value);
+    }
+    if (dailyPollTimer) {
+      clearTimeout(dailyPollTimer);
+      dailyPollTimer = null;
+      loadDailySummary(dailyDateInput.value, true);
+    }
+  });
+
   Tabs.init('daily');
   loadSchedule(dateInput.value);
 
