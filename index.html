@@ -1815,14 +1815,18 @@
   }
   // One split per season (and per team within a season a player was
   // traded), oldest first -- cached by id alone since a career's past
-  // seasons don't change, only whatever season is still in progress.
+  // seasons don't change, only whatever season is still in progress. A
+  // traded season also comes back with an extra teamless split holding the
+  // API's own combined total for that year -- dropped here since the UI
+  // recomputes that total itself from the real per-team splits, and
+  // keeping it would double-count both the year total and the subrows.
   const playerCareerStatsCache = {};
   async function getPlayerCareerStats(personId) {
     if (playerCareerStatsCache[personId] !== undefined) return playerCareerStatsCache[personId];
     try {
       const res = await fetch(`https://statsapi.mlb.com/api/v1/people/${personId}/stats?stats=yearByYear&group=hitting`);
       const data = await res.json();
-      const splits = (data.stats && data.stats[0] && data.stats[0].splits) || [];
+      const splits = ((data.stats && data.stats[0] && data.stats[0].splits) || []).filter(s => s.team);
       splits.sort((a, b) => Number(a.season) - Number(b.season));
       playerCareerStatsCache[personId] = splits;
       return splits;
