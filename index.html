@@ -1759,6 +1759,16 @@
   // review text -- set once in fetchAndRender, read back in showPitchPopup,
   // since the popup only has the pitch/team id to work with, not gameData.
   let absChallengeInfo = null;
+  // MLB's feed doesn't keep playEvents[].details.hasReview set indefinitely
+  // -- confirmed live: a pitch correctly flagged reviewed shortly after a
+  // challenge can revert to unreviewed on a later poll, even though the
+  // challenge genuinely happened. pitchStore gets fully rebuilt from a fresh
+  // fetch every poll (see buildTeamRows), so without this a real challenge
+  // could flicker its tag/ring away once the feed's own marker fades. Once
+  // extractPitches sees a pitch marked reviewed, it's remembered here for
+  // the rest of the session, keyed by the pitch's stable playId, and reapplied
+  // on every later extraction regardless of what that fetch's feed says.
+  let reviewedPitchCache = {};
   let rosterStore = {};
   let sprayStore = {};
   let playerStore = {};
@@ -2129,9 +2139,8 @@
   }
 
   function extractPitches(play) {
-    const pitches = (play.playEvents || [])
-      .filter(pe => pe.isPitch || pe.type === 'pitch')
-      .map(pe => {
+    const rawPitches = (play.playEvents || []).filter(pe => pe.isPitch || pe.type === 'pitch');
+    const pitches = rawPitches.map(pe => {
         const coords = pe.pitchData && pe.pitchData.coordinates;
         // pX/pZ are feet from the center of the plate (horizontal) and feet
         // off the ground (vertical) as the pitch crosses the front of the
@@ -2140,6 +2149,28 @@
         // guess from the unrelated Gameday pixel-space x/y fields.
         const px = coords && typeof coords.pX === 'number' ? coords.pX : null;
         const pz = coords && typeof coords.pZ === 'number' ? coords.pZ : null;
+
+        // The definitive source when present: the feed marks the specific
+        // challenged pitch directly, including who challenged it -- this
+        // is what correctly identifies a challenge that happens mid-at-bat
+        // and doesn't end it (confirmed live, e.g. a challenge on ball 2
+        // of a 6-pitch walk). It doesn't stay set indefinitely though, so
+        // fall back to whatever we've previously cached for this playId
+        // (see reviewedPitchCache) before giving up on it.
+        let hasReview = !!(pe.details && pe.details.hasReview);
+        let review = pe.reviewDetails ? {
+          isOverturned: !!pe.reviewDetails.isOverturned,
+          inProgress: !!pe.reviewDetails.inProgress,
+          playerName: (pe.reviewDetails.player && pe.reviewDetails.player.fullName) || null,
+          challengeTeamId: pe.reviewDetails.challengeTeamId || null
+        } : null;
+        if (hasReview) {
+          reviewedPitchCache[pe.playId] = review;
+        } else if (reviewedPitchCache[pe.playId]) {
+          hasReview = true;
+          review = reviewedPitchCache[pe.playId];
+        }
+
         return {
           num: pe.pitchNumber || null,
           type: (pe.details && pe.details.type && pe.details.type.description) || 'Pitch',
@@ -2151,46 +2182,38 @@
           px, pz,
           szTop: pe.pitchData && typeof pe.pitchData.strikeZoneTop === 'number' ? pe.pitchData.strikeZoneTop : null,
           szBot: pe.pitchData && typeof pe.pitchData.strikeZoneBottom === 'number' ? pe.pitchData.strikeZoneBottom : null,
-          // The definitive source when present: the feed marks the specific
-          // challenged pitch directly, including who challenged it -- this
-          // is what correctly identifies a challenge that happens mid-at-bat
-          // and doesn't end it (confirmed live, e.g. a challenge on ball 2
-          // of a 6-pitch walk). But it isn't always still here by the time
-          // we fetch -- see the play-level fallback below.
-          hasReview: !!(pe.details && pe.details.hasReview),
-          review: pe.reviewDetails ? {
-            isOverturned: !!pe.reviewDetails.isOverturned,
-            inProgress: !!pe.reviewDetails.inProgress,
-            playerName: (pe.reviewDetails.player && pe.reviewDetails.player.fullName) || null,
-            challengeTeamId: pe.reviewDetails.challengeTeamId || null
-          } : null
+          hasReview, review
         };
       });
-    // Fallback for when no pitch carries the per-pitch marker above, even
-    // though play.about.hasReview is true -- confirmed against two finalized
-    // at-bats (an overturned strikeout and an overturned hit-by-pitch, both
-    // challenges that ended the at-bat) where every pitch's own hasReview
-    // had already reverted to false despite the play-level fields staying
-    // true. In that situation we infer the pitch instead: a challenge can
-    // only be about the umpire's call on a taken pitch (Ball, Called Strike,
-    // or Hit By Pitch), never one that was fouled off, put in play, or swung
-    // through -- so if the at-bat's last pitch is one of those, that's the
-    // only pitch a challenge could have been about (also the common case,
-    // since teams save their two challenges for the pitch that decides the
-    // at-bat). If the at-bat instead ended on contact, the actually-
-    // challenged pitch was some earlier taken pitch neither source
-    // identifies -- leave every pitch unmarked rather than tag the wrong one.
+    // Fallback for when no pitch carries the per-pitch marker above (live or
+    // cached), even though play.about.hasReview is true -- confirmed against
+    // two finalized at-bats (an overturned strikeout and an overturned
+    // hit-by-pitch, both challenges that ended the at-bat) where every
+    // pitch's own hasReview had already reverted to false despite the
+    // play-level fields staying true. In that situation we infer the pitch
+    // instead: a challenge can only be about the umpire's call on a taken
+    // pitch (Ball, Called Strike, or Hit By Pitch), never one that was
+    // fouled off, put in play, or swung through -- so if the at-bat's last
+    // pitch is one of those, that's the only pitch a challenge could have
+    // been about (also the common case, since teams save their two
+    // challenges for the pitch that decides the at-bat). If the at-bat
+    // instead ended on contact, the actually-challenged pitch was some
+    // earlier taken pitch neither source identifies -- leave every pitch
+    // unmarked rather than tag the wrong one.
     const TAKEN_PITCH_CALLS = ['Ball', 'Called Strike', 'Hit By Pitch'];
     if (!pitches.some(p => p.hasReview) && play.about && play.about.hasReview && pitches.length) {
       const last = pitches[pitches.length - 1];
       if (TAKEN_PITCH_CALLS.includes(last.result)) {
-        last.hasReview = true;
-        last.review = play.reviewDetails ? {
+        const review = play.reviewDetails ? {
           isOverturned: !!play.reviewDetails.isOverturned,
           inProgress: !!play.reviewDetails.inProgress,
           playerName: null,
           challengeTeamId: play.reviewDetails.challengeTeamId || null
         } : null;
+        last.hasReview = true;
+        last.review = review;
+        const lastRaw = rawPitches[rawPitches.length - 1];
+        if (lastRaw && lastRaw.playId) reviewedPitchCache[lastRaw.playId] = review;
       }
     }
     return pitches;
