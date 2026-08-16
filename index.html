@@ -2151,33 +2151,44 @@
           px, pz,
           szTop: pe.pitchData && typeof pe.pitchData.strikeZoneTop === 'number' ? pe.pitchData.strikeZoneTop : null,
           szBot: pe.pitchData && typeof pe.pitchData.strikeZoneBottom === 'number' ? pe.pitchData.strikeZoneBottom : null,
-          hasReview: false,
-          review: null
+          // The definitive source when present: the feed marks the specific
+          // challenged pitch directly, including who challenged it -- this
+          // is what correctly identifies a challenge that happens mid-at-bat
+          // and doesn't end it (confirmed live, e.g. a challenge on ball 2
+          // of a 6-pitch walk). But it isn't always still here by the time
+          // we fetch -- see the play-level fallback below.
+          hasReview: !!(pe.details && pe.details.hasReview),
+          review: pe.reviewDetails ? {
+            isOverturned: !!pe.reviewDetails.isOverturned,
+            inProgress: !!pe.reviewDetails.inProgress,
+            playerName: (pe.reviewDetails.player && pe.reviewDetails.player.fullName) || null,
+            challengeTeamId: pe.reviewDetails.challengeTeamId || null
+          } : null
         };
       });
-    // ABS challenge outcomes live on the at-bat (play.about.hasReview /
-    // play.reviewDetails), never on the individual playEvent -- confirmed
-    // against two live challenges (an overturned strikeout and an overturned
-    // hit-by-pitch, different games/reviewTypes), where every pitch's
-    // details.hasReview stayed false and no separate review/challenge
-    // playEvent was ever inserted either. The feed doesn't say which pitch
-    // was challenged, so we infer it: a challenge can only be about the
-    // umpire's call on a taken pitch (Ball, Called Strike, or Hit By Pitch),
-    // never a pitch that was fouled off, put in play, or swung through -- so
-    // if the at-bat's last pitch is one of those, that's the only pitch a
-    // challenge could have been about (also the common case in practice,
+    // Fallback for when no pitch carries the per-pitch marker above, even
+    // though play.about.hasReview is true -- confirmed against two finalized
+    // at-bats (an overturned strikeout and an overturned hit-by-pitch, both
+    // challenges that ended the at-bat) where every pitch's own hasReview
+    // had already reverted to false despite the play-level fields staying
+    // true. In that situation we infer the pitch instead: a challenge can
+    // only be about the umpire's call on a taken pitch (Ball, Called Strike,
+    // or Hit By Pitch), never one that was fouled off, put in play, or swung
+    // through -- so if the at-bat's last pitch is one of those, that's the
+    // only pitch a challenge could have been about (also the common case,
     // since teams save their two challenges for the pitch that decides the
     // at-bat). If the at-bat instead ended on contact, the actually-
-    // challenged pitch was some earlier taken pitch the feed doesn't
-    // identify -- leave every pitch unmarked rather than tag the wrong one.
+    // challenged pitch was some earlier taken pitch neither source
+    // identifies -- leave every pitch unmarked rather than tag the wrong one.
     const TAKEN_PITCH_CALLS = ['Ball', 'Called Strike', 'Hit By Pitch'];
-    if (play.about && play.about.hasReview && pitches.length) {
+    if (!pitches.some(p => p.hasReview) && play.about && play.about.hasReview && pitches.length) {
       const last = pitches[pitches.length - 1];
       if (TAKEN_PITCH_CALLS.includes(last.result)) {
         last.hasReview = true;
         last.review = play.reviewDetails ? {
           isOverturned: !!play.reviewDetails.isOverturned,
           inProgress: !!play.reviewDetails.inProgress,
+          playerName: null,
           challengeTeamId: play.reviewDetails.challengeTeamId || null
         } : null;
       }
@@ -4873,7 +4884,7 @@
     const reviewsHtml = reviewedPitches.length
       ? `<div class="pitch-events">${reviewedPitches.map(p => {
           const rd = p.review;
-          const who = rd && absChallengeInfo && absChallengeInfo[rd.challengeTeamId] || 'A team';
+          const who = (rd && rd.playerName) || (rd && absChallengeInfo && absChallengeInfo[rd.challengeTeamId]) || 'A team';
           const outcome = rd && rd.isOverturned ? 'call overturned' : 'call stands';
           return `<div class="pitch-event-tag challenge-tag"><span class="abs-tag">ABS</span>Pitch ${p.num || ''}: ${who} challenged &#8212; ${outcome}.</div>`;
         }).join('')}</div>`
