@@ -33,14 +33,27 @@
 
   .mlb-controls { display: flex; gap: 8px; flex-wrap: wrap; }
 
-  .tab-header {
+  /* .tab-header and #scorecardStickyBar (.score-strip-bar) are both plain
+     children here, NOT independently `position: sticky` -- two separately-
+     sticky boxes stacked on each other can drift apart by a visible amount
+     during fast/composited scrolling (worse on some mobile browsers, where
+     the viewport itself resizes as the address bar collapses), no matter
+     how precisely their offsets are computed. Making this wrapper the only
+     sticky element removes the seam by construction: the two children
+     always move as one rigid unit, so there's nothing left to desync.
+     Each child keeps its own background/padding/shadow exactly as before,
+     so the two-box look is unaffected -- only the shared positioning
+     changed. */
+  .sticky-header-group {
     position: sticky;
     top: 0;
     z-index: 21;
+    box-shadow: 0 6px 8px -6px rgba(11, 15, 12, 0.35);
+  }
+  .tab-header {
     background: var(--frame);
     margin: -18px -18px 14px;
     padding: 18px 18px 16px;
-    box-shadow: 0 6px 8px -6px rgba(11, 15, 12, 0.35);
   }
   .tab-bar {
     display: flex;
@@ -121,16 +134,15 @@
     box-shadow: 0 2px 0 rgba(0,0,0,0.25) inset, 0 4px 14px rgba(0,0,0,0.35);
   }
 
-  .sticky-top {
-    position: sticky;
-    top: var(--tabbar-h, 42px);
-    z-index: 20;
+  /* Sits right after .tab-header inside .sticky-header-group, not inside
+     .sheet -- margin-top cancels .tab-header's own margin-bottom exactly,
+     so the two boxes are flush with zero gap regardless of scroll
+     position (see .sticky-header-group for why this isn't its own sticky
+     element). */
+  .score-strip-bar {
     background: var(--paper);
-    padding-top: 2px;
-    margin: -2px -18px 0;
-    padding-left: 18px;
-    padding-right: 18px;
-    box-shadow: 0 6px 8px -6px rgba(11, 15, 12, 0.35);
+    margin: -14px -18px 0;
+    padding: 0 18px;
   }
 
   /* The scorecard grid is the point of this tab, so the header stays down
@@ -1540,7 +1552,6 @@
 
   @media (max-width: 520px) {
     .sheet { padding: 14px; }
-    .sticky-top { margin: -2px -14px 0; padding-left: 14px; padding-right: 14px; }
     .standings-grid { grid-template-columns: 1fr; }
     .roster-columns { flex-direction: column; gap: 14px 0; }
     .calendar-day { min-height: 52px; padding: 2px 1px 3px; }
@@ -1553,63 +1564,66 @@
 </head>
 <body>
 <div id="mlb-root">
-  <div class="tab-header">
-    <div class="tab-bar">
-      <button type="button" class="tab-btn active" data-tab="daily">Daily</button>
-      <button type="button" class="tab-btn" data-tab="scorecard">Scorecard</button>
-      <button type="button" class="tab-btn" data-tab="standings">Standings</button>
-      <button type="button" class="tab-btn" data-tab="schedule">Schedule</button>
-      <button type="button" class="tab-btn" data-tab="roster">Roster</button>
-      <button type="button" class="tab-btn" data-tab="players">Players</button>
-    </div>
-    <div class="mlb-controls" data-tab-controls="daily">
-      <div class="date-nav">
-        <button type="button" class="date-nav-btn" id="dailyDatePrev" aria-label="Previous day">&#8249;</button>
-        <input type="date" id="dailyDatePick" />
-        <button type="button" class="date-nav-btn" id="dailyDateNext" aria-label="Next day">&#8250;</button>
+  <div class="sticky-header-group">
+    <div class="tab-header">
+      <div class="tab-bar">
+        <button type="button" class="tab-btn active" data-tab="daily">Daily</button>
+        <button type="button" class="tab-btn" data-tab="scorecard">Scorecard</button>
+        <button type="button" class="tab-btn" data-tab="standings">Standings</button>
+        <button type="button" class="tab-btn" data-tab="schedule">Schedule</button>
+        <button type="button" class="tab-btn" data-tab="roster">Roster</button>
+        <button type="button" class="tab-btn" data-tab="players">Players</button>
       </div>
-      <div class="view-toggle" id="dailyViewToggle">
-        <button type="button" class="view-toggle-btn active" data-view="games">Games</button>
-        <button type="button" class="view-toggle-btn" data-view="homeruns">Home Runs</button>
-        <button type="button" class="view-toggle-btn" data-view="strikeouts">Strikeouts</button>
+      <div class="mlb-controls" data-tab-controls="daily">
+        <div class="date-nav">
+          <button type="button" class="date-nav-btn" id="dailyDatePrev" aria-label="Previous day">&#8249;</button>
+          <input type="date" id="dailyDatePick" />
+          <button type="button" class="date-nav-btn" id="dailyDateNext" aria-label="Next day">&#8250;</button>
+        </div>
+        <div class="view-toggle" id="dailyViewToggle">
+          <button type="button" class="view-toggle-btn active" data-view="games">Games</button>
+          <button type="button" class="view-toggle-btn" data-view="homeruns">Home Runs</button>
+          <button type="button" class="view-toggle-btn" data-view="strikeouts">Strikeouts</button>
+        </div>
+      </div>
+      <div class="mlb-controls" data-tab-controls="scorecard" hidden>
+        <div class="date-nav">
+          <button type="button" class="date-nav-btn" id="datePrev" aria-label="Previous day">&#8249;</button>
+          <input type="date" id="datePick" />
+          <button type="button" class="date-nav-btn" id="dateNext" aria-label="Next day">&#8250;</button>
+        </div>
+        <select id="gamePick"><option>Loading games&#8230;</option></select>
+      </div>
+      <div class="mlb-controls" data-tab-controls="standings" hidden>
+        <div class="date-nav">
+          <button type="button" class="date-nav-btn" id="standingsDatePrev" aria-label="Previous day">&#8249;</button>
+          <input type="date" id="standingsDatePick" />
+          <button type="button" class="date-nav-btn" id="standingsDateNext" aria-label="Next day">&#8250;</button>
+        </div>
+        <div class="view-toggle" id="standingsViewToggle">
+          <button type="button" class="view-toggle-btn active" data-view="division">Division</button>
+          <button type="button" class="view-toggle-btn" data-view="wildcard">Wild Card</button>
+        </div>
+      </div>
+      <div class="mlb-controls" data-tab-controls="schedule" hidden>
+        <select id="scheduleTeamPick"></select>
+      </div>
+      <div class="mlb-controls" data-tab-controls="roster" hidden>
+        <select id="rosterTabTeamPick"></select>
+        <div class="view-toggle" id="rosterTabViewToggle">
+          <button type="button" class="view-toggle-btn active" data-view="active">26-Man</button>
+          <button type="button" class="view-toggle-btn" data-view="40man">40-Man</button>
+          <button type="button" class="view-toggle-btn" data-view="il">Injured List</button>
+        </div>
+      </div>
+      <div class="mlb-controls" data-tab-controls="players" hidden>
+        <div class="player-search-wrap">
+          <input type="text" id="playerSearchInput" placeholder="Search players&#8230;" autocomplete="off">
+          <div id="playerSearchResults" class="player-search-results" hidden></div>
+        </div>
       </div>
     </div>
-    <div class="mlb-controls" data-tab-controls="scorecard" hidden>
-      <div class="date-nav">
-        <button type="button" class="date-nav-btn" id="datePrev" aria-label="Previous day">&#8249;</button>
-        <input type="date" id="datePick" />
-        <button type="button" class="date-nav-btn" id="dateNext" aria-label="Next day">&#8250;</button>
-      </div>
-      <select id="gamePick"><option>Loading games&#8230;</option></select>
-    </div>
-    <div class="mlb-controls" data-tab-controls="standings" hidden>
-      <div class="date-nav">
-        <button type="button" class="date-nav-btn" id="standingsDatePrev" aria-label="Previous day">&#8249;</button>
-        <input type="date" id="standingsDatePick" />
-        <button type="button" class="date-nav-btn" id="standingsDateNext" aria-label="Next day">&#8250;</button>
-      </div>
-      <div class="view-toggle" id="standingsViewToggle">
-        <button type="button" class="view-toggle-btn active" data-view="division">Division</button>
-        <button type="button" class="view-toggle-btn" data-view="wildcard">Wild Card</button>
-      </div>
-    </div>
-    <div class="mlb-controls" data-tab-controls="schedule" hidden>
-      <select id="scheduleTeamPick"></select>
-    </div>
-    <div class="mlb-controls" data-tab-controls="roster" hidden>
-      <select id="rosterTabTeamPick"></select>
-      <div class="view-toggle" id="rosterTabViewToggle">
-        <button type="button" class="view-toggle-btn active" data-view="active">26-Man</button>
-        <button type="button" class="view-toggle-btn" data-view="40man">40-Man</button>
-        <button type="button" class="view-toggle-btn" data-view="il">Injured List</button>
-      </div>
-    </div>
-    <div class="mlb-controls" data-tab-controls="players" hidden>
-      <div class="player-search-wrap">
-        <input type="text" id="playerSearchInput" placeholder="Search players&#8230;" autocomplete="off">
-        <div id="playerSearchResults" class="player-search-results" hidden></div>
-      </div>
-    </div>
+    <div class="score-strip-bar" id="scorecardStickyBar" data-tab-controls="scorecard" hidden></div>
   </div>
   <div class="tab-panel" data-tab-panel="daily" id="dailyPanel">
     <div id="dailyBody">
@@ -1684,6 +1698,7 @@
   const dateInput = document.getElementById('datePick');
   const gameSelect = document.getElementById('gamePick');
   const body = document.getElementById('mlbBody');
+  const scorecardStickyBar = document.getElementById('scorecardStickyBar');
   const standingsBody = document.getElementById('standingsBody');
   const standingsDateInput = document.getElementById('standingsDatePick');
   const dailyBody = document.getElementById('dailyBody');
@@ -4225,6 +4240,7 @@
   async function loadSchedule(dateStr, preferredGamePk) {
     gameSelect.innerHTML = '<option>Loading games&#8230;</option>';
     body.innerHTML = '<div class="mlb-status-msg">Fetching schedule for ' + dateStr + '&#8230;</div>';
+    scorecardStickyBar.innerHTML = '';
     clearInterval(pollTimer);
     try {
       const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}`);
@@ -4511,13 +4527,16 @@
       // snap every table-scroll back to scrollLeft 0 on each poll
       const scrollLefts = Array.from(body.querySelectorAll('.table-scroll')).map(el => el.scrollLeft);
 
+      // Lives in .sticky-header-group (#scorecardStickyBar), not in .sheet
+      // below -- see .score-strip-bar for why.
+      scorecardStickyBar.innerHTML = `
+        <div class="score-strip">${scoreStripHtml}</div>
+        ${subLineHtml ? `<div class="score-strip-sub">${subLineHtml}</div>` : ''}
+        ${lastPlayHtml}
+      `;
+
       body.innerHTML = `
         <div class="sheet">
-          <div class="sticky-top">
-            <div class="score-strip">${scoreStripHtml}</div>
-            ${subLineHtml ? `<div class="score-strip-sub">${subLineHtml}</div>` : ''}
-            ${lastPlayHtml}
-          </div>
           ${renderTeamTable(awayName, awayRows.length ? awayRows : placeholderLineupRows(), numInnings, away.pitcherByInning, away.starterPitcherId, columnsPerInning, homePitcherCard, 'away', liveBatterInfo, season)}
           ${renderTeamTable(homeName, homeRows.length ? homeRows : placeholderLineupRows(), numInnings, home.pitcherByInning, home.starterPitcherId, columnsPerInning, awayPitcherCard, 'home', liveBatterInfo, season)}
         </div>
@@ -4542,6 +4561,7 @@
       }
     } catch (e) {
       body.innerHTML = '<div class="mlb-status-msg">Could not load game data. The MLB API may be unreachable right now.</div>';
+      scorecardStickyBar.innerHTML = '';
     }
   }
 
@@ -4913,23 +4933,6 @@
 
     return { register, switchTo, init };
   })();
-
-  // Keep the scorecard's sticky box score pinned just below the sticky tab
-  // header instead of underneath it, whatever height the header happens to
-  // render at (font loading, wrapping, which tab's controls are showing, etc).
-  // Rounds up from the fractional getBoundingClientRect height rather than
-  // using offsetHeight's own rounding -- offsetHeight can round DOWN from
-  // the true (subpixel) height, leaving --tabbar-h a hair short and opening
-  // a sliver of gap between the two sticky elements that the content
-  // scrolling underneath shows through. Rounding up instead means the worst
-  // case is a sub-pixel overlap, hidden under the header's own background.
-  const tabHeaderEl = document.querySelector('.tab-header');
-  function syncTabHeaderHeight() {
-    document.documentElement.style.setProperty('--tabbar-h', Math.ceil(tabHeaderEl.getBoundingClientRect().height) + 'px');
-  }
-  syncTabHeaderHeight();
-  if (window.ResizeObserver) new ResizeObserver(syncTabHeaderHeight).observe(tabHeaderEl);
-  else window.addEventListener('resize', syncTabHeaderHeight);
 
   const playerSearchInput = document.getElementById('playerSearchInput');
   const playerSearchResults = document.getElementById('playerSearchResults');
