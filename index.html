@@ -5062,11 +5062,11 @@
       ? '<div class="mlb-status-msg">Loading career stats&#8230;</div>'
       : careerSplits.length
         ? `<div class="table-scroll"><table class="pitch-table">
-            <thead><tr><th>Year</th><th>Team</th><th>G</th><th>AVG</th><th>OBP</th><th>SLG</th><th>HR</th><th>RBI</th></tr></thead>
+            <thead><tr><th>Year</th><th>Team</th><th>G</th><th>AVG</th><th>OBP</th><th>SLG</th><th>2B</th><th>3B</th><th>HR</th><th>SB</th><th>CS</th></tr></thead>
             <tbody>${careerSplits.map(s => {
               const stat = s.stat || {};
               const team = (s.team && (s.team.abbreviation || s.team.name)) || '&#8212;';
-              return `<tr><td>${s.season}</td><td>${team}</td><td>${stat.gamesPlayed ?? '&#8212;'}</td><td>${stat.avg ?? '&#8212;'}</td><td>${stat.obp ?? '&#8212;'}</td><td>${stat.slg ?? '&#8212;'}</td><td>${stat.homeRuns ?? '&#8212;'}</td><td>${stat.rbi ?? '&#8212;'}</td></tr>`;
+              return `<tr><td>${s.season}</td><td>${team}</td><td>${stat.gamesPlayed ?? '&#8212;'}</td><td>${stat.avg ?? '&#8212;'}</td><td>${stat.obp ?? '&#8212;'}</td><td>${stat.slg ?? '&#8212;'}</td><td>${stat.doubles ?? '&#8212;'}</td><td>${stat.triples ?? '&#8212;'}</td><td>${stat.homeRuns ?? '&#8212;'}</td><td>${stat.stolenBases ?? '&#8212;'}</td><td>${stat.caughtStealing ?? '&#8212;'}</td></tr>`;
             }).join('')}</tbody>
           </table></div>`
         : '<div class="pitch-empty">Career stats not available.</div>';
