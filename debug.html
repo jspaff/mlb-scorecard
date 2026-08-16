@@ -184,7 +184,7 @@
     }
     const now = new Date();
     const rows = games.map(g => {
-      const away = g.teams.away.team.abbreviation, home = g.teams.home.team.abbreviation;
+      const away = g.teams.away.team.name, home = g.teams.home.team.name;
       const abs = g.status.abstractGameState;
       const detailed = g.status.detailedState;
       const first = g.gameDate ? new Date(g.gameDate) : null;
@@ -312,7 +312,7 @@
     let totalReviews = 0;
     for (let i = 0; i < games.length; i++) {
       const gamePk = games[i].gamePk;
-      const label = `${games[i].teams.away.team.abbreviation} @ ${games[i].teams.home.team.abbreviation}`;
+      const label = `${games[i].teams.away.team.name} @ ${games[i].teams.home.team.name}`;
       statusEl.textContent = `Checking game ${i + 1}/${games.length} (${label})...`;
       let feed;
       try {
