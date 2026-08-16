@@ -1490,28 +1490,6 @@
   .pitch-result-hbp { color: #4f7a5f; font-weight: 700; font-style: italic; }
   table.pitch-table tr.hl td { background: rgba(217, 169, 26, 0.14); }
   table.pitch-table tr.challenged td { border-bottom-style: dashed; }
-  /* Freeze Year/Team while the wider stat columns scroll horizontally --
-     left offsets are hard-coded to the fixed widths set below so the two
-     sticky cells sit flush against each other with no gap. */
-  table.career-table th:first-child, table.career-table td:first-child {
-    position: sticky;
-    left: 0;
-    z-index: 2;
-    background: var(--paper);
-    width: 42px;
-  }
-  table.career-table th:nth-child(2), table.career-table td:nth-child(2) {
-    position: sticky;
-    left: 42px;
-    z-index: 2;
-    background: var(--paper);
-    width: 56px;
-    max-width: 56px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    box-shadow: 2px 0 4px -2px rgba(0, 0, 0, 0.4);
-  }
   .abs-tag {
     display: inline-block;
     font-family: 'IBM Plex Mono', monospace;
@@ -5083,7 +5061,7 @@
     const careerHtml = careerSplits === null
       ? '<div class="mlb-status-msg">Loading career stats&#8230;</div>'
       : careerSplits.length
-        ? `<div class="table-scroll"><table class="pitch-table career-table">
+        ? `<div class="table-scroll"><table class="pitch-table">
             <thead><tr><th>Year</th><th>Team</th><th>G</th><th>AVG</th><th>OBP</th><th>SLG</th><th>2B</th><th>3B</th><th>HR</th><th>SB</th><th>CS</th></tr></thead>
             <tbody>${careerSplits.map(s => {
               const stat = s.stat || {};
