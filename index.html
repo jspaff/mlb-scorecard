@@ -2158,17 +2158,27 @@
     // ABS challenge outcomes live on the at-bat (play.about.hasReview /
     // play.reviewDetails), never on the individual playEvent -- confirmed
     // against a live challenged strikeout, where every pitch's
-    // details.hasReview stayed false. A challenge can only be raised on the
-    // pitch that was just thrown, before the next pitch, so the reviewed
-    // pitch is the last one in the at-bat.
+    // details.hasReview stayed false. The feed doesn't say which pitch was
+    // challenged, so we infer it: ABS can only challenge the umpire's call
+    // on a taken pitch (a "Ball" or "Called Strike"), never a pitch that was
+    // fouled off, put in play, or swung through -- so if the at-bat's last
+    // pitch is a taken-pitch call, that's the only pitch a challenge could
+    // have been about (this is also the common case, since teams save their
+    // two challenges for the pitch that decides the at-bat). If the at-bat
+    // instead ended on contact, the actually-challenged pitch was some
+    // earlier taken pitch the feed doesn't identify -- leave every pitch
+    // unmarked rather than tag the wrong one.
+    const TAKEN_PITCH_CALLS = ['Ball', 'Called Strike'];
     if (play.about && play.about.hasReview && pitches.length) {
       const last = pitches[pitches.length - 1];
-      last.hasReview = true;
-      last.review = play.reviewDetails ? {
-        isOverturned: !!play.reviewDetails.isOverturned,
-        inProgress: !!play.reviewDetails.inProgress,
-        challengeTeamId: play.reviewDetails.challengeTeamId || null
-      } : null;
+      if (TAKEN_PITCH_CALLS.includes(last.result)) {
+        last.hasReview = true;
+        last.review = play.reviewDetails ? {
+          isOverturned: !!play.reviewDetails.isOverturned,
+          inProgress: !!play.reviewDetails.inProgress,
+          challengeTeamId: play.reviewDetails.challengeTeamId || null
+        } : null;
+      }
     }
     return pitches;
   }
