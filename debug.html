@@ -78,6 +78,16 @@
   Checks every play in every game and lists every at-bat with a review, no matter which pitch it landed on. Plays flagged <span class="badge ended-on-contact">ended on contact</span> are the useful ones — the review must have happened on an earlier taken pitch, not the last one, so those are exactly the cases we need a raw example of.
 </div>
 
+<h3 class="divider">or watch pre-game status transitions</h3>
+<button id="statusScan" class="secondary">Show today's game statuses</button>
+<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#c3c8bb;margin-top:8px;">
+  <input type="checkbox" id="statusAutoRefresh"> auto-refresh every 10s (watch a game approach first pitch)
+</label>
+<div style="font-size:12px;color:#8a8478;margin-top:6px;">
+  Lists every game's abstractGameState + detailedState straight from the schedule endpoint. Useful for catching the exact detailedState strings during Pre-Game/Warmup/Delayed Start, and exactly when abstractGameState flips to Live relative to those.
+</div>
+<div id="statusResults"></div>
+
 <h3 class="divider">or find one specific at-bat</h3>
 <div class="row">
   <div class="field">
@@ -154,6 +164,48 @@
     `;
     resultsEl.appendChild(div);
   }
+
+  const statusResultsEl = document.getElementById('statusResults');
+  let statusAutoTimer = null;
+
+  async function scanStatuses() {
+    const dateStr = document.getElementById('date').value;
+    let sched;
+    try {
+      sched = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}`).then(r => r.json());
+    } catch (e) {
+      statusResultsEl.textContent = 'Schedule fetch failed: ' + e.message;
+      return;
+    }
+    const games = (sched.dates[0] && sched.dates[0].games) || [];
+    if (!games.length) {
+      statusResultsEl.textContent = `No games found on ${dateStr}.`;
+      return;
+    }
+    const now = new Date();
+    const rows = games.map(g => {
+      const away = g.teams.away.team.abbreviation, home = g.teams.home.team.abbreviation;
+      const abs = g.status.abstractGameState;
+      const detailed = g.status.detailedState;
+      const first = g.gameDate ? new Date(g.gameDate) : null;
+      const untilFirst = first ? Math.round((first - now) / 60000) : null;
+      const timing = first
+        ? (untilFirst > 0 ? `first pitch in ~${untilFirst}m` : `first pitch was ~${-untilFirst}m ago`)
+        : '';
+      return `<div class="probe-row"><b>${away} @ ${home}</b> &mdash; abstractGameState=<b>${abs}</b>, detailedState=<b>${detailed}</b> &middot; ${timing}</div>`;
+    });
+    statusResultsEl.innerHTML = `<div class="probe-log">Checked ${new Date().toLocaleTimeString()}:${rows.join('')}</div>`;
+  }
+
+  document.getElementById('statusScan').addEventListener('click', scanStatuses);
+  document.getElementById('statusAutoRefresh').addEventListener('change', (e) => {
+    clearInterval(statusAutoTimer);
+    statusAutoTimer = null;
+    if (e.target.checked) {
+      scanStatuses();
+      statusAutoTimer = setInterval(scanStatuses, 10000);
+    }
+  });
 
   function parseTimecode(t) {
     // MLB timecodes are "YYYYMMDD_HHMMSS" in UTC.
