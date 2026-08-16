@@ -14,7 +14,7 @@ Alongside `index.html` sit the PWA support files: `manifest.json` (name, theme c
 
 There's nothing to install or build. Serve the directory locally (e.g. `python3 -m http.server`) and open `index.html` over `http://`/`https://` — the service worker only registers on http(s), not `file://`, so PWA install/offline behavior needs a server. All calls to `statsapi.mlb.com` are made client-side with plain `fetch()`; there's no proxy or API key involved.
 
-There's no automated way to verify a change — after editing, open the file in a browser and click through the affected tab/overlay to confirm it still works, including a live or in-progress game if the change touches polling or the scorecard grid. If you touch `sw.js`, bump `CACHE_NAME` so installed clients pick up the new app shell instead of serving a stale cached copy, and confirm via DevTools → Application → Service Workers that it updates/activates as expected.
+There's no automated way to verify a change — after editing, open the file in a browser and click through the affected tab/overlay to confirm it still works, including a live or in-progress game if the change touches polling or the scorecard grid. Bump `sw.js`'s `CACHE_NAME` on **any change to `index.html`, `manifest.json`, or the icons** (not just edits to `sw.js` itself) — the service worker serves the cached app shell immediately and only refreshes it in the background for the *next* load, so without a bump, an installed client can sit a full version behind indefinitely, with each reload only fetching the update that shows up on the load after it. Confirm via DevTools → Application → Service Workers that it updates/activates as expected.
 
 ## Structure
 
