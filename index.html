@@ -3754,11 +3754,22 @@
       dailyStatsData = { tilesHtml: tiles, homeRuns, strikeoutLeaders };
       renderDailyView();
 
-      // Only while something's actually live, same as the single-game
-      // poller -- a past date is all Final and a future one is all Preview,
-      // so this naturally never polls a date with nothing left to change.
-      if (requestId === dailyRequestId && games.some(g => g.status.abstractGameState === 'Live')) {
-        dailyPollTimer = setTimeout(() => loadDailySummary(dateStr, true), 15000);
+      // Keep polling as long as anything on this date could still change --
+      // not just while something is *currently* Live. A date can have some
+      // games Final and others still Preview (an early game ends before a
+      // late one starts), and checking only for Live means polling can stop
+      // for good in that gap, silently freezing every not-yet-started game
+      // until the date is changed or the page reloaded. A past date is all
+      // Final and a future one is all Preview-with-nothing-to-catch-yet, so
+      // this still naturally stops polling a date with nothing left to
+      // change -- it just also covers today's gaps between games. Preview
+      // games only need an occasional check-in to catch the Live transition
+      // (or a postponement), so they get a much gentler interval than an
+      // active game's 15s.
+      const stillLive = games.some(g => g.status.abstractGameState === 'Live');
+      const stillUpcoming = games.some(g => g.status.abstractGameState === 'Preview');
+      if (requestId === dailyRequestId && (stillLive || stillUpcoming)) {
+        dailyPollTimer = setTimeout(() => loadDailySummary(dateStr, true), stillLive ? 15000 : 60000);
       }
     } catch (e) {
       if (!isPoll) dailyBody.innerHTML = '<div class="mlb-status-msg">Could not load today\'s games. The MLB API may be unreachable right now.</div>';
