@@ -3075,7 +3075,13 @@
   // Dot + label for the top-row status tag next to the venue name.
   function renderStateBadge(game) {
     if (game.state === 'Final') return `<span class="badge badge-final"><span class="badge-dot"></span>Final</span>`;
-    if (game.state === 'Live') return `<span class="badge badge-live"><span class="badge-dot"></span>Live</span>`;
+    // MLB flips abstractGameState to 'Live' during pre-game warmup, confirmed
+    // well ahead of first pitch (e.g. detailedState: 'Warmup' 30+ minutes
+    // out) -- 'Live' alone doesn't mean the game has actually started, so
+    // only badge it that way once detailedState agrees play is underway.
+    if (game.state === 'Live' && game.detailedState === 'In Progress') {
+      return `<span class="badge badge-live"><span class="badge-dot"></span>Live</span>`;
+    }
     const label = game.detailedState && game.detailedState !== 'Scheduled' ? game.detailedState : 'Upcoming';
     return `<span class="badge badge-preview"><span class="badge-dot"></span>${label}</span>`;
   }
@@ -3549,7 +3555,7 @@
 
   function renderDailyGameTile(dateStr, game) {
     let rowsHtml, stateLabel, tileClass, watermarkHtml = '';
-    if (game.state === 'Live') {
+    if (game.state === 'Live' && game.detailedState === 'In Progress') {
       rowsHtml = dailyTileRow(game.awayName, game.awayId, game.awayScore ?? 0, false)
         + dailyTileRow(game.homeName, game.homeId, game.homeScore ?? 0, false);
       stateLabel = `${formatInningState(game.inningState)} ${game.inningOrdinal || ''}`.trim();
@@ -3562,6 +3568,15 @@
       tileClass = 'is-final';
       const winnerId = awayWon ? game.awayId : game.homeId;
       if (winnerId) watermarkHtml = `<img class="daily-tile-watermark" src="${capLogoUrl(winnerId)}" alt="">`;
+    } else if (game.state === 'Live') {
+      // MLB flips abstractGameState to 'Live' during pre-game warmup, well
+      // ahead of first pitch -- treat this like a not-yet-started game
+      // (inningState/inningOrdinal would otherwise show a fabricated "Top
+      // 1st" before any pitch has actually been thrown).
+      rowsHtml = dailyTileRow(game.awayName, game.awayId, null, false)
+        + dailyTileRow(game.homeName, game.homeId, null, false);
+      stateLabel = game.detailedState || 'Warmup';
+      tileClass = 'is-preview';
     } else {
       rowsHtml = dailyTileRow(game.awayName, game.awayId, null, false)
         + dailyTileRow(game.homeName, game.homeId, null, false);
@@ -4552,7 +4567,13 @@
       let compactCountHtml = '';
       let subLineHtml = '';
       let lastPlayHtml = '';
-      if (state === 'Live') {
+      // MLB flips abstractGameState to 'Live' during pre-game warmup, well
+      // ahead of first pitch -- gameHasStarted (at least one real pitch
+      // thrown anywhere in the game) is what actually distinguishes "in
+      // progress" from "warming up," since linescore.currentInning/outs/etc.
+      // are already populated with placeholder-ish values during warmup and
+      // would otherwise render as a fabricated live count.
+      if (state === 'Live' && gameHasStarted) {
         const halfOver = (linescore.outs ?? 0) >= 3;
         const balls = halfOver ? 0 : (linescore.balls ?? 0);
         const strikes = halfOver ? 0 : (linescore.strikes ?? 0);
