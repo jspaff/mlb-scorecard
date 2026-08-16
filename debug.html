@@ -82,11 +82,11 @@
 <div class="row">
   <div class="field">
     <label for="name">Batter last name</label>
-    <input id="name" value="Sogard">
+    <input id="name" placeholder="e.g. Seigler">
   </div>
   <div class="field">
-    <label for="inning">Inning</label>
-    <input id="inning" type="number" value="3">
+    <label for="inning">Inning (optional)</label>
+    <input id="inning" type="number" placeholder="any">
   </div>
 </div>
 <button id="run" class="secondary">Find at-bat</button>
@@ -282,7 +282,8 @@
     resultsEl.innerHTML = '';
     matchCounter = 0;
     const lastName = document.getElementById('name').value.trim();
-    const inningNum = Number(document.getElementById('inning').value);
+    const inningRaw = document.getElementById('inning').value.trim();
+    const inningNum = inningRaw === '' ? null : Number(inningRaw);
     const dateStr = document.getElementById('date').value;
     const nameRe = new RegExp(lastName, 'i');
 
@@ -300,7 +301,7 @@
       return;
     }
 
-    let found = false;
+    let totalFound = 0;
     for (let i = 0; i < gamePks.length; i++) {
       const gamePk = gamePks[i];
       statusEl.textContent = `Checking game ${i + 1}/${gamePks.length} (gamePk ${gamePk})...`;
@@ -312,17 +313,15 @@
       }
       const plays = (feed.liveData && feed.liveData.plays && feed.liveData.plays.allPlays) || [];
       const matches = plays.filter(p =>
-        p.about && p.about.inning === inningNum &&
+        (inningNum === null || (p.about && p.about.inning === inningNum)) &&
         p.matchup && p.matchup.batter && nameRe.test(p.matchup.batter.fullName || '')
       );
-      if (matches.length) {
-        found = true;
-        statusEl.textContent = `Found ${matches.length} match(es) in gamePk ${gamePk}.`;
-        matches.forEach(match => renderMatch(match, gamePk));
-        break;
-      }
+      matches.forEach(match => renderMatch(match, gamePk));
+      totalFound += matches.length;
     }
-    if (!found) statusEl.textContent = `No play found for "${lastName}" in inning ${inningNum} on ${dateStr}.`;
+    statusEl.textContent = totalFound
+      ? `Found ${totalFound} at-bat(s) for "${lastName}"${inningNum === null ? '' : ` in inning ${inningNum}`} on ${dateStr}.`
+      : `No play found for "${lastName}"${inningNum === null ? '' : ` in inning ${inningNum}`} on ${dateStr}.`;
   }
 
   resultsEl.addEventListener('click', (e) => {
