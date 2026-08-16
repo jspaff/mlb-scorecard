@@ -4917,9 +4917,15 @@
   // Keep the scorecard's sticky box score pinned just below the sticky tab
   // header instead of underneath it, whatever height the header happens to
   // render at (font loading, wrapping, which tab's controls are showing, etc).
+  // Rounds up from the fractional getBoundingClientRect height rather than
+  // using offsetHeight's own rounding -- offsetHeight can round DOWN from
+  // the true (subpixel) height, leaving --tabbar-h a hair short and opening
+  // a sliver of gap between the two sticky elements that the content
+  // scrolling underneath shows through. Rounding up instead means the worst
+  // case is a sub-pixel overlap, hidden under the header's own background.
   const tabHeaderEl = document.querySelector('.tab-header');
   function syncTabHeaderHeight() {
-    document.documentElement.style.setProperty('--tabbar-h', tabHeaderEl.offsetHeight + 'px');
+    document.documentElement.style.setProperty('--tabbar-h', Math.ceil(tabHeaderEl.getBoundingClientRect().height) + 'px');
   }
   syncTabHeaderHeight();
   if (window.ResizeObserver) new ResizeObserver(syncTabHeaderHeight).observe(tabHeaderEl);
