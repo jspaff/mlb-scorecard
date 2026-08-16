@@ -2273,7 +2273,7 @@
   // unfiltered, that play gets treated as a completed at-bat: it grabs a
   // cell in the grid, and getPlayCode falls back to an initialism (e.g.
   // "Batter Timeout" -> "BT") that shows up in place of the real result.
-  const NON_RESULT_EVENT_RE = /mound visit|pitching change|pitching sub|defensive sub|defensive switch|offensive sub|ejection|challenge|replay review|batter timeout|timeout/i;
+  const NON_RESULT_EVENT_RE = /mound visit|pitching change|pitching sub|defensive sub|defensive switch|offensive sub|ejection|challenge|replay review|batter timeout|timeout|game advisory/i;
 
   // MLB's own boxscoreName field is the correct source for a player's
   // display surname -- it keeps suffixes like "Jr."/"II" attached to the
@@ -4438,8 +4438,14 @@
       // turning over mid-inning would hide the live dot for anyone's second
       // at-bat until the inning's earlier at-bats happened to complete and
       // establish that column first.
+      // MLB flips abstractGameState to 'Live' (and sets linescore.currentInning)
+      // once pre-game warmup starts, well before first pitch -- state === 'Live'
+      // alone isn't "the game has started." Require at least one real pitch
+      // to exist anywhere in the game first, or the on-deck diamond shows up
+      // for the leadoff batter during warmup with nothing behind it yet.
+      const gameHasStarted = allPlays.some(p => (p.playEvents || []).some(pe => pe.isPitch));
       let liveBatterInfo = null;
-      if (state === 'Live' && linescore.currentInning) {
+      if (gameHasStarted && state === 'Live' && linescore.currentInning) {
         let effInning = linescore.currentInning;
         let effHalf = (linescore.inningHalf || 'Top').toLowerCase();
         if ((linescore.outs ?? 0) >= 3) {
