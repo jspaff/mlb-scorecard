@@ -215,7 +215,7 @@
 
   .gs-top-row {
     display: flex;
-    align-items: baseline;
+    align-items: flex-start;
     justify-content: space-between;
     gap: 10px;
     margin-bottom: 2px;
@@ -229,9 +229,12 @@
     color: var(--ink);
   }
   .venue-city {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
     font-weight: 400;
     letter-spacing: 0.02em;
     color: var(--ink-soft);
+    margin-top: 1px;
   }
   .box-score { margin-bottom: 14px; }
   table.box-table {
@@ -295,6 +298,7 @@
     color: var(--ink-soft);
     margin-bottom: 10px;
   }
+  .gs-weather { color: var(--ink-soft); }
   .gs-score-line {
     display: flex;
     align-items: baseline;
@@ -3067,9 +3071,22 @@
     const cityState = location ? [location.city, location.stateAbbrev || location.state].filter(Boolean).join(', ') : '';
     const idAttr = gamePk ? ` id="venue-${gamePk}"` : '';
     return `<div class="gs-top-row"${idAttr}>
-      <div class="venue-name">${venueName}${cityState ? ` <span class="venue-city">&#183; ${cityState}</span>` : ''}</div>
+      <div class="venue-info">
+        <div class="venue-name">${venueName}</div>
+        ${cityState ? `<div class="venue-city">${cityState}</div>` : ''}
+      </div>
       ${badgeHtml || ''}
     </div>`;
+  }
+
+  // weather is the feed/live gameData.weather record ({temp, condition, wind}) --
+  // temp/condition only, per the Game Summary modal's date line (see
+  // renderGameSummaryGame / loadGameSummaryExtrasInto).
+  function renderWeatherLine(weather) {
+    if (!weather || weather.temp == null) return '';
+    const parts = [`${weather.temp}&#176;F`];
+    if (weather.condition) parts.push(weather.condition);
+    return ` <span class="gs-weather">&#183; ${parts.join(' &#183; ')}</span>`;
   }
 
   // Dot + label for the top-row status tag next to the venue name.
@@ -4051,7 +4068,15 @@
         <span class="gs-score-team${homeWon ? ' gs-winner' : ''}">${homeAbbr}</span>
       </div>`;
 
-    const dateLineHtml = game.gameDate ? `<div class="gs-date-line">${formatGameTime(game.gameDate)}</div>` : '';
+    // game.weather is only ever supplied by the Scorecard tab's "Box Score"
+    // link, which already has the live feed's gameData loaded -- Daily and
+    // Schedule tabs only know the score, so their Live/Final games fetch it
+    // lazily into this same placeholder (see loadGameSummaryExtrasInto),
+    // same pattern as the box score above.
+    const weatherHtml = game.weather
+      ? renderWeatherLine(game.weather)
+      : ((game.state === 'Final' || game.state === 'Live') ? `<span class="gs-weather" id="weather-${game.gamePk}"></span>` : '');
+    const dateLineHtml = game.gameDate ? `<div class="gs-date-line">${formatGameTime(game.gameDate)}${weatherHtml}</div>` : '';
 
     // game.venueHtml is only ever supplied by the Scorecard tab's "Box
     // Score" link, which already has the venue name and detailed record
@@ -4198,7 +4223,8 @@
       const feedRes = await fetch(`https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live`);
       const feedData = await feedRes.json();
       const linescore = feedData.liveData && feedData.liveData.linescore;
-      if (!includeHighlights) return { leaders: [], playOfGame: null, linescore };
+      const weather = feedData.gameData && feedData.gameData.weather;
+      if (!includeHighlights) return { leaders: [], playOfGame: null, linescore, weather };
 
       const wpRes = await fetch(`https://statsapi.mlb.com/api/v1/game/${gamePk}/winProbability`);
       const wpData = await wpRes.json();
@@ -4247,9 +4273,9 @@
           : buildBatterStatLineParts(stats && stats.batting);
         return { id: p.id, name: p.name, statLine: renderStatLineParts(statParts) };
       });
-      return { leaders, playOfGame, linescore };
+      return { leaders, playOfGame, linescore, weather };
     } catch (e) {
-      return { leaders: [], playOfGame: null, linescore: null };
+      return { leaders: [], playOfGame: null, linescore: null, weather: null };
     }
   }
 
@@ -4304,7 +4330,7 @@
 
   async function loadGameSummaryExtrasInto(game, requestId) {
     const includeHighlights = game.state === 'Final';
-    const { leaders, playOfGame, linescore } = await fetchGameHighlights(game.gamePk, includeHighlights);
+    const { leaders, playOfGame, linescore, weather } = await fetchGameHighlights(game.gamePk, includeHighlights);
     if (requestId !== gameSummaryRequestId) return;
     if (includeHighlights) {
       const wpaEl = document.getElementById(`wpaLeaders-${game.gamePk}`);
@@ -4313,6 +4339,10 @@
     if (!game.linescore) {
       const boxEl = document.getElementById(`boxScore-${game.gamePk}`);
       if (boxEl) boxEl.outerHTML = linescore ? renderBoxScore(linescore, game.awayName, game.homeName) : '';
+    }
+    if (!game.weather) {
+      const weatherEl = document.getElementById(`weather-${game.gamePk}`);
+      if (weatherEl) weatherEl.outerHTML = renderWeatherLine(weather);
     }
   }
 
@@ -4645,6 +4675,7 @@
         state, detailedState,
         gameDate: gameData.datetime && gameData.datetime.dateTime,
         linescore: showRuns ? linescore : null,
+        weather: gameData.weather || null,
         venueHtml: renderVenueHeader(gameData.venue && gameData.venue.name, venue, undefined, renderStateBadge({ state, detailedState }))
       };
 
