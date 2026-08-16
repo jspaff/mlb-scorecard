@@ -718,7 +718,7 @@
     color: var(--ink-soft);
     width: 14px;
   }
-  .roster-name { flex: 1; }
+  .roster-name { flex: 1; display: flex; align-items: center; gap: 6px; }
   .roster-pos {
     font-family: 'Special Elite', monospace;
     font-size: 11px;
@@ -1703,7 +1703,7 @@
   const dailyDateInput = document.getElementById('dailyDatePick');
   let pollTimer = null;
   // The currently loaded game, in the same shape renderGameSummaryGame()
-  // expects, so the Scorecard tab's "Box Score" link can reuse the exact
+  // expects, so the Scorecard tab's "Game Summary" link can reuse the exact
   // modal the Daily/Schedule tabs open rather than duplicating it. Lives
   // outside fetchAndRender since the link is clicked well after that call
   // returns, on whatever the latest poll last rendered.
@@ -2754,7 +2754,7 @@
     if (!list || !list.length) return '<div class="roster-empty">No pitching data available</div>';
     return list.map(p => `
       <div class="bp-row">
-        <div class="bp-name">${p.name}${p.isStarter ? '<span class="bp-badge bp-badge-starter">STARTER</span>' : (p.usedToday ? '<span class="bp-badge">IN GAME</span>' : '')}</div>
+        <div class="bp-name">${p.name}${p.isStarter ? '<span class="bp-badge bp-badge-starter">STARTER</span>' : (p.usedToday ? '<span class="bp-badge">RELIEVER</span>' : '')}</div>
         <div class="bp-recent">
           <span class="bp-recent-item"><span class="bp-recent-value">${p.usedToday ? (p.todayIp ?? '0.0') : '&#8212;'}</span><span class="bp-recent-label">IP</span></span>
           <span class="bp-recent-item"><span class="bp-recent-value">${p.usedToday ? (p.todayPc ?? 0) : '&#8212;'}</span><span class="bp-recent-label">P</span></span>
@@ -2932,7 +2932,7 @@
       return `<div class="roster-row"><span class="roster-order">${i + 1}</span><span class="roster-name">${starter.name}</span><span class="roster-pos">${starter.pos}</span></div>`;
     }).join('');
     const benchHtml = benchPlayers.length
-      ? benchPlayers.map(p => `<div class="roster-row"><span class="roster-name">${p.name}</span><span class="roster-pos">${p.pos}</span></div>`).join('')
+      ? benchPlayers.map(p => `<div class="roster-row"><span class="roster-name">${p.name}${p.entered ? ' <span class="bp-badge">ENTERED</span>' : ''}</span><span class="roster-pos">${p.pos}</span></div>`).join('')
       : '<div class="roster-empty">None</div>';
 
     return `
@@ -3974,7 +3974,7 @@
       ? `<div class="pog-section" id="wpaLeaders-${game.gamePk}"><div class="potg-loading">Loading game highlights&#8230;</div></div>`
       : '';
 
-    // The Scorecard tab's own "Box Score" link always points at the game
+    // The Scorecard tab's own "Game Summary" link always points at the game
     // already on screen there, so a "View Full Scorecard" CTA in that one
     // context would just reload the same game -- suppressed via this flag
     // rather than a gamePk comparison, since it should only ever apply to
@@ -4035,7 +4035,7 @@
     }));
     openGameSummaryModal(dateStr, neutralGames, teamName);
   }
-  // Scorecard tab's "Box Score" link -- reuses the exact same modal as
+  // Scorecard tab's "Game Summary" link -- reuses the exact same modal as
   // the Daily/Schedule tabs, just fed the one game already loaded there
   // (with linescore attached, so the box score renders instantly instead
   // of needing the lazy fetch Final tiles from other tabs rely on).
@@ -4427,10 +4427,18 @@
       const homeBullpen = await buildBullpenList(liveData.boxscore.teams.home, away.starterPitcherId, season, officialDate, allPlays, 'top');
       const awayBullpen = await buildBullpenList(liveData.boxscore.teams.away, home.starterPitcherId, season, officialDate, allPlays, 'bottom');
 
+      // A starter's battingOrder is a clean multiple of 100 (100, 200, ...);
+      // a substitute who enters for that slot gets that slot's number plus
+      // 1, 2, etc. (101, 102, ...), so an entered bench player still reads
+      // as "not a starter" while gaining a battingOrder -- kept in the
+      // Bench section (rather than only showing up as a substitute line
+      // under the original starter in the scorecard grid) and flagged with
+      // `entered` so the roster modal can tag them instead of dropping them.
       function getBenchPlayers(sideBoxscore) {
         return Object.values(sideBoxscore.players || {})
-          .filter(p => p.person && p.position && p.position.abbreviation !== 'P' && !p.battingOrder)
-          .map(p => ({ name: p.person.fullName, pos: p.position.abbreviation }));
+          .filter(p => p.person && p.position && p.position.abbreviation !== 'P'
+            && (!p.battingOrder || parseInt(p.battingOrder) % 100 !== 0))
+          .map(p => ({ name: p.person.fullName, pos: p.position.abbreviation, entered: !!p.battingOrder }));
       }
       rosterStore[awayName] = renderRosterContent(awayName, awayBullpen, awayRows, getBenchPlayers(liveData.boxscore.teams.away));
       rosterStore[homeName] = renderRosterContent(homeName, homeBullpen, homeRows, getBenchPlayers(liveData.boxscore.teams.home));
@@ -4439,7 +4447,7 @@
 
       // Text for the always-visible compact score strip. The venue header,
       // inning-by-inning box score, and top-play highlights all live in the
-      // game summary modal (opened via the "Box Score" link) instead of
+      // game summary modal (opened via the "Game Summary" link) instead of
       // here, so the scorecard grid keeps the viewport.
       let compactStateHtml = '';
       let compactCountHtml = '';
@@ -4500,7 +4508,7 @@
         <span class="score-strip-teams">${awayAbbr}${showRuns ? ` <span class="score-strip-run">${awayRuns}</span>` : ''} @ ${homeAbbr}${showRuns ? ` <span class="score-strip-run">${homeRuns}</span>` : ''}</span>
         <span class="score-strip-state">${compactStateHtml}</span>
         ${compactCountHtml}
-        <button type="button" class="box-score-link">Box Score</button>
+        <button type="button" class="box-score-link">Game Summary</button>
       `;
 
       // Fed to showCurrentGameSummary() when the link above is clicked --
