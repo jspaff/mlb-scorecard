@@ -138,10 +138,17 @@
      .sheet -- margin-top cancels .tab-header's own margin-bottom exactly,
      so the two boxes are flush with zero gap regardless of scroll
      position (see .sticky-header-group for why this isn't its own sticky
-     element). */
+     element). Deliberately has NO horizontal margin: unlike .tab-header,
+     which bleeds -18px to cancel #mlb-root's own padding and touch its
+     outer edge, .sheet below (and the original .sticky-top nested in it)
+     never bleeds past #mlb-root's padding box -- it's a narrower inset
+     card. Leaving this box's width alone (just sitting naturally inside
+     that same padding box) reproduces that exact width instead of
+     matching .tab-header's wider, edge-to-edge bleed. Only the padding
+     re-creates the original's left/right text inset. */
   .score-strip-bar {
     background: var(--paper);
-    margin: -14px -18px 0;
+    margin-top: -14px;
     padding: 0 18px;
   }
 
@@ -1552,6 +1559,7 @@
 
   @media (max-width: 520px) {
     .sheet { padding: 14px; }
+    .score-strip-bar { padding-left: 14px; padding-right: 14px; }
     .standings-grid { grid-template-columns: 1fr; }
     .roster-columns { flex-direction: column; gap: 14px 0; }
     .calendar-day { min-height: 52px; padding: 2px 1px 3px; }
