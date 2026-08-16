@@ -41,6 +41,13 @@
     margin: -18px -18px 14px;
     padding: 18px 18px 16px;
     box-shadow: 0 6px 8px -6px rgba(11, 15, 12, 0.35);
+    /* Promotes this and .sticky-top to their own compositing layers --
+       stacked `position: sticky` elements are known to occasionally
+       repaint a frame late on some mobile browsers (observed: Android
+       Chrome, on an ordinary scroll, not just a fast fling), briefly
+       showing whatever's behind through the seam. This is the standard
+       mitigation; it doesn't change layout or appearance. */
+    will-change: transform;
   }
   .tab-bar {
     display: flex;
@@ -131,6 +138,7 @@
     padding-left: 18px;
     padding-right: 18px;
     box-shadow: 0 6px 8px -6px rgba(11, 15, 12, 0.35);
+    will-change: transform; /* see .tab-header */
   }
 
   /* The scorecard grid is the point of this tab, so the header stays down
@@ -4923,6 +4931,20 @@
   // a sliver of gap between the two sticky elements that the content
   // scrolling underneath shows through. Rounding up instead means the worst
   // case is a sub-pixel overlap, hidden under the header's own background.
+  //
+  // .tab-header and the score strip are two independently `position:
+  // sticky` elements, and on at least some mobile browsers (observed:
+  // Android Chrome, during an ordinary scroll -- not just a fast fling)
+  // they can visibly drift apart for a stretch of the scroll, exposing
+  // whatever's behind. Re-measuring only on load and on ResizeObserver
+  // (a real content/height change) doesn't catch that, since --tabbar-h's
+  // *value* isn't actually wrong when it happens -- something about how
+  // the browser is applying it mid-scroll is. Re-running the same
+  // measurement on every scroll frame (rAF-throttled, and a no-op unless
+  // the height actually changed) is cheap insurance against that, paired
+  // with the will-change hints above (the more likely fix, since this is
+  // the classic symptom of two stacked sticky elements landing on
+  // different compositing layers and repainting a frame apart).
   const tabHeaderEl = document.querySelector('.tab-header');
   function syncTabHeaderHeight() {
     document.documentElement.style.setProperty('--tabbar-h', Math.ceil(tabHeaderEl.getBoundingClientRect().height) + 'px');
@@ -4930,6 +4952,15 @@
   syncTabHeaderHeight();
   if (window.ResizeObserver) new ResizeObserver(syncTabHeaderHeight).observe(tabHeaderEl);
   else window.addEventListener('resize', syncTabHeaderHeight);
+  let tabHeaderSyncQueued = false;
+  window.addEventListener('scroll', () => {
+    if (tabHeaderSyncQueued) return;
+    tabHeaderSyncQueued = true;
+    requestAnimationFrame(() => {
+      tabHeaderSyncQueued = false;
+      syncTabHeaderHeight();
+    });
+  }, { passive: true });
 
   const playerSearchInput = document.getElementById('playerSearchInput');
   const playerSearchResults = document.getElementById('playerSearchResults');
