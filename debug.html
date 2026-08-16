@@ -56,7 +56,12 @@
     max-height: 260px; overflow-y: auto;
   }
   .copybtn { font-size: 13px; padding: 8px 12px; width: auto; margin: 6px 0 0; }
+  .probebtn { font-size: 13px; padding: 8px 12px; width: auto; margin: 6px 0 0 6px; background: #d9a91a; }
   details summary { cursor: pointer; font-size: 13px; color: #c3c8bb; margin-top: 8px; }
+  .probe-log { margin-top: 8px; font-size: 12px; }
+  .probe-row { padding: 3px 0; border-bottom: 1px solid #3b4336; }
+  .probe-row.hit { color: #d9a91a; font-weight: 700; }
+  .probe-row.miss { color: #8a8478; }
 </style>
 </head>
 <body>
@@ -99,7 +104,7 @@
   const statusEl = document.getElementById('status');
   const resultsEl = document.getElementById('results');
   const reviewKeyRe = /review|challenge|abs/i;
-  const TAKEN_PITCH_CALLS = ['Ball', 'Called Strike'];
+  const TAKEN_PITCH_CALLS = ['Ball', 'Called Strike', 'Hit By Pitch'];
   let matchCounter = 0;
 
   function scanForReviewKeys(obj, path, out) {
@@ -143,9 +148,94 @@
       <div class="sub">gamePk ${gamePk} &middot; ${pitchCount} pitch(es) &middot; result: ${(play.result && play.result.event) || '?'}</div>
       ${hitsHtml}
       <button class="copybtn" data-idx="${idx}">Copy full play JSON</button>
+      <button class="probebtn" data-idx="${idx}" data-gamepk="${gamePk}">Probe timecodes for the moment this was reviewed</button>
+      <div class="probe-log" data-idx="${idx}"></div>
       <details><summary>Raw play JSON</summary><pre>${json.replace(/</g, '&lt;')}</pre></details>
     `;
     resultsEl.appendChild(div);
+  }
+
+  function parseTimecode(t) {
+    // MLB timecodes are "YYYYMMDD_HHMMSS" in UTC.
+    const y = t.slice(0, 4), mo = t.slice(4, 6), d = t.slice(6, 8);
+    const h = t.slice(9, 11), mi = t.slice(11, 13), s = t.slice(13, 15);
+    return Date.parse(`${y}-${mo}-${d}T${h}:${mi}:${s}Z`);
+  }
+
+  async function probeTimecodes(gamePk, play, logEl) {
+    logEl.textContent = 'Fetching timecode list...';
+    let timestamps;
+    try {
+      timestamps = await fetch(`https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live/timestamps`).then(r => r.json());
+    } catch (e) {
+      logEl.textContent = 'Timestamps fetch failed: ' + e.message;
+      return;
+    }
+    if (!Array.isArray(timestamps) || !timestamps.length) {
+      logEl.textContent = 'No timecodes returned for this game.';
+      return;
+    }
+
+    const startMs = play.about && play.about.startTime ? Date.parse(play.about.startTime) : null;
+    const endMs = play.about && play.about.endTime ? Date.parse(play.about.endTime) : startMs;
+    if (!startMs) {
+      logEl.textContent = 'This play has no about.startTime to anchor the search window.';
+      return;
+    }
+    const windowStart = startMs - 60000;
+    const windowEnd = endMs + 5 * 60000;
+
+    let candidates = timestamps
+      .map(t => ({ t, ms: parseTimecode(t) }))
+      .filter(x => !isNaN(x.ms) && x.ms >= windowStart && x.ms <= windowEnd)
+      .sort((a, b) => a.ms - b.ms);
+
+    if (!candidates.length) {
+      logEl.textContent = `No timecodes found in the window ${new Date(windowStart).toISOString()} to ${new Date(windowEnd).toISOString()}.`;
+      return;
+    }
+
+    const MAX_PROBES = 30;
+    if (candidates.length > MAX_PROBES) {
+      const step = candidates.length / MAX_PROBES;
+      candidates = Array.from({ length: MAX_PROBES }, (_, i) => candidates[Math.floor(i * step)]);
+    }
+
+    logEl.innerHTML = `Probing ${candidates.length} timecode(s)...`;
+    const rows = [];
+    let firstHit = null;
+    for (let i = 0; i < candidates.length; i++) {
+      const { t } = candidates[i];
+      logEl.innerHTML = rows.join('') + `<div class="probe-row">Checking ${i + 1}/${candidates.length} (${t})...</div>`;
+      let feed;
+      try {
+        feed = await fetch(`https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live?timecode=${t}`).then(r => r.json());
+      } catch (e) {
+        rows.push(`<div class="probe-row miss">${t}: fetch failed</div>`);
+        continue;
+      }
+      const plays = (feed.liveData && feed.liveData.plays && feed.liveData.plays.allPlays) || [];
+      const snapPlay = plays.find(p => p.atBatIndex === play.atBatIndex);
+      if (!snapPlay) {
+        rows.push(`<div class="probe-row miss">${t}: play not present yet</div>`);
+        continue;
+      }
+      const pitches = (snapPlay.playEvents || []).filter(pe => pe.isPitch || pe.type === 'pitch');
+      const reviewedPitch = pitches.find(pe => pe.details && pe.details.hasReview);
+      if (reviewedPitch) {
+        rows.push(`<div class="probe-row hit">${t}: pitch ${reviewedPitch.pitchNumber} hasReview=true (${(reviewedPitch.details.description)})</div>`);
+        if (!firstHit) {
+          firstHit = { t, snapPlay, reviewedPitch };
+          window.__probeHit = snapPlay;
+        }
+      } else {
+        rows.push(`<div class="probe-row miss">${t}: no per-pitch hasReview among ${pitches.length} pitch(es)</div>`);
+      }
+    }
+    const summary = firstHit
+      ? `<div class="probe-row hit">CONFIRMED at ${firstHit.t} -- pitch ${firstHit.reviewedPitch.pitchNumber}. Full snapshot play stashed on window.__probeHit; run copy(JSON.stringify(window.__probeHit, null, 2)) to grab it.</div>`
+      : `<div class="probe-row miss">No timecode in this window showed a per-pitch hasReview=true.</div>`;
+    logEl.innerHTML = summary + rows.join('');
   }
 
   async function scanAll() {
@@ -236,15 +326,24 @@
   }
 
   resultsEl.addEventListener('click', (e) => {
-    const btn = e.target.closest('.copybtn');
-    if (!btn) return;
-    const match = window[`__abMatch${btn.dataset.idx}`];
-    const text = JSON.stringify(match, null, 2);
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(() => {
-        btn.textContent = 'Copied!';
-        setTimeout(() => { btn.textContent = 'Copy full play JSON'; }, 1500);
-      });
+    const copyBtn = e.target.closest('.copybtn');
+    if (copyBtn) {
+      const match = window[`__abMatch${copyBtn.dataset.idx}`];
+      const text = JSON.stringify(match, null, 2);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          copyBtn.textContent = 'Copied!';
+          setTimeout(() => { copyBtn.textContent = 'Copy full play JSON'; }, 1500);
+        });
+      }
+      return;
+    }
+    const probeBtn = e.target.closest('.probebtn');
+    if (probeBtn) {
+      const match = window[`__abMatch${probeBtn.dataset.idx}`];
+      const logEl = resultsEl.querySelector(`.probe-log[data-idx="${probeBtn.dataset.idx}"]`);
+      probeTimecodes(probeBtn.dataset.gamepk, match, logEl);
+      return;
     }
   });
 
