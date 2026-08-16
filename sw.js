@@ -1,7 +1,13 @@
 // App-shell cache for the installed PWA. Only intercepts same-origin GET
 // requests, so statsapi.mlb.com and Google Fonts always hit the network
 // directly — this never proxies or caches live game data.
-const CACHE_NAME = 'mlb-scorecard-v1';
+//
+// fetch() below serves the cached app shell immediately and only refreshes
+// the cache in the background for the *next* load -- so bump this on every
+// deploy that changes index.html (not just edits to this file), or
+// installed clients can sit a full version behind indefinitely, each reload
+// only fetching the update that shows up on the load after it.
+const CACHE_NAME = 'mlb-scorecard-v2';
 const APP_SHELL = [
   './',
   './index.html',
