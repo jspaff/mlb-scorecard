@@ -121,17 +121,28 @@
     box-shadow: 0 2px 0 rgba(0,0,0,0.25) inset, 0 4px 14px rgba(0,0,0,0.35);
   }
 
-  .sticky-top {
-    position: sticky;
-    top: var(--tabbar-h, 42px);
-    z-index: 20;
+  /* Pinned to the bottom of the screen instead of stacking a second sticky
+     element under .tab-header -- the score is always visible while
+     scrolling the grid, but there's nothing else anchored to the same
+     edge for it to visually seam against. */
+  .score-bottom-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
     background: var(--paper);
-    padding-top: 2px;
-    margin: -2px -18px 0;
-    padding-left: 18px;
-    padding-right: 18px;
-    box-shadow: 0 6px 8px -6px rgba(11, 15, 12, 0.35);
+    border-top: 1px solid var(--paper-line);
+    box-shadow: 0 -6px 14px -4px rgba(11, 15, 12, 0.45);
+    padding: 8px 18px calc(8px + env(safe-area-inset-bottom, 0px));
   }
+  .score-bottom-bar[hidden], .score-bottom-bar:empty { display: none; }
+
+  /* Reserves room at the bottom of the scorecard grid so the last rows
+     aren't hidden behind the fixed .score-bottom-bar sitting on top of
+     them -- #mlbBody is the scorecard tab's own content container, so
+     this doesn't affect any other tab's .sheet. */
+  #mlbBody { padding-bottom: 90px; }
 
   /* The scorecard grid is the point of this tab, so the header stays down
      to a single-line score strip -- venue info and the inning-by-inning
@@ -1540,7 +1551,7 @@
 
   @media (max-width: 520px) {
     .sheet { padding: 14px; }
-    .sticky-top { margin: -2px -14px 0; padding-left: 14px; padding-right: 14px; }
+    .score-bottom-bar { padding-left: 14px; padding-right: 14px; }
     .standings-grid { grid-template-columns: 1fr; }
     .roster-columns { flex-direction: column; gap: 14px 0; }
     .calendar-day { min-height: 52px; padding: 2px 1px 3px; }
@@ -1641,6 +1652,7 @@
       <div class="mlb-status-msg">Search for a player above to see their profile.</div>
     </div>
   </div>
+  <div class="score-bottom-bar" id="scoreBottomBar" data-tab-controls="scorecard" hidden></div>
   <div id="pitchOverlay" class="pitch-overlay">
     <div class="pitch-modal">
       <button id="pitchClose" class="pitch-close" aria-label="Close">&#10005;</button>
@@ -1684,6 +1696,7 @@
   const dateInput = document.getElementById('datePick');
   const gameSelect = document.getElementById('gamePick');
   const body = document.getElementById('mlbBody');
+  const scoreBottomBar = document.getElementById('scoreBottomBar');
   const standingsBody = document.getElementById('standingsBody');
   const standingsDateInput = document.getElementById('standingsDatePick');
   const dailyBody = document.getElementById('dailyBody');
@@ -4225,6 +4238,7 @@
   async function loadSchedule(dateStr, preferredGamePk) {
     gameSelect.innerHTML = '<option>Loading games&#8230;</option>';
     body.innerHTML = '<div class="mlb-status-msg">Fetching schedule for ' + dateStr + '&#8230;</div>';
+    scoreBottomBar.innerHTML = '';
     clearInterval(pollTimer);
     try {
       const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}`);
@@ -4511,13 +4525,16 @@
       // snap every table-scroll back to scrollLeft 0 on each poll
       const scrollLefts = Array.from(body.querySelectorAll('.table-scroll')).map(el => el.scrollLeft);
 
+      // Lives in the fixed bottom bar (#scoreBottomBar), not in .sheet --
+      // see .score-bottom-bar for why.
+      scoreBottomBar.innerHTML = `
+        <div class="score-strip">${scoreStripHtml}</div>
+        ${subLineHtml ? `<div class="score-strip-sub">${subLineHtml}</div>` : ''}
+        ${lastPlayHtml}
+      `;
+
       body.innerHTML = `
         <div class="sheet">
-          <div class="sticky-top">
-            <div class="score-strip">${scoreStripHtml}</div>
-            ${subLineHtml ? `<div class="score-strip-sub">${subLineHtml}</div>` : ''}
-            ${lastPlayHtml}
-          </div>
           ${renderTeamTable(awayName, awayRows.length ? awayRows : placeholderLineupRows(), numInnings, away.pitcherByInning, away.starterPitcherId, columnsPerInning, homePitcherCard, 'away', liveBatterInfo, season)}
           ${renderTeamTable(homeName, homeRows.length ? homeRows : placeholderLineupRows(), numInnings, home.pitcherByInning, home.starterPitcherId, columnsPerInning, awayPitcherCard, 'home', liveBatterInfo, season)}
         </div>
@@ -4542,6 +4559,7 @@
       }
     } catch (e) {
       body.innerHTML = '<div class="mlb-status-msg">Could not load game data. The MLB API may be unreachable right now.</div>';
+      scoreBottomBar.innerHTML = '';
     }
   }
 
@@ -4913,23 +4931,6 @@
 
     return { register, switchTo, init };
   })();
-
-  // Keep the scorecard's sticky box score pinned just below the sticky tab
-  // header instead of underneath it, whatever height the header happens to
-  // render at (font loading, wrapping, which tab's controls are showing, etc).
-  // Rounds up from the fractional getBoundingClientRect height rather than
-  // using offsetHeight's own rounding -- offsetHeight can round DOWN from
-  // the true (subpixel) height, leaving --tabbar-h a hair short and opening
-  // a sliver of gap between the two sticky elements that the content
-  // scrolling underneath shows through. Rounding up instead means the worst
-  // case is a sub-pixel overlap, hidden under the header's own background.
-  const tabHeaderEl = document.querySelector('.tab-header');
-  function syncTabHeaderHeight() {
-    document.documentElement.style.setProperty('--tabbar-h', Math.ceil(tabHeaderEl.getBoundingClientRect().height) + 'px');
-  }
-  syncTabHeaderHeight();
-  if (window.ResizeObserver) new ResizeObserver(syncTabHeaderHeight).observe(tabHeaderEl);
-  else window.addEventListener('resize', syncTabHeaderHeight);
 
   const playerSearchInput = document.getElementById('playerSearchInput');
   const playerSearchResults = document.getElementById('playerSearchResults');
