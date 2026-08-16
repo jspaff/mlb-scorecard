@@ -101,6 +101,36 @@
 </div>
 <button id="run" class="secondary">Find at-bat</button>
 
+<h3 class="divider">or explore possible values of any API field</h3>
+<div style="font-size:12px;color:#8a8478;margin-bottom:8px;">
+  Generalizes the ad-hoc probing we've done before (e.g. confirming the real award ID codes via the /v1/awards catalog). Give it an endpoint and a dot-path to a field, and it tallies every distinct value it finds — across one JSON response, or across every game on a date range if the endpoint has a <code>{gamePk}</code> placeholder.
+</div>
+<div class="row">
+  <div class="field" style="flex-basis:100%;">
+    <label for="fxUrl">Endpoint (use <code>{gamePk}</code> to scan games)</label>
+    <input id="fxUrl" value="https://statsapi.mlb.com/api/v1.1/game/{gamePk}/feed/live">
+  </div>
+</div>
+<div class="row">
+  <div class="field" style="flex-basis:100%;">
+    <label for="fxPath">Field path (dot-separated; append <code>[]</code> to a key to iterate its array)</label>
+    <input id="fxPath" value="liveData.plays.allPlays[].result.event">
+  </div>
+</div>
+<div class="row">
+  <div class="field">
+    <label for="fxDays">Days to scan (ending on the Date field above, only used with {gamePk})</label>
+    <input id="fxDays" type="number" min="1" value="1">
+  </div>
+  <div class="field">
+    <label for="fxGamePks">Or specific gamePks (comma-separated, overrides Days)</label>
+    <input id="fxGamePks" placeholder="e.g. 745804, 745805">
+  </div>
+</div>
+<button id="fxRun" class="secondary">Explore field values</button>
+<div id="fxStatus" style="margin:10px 0;font-size:14px;color:#c3c8bb;white-space:pre-wrap;"></div>
+<div id="fxResults"></div>
+
 <div id="status"></div>
 <div id="results"></div>
 
@@ -400,6 +430,144 @@
 
   document.getElementById('scanAll').addEventListener('click', scanAll);
   document.getElementById('run').addEventListener('click', run);
+
+  // Generic field-value explorer: walks a dot-path (with `key[]` array
+  // iteration) through one or more fetched JSON responses and tallies every
+  // distinct value found, so "what are the possible values of X" no longer
+  // has to be answered by guessing or by one-off scripts like scanAll/run above.
+  const fxStatusEl = document.getElementById('fxStatus');
+  const fxResultsEl = document.getElementById('fxResults');
+
+  function parseFieldPath(path) {
+    return path.split('.').map(tok => {
+      const iterate = tok.endsWith('[]');
+      return { key: iterate ? tok.slice(0, -2) : tok, iterate };
+    });
+  }
+
+  // Walks `tokens` through `obj`, calling onValue(value, contextPath) for
+  // every leaf reached. `[]` tokens fan out into every array element.
+  function walkFieldPath(obj, tokens, tokenIdx, contextPath, onValue) {
+    if (obj === null || obj === undefined) return;
+    if (tokenIdx === tokens.length) {
+      onValue(obj, contextPath);
+      return;
+    }
+    const { key, iterate } = tokens[tokenIdx];
+    const next = key === '' ? obj : obj[key];
+    const nextPath = contextPath + (contextPath ? '.' : '') + (key || '[]');
+    if (iterate) {
+      if (!Array.isArray(next)) return;
+      next.forEach((el, i) => walkFieldPath(el, tokens, tokenIdx + 1, `${nextPath}[${i}]`, onValue));
+    } else {
+      walkFieldPath(next, tokens, tokenIdx + 1, nextPath, onValue);
+    }
+  }
+
+  async function gamePksForExplore(dateStr, days) {
+    const pks = [];
+    const d = new Date(dateStr + 'T12:00:00');
+    for (let i = 0; i < days; i++) {
+      const ds = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      try {
+        const sched = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${ds}`).then(r => r.json());
+        (sched.dates[0] && sched.dates[0].games || []).forEach(g => pks.push(g.gamePk));
+      } catch (e) { /* skip a day whose schedule fetch failed */ }
+      d.setDate(d.getDate() - 1);
+    }
+    return pks;
+  }
+
+  async function exploreFieldValues() {
+    fxResultsEl.innerHTML = '';
+    const urlTemplate = document.getElementById('fxUrl').value.trim();
+    const fieldPath = document.getElementById('fxPath').value.trim();
+    if (!urlTemplate || !fieldPath) {
+      fxStatusEl.textContent = 'Endpoint and field path are both required.';
+      return;
+    }
+    const tokens = parseFieldPath(fieldPath);
+    const usesGamePk = urlTemplate.includes('{gamePk}');
+
+    let urls;
+    if (usesGamePk) {
+      const explicit = document.getElementById('fxGamePks').value.trim();
+      let gamePks;
+      if (explicit) {
+        gamePks = explicit.split(',').map(s => s.trim()).filter(Boolean);
+      } else {
+        const days = Math.max(1, Number(document.getElementById('fxDays').value) || 1);
+        fxStatusEl.textContent = `Collecting gamePks for the last ${days} day(s)...`;
+        gamePks = await gamePksForExplore(document.getElementById('date').value, days);
+      }
+      if (!gamePks.length) {
+        fxStatusEl.textContent = 'No gamePks found to scan.';
+        return;
+      }
+      urls = gamePks.map(pk => ({ url: urlTemplate.replace('{gamePk}', pk), label: `gamePk ${pk}` }));
+    } else {
+      urls = [{ url: urlTemplate, label: urlTemplate }];
+    }
+
+    // value (as JSON) -> { value, count, examples: [label] }
+    const tally = new Map();
+    let fetchErrors = 0;
+    for (let i = 0; i < urls.length; i++) {
+      fxStatusEl.textContent = `Fetching ${i + 1}/${urls.length} (${urls[i].label})...`;
+      let data;
+      try {
+        data = await fetch(urls[i].url).then(r => r.json());
+      } catch (e) {
+        fetchErrors++;
+        continue;
+      }
+      walkFieldPath(data, tokens, 0, '', (value, contextPath) => {
+        const vkey = JSON.stringify(value);
+        let entry = tally.get(vkey);
+        if (!entry) {
+          entry = { value, count: 0, examples: [] };
+          tally.set(vkey, entry);
+        }
+        entry.count++;
+        if (entry.examples.length < 3) entry.examples.push(`${urls[i].label} @ ${contextPath}`);
+      });
+    }
+
+    const distinct = Array.from(tally.values()).sort((a, b) => b.count - a.count);
+    const totalHits = distinct.reduce((s, e) => s + e.count, 0);
+    fxStatusEl.textContent = `Scanned ${urls.length} URL(s)${fetchErrors ? ` (${fetchErrors} failed)` : ''}. `
+      + `Found ${totalHits} value(s) at "${fieldPath}", ${distinct.length} distinct.`;
+
+    if (!distinct.length) return;
+
+    const asArray = distinct.map(e => JSON.stringify(e.value));
+    const div = document.createElement('div');
+    div.className = 'match';
+    div.innerHTML = `
+      <h2>${distinct.length} distinct value(s)</h2>
+      <div class="sub">sorted by frequency, most common first</div>
+      ${distinct.map(e => `
+        <div class="keyhit">
+          <b>${JSON.stringify(e.value)}</b> &times; ${e.count}
+          <span style="color:#8a8478;"> — e.g. ${e.examples.join('; ')}</span>
+        </div>
+      `).join('')}
+      <button class="copybtn" id="fxCopy">Copy as JS array</button>
+    `;
+    fxResultsEl.appendChild(div);
+    document.getElementById('fxCopy').addEventListener('click', () => {
+      const text = `[${asArray.join(', ')}]`;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          const btn = document.getElementById('fxCopy');
+          btn.textContent = 'Copied!';
+          setTimeout(() => { btn.textContent = 'Copy as JS array'; }, 1500);
+        });
+      }
+    });
+  }
+
+  document.getElementById('fxRun').addEventListener('click', exploreFieldValues);
 })();
 </script>
 </body>
