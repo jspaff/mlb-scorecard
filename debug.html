@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AB Debug Tool</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 16px;
+    background: #3b4336;
+    color: #f3ecdb;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  h1 { font-size: 18px; margin: 0 0 14px; }
+  .row { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+  label { display: block; font-size: 12px; color: #c3c8bb; margin-bottom: 3px; }
+  input {
+    background: #54796d; color: #f3ecdb; border: 1px solid #6b8c80;
+    border-radius: 6px; padding: 10px; font-size: 16px; width: 100%;
+  }
+  .field { flex: 1; min-width: 100px; }
+  button {
+    background: #d9a91a; color: #3b4336; border: none; border-radius: 6px;
+    padding: 12px 16px; font-size: 16px; font-weight: 700; width: 100%;
+    margin-top: 4px;
+  }
+  button:active { opacity: 0.8; }
+  button.secondary {
+    background: #54796d; color: #f3ecdb; border: 1px solid #6b8c80; margin-top: 8px;
+  }
+  #status { margin: 14px 0; font-size: 14px; color: #c3c8bb; white-space: pre-wrap; }
+  .match {
+    background: #2f362b; border: 1px solid #545e4d; border-radius: 8px;
+    padding: 12px; margin-bottom: 14px;
+  }
+  .match h2 { font-size: 15px; margin: 0 0 8px; color: #d9a91a; }
+  .keyhit { font-size: 13px; color: #e0604a; margin: 2px 0; word-break: break-word; }
+  .keyhit b { color: #f3ecdb; }
+  pre {
+    background: #26291f; padding: 10px; border-radius: 6px; overflow-x: auto;
+    font-size: 12px; line-height: 1.4; white-space: pre-wrap; word-break: break-word;
+  }
+  .copybtn { font-size: 13px; padding: 8px 12px; width: auto; margin: 6px 0 0; }
+</style>
+</head>
+<body>
+<h1>⚾ AB Debug Tool</h1>
+<div class="row">
+  <div class="field">
+    <label for="name">Batter last name</label>
+    <input id="name" value="Sogard">
+  </div>
+  <div class="field">
+    <label for="inning">Inning</label>
+    <input id="inning" type="number" value="3">
+  </div>
+</div>
+<div class="row">
+  <div class="field">
+    <label for="date">Date</label>
+    <input id="date" type="date">
+  </div>
+</div>
+<button id="run">Find at-bat</button>
+<div id="status"></div>
+<div id="results"></div>
+
+<script>
+(function () {
+  const pad = n => String(n).padStart(2, '0');
+  const today = new Date();
+  document.getElementById('date').value =
+    `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+
+  const statusEl = document.getElementById('status');
+  const resultsEl = document.getElementById('results');
+  const reviewKeyRe = /review|challenge|abs/i;
+
+  function scanForReviewKeys(obj, path, out) {
+    if (!obj || typeof obj !== 'object') return;
+    for (const [k, v] of Object.entries(obj)) {
+      const p = path ? `${path}.${k}` : k;
+      if (reviewKeyRe.test(k)) out.push([p, v]);
+      if (v && typeof v === 'object') scanForReviewKeys(v, p, out);
+    }
+  }
+
+  async function run() {
+    resultsEl.innerHTML = '';
+    const lastName = document.getElementById('name').value.trim();
+    const inningNum = Number(document.getElementById('inning').value);
+    const dateStr = document.getElementById('date').value;
+    const nameRe = new RegExp(lastName, 'i');
+
+    statusEl.textContent = `Fetching schedule for ${dateStr}...`;
+    let sched;
+    try {
+      sched = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}`).then(r => r.json());
+    } catch (e) {
+      statusEl.textContent = 'Schedule fetch failed: ' + e.message;
+      return;
+    }
+    const gamePks = (sched.dates[0] && sched.dates[0].games || []).map(g => g.gamePk);
+    if (!gamePks.length) {
+      statusEl.textContent = `No games found on ${dateStr}.`;
+      return;
+    }
+
+    let found = false;
+    for (let i = 0; i < gamePks.length; i++) {
+      const gamePk = gamePks[i];
+      statusEl.textContent = `Checking game ${i + 1}/${gamePks.length} (gamePk ${gamePk})...`;
+      let feed;
+      try {
+        feed = await fetch(`https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live`).then(r => r.json());
+      } catch (e) {
+        continue;
+      }
+      const plays = (feed.liveData && feed.liveData.plays && feed.liveData.plays.allPlays) || [];
+      const matches = plays.filter(p =>
+        p.about && p.about.inning === inningNum &&
+        p.matchup && p.matchup.batter && nameRe.test(p.matchup.batter.fullName || '')
+      );
+      if (matches.length) {
+        found = true;
+        statusEl.textContent = `Found ${matches.length} match(es) in gamePk ${gamePk}.`;
+        matches.forEach((match, idx) => {
+          window[`__abMatch${idx}`] = match;
+          const hits = [];
+          scanForReviewKeys(match, '', hits);
+          const div = document.createElement('div');
+          div.className = 'match';
+          const hitsHtml = hits.length
+            ? hits.map(([p, v]) => `<div class="keyhit"><b>${p}</b> = ${JSON.stringify(v)}</div>`).join('')
+            : '<div class="keyhit" style="color:#c3c8bb">No review/challenge/abs-named keys found on this play.</div>';
+          const json = JSON.stringify(match, null, 2);
+          div.innerHTML = `
+            <h2>${match.matchup.batter.fullName} — inning ${match.about.inning}</h2>
+            ${hitsHtml}
+            <button class="copybtn" data-idx="${idx}">Copy full play JSON</button>
+            <pre>${json.replace(/</g, '&lt;')}</pre>
+          `;
+          resultsEl.appendChild(div);
+        });
+        break;
+      }
+    }
+    if (!found) statusEl.textContent = `No play found for "${lastName}" in inning ${inningNum} on ${dateStr}.`;
+  }
+
+  resultsEl.addEventListener('click', (e) => {
+    const btn = e.target.closest('.copybtn');
+    if (!btn) return;
+    const match = window[`__abMatch${btn.dataset.idx}`];
+    const text = JSON.stringify(match, null, 2);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = 'Copy full play JSON'; }, 1500);
+      });
+    }
+  });
+
+  document.getElementById('run').addEventListener('click', run);
+})();
+</script>
+</body>
+</html>
