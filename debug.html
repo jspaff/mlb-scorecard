@@ -14,6 +14,10 @@
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
   h1 { font-size: 18px; margin: 0 0 14px; }
+  h3.divider {
+    font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em;
+    color: #8a8478; margin: 18px 0 8px; border-top: 1px solid #545e4d; padding-top: 14px;
+  }
   .row { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
   label { display: block; font-size: 12px; color: #c3c8bb; margin-bottom: 3px; }
   input {
@@ -28,25 +32,48 @@
   }
   button:active { opacity: 0.8; }
   button.secondary {
-    background: #54796d; color: #f3ecdb; border: 1px solid #6b8c80; margin-top: 8px;
+    background: #54796d; color: #f3ecdb; border: 1px solid #6b8c80;
   }
   #status { margin: 14px 0; font-size: 14px; color: #c3c8bb; white-space: pre-wrap; }
   .match {
     background: #2f362b; border: 1px solid #545e4d; border-radius: 8px;
     padding: 12px; margin-bottom: 14px;
   }
-  .match h2 { font-size: 15px; margin: 0 0 8px; color: #d9a91a; }
+  .match.interesting { border-color: #e0604a; }
+  .match h2 { font-size: 15px; margin: 0 0 4px; color: #d9a91a; }
+  .match .sub { font-size: 12px; color: #c3c8bb; margin-bottom: 8px; }
+  .badge {
+    display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 6px;
+    border-radius: 4px; margin-left: 6px; vertical-align: middle;
+  }
+  .badge.ended-on-call { background: #54796d; color: #f3ecdb; }
+  .badge.ended-on-contact { background: #e0604a; color: #f3ecdb; }
   .keyhit { font-size: 13px; color: #e0604a; margin: 2px 0; word-break: break-word; }
   .keyhit b { color: #f3ecdb; }
   pre {
     background: #26291f; padding: 10px; border-radius: 6px; overflow-x: auto;
     font-size: 12px; line-height: 1.4; white-space: pre-wrap; word-break: break-word;
+    max-height: 260px; overflow-y: auto;
   }
   .copybtn { font-size: 13px; padding: 8px 12px; width: auto; margin: 6px 0 0; }
+  details summary { cursor: pointer; font-size: 13px; color: #c3c8bb; margin-top: 8px; }
 </style>
 </head>
 <body>
 <h1>⚾ AB Debug Tool</h1>
+
+<div class="row">
+  <div class="field">
+    <label for="date">Date</label>
+    <input id="date" type="date">
+  </div>
+</div>
+<button id="scanAll">Scan all ABS reviews on this date</button>
+<div style="font-size:12px;color:#8a8478;margin-top:6px;">
+  Checks every play in every game and lists every at-bat with a review, no matter which pitch it landed on. Plays flagged <span class="badge ended-on-contact">ended on contact</span> are the useful ones — the review must have happened on an earlier taken pitch, not the last one, so those are exactly the cases we need a raw example of.
+</div>
+
+<h3 class="divider">or find one specific at-bat</h3>
 <div class="row">
   <div class="field">
     <label for="name">Batter last name</label>
@@ -57,13 +84,8 @@
     <input id="inning" type="number" value="3">
   </div>
 </div>
-<div class="row">
-  <div class="field">
-    <label for="date">Date</label>
-    <input id="date" type="date">
-  </div>
-</div>
-<button id="run">Find at-bat</button>
+<button id="run" class="secondary">Find at-bat</button>
+
 <div id="status"></div>
 <div id="results"></div>
 
@@ -77,6 +99,8 @@
   const statusEl = document.getElementById('status');
   const resultsEl = document.getElementById('results');
   const reviewKeyRe = /review|challenge|abs/i;
+  const TAKEN_PITCH_CALLS = ['Ball', 'Called Strike'];
+  let matchCounter = 0;
 
   function scanForReviewKeys(obj, path, out) {
     if (!obj || typeof obj !== 'object') return;
@@ -87,8 +111,86 @@
     }
   }
 
+  function lastPitchResult(play) {
+    const pitches = (play.playEvents || []).filter(pe => pe.isPitch || pe.type === 'pitch');
+    const last = pitches[pitches.length - 1];
+    return (last && last.details && last.details.description) || null;
+  }
+
+  function renderMatch(play, gamePk) {
+    const idx = matchCounter++;
+    window[`__abMatch${idx}`] = play;
+    const hits = [];
+    scanForReviewKeys(play, '', hits);
+    const lastResult = lastPitchResult(play);
+    const endedOnContact = lastResult && !TAKEN_PITCH_CALLS.includes(lastResult);
+    const badge = lastResult
+      ? (endedOnContact
+          ? `<span class="badge ended-on-contact">ended on contact (${lastResult})</span>`
+          : `<span class="badge ended-on-call">ended on taken pitch (${lastResult})</span>`)
+      : '';
+    const hitsHtml = hits.length
+      ? hits.map(([p, v]) => `<div class="keyhit"><b>${p}</b> = ${JSON.stringify(v)}</div>`).join('')
+      : '<div class="keyhit" style="color:#c3c8bb">No review/challenge/abs-named keys found on this play.</div>';
+    const json = JSON.stringify(play, null, 2);
+    const batterName = (play.matchup && play.matchup.batter && play.matchup.batter.fullName) || 'Unknown batter';
+    const inning = play.about ? play.about.inning : '?';
+    const pitchCount = (play.playEvents || []).filter(pe => pe.isPitch || pe.type === 'pitch').length;
+    const div = document.createElement('div');
+    div.className = 'match' + (endedOnContact ? ' interesting' : '');
+    div.innerHTML = `
+      <h2>${batterName} — inning ${inning} ${badge}</h2>
+      <div class="sub">gamePk ${gamePk} &middot; ${pitchCount} pitch(es) &middot; result: ${(play.result && play.result.event) || '?'}</div>
+      ${hitsHtml}
+      <button class="copybtn" data-idx="${idx}">Copy full play JSON</button>
+      <details><summary>Raw play JSON</summary><pre>${json.replace(/</g, '&lt;')}</pre></details>
+    `;
+    resultsEl.appendChild(div);
+  }
+
+  async function scanAll() {
+    resultsEl.innerHTML = '';
+    matchCounter = 0;
+    const dateStr = document.getElementById('date').value;
+
+    statusEl.textContent = `Fetching schedule for ${dateStr}...`;
+    let sched;
+    try {
+      sched = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}`).then(r => r.json());
+    } catch (e) {
+      statusEl.textContent = 'Schedule fetch failed: ' + e.message;
+      return;
+    }
+    const games = (sched.dates[0] && sched.dates[0].games) || [];
+    if (!games.length) {
+      statusEl.textContent = `No games found on ${dateStr}.`;
+      return;
+    }
+
+    let totalReviews = 0;
+    for (let i = 0; i < games.length; i++) {
+      const gamePk = games[i].gamePk;
+      const label = `${games[i].teams.away.team.abbreviation} @ ${games[i].teams.home.team.abbreviation}`;
+      statusEl.textContent = `Checking game ${i + 1}/${games.length} (${label})...`;
+      let feed;
+      try {
+        feed = await fetch(`https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live`).then(r => r.json());
+      } catch (e) {
+        continue;
+      }
+      const plays = (feed.liveData && feed.liveData.plays && feed.liveData.plays.allPlays) || [];
+      const reviewed = plays.filter(p => p.about && p.about.hasReview);
+      reviewed.forEach(p => renderMatch(p, gamePk));
+      totalReviews += reviewed.length;
+    }
+    statusEl.textContent = totalReviews
+      ? `Found ${totalReviews} reviewed at-bat(s) across ${games.length} game(s) on ${dateStr}.`
+      : `No ABS reviews found in ${games.length} game(s) on ${dateStr}.`;
+  }
+
   async function run() {
     resultsEl.innerHTML = '';
+    matchCounter = 0;
     const lastName = document.getElementById('name').value.trim();
     const inningNum = Number(document.getElementById('inning').value);
     const dateStr = document.getElementById('date').value;
@@ -126,24 +228,7 @@
       if (matches.length) {
         found = true;
         statusEl.textContent = `Found ${matches.length} match(es) in gamePk ${gamePk}.`;
-        matches.forEach((match, idx) => {
-          window[`__abMatch${idx}`] = match;
-          const hits = [];
-          scanForReviewKeys(match, '', hits);
-          const div = document.createElement('div');
-          div.className = 'match';
-          const hitsHtml = hits.length
-            ? hits.map(([p, v]) => `<div class="keyhit"><b>${p}</b> = ${JSON.stringify(v)}</div>`).join('')
-            : '<div class="keyhit" style="color:#c3c8bb">No review/challenge/abs-named keys found on this play.</div>';
-          const json = JSON.stringify(match, null, 2);
-          div.innerHTML = `
-            <h2>${match.matchup.batter.fullName} — inning ${match.about.inning}</h2>
-            ${hitsHtml}
-            <button class="copybtn" data-idx="${idx}">Copy full play JSON</button>
-            <pre>${json.replace(/</g, '&lt;')}</pre>
-          `;
-          resultsEl.appendChild(div);
-        });
+        matches.forEach(match => renderMatch(match, gamePk));
         break;
       }
     }
@@ -163,6 +248,7 @@
     }
   });
 
+  document.getElementById('scanAll').addEventListener('click', scanAll);
   document.getElementById('run').addEventListener('click', run);
 })();
 </script>
