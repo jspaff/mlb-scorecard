@@ -126,8 +126,18 @@
     top: var(--tabbar-h, 42px);
     z-index: 20;
     background: var(--paper);
-    padding-top: 2px;
-    margin: -2px -18px 0;
+    /* Two independently `position: sticky` elements (this one and
+       .tab-header) can still visibly desync by a few pixels for a frame
+       during fast/composited scrolling, even though the measured --tabbar-h
+       offset is exact at rest -- see syncTabHeaderHeight. The padding-top/
+       margin-top pair below cancel out for CONTENT position (net zero) but
+       extend the painted background 10px above the nominal top, so a
+       transient desync exposes more of this box's own background --
+       already the same color as what's behind it -- instead of a seam.
+       Sits under .tab-header's z-index, so the overlap is invisible when
+       perfectly in sync. */
+    padding-top: 10px;
+    margin: -10px -18px 0;
     padding-left: 18px;
     padding-right: 18px;
     box-shadow: 0 6px 8px -6px rgba(11, 15, 12, 0.35);
@@ -1540,7 +1550,7 @@
 
   @media (max-width: 520px) {
     .sheet { padding: 14px; }
-    .sticky-top { margin: -2px -14px 0; padding-left: 14px; padding-right: 14px; }
+    .sticky-top { margin: -10px -14px 0; padding-left: 14px; padding-right: 14px; }
     .standings-grid { grid-template-columns: 1fr; }
     .roster-columns { flex-direction: column; gap: 14px 0; }
     .calendar-day { min-height: 52px; padding: 2px 1px 3px; }
