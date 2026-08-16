@@ -2158,6 +2158,23 @@
     return desc;
   }
 
+  // As noted at NON_RESULT_EVENT_RE, MLB sometimes logs a pause as its own
+  // trailing top-level play sharing the batter's matchup, rather than as a
+  // playEvent embedded in the at-bat itself -- currentInterruption() alone
+  // misses that case. Detected as: the very last item in allPlays, for the
+  // same batter as `play`, with a genuine-pause result.event. Once a real
+  // pitch follows, MLB appends a newer play/playEvent and this stops
+  // matching on its own.
+  function trailingTopLevelPause(play, allPlays) {
+    const lastPlay = allPlays[allPlays.length - 1];
+    if (!lastPlay || lastPlay === play) return null;
+    const batterId = play.matchup && play.matchup.batter && play.matchup.batter.id;
+    const lastBatterId = lastPlay.matchup && lastPlay.matchup.batter && lastPlay.matchup.batter.id;
+    if (!batterId || batterId !== lastBatterId) return null;
+    const event = (lastPlay.result && lastPlay.result.event) || '';
+    return GENUINE_PAUSE_RE.test(event) ? event : null;
+  }
+
   // MLB's feed sometimes logs an interruption (mound visit, a timeout,
   // a pitching change mid-count, etc.) as its own top-level play with
   // result.type === 'atBat' and result.event set to the interruption's
@@ -3078,6 +3095,7 @@
           }
           const hasPitchDetail = pitchSource && (
             (pitchSource.pitches && pitchSource.pitches.length) || (pitchSource.events && pitchSource.events.length)
+            || (isLiveCell && liveBatterInfo.currentInterruption)
           );
           const cellHtml = inner ? `<div class="cell-wrap${hasPitchDetail ? ' clickable' : ''}"${pitchAttr}>${inner}</div>` : '';
           const cls = 'cell'
@@ -4365,7 +4383,9 @@
               pitches: livePitches,
               events: livePlay ? extractEvents(livePlay) : [],
               ...(livePlay ? extractHandedness(livePlay) : { batSide: null, pitchHand: null }),
-              currentInterruption: livePlay ? currentInterruption(livePlay) : null,
+              currentInterruption: livePlay
+                ? (currentInterruption(livePlay) || trailingTopLevelPause(livePlay, allPlays))
+                : null,
               batterName: (isFeedMatch && feedBatter.fullName) || nextRow.players[nextRow.players.length - 1].name,
               pitcherFullName: (linescore.defense && linescore.defense.pitcher && linescore.defense.pitcher.fullName) || ''
             };
