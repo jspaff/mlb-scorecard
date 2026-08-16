@@ -1421,11 +1421,11 @@
   }
   .player-profile-watermark {
     position: absolute;
-    top: -18px;
-    right: -18px;
+    top: -10px;
+    right: -10px;
     z-index: -1;
-    width: 200px;
-    height: 200px;
+    width: 130px;
+    height: 130px;
     object-fit: contain;
     opacity: 0.14;
     pointer-events: none;
@@ -4994,11 +4994,17 @@
     ].filter(Boolean).join(' &#183; ');
   }
   function playerBioLine(person) {
+    const bats = person.batSide && person.batSide.code;
+    const throwsHand = person.pitchHand && person.pitchHand.code;
+    const handedness = bats && throwsHand ? `Bats/Throws: ${bats}/${throwsHand}`
+      : bats ? `Bats: ${bats}`
+      : throwsHand ? `Throws: ${throwsHand}`
+      : null;
     return [
       person.currentAge != null ? `${person.currentAge} yrs` : null,
       person.height,
       person.weight != null ? `${person.weight} lbs` : null,
-      person.batSide && person.batSide.code ? `Bats: ${person.batSide.code}` : null
+      handedness
     ].filter(Boolean).join(' &#183; ');
   }
 
