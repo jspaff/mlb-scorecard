@@ -22,7 +22,7 @@ The page is scoped under `#mlb-root` with a set of CSS custom properties (`--pap
 
 ### Tabs
 
-Five tabs — Daily, Scorecard, Standings, Schedule, Roster — are plain markup (`data-tab-panel` / `data-tab-controls` attributes) driven by a small hand-rolled router near the bottom of the script (the `Tabs` IIFE: `register`/`switchTo`/`init`). Each tab is registered with an optional `init` (runs once, on first activation) and `onShow` (runs every time the tab becomes active). The active tab is also mirrored into the URL hash. Adding a new tab means a `register()` call plus a button + panel in the HTML — there's no routing framework to wire up.
+Six tabs — Daily, Scorecard, Standings, Schedule, Roster, Players — are plain markup (`data-tab-panel` / `data-tab-controls` attributes) driven by a small hand-rolled router near the bottom of the script (the `Tabs` IIFE: `register`/`switchTo`/`init`). Each tab is registered with an optional `init` (runs once, on first activation) and `onShow` (runs every time the tab becomes active). The active tab is also mirrored into the URL hash. Adding a new tab means a `register()` call plus a button + panel in the HTML — there's no routing framework to wire up.
 
 ### Overlays / modals
 
@@ -30,7 +30,9 @@ Pitch detail, roster, spray chart, player, game summary, and team win/loss chart
 
 ### Live polling
 
-Live-game and daily-summary polling deliberately self-reschedule with `setTimeout` (see `dailyPollTimer`) or clear-then-`setInterval` (see `pollTimer` in `fetchAndRender`) rather than a bare `setInterval`, so that a fresh call — whether triggered by the user changing dates or by the poll tick itself — can cancel whatever's pending with one `clearTimeout`/`clearInterval` at the top. This avoids a stale date's poll cycle surviving a race against a newer one. Polling only runs while a game's `abstractGameState` is `Live`, at a 15s interval.
+Live-game and daily-summary polling deliberately self-reschedule with `setTimeout` (see `dailyPollTimer`) or clear-then-`setInterval` (see `pollTimer` in `fetchAndRender`) rather than a bare `setInterval`, so that a fresh call — whether triggered by the user changing dates or by the poll tick itself — can cancel whatever's pending with one `clearTimeout`/`clearInterval` at the top. This avoids a stale date's poll cycle surviving a race against a newer one. Polling only runs while a game's `abstractGameState` is `Live`, at a 7s interval (`pollTimer`) for the Scorecard tab and a 15s interval for the Daily tab's summary (`dailyPollTimer`).
+
+`clearTimeout`/`clearInterval` alone only stops *future* ticks, though — it can't cancel a call already in flight. Every async load path that can have more than one call outstanding at once (`fetchAndRender`, `loadDailySummary`, `openGameSummaryModal`'s venue/highlights loaders, player search, `showPlayerProfile`) also guards with a bumped `xRequestId` counter, checked right before that call writes to shared state or the DOM, so a slow, now-stale response can never overwrite what a newer call already rendered. Match this when adding a new polling or debounced-fetch path.
 
 ### Scorecard rendering (the core feature)
 
