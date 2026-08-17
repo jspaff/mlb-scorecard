@@ -3810,7 +3810,20 @@
         dailyPollTimer = setTimeout(() => loadDailySummary(dateStr, true), stillLive ? 15000 : 60000);
       }
     } catch (e) {
-      if (!isPoll) dailyBody.innerHTML = apiErrorMsg("today's games");
+      if (!isPoll) {
+        dailyBody.innerHTML = apiErrorMsg("today's games");
+        return;
+      }
+      // A transient failure mid-poll (a network blip, e.g. right as the
+      // phone wakes up) must not silently kill the poll chain for the rest
+      // of the session -- unlike fetchAndRender's setInterval, this chain
+      // only keeps going if something here re-arms dailyPollTimer, and the
+      // background-resume catch-up above only acts when dailyPollTimer is
+      // set. Retry on the live cadence; once a fetch succeeds again, the
+      // normal stillLive/stillUpcoming check above takes back over.
+      if (requestId === dailyRequestId) {
+        dailyPollTimer = setTimeout(() => loadDailySummary(dateStr, true), 15000);
+      }
     }
   }
 
