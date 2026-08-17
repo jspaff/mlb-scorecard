@@ -4709,7 +4709,7 @@
       });
 
       clearInterval(pollTimer);
-      if (state === 'Live') pollTimer = setInterval(() => fetchAndRender(gamePk), 15000);
+      if (state === 'Live') pollTimer = setInterval(() => fetchAndRender(gamePk), 7000);
 
       // if the pitch modal is currently open, refresh it in place with the
       // freshly-rebuilt pitchStore rather than leaving it showing stale data.
