@@ -1932,6 +1932,12 @@
     d.setUTCDate(d.getUTCDate() + delta);
     return d.toISOString().slice(0, 10);
   }
+
+  // Shared catch-block fallback across every top-level load function --
+  // `what` names the resource that failed (e.g. 'schedule', 'roster').
+  function apiErrorMsg(what) {
+    return `<div class="mlb-status-msg">Could not load ${what}. The MLB API may be unreachable right now.</div>`;
+  }
   const sprayFilterState = {};
 
   function todayStr() {
@@ -2057,6 +2063,18 @@
     ];
     const specialMap = {};
     (specialEdges || []).forEach(s => { specialMap[s.edge] = s.label; });
+    // Label box for a special-play tag (CS/PO/S/WP/...), projected outward
+    // from the diamond center along the (cx,cy) direction so it sits just
+    // outside the edge it annotates. Shared by both the "on the bases" and
+    // "put out" edge branches below, which differ only in which point they
+    // project from and what text they show.
+    function edgeLabelSvg(cx, cy, text) {
+      const outFactor = 1.55;
+      const labelX = 20 + (cx - 20) * outFactor;
+      const labelY = 20 + (cy - 20) * outFactor;
+      return `<rect x="${labelX - 6.5}" y="${labelY - 4.5}" width="13" height="9" rx="1.5" fill="${paper}" stroke="${gold}" stroke-width="0.8"/>`
+        + `<text x="${labelX}" y="${labelY + 2.8}" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="6.5" font-weight="700" fill="${gold}">${text}</text>`;
+    }
     let svg = '<svg viewBox="0 0 40 40" width="52" height="52">';
     let labelSvg = '';
     edges.forEach(([name, p1, p2, on]) => {
@@ -2066,11 +2084,7 @@
         svg += `<line x1="${p1[0]}" y1="${p1[1]}" x2="${p2[0]}" y2="${p2[1]}" stroke="${color}" stroke-width="2.4" stroke-linecap="square"/>`;
         if (special) {
           const midX = (p1[0] + p2[0]) / 2, midY = (p1[1] + p2[1]) / 2;
-          const outFactor = 1.55;
-          const labelX = 20 + (midX - 20) * outFactor;
-          const labelY = 20 + (midY - 20) * outFactor;
-          labelSvg += `<rect x="${labelX - 6.5}" y="${labelY - 4.5}" width="13" height="9" rx="1.5" fill="${paper}" stroke="${gold}" stroke-width="0.8"/>`;
-          labelSvg += `<text x="${labelX}" y="${labelY + 2.8}" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="6.5" font-weight="700" fill="${gold}">${special}</text>`;
+          labelSvg += edgeLabelSvg(midX, midY, special);
         }
       } else if (outEdge === name) {
         const stopX = p1[0] + (p2[0] - p1[0]) * 0.55;
@@ -2083,13 +2097,7 @@
         const px = -dy / len, py = dx / len;
         const tickLen = 3.4;
         svg += `<line x1="${stopX - px * tickLen}" y1="${stopY - py * tickLen}" x2="${stopX + px * tickLen}" y2="${stopY + py * tickLen}" stroke="${brick}" stroke-width="2.2" stroke-linecap="butt"/>`;
-        if (outLabel) {
-          const outFactor = 1.55;
-          const labelX = 20 + (stopX - 20) * outFactor;
-          const labelY = 20 + (stopY - 20) * outFactor;
-          labelSvg += `<rect x="${labelX - 6.5}" y="${labelY - 4.5}" width="13" height="9" rx="1.5" fill="${paper}" stroke="${gold}" stroke-width="0.8"/>`;
-          labelSvg += `<text x="${labelX}" y="${labelY + 2.8}" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="6.5" font-weight="700" fill="${gold}">${outLabel}</text>`;
-        }
+        if (outLabel) labelSvg += edgeLabelSvg(stopX, stopY, outLabel);
       } else {
         svg += `<line x1="${p1[0]}" y1="${p1[1]}" x2="${p2[0]}" y2="${p2[1]}" stroke="${dim}" stroke-width="1.2" stroke-linecap="square"/>`;
       }
@@ -2223,7 +2231,13 @@
   // someone notices and hardcodes an exception for it, which is exactly the
   // bug a stolen base used to trigger (it briefly replaced "At bat in
   // progress..." as if the game were paused, when the at-bat was still live).
-  const GENUINE_PAUSE_RE = /mound visit|batter timeout|timeout|replay review|challenge|ejection/i;
+  // Shared with NON_RESULT_EVENT_RE below, which is a superset of these same
+  // terms plus a few more (pitching/defensive/offensive subs, etc.) -- built
+  // from one array so the "pauses happening right now" list can't silently
+  // drift out of sync with the broader "not a real result" list it's a
+  // subset of.
+  const PAUSE_TERMS = ['mound visit', 'batter timeout', 'timeout', 'replay review', 'challenge', 'ejection'];
+  const GENUINE_PAUSE_RE = new RegExp(PAUSE_TERMS.join('|'), 'i');
 
   // Non-pitch events worth keeping on the at-bat's record once it's done --
   // everything except a genuine pause (see GENUINE_PAUSE_RE), so a personnel
@@ -2277,7 +2291,10 @@
   // unfiltered, that play gets treated as a completed at-bat: it grabs a
   // cell in the grid, and getPlayCode falls back to an initialism (e.g.
   // "Batter Timeout" -> "BT") that shows up in place of the real result.
-  const NON_RESULT_EVENT_RE = /mound visit|pitching change|pitching sub|defensive sub|defensive switch|offensive sub|ejection|challenge|replay review|batter timeout|timeout|game advisory/i;
+  const NON_RESULT_EVENT_RE = new RegExp(
+    [...PAUSE_TERMS, 'pitching change', 'pitching sub', 'defensive sub', 'defensive switch', 'offensive sub', 'game advisory'].join('|'),
+    'i'
+  );
 
   // MLB's own boxscoreName field is the correct source for a player's
   // display surname -- it keeps suffixes like "Jr."/"II" attached to the
@@ -2858,11 +2875,43 @@
     203: { name: 'National League West', order: 5 }
   };
 
-  function renderStandingsContent(records, date) {
-    const divisions = (records || [])
+  // Shared by renderStandingsContent/renderWildcardContent below: only the
+  // divisions DIVISION_INFO knows about, with at least one team, in display order.
+  function sortedDivisionsWithTeams(records) {
+    return (records || [])
       .filter(r => r.division && DIVISION_INFO[r.division.id] && r.teamRecords && r.teamRecords.length)
       .slice()
       .sort((a, b) => DIVISION_INFO[a.division.id].order - DIVISION_INFO[b.division.id].order);
+  }
+  function alDivisions(divisions) { return divisions.filter(d => DIVISION_INFO[d.division.id].name.startsWith('American League')); }
+  function nlDivisions(divisions) { return divisions.filter(d => DIVISION_INFO[d.division.id].name.startsWith('National League')); }
+  const STANDINGS_HEADER_ROW = `<div class="standings-row standings-header-row">
+    <span class="standings-team">Team</span>
+    <span class="standings-num">W</span>
+    <span class="standings-num">L</span>
+    <span class="standings-num">PCT</span>
+    <span class="standings-num">GB</span>
+    <span class="standings-num">Strk</span>
+  </div>`;
+  // gbValue is tr.gamesBack for the division view, tr.wildCardGamesBack for
+  // the wild-card view -- the only field that differs between the two.
+  function standingsRow(tr, gbValue) {
+    const streak = (tr.streak && tr.streak.streakCode) || '&#8212;';
+    const gb = gbValue === '-' || gbValue == null ? '&#8212;' : gbValue;
+    const teamId = tr.team && tr.team.id;
+    const teamName = (tr.team && tr.team.name) || '';
+    return `<div class="standings-row">
+      <button type="button" class="standings-team standings-team-btn" data-team-id="${teamId}" data-team-name="${teamName}">${teamName}</button>
+      <span class="standings-num">${tr.wins ?? 0}</span>
+      <span class="standings-num">${tr.losses ?? 0}</span>
+      <span class="standings-num">${tr.winningPercentage ?? '.000'}</span>
+      <span class="standings-num">${gb}</span>
+      <span class="standings-num">${streak}</span>
+    </div>`;
+  }
+
+  function renderStandingsContent(records, date) {
+    const divisions = sortedDivisionsWithTeams(records);
     if (!divisions.length) {
       return `<div class="pitch-header">Standings</div><div class="pitch-empty">Standings not available for this date.</div>`;
     }
@@ -2871,74 +2920,24 @@
       const teams = (div.teamRecords || []).slice().sort((a, b) =>
         (parseInt(a.divisionRank, 10) || 99) - (parseInt(b.divisionRank, 10) || 99)
       );
-      const rows = teams.map(tr => {
-        const streak = (tr.streak && tr.streak.streakCode) || '&#8212;';
-        const gb = tr.gamesBack === '-' || tr.gamesBack == null ? '&#8212;' : tr.gamesBack;
-        const teamId = tr.team && tr.team.id;
-        const teamName = (tr.team && tr.team.name) || '';
-        return `<div class="standings-row">
-          <button type="button" class="standings-team standings-team-btn" data-team-id="${teamId}" data-team-name="${teamName}">${teamName}</button>
-          <span class="standings-num">${tr.wins ?? 0}</span>
-          <span class="standings-num">${tr.losses ?? 0}</span>
-          <span class="standings-num">${tr.winningPercentage ?? '.000'}</span>
-          <span class="standings-num">${gb}</span>
-          <span class="standings-num">${streak}</span>
-        </div>`;
-      }).join('');
+      const rows = teams.map(tr => standingsRow(tr, tr.gamesBack)).join('');
       return `<div class="roster-section-title">${DIVISION_INFO[div.division.id].name}</div>
-        <div class="standings-row standings-header-row">
-          <span class="standings-team">Team</span>
-          <span class="standings-num">W</span>
-          <span class="standings-num">L</span>
-          <span class="standings-num">PCT</span>
-          <span class="standings-num">GB</span>
-          <span class="standings-num">Strk</span>
-        </div>
+        ${STANDINGS_HEADER_ROW}
         ${rows}`;
     }
 
-    const alDivisions = divisions.filter(d => DIVISION_INFO[d.division.id].name.startsWith('American League'));
-    const nlDivisions = divisions.filter(d => DIVISION_INFO[d.division.id].name.startsWith('National League'));
     const grid = `<div class="standings-grid">
-      <div class="standings-col">${alDivisions.map(renderDivision).join('')}</div>
-      <div class="standings-col">${nlDivisions.map(renderDivision).join('')}</div>
+      <div class="standings-col">${alDivisions(divisions).map(renderDivision).join('')}</div>
+      <div class="standings-col">${nlDivisions(divisions).map(renderDivision).join('')}</div>
     </div>`;
     return `<div class="pitch-header">Standings</div><div class="pitch-subheader">As of ${date}</div>${grid}`;
   }
 
   function renderWildcardContent(records, date) {
-    const divisions = (records || [])
-      .filter(r => r.division && DIVISION_INFO[r.division.id] && r.teamRecords && r.teamRecords.length)
-      .slice()
-      .sort((a, b) => DIVISION_INFO[a.division.id].order - DIVISION_INFO[b.division.id].order);
+    const divisions = sortedDivisionsWithTeams(records);
     if (!divisions.length) {
       return `<div class="pitch-header">Standings</div><div class="pitch-empty">Standings not available for this date.</div>`;
     }
-
-    function row(tr) {
-      const streak = (tr.streak && tr.streak.streakCode) || '&#8212;';
-      const gb = tr.wildCardGamesBack;
-      const gbDisplay = gb === '-' || gb == null ? '&#8212;' : gb;
-      const teamId = tr.team && tr.team.id;
-      const teamName = (tr.team && tr.team.name) || '';
-      return `<div class="standings-row">
-        <button type="button" class="standings-team standings-team-btn" data-team-id="${teamId}" data-team-name="${teamName}">${teamName}</button>
-        <span class="standings-num">${tr.wins ?? 0}</span>
-        <span class="standings-num">${tr.losses ?? 0}</span>
-        <span class="standings-num">${tr.winningPercentage ?? '.000'}</span>
-        <span class="standings-num">${gbDisplay}</span>
-        <span class="standings-num">${streak}</span>
-      </div>`;
-    }
-
-    const header = `<div class="standings-row standings-header-row">
-      <span class="standings-team">Team</span>
-      <span class="standings-num">W</span>
-      <span class="standings-num">L</span>
-      <span class="standings-num">PCT</span>
-      <span class="standings-num">GB</span>
-      <span class="standings-num">Strk</span>
-    </div>`;
 
     function renderLeague(leagueDivisions, label) {
       const leaders = [];
@@ -2957,21 +2956,19 @@
       });
 
       const contenderRows = contenders.map((tr, i) => {
-        const html = row(tr);
+        const html = standingsRow(tr, tr.wildCardGamesBack);
         return i === 3 ? `<div class="wc-cutoff-line"></div>${html}` : html;
       }).join('');
 
       return `<div class="roster-section-title">${label} Division Leaders</div>
-        ${header}${leaders.map(row).join('')}
+        ${STANDINGS_HEADER_ROW}${leaders.map(tr => standingsRow(tr, tr.wildCardGamesBack)).join('')}
         <div class="roster-section-title">${label} Wild Card</div>
-        ${header}${contenderRows}`;
+        ${STANDINGS_HEADER_ROW}${contenderRows}`;
     }
 
-    const alDivisions = divisions.filter(d => DIVISION_INFO[d.division.id].name.startsWith('American League'));
-    const nlDivisions = divisions.filter(d => DIVISION_INFO[d.division.id].name.startsWith('National League'));
     const grid = `<div class="standings-grid">
-      <div class="standings-col">${renderLeague(alDivisions, 'AL')}</div>
-      <div class="standings-col">${renderLeague(nlDivisions, 'NL')}</div>
+      <div class="standings-col">${renderLeague(alDivisions(divisions), 'AL')}</div>
+      <div class="standings-col">${renderLeague(nlDivisions(divisions), 'NL')}</div>
     </div>`;
     return `<div class="pitch-header">Standings</div><div class="pitch-subheader">Wild Card &#8226; As of ${date}</div>${grid}`;
   }
@@ -2987,13 +2984,10 @@
          <div class="player-stat-line"><span class="psl-label">HR</span><span>${seasonStat.homeRuns ?? '&#8212;'}</span></div>
          <div class="player-stat-line"><span class="psl-label">RBI</span><span>${seasonStat.rbi ?? '&#8212;'}</span></div>`
       : `<div class="pitch-empty">Season stats not available.</div>`;
-    const awardsHtml = awardTags && awardTags.length
-      ? `<div class="player-award-tags">${awardTags.map(t => `<span class="player-award-tag">${t}</span>`).join('')}</div>`
-      : '';
-    const headshotUrl = `https://img.mlbstatic.com/mlb-photos/image/upload/w_112,q_100,f_auto/v1/people/${info.id}/headshot/67/current`;
+    const awardsHtml = renderAwardTags(awardTags);
     return `
       <div class="player-modal-head">
-        <img class="player-headshot" src="${headshotUrl}" alt="" loading="lazy" onerror="this.style.display='none'">
+        <img class="player-headshot" src="${headshotUrl(info.id)}" alt="" loading="lazy" onerror="this.style.display='none'">
         <div>
           <div class="pitch-header">${info.name}</div>
           <div class="pitch-subheader">${info.pos} &#183; ${info.team}</div>
@@ -3284,14 +3278,17 @@
   const SCHEDULE_TEAM_KEY = 'mlb-schedule-team';
   const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-  function populateScheduleTeamSelect() {
+  // Shared by the Schedule and Roster tabs' team pickers -- both populate
+  // the same 30-team list and fall back the same way to a saved localStorage
+  // pick, differing only in which <select> and which storage key.
+  function populateTeamSelect(selectEl, storageKey) {
     const teams = Object.keys(TEAM_NICKNAMES)
       .map(id => ({ id, name: TEAM_NICKNAMES[id] }))
       .sort((a, b) => a.name.localeCompare(b.name));
-    scheduleTeamSelect.innerHTML = teams.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+    selectEl.innerHTML = teams.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
     let saved = null;
-    try { saved = localStorage.getItem(SCHEDULE_TEAM_KEY); } catch (e) {}
-    scheduleTeamSelect.value = (saved && TEAM_NICKNAMES[saved]) ? saved : teams[0].id;
+    try { saved = localStorage.getItem(storageKey); } catch (e) {}
+    selectEl.value = (saved && TEAM_NICKNAMES[saved]) ? saved : teams[0].id;
   }
 
   async function fetchTeamSchedule(teamId, season) {
@@ -3546,7 +3543,7 @@
       currentScheduleTeam = { teamId, gamesByDate };
       renderScheduleAllMonths(gamesByDate, seasonStart, seasonEnd);
     } catch (e) {
-      scheduleBody.innerHTML = '<div class="mlb-status-msg">Could not load schedule. The MLB API may be unreachable right now.</div>';
+      scheduleBody.innerHTML = apiErrorMsg('schedule');
     }
   }
 
@@ -3565,6 +3562,16 @@
 
   function capLogoUrl(teamId) {
     return `https://www.mlbstatic.com/team-logos/team-cap-on-dark/${teamId}.svg`;
+  }
+
+  function headshotUrl(personId, width) {
+    return `https://img.mlbstatic.com/mlb-photos/image/upload/w_${width || 112},q_100,f_auto/v1/people/${personId}/headshot/67/current`;
+  }
+
+  function renderAwardTags(awardTags) {
+    return awardTags && awardTags.length
+      ? `<div class="player-award-tags">${awardTags.map(t => `<span class="player-award-tag">${t}</span>`).join('')}</div>`
+      : '';
   }
 
   function dailyTileRow(name, teamId, score, won) {
@@ -3589,19 +3596,14 @@
       tileClass = 'is-final';
       const winnerId = awayWon ? game.awayId : game.homeId;
       if (winnerId) watermarkHtml = `<img class="daily-tile-watermark" src="${capLogoUrl(winnerId)}" alt="">`;
-    } else if (game.state === 'Live') {
+    } else {
       // MLB flips abstractGameState to 'Live' during pre-game warmup, well
-      // ahead of first pitch -- treat this like a not-yet-started game
+      // ahead of first pitch -- treat that like a not-yet-started game too
       // (inningState/inningOrdinal would otherwise show a fabricated "Top
       // 1st" before any pitch has actually been thrown).
       rowsHtml = dailyTileRow(game.awayName, game.awayId, null, false)
         + dailyTileRow(game.homeName, game.homeId, null, false);
-      stateLabel = game.detailedState || 'Warmup';
-      tileClass = 'is-preview';
-    } else {
-      rowsHtml = dailyTileRow(game.awayName, game.awayId, null, false)
-        + dailyTileRow(game.homeName, game.homeId, null, false);
-      stateLabel = formatGameTime(game.gameDate);
+      stateLabel = game.state === 'Live' ? (game.detailedState || 'Warmup') : formatGameTime(game.gameDate);
       tileClass = 'is-preview';
     }
     return `
@@ -3808,7 +3810,7 @@
         dailyPollTimer = setTimeout(() => loadDailySummary(dateStr, true), stillLive ? 15000 : 60000);
       }
     } catch (e) {
-      if (!isPoll) dailyBody.innerHTML = '<div class="mlb-status-msg">Could not load today\'s games. The MLB API may be unreachable right now.</div>';
+      if (!isPoll) dailyBody.innerHTML = apiErrorMsg("today's games");
     }
   }
 
@@ -3854,16 +3856,6 @@
   let rosterTabView = 'active';
   const teamRosterCache = {};
   const teamInjuryCache = {};
-
-  function populateRosterTabTeamSelect() {
-    const teams = Object.keys(TEAM_NICKNAMES)
-      .map(id => ({ id, name: TEAM_NICKNAMES[id] }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-    rosterTabTeamSelect.innerHTML = teams.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
-    let saved = null;
-    try { saved = localStorage.getItem(ROSTER_TAB_TEAM_KEY); } catch (e) {}
-    rosterTabTeamSelect.value = (saved && TEAM_NICKNAMES[saved]) ? saved : teams[0].id;
-  }
 
   async function fetchTeamRoster(teamId, rosterType) {
     const key = `${teamId}-${rosterType}`;
@@ -4032,7 +4024,7 @@
         rosterTabBody.innerHTML = `<div class="sheet">${renderInjuredList(fortyMan, injuryMap)}</div>`;
       }
     } catch (e) {
-      rosterTabBody.innerHTML = '<div class="mlb-status-msg">Could not load roster. The MLB API may be unreachable right now.</div>';
+      rosterTabBody.innerHTML = apiErrorMsg('roster');
     }
   }
 
@@ -4152,9 +4144,15 @@
     gameSummaryOverlay.classList.add('open');
     // Venue (name+city) applies to every game regardless of state; box
     // score and highlights only make sense once a game has actually
-    // started, so those stay gated to Live/Final.
+    // started, so those stay gated to Live/Final. A Live game whose
+    // linescore and weather are already known (the Scorecard tab's own
+    // "Game Summary" link, via currentGameSummary) has nothing left for
+    // this to fetch -- renderGameSummaryGame won't have left a placeholder
+    // for either, and a Live game never gets the highlights placeholder --
+    // so skip it instead of fetching the whole feed for nothing.
     games.filter(g => !g.venueHtml && g.venueId).forEach(g => loadVenueInto(g, requestId));
-    games.filter(g => g.state === 'Final' || g.state === 'Live').forEach(g => loadGameSummaryExtrasInto(g, requestId));
+    games.filter(g => g.state === 'Final' || (g.state === 'Live' && (!g.linescore || !g.weather)))
+      .forEach(g => loadGameSummaryExtrasInto(g, requestId));
   }
 
   function showGameSummaryModal(dateStr) {
@@ -4180,8 +4178,13 @@
     if (!currentGameSummary) return;
     openGameSummaryModal(currentGameSummary.dateStr, [{ ...currentGameSummary, hideScorecardCta: true }]);
   }
+  // Shared by every modal here whose hide function is just this one line
+  // (hidePitchPopup is kept separate since it also resets extra state).
+  function closeOverlay(overlay) {
+    overlay.classList.remove('open');
+  }
   function hideGameSummaryModal() {
-    gameSummaryOverlay.classList.remove('open');
+    closeOverlay(gameSummaryOverlay);
   }
 
   function findBoxscorePlayer(boxscore, personId) {
@@ -4226,7 +4229,14 @@
   // math entirely for Live games -- their box score is still worth fetching
   // eagerly (see openGameSummaryModal), but WPA swings mid-game aren't a
   // "top play/players" verdict yet, so there's no point paying for that call.
+  // Only cached when includeHighlights is true, i.e. the game is Final (see
+  // loadGameSummaryExtrasInto) -- mirrors gameStatsCache/fetchGameStats: a
+  // Final game's result never changes, so it's safe to skip refetching on a
+  // repeat modal open, but a Live game's is deliberately fetched fresh every
+  // time.
+  const gameHighlightsCache = {};
   async function fetchGameHighlights(gamePk, includeHighlights) {
+    if (includeHighlights && gameHighlightsCache[gamePk] !== undefined) return gameHighlightsCache[gamePk];
     try {
       const feedRes = await fetch(`https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live`);
       const feedData = await feedRes.json();
@@ -4281,7 +4291,9 @@
           : buildBatterStatLineParts(stats && stats.batting);
         return { id: p.id, name: p.name, statLine: renderStatLineParts(statParts) };
       });
-      return { leaders, playOfGame, linescore, weather };
+      const result = { leaders, playOfGame, linescore, weather };
+      if (includeHighlights) gameHighlightsCache[gamePk] = result;
+      return result;
     } catch (e) {
       return { leaders: [], playOfGame: null, linescore: null, weather: null };
     }
@@ -4304,10 +4316,9 @@
   function renderPlayersOfTheGame(leaders) {
     if (!leaders.length) return '';
     const players = leaders.map(p => {
-      const headshotUrl = `https://img.mlbstatic.com/mlb-photos/image/upload/w_112,q_100,f_auto/v1/people/${p.id}/headshot/67/current`;
       return `
         <div class="potg-player">
-          <img class="potg-headshot" src="${headshotUrl}" alt="" loading="lazy" onerror="this.style.display='none'">
+          <img class="potg-headshot" src="${headshotUrl(p.id)}" alt="" loading="lazy" onerror="this.style.display='none'">
           <div class="potg-player-name">${p.name}</div>
           ${p.statLine ? `<div class="potg-stat-line">${p.statLine}</div>` : ''}
         </div>`;
@@ -4408,7 +4419,7 @@
       gameSelect.value = chosen;
       loadGame(chosen);
     } catch (e) {
-      body.innerHTML = '<div class="mlb-status-msg">Could not load schedule. The MLB API may be unreachable right now.</div>';
+      body.innerHTML = apiErrorMsg('schedule');
     }
   }
 
@@ -4427,7 +4438,7 @@
         : renderStandingsContent(records, dateStr);
       standingsBody.innerHTML = `<div class="sheet">${content}</div>`;
     } catch (e) {
-      standingsBody.innerHTML = '<div class="mlb-status-msg">Could not load standings. The MLB API may be unreachable right now.</div>';
+      standingsBody.innerHTML = apiErrorMsg('standings');
     }
   }
 
@@ -4453,7 +4464,11 @@
       const detailedState = gameData.status.detailedState;
       const allPlays = (liveData.plays && liveData.plays.allPlays) || [];
       const personIndex = gameData.players || {};
-      const venue = await getVenueInfo(gameData.venue && gameData.venue.id);
+      // Started here (not awaited yet) so it resolves in parallel with all
+      // the synchronous work below and the bullpen fetches -- it's cached by
+      // venue id and doesn't feed into anything else in this function, so
+      // there's no reason to block on it this early.
+      const venuePromise = getVenueInfo(gameData.venue && gameData.venue.id);
 
       const numInnings = Math.max((linescore.innings || []).length, 9);
       const away = buildTeamRows(liveData.boxscore.teams.away, 'top', allPlays, personIndex);
@@ -4465,9 +4480,10 @@
       // column, applied to BOTH teams' tables so they stay aligned even
       // though only one side actually used the extra column
       const columnsPerInning = {};
+      const allRows = [...awayRows, ...homeRows];
       for (let i = 1; i <= numInnings; i++) {
         let max = 1;
-        [...awayRows, ...homeRows].forEach(r => {
+        allRows.forEach(r => {
           const len = (r.cells[i] || []).length;
           if (len > max) max = len;
         });
@@ -4578,7 +4594,8 @@
       // switch can race past this call (see the requestId guard below).
       const season = gameData.game.season;
       const officialDate = gameData.datetime.officialDate;
-      const [homeBullpen, awayBullpen] = await Promise.all([
+      const [venue, homeBullpen, awayBullpen] = await Promise.all([
+        venuePromise,
         buildBullpenList(liveData.boxscore.teams.home, away.starterPitcherId, season, officialDate, allPlays, 'top'),
         buildBullpenList(liveData.boxscore.teams.away, home.starterPitcherId, season, officialDate, allPlays, 'bottom')
       ]);
@@ -4640,9 +4657,13 @@
         const strikes = halfOver ? 0 : (linescore.strikes ?? 0);
         const outs = halfOver ? 0 : (linescore.outs ?? 0);
         const offense = halfOver ? {} : (linescore.offense || {});
-        const inningHalf = halfOver
-          ? (linescore.inningHalf === 'Top' ? 'Mid' : 'End')
-          : (linescore.inningHalf === 'Top' ? 'Top' : 'Bot');
+        // linescore.inningHalf is only ever 'Top'/'Bottom'; halfOver derives
+        // the fuller 'Middle'/'End' state, then formatInningState (shared
+        // with the Daily tab's tile) does the abbreviation.
+        const halfState = halfOver
+          ? (linescore.inningHalf === 'Top' ? 'Middle' : 'End')
+          : (linescore.inningHalf === 'Top' ? 'Top' : 'Bottom');
+        const inningHalf = formatInningState(halfState);
         const inningNum = linescore.currentInning;
         const onFirst = !!offense.first, onSecond = !!offense.second, onThird = !!offense.third;
         const batter = offense.batter ? offense.batter.fullName : '';
@@ -4749,7 +4770,7 @@
       }
     } catch (e) {
       if (requestId !== fetchAndRenderRequestId) return;
-      body.innerHTML = '<div class="mlb-status-msg">Could not load game data. The MLB API may be unreachable right now.</div>';
+      body.innerHTML = apiErrorMsg('game data');
       scoreBottomBar.innerHTML = '';
     }
   }
@@ -5047,7 +5068,7 @@
     rosterOverlay.classList.add('open');
   }
   function hideRosterModal() {
-    rosterOverlay.classList.remove('open');
+    closeOverlay(rosterOverlay);
   }
 
   const sprayOverlay = document.getElementById('sprayOverlay');
@@ -5060,7 +5081,7 @@
     sprayOverlay.classList.add('open');
   }
   function hideSprayModal() {
-    sprayOverlay.classList.remove('open');
+    closeOverlay(sprayOverlay);
   }
 
   const teamChartOverlay = document.getElementById('teamChartOverlay');
@@ -5079,7 +5100,7 @@
     }
   }
   function hideTeamChartModal() {
-    teamChartOverlay.classList.remove('open');
+    closeOverlay(teamChartOverlay);
   }
 
   // Tab framework: register a tab with an optional lazy `init` (runs once,
@@ -5269,14 +5290,11 @@
   }
 
   function renderPlayerProfile(person, careerSplits, awardTags) {
-    const headshotUrl = `https://img.mlbstatic.com/mlb-photos/image/upload/w_180,q_100,f_auto/v1/people/${person.id}/headshot/67/current`;
     const teamId = person.currentTeam && person.currentTeam.id;
     const watermarkHtml = teamId ? `<img class="player-profile-watermark" src="${capLogoUrl(teamId)}" alt="" aria-hidden="true">` : '';
     const meta = playerMetaLine(person);
     const bio = playerBioLine(person);
-    const awardsHtml = awardTags && awardTags.length
-      ? `<div class="player-award-tags">${awardTags.map(t => `<span class="player-award-tag">${t}</span>`).join('')}</div>`
-      : '';
+    const awardsHtml = renderAwardTags(awardTags);
     const careerHtml = careerSplits === null
       ? '<div class="mlb-status-msg">Loading career stats&#8230;</div>'
       : careerSplits.length
@@ -5285,7 +5303,7 @@
     return `<div class="sheet player-profile-sheet">
       ${watermarkHtml}
       <div class="player-profile-head">
-        <img class="player-profile-photo" src="${headshotUrl}" alt="" loading="lazy" onerror="this.style.display='none'">
+        <img class="player-profile-photo" src="${headshotUrl(person.id, 180)}" alt="" loading="lazy" onerror="this.style.display='none'">
         <div>
           <div class="player-profile-name">${person.fullName}</div>
           ${meta ? `<div class="player-profile-meta">${meta}</div>` : ''}
@@ -5331,8 +5349,8 @@
   });
   Tabs.register('scorecard');
   Tabs.register('standings', { init: () => loadStandings(standingsDateInput.value) });
-  Tabs.register('schedule', { init: () => { populateScheduleTeamSelect(); loadTeamSchedule(scheduleTeamSelect.value); } });
-  Tabs.register('roster', { init: () => { populateRosterTabTeamSelect(); loadRosterTab(rosterTabTeamSelect.value); } });
+  Tabs.register('schedule', { init: () => { populateTeamSelect(scheduleTeamSelect, SCHEDULE_TEAM_KEY); loadTeamSchedule(scheduleTeamSelect.value); } });
+  Tabs.register('roster', { init: () => { populateTeamSelect(rosterTabTeamSelect, ROSTER_TAB_TEAM_KEY); loadRosterTab(rosterTabTeamSelect.value); } });
   Tabs.register('players');
 
   const playerOverlay = document.getElementById('playerOverlay');
@@ -5352,7 +5370,7 @@
     playerModalBody.innerHTML = renderPlayerModalContent(info, seasonStat, summarizeAwardTags(awards));
   }
   function hidePlayerModal() {
-    playerOverlay.classList.remove('open');
+    closeOverlay(playerOverlay);
   }
 
   document.addEventListener('click', (e) => {
