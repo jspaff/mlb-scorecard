@@ -41,9 +41,23 @@ The Scorecard tab turns the live game feed's play-by-play (`allPlays`) into trad
 
 ### Data flow and caching
 
-All rendering functions follow a `renderX(...) -> HTML string` pattern, assigned via `innerHTML` — there's no virtual DOM or DOM-diffing. In-memory, module-scoped caches/stores (`gameLogCache`, `standingsCache`, `venueCache`, `playerStore`, `rosterStore`, `sprayStore`, `pitchStore`) key off IDs (game, player, team, venue) to avoid refetching when switching tabs or reopening modals within a session; nothing is persisted across page loads.
+Functions split into three layers by name: `getX`/`fetchX` (async, hits the API, returns data — the `get`/`fetch` prefix itself carries no distinction, both are used for the same kind of function), `buildX` (sync, transforms raw API data into a structured intermediate like `buildTeamRows`/`buildBullpenList` — not HTML), and `renderX` (sync, returns an HTML string, assigned via `innerHTML` — there's no virtual DOM or DOM-diffing).
+
+Every `getX`/`fetchX` function wraps its `fetch` in its own try/catch and degrades gracefully on failure rather than letting callers deal with a rejected promise — match this when adding a new one. In-memory, module-scoped caches/stores (`gameLogCache`, `standingsCache`, `venueCache`, `playerStore`, `rosterStore`, `sprayStore`, `pitchStore`, etc.) key off IDs or composite keys (e.g. `` `${personId}-${season}` ``) to avoid refetching when switching tabs or reopening modals within a session; nothing is persisted across page loads. Whether a *failure* gets cached depends on the data, and both cases exist on purpose:
+- Static, low-stakes lookups (venue info, player bio/awards) cache `null` on failure — a bad request that stays bad for the rest of the session is a fair trade against hammering a flaky endpoint, and a blank field is a low-stakes degradation.
+- Anything that can still change during the session (live game stats, in-progress schedules) does *not* cache a failure — see `fetchGameStats`, which only writes to its cache when `isFinal` and otherwise returns fresh empty results every call, so a transient error doesn't lock in stale/missing data for a game that's still moving.
+
+When adding a new cached fetcher, pick the side of that line matching the data, don't default to "always cache null on error."
 
 MLB Stats API endpoints in use: `/v1/schedule`, `/v1/standings`, `/v1/teams/{id}/roster`, `/v1/people/{id}/stats`, `/v1/venues/{id}`, `/v1/transactions`, `/v1/game/{gamePk}/winProbability`, and `/v1.1/game/{gamePk}/feed/live` (the live boxscore/play-by-play feed that drives the Scorecard and Daily tabs).
+
+### HTML building and escaping
+
+There is no `escapeHtml`/sanitization helper anywhere in the file — every `renderX` function interpolates data straight into template strings assigned via `innerHTML`. This is safe only because every value ever interpolated originates from the MLB Stats API, never from anything the user types or pastes. The two `localStorage` values (below) don't break this either, since both are team IDs chosen from a fixed `<select>`, not free text. If a future change ever interpolates user-typed input (a search box, a note field, anything) into an `innerHTML` template, it must be escaped explicitly at that point — don't assume the rest of the file's unescaped interpolation makes that safe too.
+
+### Persisted preferences
+
+`localStorage` is used sparingly and only for trivial, session-spanning UI preferences — currently `mlb-schedule-team` and `mlb-roster-tab-team`, each just a team ID string. Keys are prefixed `mlb-`, and every read/write is wrapped in its own try/catch (private browsing / storage-disabled safety). Keep any new persisted preference this narrow — small values, `mlb-`-prefixed key, try/catch-wrapped — rather than growing an ad hoc storage layer.
 
 ## Conventions observed in this codebase
 

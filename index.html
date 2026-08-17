@@ -3297,38 +3297,42 @@
   async function fetchTeamSchedule(teamId, season) {
     const key = `${teamId}-${season}`;
     if (scheduleCache[key]) return scheduleCache[key];
-    const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&teamId=${teamId}&season=${season}&gameType=R`;
-    const res = await fetch(url);
-    const data = await res.json();
-    const dates = data.dates || [];
-    const gamesByDate = {};
-    dates.forEach(d => {
-      gamesByDate[d.date] = d.games.map(g => {
-        const isHome = g.teams.home.team.id === Number(teamId);
-        const opponent = isHome ? g.teams.away.team : g.teams.home.team;
-        return {
-          gamePk: g.gamePk,
-          gameNumber: g.gameNumber || 1,
-          isHome,
-          opponent: teamAbbr(opponent),
-          opponentFull: teamNickname(opponent),
-          gameDate: g.gameDate,
-          state: g.status.abstractGameState,
-          detailedState: g.status.detailedState,
-          homeScore: g.teams.home.score,
-          awayScore: g.teams.away.score,
-          venueId: g.venue && g.venue.id,
-          venueName: g.venue && g.venue.name
-        };
+    try {
+      const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&teamId=${teamId}&season=${season}&gameType=R`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const dates = data.dates || [];
+      const gamesByDate = {};
+      dates.forEach(d => {
+        gamesByDate[d.date] = d.games.map(g => {
+          const isHome = g.teams.home.team.id === Number(teamId);
+          const opponent = isHome ? g.teams.away.team : g.teams.home.team;
+          return {
+            gamePk: g.gamePk,
+            gameNumber: g.gameNumber || 1,
+            isHome,
+            opponent: teamAbbr(opponent),
+            opponentFull: teamNickname(opponent),
+            gameDate: g.gameDate,
+            state: g.status.abstractGameState,
+            detailedState: g.status.detailedState,
+            homeScore: g.teams.home.score,
+            awayScore: g.teams.away.score,
+            venueId: g.venue && g.venue.id,
+            venueName: g.venue && g.venue.name
+          };
+        });
       });
-    });
-    const result = {
-      gamesByDate,
-      seasonStart: dates.length ? dates[0].date : null,
-      seasonEnd: dates.length ? dates[dates.length - 1].date : null
-    };
-    scheduleCache[key] = result;
-    return result;
+      const result = {
+        gamesByDate,
+        seasonStart: dates.length ? dates[0].date : null,
+        seasonEnd: dates.length ? dates[dates.length - 1].date : null
+      };
+      scheduleCache[key] = result;
+      return result;
+    } catch (e) {
+      return { gamesByDate: {}, seasonStart: null, seasonEnd: null };
+    }
   }
 
   const teamChartCache = {};
