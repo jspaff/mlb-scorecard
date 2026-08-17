@@ -3868,19 +3868,23 @@
   async function fetchTeamRoster(teamId, rosterType) {
     const key = `${teamId}-${rosterType}`;
     if (teamRosterCache[key]) return teamRosterCache[key];
-    const url = `https://statsapi.mlb.com/api/v1/teams/${teamId}/roster?rosterType=${rosterType}`;
-    const res = await fetch(url);
-    const data = await res.json();
-    const roster = (data.roster || []).map(r => ({
-      id: r.person && r.person.id,
-      name: r.person && r.person.fullName,
-      jersey: r.jerseyNumber || '',
-      posAbbr: (r.position && r.position.abbreviation) || '',
-      posType: (r.position && r.position.type) || 'Other',
-      statusDesc: (r.status && r.status.description) || ''
-    }));
-    teamRosterCache[key] = roster;
-    return roster;
+    try {
+      const url = `https://statsapi.mlb.com/api/v1/teams/${teamId}/roster?rosterType=${rosterType}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const roster = (data.roster || []).map(r => ({
+        id: r.person && r.person.id,
+        name: r.person && r.person.fullName,
+        jersey: r.jerseyNumber || '',
+        posAbbr: (r.position && r.position.abbreviation) || '',
+        posType: (r.position && r.position.type) || 'Other',
+        statusDesc: (r.status && r.status.description) || ''
+      }));
+      teamRosterCache[key] = roster;
+      return roster;
+    } catch (e) {
+      return [];
+    }
   }
 
   async function fetchTeamInjuryDetails(teamId) {
@@ -4427,9 +4431,17 @@
     }
   }
 
+  // Bumped on every call so a stale call (an older poll tick, or a poll for
+  // a game the user has since switched away from -- clearInterval only ever
+  // stops *future* ticks, not one already in flight) can tell it's no longer
+  // the latest before it commits anything. Checked once, right before the
+  // point where results start getting written to shared state / the DOM --
+  // see the guard below, mirroring the requestId pattern already used by
+  // loadDailySummary / openGameSummaryModal / player search & profile.
+  let fetchAndRenderRequestId = 0;
   async function fetchAndRender(gamePk) {
+    const requestId = ++fetchAndRenderRequestId;
     try {
-      pitchStore = {};
       const res = await fetch(`https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live`);
       const data = await res.json();
       const gameData = data.gameData;
@@ -4438,12 +4450,6 @@
       const awayName = gameData.teams.away.name;
       const homeName = gameData.teams.home.name;
       const state = gameData.status.abstractGameState;
-      // Team names for the challenge-outcome text in the pitch popup, keyed
-      // by team id (play.reviewDetails.challengeTeamId) -- see extractPitches.
-      absChallengeInfo = {
-        [gameData.teams.away.id]: gameData.teams.away.locationName || teamNickname(gameData.teams.away),
-        [gameData.teams.home.id]: gameData.teams.home.locationName || teamNickname(gameData.teams.home)
-      };
       const detailedState = gameData.status.detailedState;
       const allPlays = (liveData.plays && liveData.plays.allPlays) || [];
       const personIndex = gameData.players || {};
@@ -4566,11 +4572,32 @@
       const awayPitcherCard = pitcherCardFor(home.starterPitcherId, liveData.boxscore.teams.away);
 
       // bullpen: every pitcher who isn't today's starter, with pitch counts
-      // from the prior two days for fatigue context
+      // from the prior two days for fatigue context. The two sides don't
+      // depend on each other, so fetch them together rather than back to
+      // back -- this also shortens the window in which a newer poll/game
+      // switch can race past this call (see the requestId guard below).
       const season = gameData.game.season;
       const officialDate = gameData.datetime.officialDate;
-      const homeBullpen = await buildBullpenList(liveData.boxscore.teams.home, away.starterPitcherId, season, officialDate, allPlays, 'top');
-      const awayBullpen = await buildBullpenList(liveData.boxscore.teams.away, home.starterPitcherId, season, officialDate, allPlays, 'bottom');
+      const [homeBullpen, awayBullpen] = await Promise.all([
+        buildBullpenList(liveData.boxscore.teams.home, away.starterPitcherId, season, officialDate, allPlays, 'top'),
+        buildBullpenList(liveData.boxscore.teams.away, home.starterPitcherId, season, officialDate, allPlays, 'bottom')
+      ]);
+
+      // Everything above this point is local computation from this call's
+      // own fetch; nothing has touched shared state or the DOM yet. Bail
+      // here if a newer call (a later poll tick, or the user switching
+      // games/dates) has since started -- otherwise a slow, now-stale
+      // response could still overwrite what the newer call already
+      // rendered. See fetchAndRenderRequestId.
+      if (requestId !== fetchAndRenderRequestId) return;
+
+      pitchStore = {};
+      // Team names for the challenge-outcome text in the pitch popup, keyed
+      // by team id (play.reviewDetails.challengeTeamId) -- see extractPitches.
+      absChallengeInfo = {
+        [gameData.teams.away.id]: gameData.teams.away.locationName || teamNickname(gameData.teams.away),
+        [gameData.teams.home.id]: gameData.teams.home.locationName || teamNickname(gameData.teams.home)
+      };
 
       // A starter's battingOrder is a clean multiple of 100 (100, 200, ...);
       // a substitute who enters for that slot gets that slot's number plus
@@ -4721,6 +4748,7 @@
         else hidePitchPopup();
       }
     } catch (e) {
+      if (requestId !== fetchAndRenderRequestId) return;
       body.innerHTML = '<div class="mlb-status-msg">Could not load game data. The MLB API may be unreachable right now.</div>';
       scoreBottomBar.innerHTML = '';
     }
@@ -5389,12 +5417,13 @@
   });
 
   // Backgrounding the tab (or the installed PWA) gets setTimeout/setInterval
-  // throttled or fully suspended by the browser, so a 15s poll can silently
-  // stop firing while it's not visible -- returning to a live game or the
-  // Daily tab could otherwise sit on a stale fetch from before backgrounding
-  // for an unpredictable stretch, until whatever's left of the suspended
-  // timer eventually fires. Catch up immediately instead, the same way a
-  // fresh navigation would: clear whatever poll is pending and refetch now.
+  // throttled or fully suspended by the browser, so a poll (7s for a live
+  // game, 15s/60s for the Daily tab) can silently stop firing while it's not
+  // visible -- returning to a live game or the Daily tab could otherwise sit
+  // on a stale fetch from before backgrounding for an unpredictable stretch,
+  // until whatever's left of the suspended timer eventually fires. Catch up
+  // immediately instead, the same way a fresh navigation would: clear
+  // whatever poll is pending and refetch now.
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible') return;
     if (pollTimer && gameSelect.value) {
