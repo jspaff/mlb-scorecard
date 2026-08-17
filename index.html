@@ -5442,8 +5442,21 @@
   // until whatever's left of the suspended timer eventually fires. Catch up
   // immediately instead, the same way a fresh navigation would: clear
   // whatever poll is pending and refetch now.
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState !== 'visible') return;
+  //
+  // visibilitychange alone isn't reliable enough for this on mobile: an
+  // installed home-screen app can have its process suspended or discarded
+  // by the OS while backgrounded (observed on Android; standalone-mode
+  // WebKit on iOS has its own history of the same class of bug), and on
+  // return the event doesn't reliably fire in time, if at all, so the
+  // catch-up above never runs. pageshow and window focus both fire
+  // reliably on resume regardless of why visibilitychange didn't, so all
+  // three are wired to the same catch-up and a short cooldown collapses
+  // the near-simultaneous firings a single resume tends to produce.
+  let lastResumeCatchUp = 0;
+  function catchUpAfterResume() {
+    const now = Date.now();
+    if (now - lastResumeCatchUp < 1000) return;
+    lastResumeCatchUp = now;
     if (pollTimer && gameSelect.value) {
       clearInterval(pollTimer);
       fetchAndRender(gameSelect.value);
@@ -5453,7 +5466,12 @@
       dailyPollTimer = null;
       loadDailySummary(dailyDateInput.value, true);
     }
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') catchUpAfterResume();
   });
+  window.addEventListener('pageshow', catchUpAfterResume);
+  window.addEventListener('focus', catchUpAfterResume);
 
   Tabs.init('daily');
   loadSchedule(dateInput.value);
