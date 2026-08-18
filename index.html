@@ -5226,12 +5226,12 @@
     pitchModalBody.innerHTML = `
       <div class="pitch-header">${c.batterName || 'Batter'}</div>
       <div class="pitch-subheader">vs ${c.pitcherFullName || 'pitcher'}</div>
+      ${c.videoUrl ? `<a class="pog-watch" href="${c.videoUrl}" target="_blank" rel="noopener noreferrer">Watch &#9654;</a>` : ''}
       ${rows}
       ${locationHtml}
       ${reviewsHtml}
       ${eventsHtml}
       ${c.playDesc ? `<div class="pitch-final-desc">${c.playDesc}</div>` : ''}
-      ${c.videoUrl ? `<a class="pog-watch" href="${c.videoUrl}" target="_blank" rel="noopener noreferrer">Watch &#9654;</a>` : ''}
     `;
     pitchOverlay.classList.add('open');
     wirePitchLocationSync();
