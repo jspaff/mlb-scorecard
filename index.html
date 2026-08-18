@@ -1441,34 +1441,22 @@
     z-index: 0;
     overflow: hidden;
   }
-  /* The container query context for the spray widget below: whether the
-     chart sits beside the name or wraps underneath depends on this
-     element's own width, not the viewport's, so it works the same whether
-     the app is full-screen or embedded in a narrow panel. */
-  .player-profile-head {
-    container-type: inline-size;
-    container-name: profile-head;
-    position: relative;
-    margin-bottom: 16px;
-  }
   .player-profile-watermark {
     position: absolute;
-    left: 40px;
-    top: -16px;
-    z-index: 0;
-    width: 118px;
-    height: 118px;
+    top: 14px;
+    right: 14px;
+    z-index: -1;
+    width: 130px;
+    height: 130px;
     object-fit: contain;
-    opacity: 0.16;
+    opacity: 0.14;
     pointer-events: none;
   }
-  .head-flex {
+  .player-profile-head {
     display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    gap: 12px 14px;
-    position: relative;
-    z-index: 1;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
   }
   .player-profile-photo {
     width: 80px;
@@ -1478,12 +1466,8 @@
     background: var(--paper-line);
     border: 2px solid var(--gold);
     box-shadow: 0 3px 0 var(--paper-line);
-    flex: 0 0 auto;
+    flex-shrink: 0;
   }
-  /* growth-priority flex sibling of .spray-mini below -- always keeps the
-     space it needs for the name/meta/bio/Bats-Throws text, so the chart is
-     what gives way and wraps first. */
-  .name-meta { flex: 999 1 160px; min-width: 140px; }
   .player-profile-name {
     font-family: 'Oswald', sans-serif;
     font-weight: 600;
@@ -1500,32 +1484,17 @@
     font-family: 'IBM Plex Mono', monospace;
     font-size: 11.5px;
     color: var(--ink-soft);
-    margin-top: 6px;
-  }
-  .player-profile-bt {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11.5px;
-    color: var(--ink-soft);
-    margin-top: 2px;
+    margin-top: 4px;
   }
 
-  /* base width 150px, but flex-grow:1 means once it has no sibling left on
-     its line (wrapped below the name/meta column) it stretches to fill the
-     full row instead of sitting stranded at 150px. */
-  .spray-mini { flex: 1 1 150px; min-width: 130px; }
-  .spray-mini .spray-card { margin: 0; padding: 8px 10px 10px; text-align: left; }
-  .spray-mini .spray-card-head {
-    display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 5px;
-  }
-  .spray-card-title {
-    font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 9.5px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
-    white-space: nowrap;
-  }
+  /* Season spray chart, below the Career table -- reuses the same
+     .spray-card/.spray-header/.spray-legend look as the Scorecard tab's
+     per-game chart (just a year <select> instead of a batter filter), but
+     capped to a max-width and centered so it doesn't blow up to the full
+     width of the sheet on a wide screen. */
+  .player-spray-section { margin-top: 4px; }
+  .player-spray-section .spray-card { max-width: 420px; margin: 0 auto; }
+  .player-spray-section .spray-card > svg { max-width: 320px; }
   .spray-year-select {
     font-family: 'Inter', sans-serif;
     font-size: 10.5px;
@@ -1534,43 +1503,7 @@
     border: 1px solid var(--paper-line);
     border-radius: 4px;
     padding: 2px 5px;
-  }
-  .spray-card-body { display: flex; gap: 8px; align-items: center; }
-  .spray-card-body .field-wrap { flex: 1 1 auto; min-width: 0; }
-  .spray-card-legend { display: flex; flex-direction: column; gap: 4px; flex: 0 0 auto; }
-  .spray-card-key {
-    font-family: 'Overpass', sans-serif;
-    font-weight: 600;
-    font-size: 9px;
-    color: var(--ink-soft);
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-  }
-  .spray-card-key .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
-  .spray-card-key .dot.hr-dot { background: #fff8ea; border: 1.4px solid; box-sizing: border-box; }
-  .spray-card-key .dot.out { background: #8a8478; }
-  .spray-mini-status {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10.5px;
-    color: var(--ink-soft);
-    padding: 10px 2px;
-  }
-
-  /* Once photo + name/meta + chart no longer fit on one line -- 80 (photo)
-     + 140 (name/meta's floor) + 150 (the chart's floor), plus the two 14px
-     gaps between them -- the chart wraps to its own full-width row. Switch
-     the legend from a column beside the field to a row underneath it at
-     that same point, so the layout only ever changes at the moment
-     flexbox itself already wrapped the row, never based on the chart's own
-     (then still-shrinking) resulting width. */
-  @container profile-head (max-width: 398px) {
-    .spray-card-body { flex-direction: column; }
-    .spray-card-legend { flex-direction: row; justify-content: center; flex-wrap: wrap; gap: 12px; margin-top: 6px; }
-    .spray-card-title { font-size: 10.5px; }
-    .spray-year-select { font-size: 11px; padding: 2px 6px; }
-    .spray-card-key { font-size: 10px; gap: 4px; }
-    .spray-card-key .dot { width: 8px; height: 8px; }
+    max-width: 100px;
   }
   table.pitch-table { width: 100%; border-collapse: collapse; font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
   table.pitch-table th {
@@ -2989,12 +2922,13 @@
     </div>`;
   }
 
-  // Player profile's season spray chart -- same field/dot drawing as the
-  // team chart above, but no batter filter (there's only ever one batter)
-  // and a year <select> instead. Layout (legend beside the field vs.
-  // underneath it) is handled entirely in CSS via a container query on
-  // .player-profile-head, since which one fits depends on whether the
-  // chart is sitting next to the name or has wrapped below it.
+  // Player profile's season spray chart, shown below the Career table.
+  // Same field/dot drawing and .spray-card/.spray-header/.spray-legend
+  // look as the Scorecard tab's per-game chart above -- just a year
+  // <select> instead of a batter filter, and no per-dot filtering since
+  // there's only ever one batter. Sizing (bigger than a corner widget, but
+  // capped so it doesn't take over the sheet on a wide screen) is handled
+  // by the .player-spray-section rule in the stylesheet.
   function renderPlayerSprayWidget(state) {
     if (!state.seasons.length) return '';
     const yearOptions = state.seasons
@@ -3002,26 +2936,24 @@
       .join('');
     let bodyHtml;
     if (state.loading) {
-      bodyHtml = '<div class="spray-mini-status">Loading&#8230;</div>';
+      bodyHtml = '<div class="mlb-status-msg">Loading spray chart&#8230;</div>';
     } else if (!state.balls || !state.balls.length) {
-      bodyHtml = `<div class="spray-mini-status">No batted balls recorded for ${state.season}.</div>`;
+      bodyHtml = `<div class="pitch-empty">No batted balls recorded for ${state.season}.</div>`;
     } else {
       const svg = renderBattedBallFieldSVG(state.balls, { pkeyPrefix: `player-spray-${state.personId}-${state.season}` });
-      bodyHtml = `<div class="spray-card-body">
-        <div class="field-wrap">${svg}</div>
-        <div class="spray-card-legend">
-          <span class="spray-card-key"><span class="dot" style="background:${HIT_DOT_COLORS.single}"></span>1B</span>
-          <span class="spray-card-key"><span class="dot" style="background:${HIT_DOT_COLORS.double}"></span>2B</span>
-          <span class="spray-card-key"><span class="dot" style="background:${HIT_DOT_COLORS.triple}"></span>3B</span>
-          <span class="spray-card-key"><span class="dot hr-dot" style="border-color:${HIT_DOT_COLORS.homerun}"></span>HR</span>
-          <span class="spray-card-key"><span class="dot out"></span>Out</span>
-        </div>
-      </div>`;
+      bodyHtml = `${svg}
+        <div class="spray-legend">
+          <span class="spray-key"><span class="dot" style="background:${HIT_DOT_COLORS.single}"></span>1B</span>
+          <span class="spray-key"><span class="dot" style="background:${HIT_DOT_COLORS.double}"></span>2B</span>
+          <span class="spray-key"><span class="dot" style="background:${HIT_DOT_COLORS.triple}"></span>3B</span>
+          <span class="spray-key"><span class="dot hr-dot" style="border-color:${HIT_DOT_COLORS.homerun}"></span>HR</span>
+          <span class="spray-key"><span class="dot out"></span>Out</span>
+        </div>`;
     }
-    return `<div class="spray-mini">
+    return `<div class="player-spray-section">
       <div class="spray-card">
-        <div class="spray-card-head">
-          <span class="spray-card-title">Spray Chart</span>
+        <div class="spray-header">
+          <div class="spray-title">Spray Chart</div>
           <select class="spray-year-select" data-player-id="${state.personId}">${yearOptions}</select>
         </div>
         ${bodyHtml}
@@ -5424,19 +5356,18 @@
     ].filter(Boolean).join(' &#183; ');
   }
   function playerBioLine(person) {
+    const bats = person.batSide && person.batSide.code;
+    const throwsHand = person.pitchHand && person.pitchHand.code;
+    const handedness = bats && throwsHand ? `Bats/Throws: ${bats}/${throwsHand}`
+      : bats ? `Bats: ${bats}`
+      : throwsHand ? `Throws: ${throwsHand}`
+      : null;
     return [
       person.currentAge != null ? `${person.currentAge} yrs` : null,
       person.height,
-      person.weight != null ? `${person.weight} lbs` : null
+      person.weight != null ? `${person.weight} lbs` : null,
+      handedness
     ].filter(Boolean).join(' &#183; ');
-  }
-  function playerBatsThrowsLine(person) {
-    const bats = person.batSide && person.batSide.code;
-    const throwsHand = person.pitchHand && person.pitchHand.code;
-    if (bats && throwsHand) return `Bats ${bats} / Throws ${throwsHand}`;
-    if (bats) return `Bats ${bats}`;
-    if (throwsHand) return `Throws ${throwsHand}`;
-    return null;
   }
 
   function renderPlayerSearchResults(people) {
@@ -5552,31 +5483,27 @@
     const watermarkHtml = teamId ? `<img class="player-profile-watermark" src="${capLogoUrl(teamId)}" alt="" aria-hidden="true">` : '';
     const meta = playerMetaLine(person);
     const bio = playerBioLine(person);
-    const bt = playerBatsThrowsLine(person);
     const awardsHtml = renderAwardTags(awardTags);
     const careerHtml = careerSplits === null
       ? '<div class="mlb-status-msg">Loading career stats&#8230;</div>'
       : careerSplits.length
         ? renderCareerTable(careerSplits)
         : '<div class="pitch-empty">Career stats not available.</div>';
-    const sprayHtml = playerSprayState.personId === person.id ? renderPlayerSprayWidget(playerSprayState) : '';
+    const sprayHtml = playerSprayState.personId === Number(person.id) ? renderPlayerSprayWidget(playerSprayState) : '';
     return `<div class="sheet player-profile-sheet">
+      ${watermarkHtml}
       <div class="player-profile-head">
-        ${watermarkHtml}
-        <div class="head-flex">
-          <img class="player-profile-photo" src="${headshotUrl(person.id, 180)}" alt="" loading="lazy" onerror="this.style.display='none'">
-          <div class="name-meta">
-            <div class="player-profile-name">${person.fullName}</div>
-            ${meta ? `<div class="player-profile-meta">${meta}</div>` : ''}
-            ${bio ? `<div class="player-profile-bio">${bio}</div>` : ''}
-            ${bt ? `<div class="player-profile-bt">${bt}</div>` : ''}
-          </div>
-          ${sprayHtml}
+        <img class="player-profile-photo" src="${headshotUrl(person.id, 180)}" alt="" loading="lazy" onerror="this.style.display='none'">
+        <div>
+          <div class="player-profile-name">${person.fullName}</div>
+          ${meta ? `<div class="player-profile-meta">${meta}</div>` : ''}
+          ${bio ? `<div class="player-profile-bio">${bio}</div>` : ''}
         </div>
       </div>
       ${awardsHtml}
       <div class="roster-section-title">Career</div>
       ${careerHtml}
+      ${sprayHtml}
     </div>`;
   }
 
@@ -5601,7 +5528,15 @@
     rerenderPlayerProfile();
   }
 
-  async function showPlayerProfile(person) {
+  async function showPlayerProfile(rawPerson) {
+    // Normalized once, here, since callers don't agree on type: search
+    // results carry a numeric id straight from the API, but a dataset
+    // attribute (jumpToPlayerProfile, showPlayerModal) is always a string.
+    // playerSprayState.personId is compared with `===` elsewhere, so a
+    // mismatched type there silently made the spray widget disappear
+    // whenever a profile was opened by jumping from a player-name button
+    // instead of the search box.
+    const person = { ...rawPerson, id: Number(rawPerson.id) };
     const requestId = ++playerProfileRequestId;
     playerSprayToken++; // abandon any spray fetch still in flight for whatever was open before
     playerSprayState = { personId: person.id, season: null, seasons: [], balls: null, loading: false };
