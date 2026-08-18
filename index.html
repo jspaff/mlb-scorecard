@@ -1911,6 +1911,8 @@
   // per-team for the Scorecard tab's spray chart, just filtered to one
   // batter instead of one halfInning. coordX/coordY already sit in the same
   // pixel space diamondSVG/fieldSVG expect, so no transform is needed here.
+  // Outs are skipped entirely -- the player profile's season chart is meant
+  // to show where a player's hits land, not the outs mixed in with them.
   function extractPlayerBattedBalls(allPlays, personId) {
     const balls = [];
     (allPlays || []).forEach(play => {
@@ -1925,12 +1927,14 @@
         event === 'Double' ? 'double' :
         event === 'Triple' ? 'triple' :
         event === 'Home Run' ? 'homerun' : 'out';
+      if (hitType === 'out') return;
       balls.push({
         x: hitCoords.x, y: hitCoords.y, hitType,
         pitches: extractPitches(play), events: extractEvents(play), ...extractHandedness(play), isComplete: true,
         batterName: batter.fullName || '',
         pitcherFullName: (play.matchup && play.matchup.pitcher && play.matchup.pitcher.fullName) || '',
-        playDesc: (play.result && play.result.description) || ''
+        playDesc: (play.result && play.result.description) || '',
+        videoUrl: savantVideoUrl(extractPlayId(play))
       });
     });
     return balls;
@@ -2257,6 +2261,15 @@
     return null;
   }
 
+  // Same lastEvent.playId lookup fetchGameStats already uses to link a
+  // home run to its Baseball Savant clip -- reused here so any at-bat
+  // popup (grid cell or spray-chart dot) can offer the same Watch link.
+  function extractPlayId(play) {
+    const events = play.playEvents || [];
+    const lastEvent = events[events.length - 1];
+    return (lastEvent && lastEvent.playId) || null;
+  }
+
   function extractPitches(play) {
     const pitches = (play.playEvents || [])
       .filter(pe => pe.isPitch || pe.type === 'pitch')
@@ -2516,6 +2529,7 @@
         const pitches = extractPitches(play);
         const handedness = extractHandedness(play);
         const hitCoords = extractHitCoordinates(play);
+        const videoUrl = savantVideoUrl(extractPlayId(play));
         if (hitCoords) {
           const hitType =
             event === 'Single' ? 'single' :
@@ -2527,7 +2541,8 @@
             pitches, events: extractEvents(play), batterId, ...handedness, isComplete: true,
             batterName: (play.matchup && play.matchup.batter && play.matchup.batter.fullName) || '',
             pitcherFullName: (play.matchup && play.matchup.pitcher && play.matchup.pitcher.fullName) || '',
-            playDesc: (play.result && play.result.description) || ''
+            playDesc: (play.result && play.result.description) || '',
+            videoUrl
           });
         }
 
@@ -2535,7 +2550,7 @@
         row.cells[inning].push({
           code, reached: rb, scored: rb === 4, isOut: rb === 0, playerId: batterId,
           pitcherChanged, pitcherId, pitcherName, order, calledLooking,
-          pitches, events: extractEvents(play), ...handedness, isComplete: true,
+          pitches, events: extractEvents(play), ...handedness, isComplete: true, videoUrl,
           batterName: (play.matchup && play.matchup.batter && play.matchup.batter.fullName) || '',
           pitcherFullName: (pitcher && pitcher.fullName) || '',
           playDesc: (play.result && play.result.description) || ''
@@ -2944,7 +2959,7 @@
     if (state.loading) {
       bodyHtml = '<div class="mlb-status-msg">Loading spray chart&#8230;</div>';
     } else if (!state.balls || !state.balls.length) {
-      bodyHtml = `<div class="pitch-empty">No batted balls recorded for ${state.season}.</div>`;
+      bodyHtml = `<div class="pitch-empty">No hits recorded for ${state.season}.</div>`;
     } else {
       const svg = renderBattedBallFieldSVG(state.balls, { pkeyPrefix: `player-spray-${state.personId}-${state.season}` });
       bodyHtml = `${svg}
@@ -2953,7 +2968,6 @@
           <span class="spray-key"><span class="dot" style="background:${HIT_DOT_COLORS.double}"></span>2B</span>
           <span class="spray-key"><span class="dot" style="background:${HIT_DOT_COLORS.triple}"></span>3B</span>
           <span class="spray-key"><span class="dot hr-dot" style="border-color:${HIT_DOT_COLORS.homerun}"></span>HR</span>
-          <span class="spray-key"><span class="dot out"></span>Out</span>
         </div>`;
     }
     return `<div class="player-spray-section">
@@ -5217,6 +5231,7 @@
       ${reviewsHtml}
       ${eventsHtml}
       ${c.playDesc ? `<div class="pitch-final-desc">${c.playDesc}</div>` : ''}
+      ${c.videoUrl ? `<a class="pog-watch" href="${c.videoUrl}" target="_blank" rel="noopener noreferrer">Watch &#9654;</a>` : ''}
     `;
     pitchOverlay.classList.add('open');
     wirePitchLocationSync();
