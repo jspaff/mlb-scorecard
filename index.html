@@ -625,6 +625,7 @@
     border-radius: 6px;
     text-align: center;
   }
+  .spray-card > svg { max-width: 280px; margin: 0 auto; }
   .spray-header {
     display: flex;
     align-items: center;
@@ -1485,6 +1486,31 @@
     color: var(--ink-soft);
     margin-top: 4px;
   }
+  .player-profile-bt {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    margin-top: 2px;
+  }
+
+  /* Season spray chart, below the Career table -- reuses the same
+     .spray-card/.spray-header/.spray-legend look as the Scorecard tab's
+     per-game chart (just a year <select> instead of a batter filter), but
+     capped to a max-width and centered so it doesn't blow up to the full
+     width of the sheet on a wide screen. */
+  .player-spray-section { margin-top: 4px; }
+  .player-spray-section .spray-card { max-width: 420px; margin: 0 auto; }
+  .player-spray-section .spray-card > svg { max-width: 320px; }
+  .spray-year-select {
+    font-family: 'Inter', sans-serif;
+    font-size: 10.5px;
+    background: var(--paper);
+    color: var(--ink);
+    border: 1px solid var(--paper-line);
+    border-radius: 4px;
+    padding: 2px 5px;
+    max-width: 100px;
+  }
   table.pitch-table { width: 100%; border-collapse: collapse; font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
   table.pitch-table th {
     font-family: 'Overpass', sans-serif;
@@ -1766,6 +1792,23 @@
   let rosterStore = {};
   let sprayStore = {};
   let playerStore = {};
+  // Single-active-profile state for the player-page spray chart widget --
+  // mirrors sprayFilterState's module-scoped pattern, but keyed implicitly
+  // to whichever profile is currently open rather than by team name, since
+  // only one player profile is ever shown at a time. Reset in
+  // showPlayerProfile, updated by loadPlayerSpray and the year <select>.
+  let playerSprayState = { personId: null, season: null, seasons: [], balls: null, loading: false };
+  // Bumped on every profile switch and every year-dropdown change so a
+  // slow, now-superseded fetch (a different player, or a season the user
+  // has since clicked away from) can't overwrite state a newer request
+  // already wrote -- same guard pattern as xRequestId elsewhere in the file.
+  let playerSprayToken = 0;
+  // Last-rendered profile inputs, kept so the spray widget can re-render on
+  // its own (once its fetch resolves) without re-fetching person/career/
+  // awards data that hasn't changed.
+  let lastProfilePerson = null;
+  let lastProfileCareerSplits = null;
+  let lastProfileAwardTags = [];
   // Mirrors the --ink/--gold/--brick/--paper CSS variables (plus the ball
   // green that only exists as a literal on .pitch-result-ball), for the few
   // spots (SVG strings) that can't reference a CSS custom property directly.
@@ -1862,6 +1905,84 @@
       return [];
     }
   }
+
+  // Pulls this batter's plate-appearance results with hitData coordinates
+  // out of one game's play list -- the same extraction buildTeamRows does
+  // per-team for the Scorecard tab's spray chart, just filtered to one
+  // batter instead of one halfInning. coordX/coordY already sit in the same
+  // pixel space diamondSVG/fieldSVG expect, so no transform is needed here.
+  // Outs are skipped entirely -- the player profile's season chart is meant
+  // to show where a player's hits land, not the outs mixed in with them.
+  function extractPlayerBattedBalls(allPlays, personId) {
+    const balls = [];
+    (allPlays || []).forEach(play => {
+      const batter = play.matchup && play.matchup.batter;
+      if (!batter || batter.id !== personId) return;
+      const event = (play.result && play.result.event) || '';
+      if (!(play.result && play.result.type === 'atBat') || !event || NON_RESULT_EVENT_RE.test(event)) return;
+      const hitCoords = extractHitCoordinates(play);
+      if (!hitCoords) return;
+      const hitType =
+        event === 'Single' ? 'single' :
+        event === 'Double' ? 'double' :
+        event === 'Triple' ? 'triple' :
+        event === 'Home Run' ? 'homerun' : 'out';
+      if (hitType === 'out') return;
+      balls.push({
+        x: hitCoords.x, y: hitCoords.y, hitType,
+        pitches: extractPitches(play), events: extractEvents(play), ...extractHandedness(play), isComplete: true,
+        batterName: batter.fullName || '',
+        pitcherFullName: (play.matchup && play.matchup.pitcher && play.matchup.pitcher.fullName) || '',
+        playDesc: (play.result && play.result.description) || '',
+        videoUrl: savantVideoUrl(extractPlayId(play))
+      });
+    });
+    return balls;
+  }
+
+  // There's no single MLB Stats API endpoint for a player's season-long
+  // batted-ball locations -- each game's live feed only carries its own
+  // plays. Building this means walking the player's game log for the
+  // season and fetching every game they had an at-bat in, so it's the one
+  // fetcher in the file that can mean 100+ network calls; capped at
+  // CONCURRENCY in flight at once rather than firing them all together.
+  // Cached by personId-season once complete (not on a failed game log
+  // fetch -- that can be transient, and an empty result would otherwise
+  // lock in a blank chart for the rest of the session; a per-game feed
+  // fetch failing just drops that one game's balls rather than the batch).
+  const playerSeasonSprayCache = {};
+  const SPRAY_FETCH_CONCURRENCY = 6;
+  async function getPlayerSeasonBattedBalls(personId, season) {
+    const cacheKey = `${personId}-${season}`;
+    if (playerSeasonSprayCache[cacheKey] !== undefined) return playerSeasonSprayCache[cacheKey];
+    try {
+      const logRes = await fetch(`https://statsapi.mlb.com/api/v1/people/${personId}/stats?stats=gameLog&season=${season}&group=hitting`);
+      const logData = await logRes.json();
+      const splits = (logData.stats && logData.stats[0] && logData.stats[0].splits) || [];
+      const gamePks = splits
+        .filter(s => s.stat && (s.stat.atBats || 0) > 0 && s.game && s.game.gamePk)
+        .map(s => s.game.gamePk);
+      const balls = [];
+      let nextIndex = 0;
+      async function worker() {
+        while (nextIndex < gamePks.length) {
+          const gamePk = gamePks[nextIndex++];
+          try {
+            const res = await fetch(`https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live`);
+            const data = await res.json();
+            const allPlays = (data.liveData && data.liveData.plays && data.liveData.plays.allPlays) || [];
+            balls.push(...extractPlayerBattedBalls(allPlays, personId));
+          } catch (e) { /* skip this one game, the rest still matter */ }
+        }
+      }
+      await Promise.all(Array.from({ length: Math.min(SPRAY_FETCH_CONCURRENCY, gamePks.length) }, worker));
+      playerSeasonSprayCache[cacheKey] = balls;
+      return balls;
+    } catch (e) {
+      return [];
+    }
+  }
+
   // Real MLB-wide season awards use a clean AL/NL + short-suffix id
   // (ALMVP, NLCY, ALGG, ...) -- confirmed via the /v1/awards catalog rather
   // than guessed, unlike `name`, which org-specific and minor/winter-league
@@ -2140,6 +2261,15 @@
     return null;
   }
 
+  // Same lastEvent.playId lookup fetchGameStats already uses to link a
+  // home run to its Baseball Savant clip -- reused here so any at-bat
+  // popup (grid cell or spray-chart dot) can offer the same Watch link.
+  function extractPlayId(play) {
+    const events = play.playEvents || [];
+    const lastEvent = events[events.length - 1];
+    return (lastEvent && lastEvent.playId) || null;
+  }
+
   function extractPitches(play) {
     const pitches = (play.playEvents || [])
       .filter(pe => pe.isPitch || pe.type === 'pitch')
@@ -2399,6 +2529,7 @@
         const pitches = extractPitches(play);
         const handedness = extractHandedness(play);
         const hitCoords = extractHitCoordinates(play);
+        const videoUrl = savantVideoUrl(extractPlayId(play));
         if (hitCoords) {
           const hitType =
             event === 'Single' ? 'single' :
@@ -2410,7 +2541,8 @@
             pitches, events: extractEvents(play), batterId, ...handedness, isComplete: true,
             batterName: (play.matchup && play.matchup.batter && play.matchup.batter.fullName) || '',
             pitcherFullName: (play.matchup && play.matchup.pitcher && play.matchup.pitcher.fullName) || '',
-            playDesc: (play.result && play.result.description) || ''
+            playDesc: (play.result && play.result.description) || '',
+            videoUrl
           });
         }
 
@@ -2418,7 +2550,7 @@
         row.cells[inning].push({
           code, reached: rb, scored: rb === 4, isOut: rb === 0, playerId: batterId,
           pitcherChanged, pitcherId, pitcherName, order, calledLooking,
-          pitches, events: extractEvents(play), ...handedness, isComplete: true,
+          pitches, events: extractEvents(play), ...handedness, isComplete: true, videoUrl,
           batterName: (play.matchup && play.matchup.batter && play.matchup.batter.fullName) || '',
           pitcherFullName: (pitcher && pitcher.fullName) || '',
           playDesc: (play.result && play.result.description) || ''
@@ -2680,25 +2812,29 @@
     return { rows, pitcherByInning, starterPitcherId, battedBalls };
   }
 
-  function renderSprayChart(balls, teamName) {
-    if (!balls || !balls.length) return '';
+  // Dot colors for a batted ball's result -- shared between the per-game
+  // team spray chart (Scorecard tab) and the player profile's season spray
+  // widget, since both draw the same kind of dot.
+  const HIT_DOT_COLORS = {
+    single: '#c98a12',
+    double: '#1f6fb3',
+    triple: '#8a4fc9',
+    homerun: '#c98a12',
+    out: '#8a8478'
+  };
+
+  // Draws the fence/infield/dot field itself -- factored out of
+  // renderSprayChart so the player profile's season spray widget can reuse
+  // the same to-scale geometry instead of duplicating it. `pkeyPrefix`, if
+  // given, makes each dot clickable (stored in pitchStore, opens the shared
+  // pitch-detail popup); `visible(ball)` lets a caller hide some dots
+  // without excluding them from the markup, matching how the team chart's
+  // batter filter toggles `g[data-batter]` visibility in place.
+  function renderBattedBallFieldSVG(balls, { viewBox = '0 15 250 200', pkeyPrefix = null, visible = null } = {}) {
     const home = [125, 205];
-    const { ink, gold, brick } = PALETTE;
+    const { ink, brick } = PALETTE;
     const grass = 'rgba(243,236,219,0.06)';
     const dirt = 'rgba(217,169,26,0.18)';
-
-    const batters = [];
-    const seenBatters = new Set();
-    balls.forEach(b => {
-      if (b.batterId && !seenBatters.has(b.batterId)) {
-        seenBatters.add(b.batterId);
-        batters.push({ id: b.batterId, name: b.batterName });
-      }
-    });
-    const currentFilter = sprayFilterState[teamName] || 'all';
-    const filterOptions = [`<option value="all"${currentFilter === 'all' ? ' selected' : ''}>All Batters</option>`]
-      .concat(batters.map(bt => `<option value="${bt.id}"${String(bt.id) === String(currentFilter) ? ' selected' : ''}>${bt.name}</option>`))
-      .join('');
 
     // generic MLB fence distances: shallower down the lines, deeper in the
     // gaps, deepest to straightaway center. Scale is set so center field
@@ -2739,7 +2875,7 @@
     const third = [home[0] - diagBase, home[1] - diagBase];
     const second = [home[0], home[1] - baseDist * Math.SQRT2];
 
-    let svg = '<svg viewBox="0 15 250 200" width="100%" style="max-width:280px; display:block; margin:0 auto;">';
+    let svg = `<svg viewBox="${viewBox}" width="100%" style="display:block">`;
     svg += `<path d="M ${home[0]},${home[1]} L ${fencePts[0][0]},${fencePts[0][1]} ${fenceCurve} L ${home[0]},${home[1]} Z" fill="${grass}" stroke="${ink}" stroke-width="1.3" stroke-linejoin="round"/>`;
     svg += `<line x1="${home[0]}" y1="${home[1]}" x2="${fencePts[0][0]}" y2="${fencePts[0][1]}" stroke="${ink}" stroke-width="1"/>`;
     svg += `<line x1="${home[0]}" y1="${home[1]}" x2="${fencePts[4][0]}" y2="${fencePts[4][1]}" stroke="${ink}" stroke-width="1"/>`;
@@ -2750,31 +2886,46 @@
     });
     svg += `<circle cx="${home[0]}" cy="${home[1]}" r="2.5" fill="${ink}"/>`;
 
-    const hitColors = {
-      single: '#c98a12',
-      double: '#1f6fb3',
-      triple: '#8a4fc9',
-      homerun: '#c98a12',
-      out: '#8a8478'
-    };
-
     balls.forEach((b, i) => {
-      const color = hitColors[b.hitType] || brick;
-      const pkey = `${teamName}-ball-${i}`;
-      pitchStore[pkey] = b;
-      const visible = currentFilter === 'all' || String(b.batterId) === String(currentFilter);
-      svg += `<g data-batter="${b.batterId || ''}"${visible ? '' : ' style="display:none"'}>`;
+      const color = HIT_DOT_COLORS[b.hitType] || brick;
+      const pkey = pkeyPrefix ? `${pkeyPrefix}-ball-${i}` : null;
+      if (pkey) pitchStore[pkey] = b;
+      const pkeyAttr = pkey ? ` class="clickable" data-pkey="${pkey}"` : '';
+      const isVisible = visible ? visible(b) : true;
+      svg += `<g data-batter="${b.batterId || ''}"${isVisible ? '' : ' style="display:none"'}>`;
       if (b.hitType === 'homerun') {
         svg += `<circle cx="${b.x}" cy="${b.y}" r="7.5" fill="${color}" opacity="0.3"/>`;
         svg += `<circle cx="${b.x}" cy="${b.y}" r="5.5" fill="${color}" opacity="0.3"/>`;
-        svg += `<circle cx="${b.x}" cy="${b.y}" r="4" fill="#fff8ea" stroke="${color}" stroke-width="1.4" class="clickable" data-pkey="${pkey}"/>`;
+        svg += `<circle cx="${b.x}" cy="${b.y}" r="4" fill="#fff8ea" stroke="${color}" stroke-width="1.4"${pkeyAttr}/>`;
       } else {
         const opacity = b.hitType === 'out' ? 0.32 : 0.95;
-        svg += `<circle cx="${b.x}" cy="${b.y}" r="3.2" fill="${color}" opacity="${opacity}" stroke="#3b4336" stroke-width="0.7" class="clickable" data-pkey="${pkey}"/>`;
+        svg += `<circle cx="${b.x}" cy="${b.y}" r="3.2" fill="${color}" opacity="${opacity}" stroke="#3b4336" stroke-width="0.7"${pkeyAttr}/>`;
       }
       svg += '</g>';
     });
     svg += '</svg>';
+    return svg;
+  }
+
+  function renderSprayChart(balls, teamName) {
+    if (!balls || !balls.length) return '';
+    const batters = [];
+    const seenBatters = new Set();
+    balls.forEach(b => {
+      if (b.batterId && !seenBatters.has(b.batterId)) {
+        seenBatters.add(b.batterId);
+        batters.push({ id: b.batterId, name: b.batterName });
+      }
+    });
+    const currentFilter = sprayFilterState[teamName] || 'all';
+    const filterOptions = [`<option value="all"${currentFilter === 'all' ? ' selected' : ''}>All Batters</option>`]
+      .concat(batters.map(bt => `<option value="${bt.id}"${String(bt.id) === String(currentFilter) ? ' selected' : ''}>${bt.name}</option>`))
+      .join('');
+
+    const svg = renderBattedBallFieldSVG(balls, {
+      pkeyPrefix: teamName,
+      visible: b => currentFilter === 'all' || String(b.batterId) === String(currentFilter)
+    });
 
     return `<div class="spray-card">
       <div class="spray-header">
@@ -2783,11 +2934,49 @@
       </div>
       ${svg}
       <div class="spray-legend">
-        <span class="spray-key"><span class="dot" style="background:${hitColors.single}"></span>1B</span>
-        <span class="spray-key"><span class="dot" style="background:${hitColors.double}"></span>2B</span>
-        <span class="spray-key"><span class="dot" style="background:${hitColors.triple}"></span>3B</span>
-        <span class="spray-key"><span class="dot hr-dot" style="border-color:${hitColors.homerun}"></span>HR</span>
+        <span class="spray-key"><span class="dot" style="background:${HIT_DOT_COLORS.single}"></span>1B</span>
+        <span class="spray-key"><span class="dot" style="background:${HIT_DOT_COLORS.double}"></span>2B</span>
+        <span class="spray-key"><span class="dot" style="background:${HIT_DOT_COLORS.triple}"></span>3B</span>
+        <span class="spray-key"><span class="dot hr-dot" style="border-color:${HIT_DOT_COLORS.homerun}"></span>HR</span>
         <span class="spray-key"><span class="dot out"></span>Out</span>
+      </div>
+    </div>`;
+  }
+
+  // Player profile's season spray chart, shown below the Career table.
+  // Same field/dot drawing and .spray-card/.spray-header/.spray-legend
+  // look as the Scorecard tab's per-game chart above -- just a year
+  // <select> instead of a batter filter, and no per-dot filtering since
+  // there's only ever one batter. Sizing (bigger than a corner widget, but
+  // capped so it doesn't take over the sheet on a wide screen) is handled
+  // by the .player-spray-section rule in the stylesheet.
+  function renderPlayerSprayWidget(state) {
+    if (!state.seasons.length) return '';
+    const yearOptions = state.seasons
+      .map(s => `<option value="${s}"${String(s) === String(state.season) ? ' selected' : ''}>${s}</option>`)
+      .join('');
+    let bodyHtml;
+    if (state.loading) {
+      bodyHtml = '<div class="mlb-status-msg">Loading spray chart&#8230;</div>';
+    } else if (!state.balls || !state.balls.length) {
+      bodyHtml = `<div class="pitch-empty">No hits recorded for ${state.season}.</div>`;
+    } else {
+      const svg = renderBattedBallFieldSVG(state.balls, { pkeyPrefix: `player-spray-${state.personId}-${state.season}` });
+      bodyHtml = `${svg}
+        <div class="spray-legend">
+          <span class="spray-key"><span class="dot" style="background:${HIT_DOT_COLORS.single}"></span>1B</span>
+          <span class="spray-key"><span class="dot" style="background:${HIT_DOT_COLORS.double}"></span>2B</span>
+          <span class="spray-key"><span class="dot" style="background:${HIT_DOT_COLORS.triple}"></span>3B</span>
+          <span class="spray-key"><span class="dot hr-dot" style="border-color:${HIT_DOT_COLORS.homerun}"></span>HR</span>
+        </div>`;
+    }
+    return `<div class="player-spray-section">
+      <div class="spray-card">
+        <div class="spray-header">
+          <div class="spray-title">Spray Chart</div>
+          <select class="spray-year-select" data-player-id="${state.personId}">${yearOptions}</select>
+        </div>
+        ${bodyHtml}
       </div>
     </div>`;
   }
@@ -5037,6 +5226,7 @@
     pitchModalBody.innerHTML = `
       <div class="pitch-header">${c.batterName || 'Batter'}</div>
       <div class="pitch-subheader">vs ${c.pitcherFullName || 'pitcher'}</div>
+      ${c.videoUrl ? `<a class="pog-watch" href="${c.videoUrl}" target="_blank" rel="noopener noreferrer">Watch &#9654;</a>` : ''}
       ${rows}
       ${locationHtml}
       ${reviewsHtml}
@@ -5187,18 +5377,19 @@
     ].filter(Boolean).join(' &#183; ');
   }
   function playerBioLine(person) {
-    const bats = person.batSide && person.batSide.code;
-    const throwsHand = person.pitchHand && person.pitchHand.code;
-    const handedness = bats && throwsHand ? `Bats/Throws: ${bats}/${throwsHand}`
-      : bats ? `Bats: ${bats}`
-      : throwsHand ? `Throws: ${throwsHand}`
-      : null;
     return [
       person.currentAge != null ? `${person.currentAge} yrs` : null,
       person.height,
-      person.weight != null ? `${person.weight} lbs` : null,
-      handedness
+      person.weight != null ? `${person.weight} lbs` : null
     ].filter(Boolean).join(' &#183; ');
+  }
+  function playerBatsThrowsLine(person) {
+    const bats = person.batSide && person.batSide.code;
+    const throwsHand = person.pitchHand && person.pitchHand.code;
+    if (bats && throwsHand) return `Bats ${bats} / Throws ${throwsHand}`;
+    if (bats) return `Bats ${bats}`;
+    if (throwsHand) return `Throws ${throwsHand}`;
+    return null;
   }
 
   function renderPlayerSearchResults(people) {
@@ -5314,12 +5505,14 @@
     const watermarkHtml = teamId ? `<img class="player-profile-watermark" src="${capLogoUrl(teamId)}" alt="" aria-hidden="true">` : '';
     const meta = playerMetaLine(person);
     const bio = playerBioLine(person);
+    const bt = playerBatsThrowsLine(person);
     const awardsHtml = renderAwardTags(awardTags);
     const careerHtml = careerSplits === null
       ? '<div class="mlb-status-msg">Loading career stats&#8230;</div>'
       : careerSplits.length
         ? renderCareerTable(careerSplits)
         : '<div class="pitch-empty">Career stats not available.</div>';
+    const sprayHtml = playerSprayState.personId === Number(person.id) ? renderPlayerSprayWidget(playerSprayState) : '';
     return `<div class="sheet player-profile-sheet">
       ${watermarkHtml}
       <div class="player-profile-head">
@@ -5328,16 +5521,49 @@
           <div class="player-profile-name">${person.fullName}</div>
           ${meta ? `<div class="player-profile-meta">${meta}</div>` : ''}
           ${bio ? `<div class="player-profile-bio">${bio}</div>` : ''}
+          ${bt ? `<div class="player-profile-bt">${bt}</div>` : ''}
         </div>
       </div>
       ${awardsHtml}
       <div class="roster-section-title">Career</div>
       ${careerHtml}
+      ${sprayHtml}
     </div>`;
   }
 
-  async function showPlayerProfile(person) {
+  // Re-renders the profile from the last-fetched person/career/awards data
+  // without re-fetching them -- used when the spray widget's own fetch
+  // resolves (or the year dropdown changes), since none of that touches
+  // person/career/awards.
+  function rerenderPlayerProfile() {
+    if (!lastProfilePerson) return;
+    playersBody.innerHTML = renderPlayerProfile(lastProfilePerson, lastProfileCareerSplits, lastProfileAwardTags);
+  }
+
+  async function loadPlayerSpray(personId, season) {
+    const token = ++playerSprayToken;
+    const balls = await getPlayerSeasonBattedBalls(personId, season);
+    // stale if superseded by a newer season/player switch, or if the user
+    // has since navigated off this player's profile entirely
+    if (token !== playerSprayToken || playerSprayState.personId !== personId) return;
+    playerSprayState.season = season;
+    playerSprayState.balls = balls;
+    playerSprayState.loading = false;
+    rerenderPlayerProfile();
+  }
+
+  async function showPlayerProfile(rawPerson) {
+    // Normalized once, here, since callers don't agree on type: search
+    // results carry a numeric id straight from the API, but a dataset
+    // attribute (jumpToPlayerProfile, showPlayerModal) is always a string.
+    // playerSprayState.personId is compared with `===` elsewhere, so a
+    // mismatched type there silently made the spray widget disappear
+    // whenever a profile was opened by jumping from a player-name button
+    // instead of the search box.
+    const person = { ...rawPerson, id: Number(rawPerson.id) };
     const requestId = ++playerProfileRequestId;
+    playerSprayToken++; // abandon any spray fetch still in flight for whatever was open before
+    playerSprayState = { personId: person.id, season: null, seasons: [], balls: null, loading: false };
     playersBody.innerHTML = renderPlayerProfile(person, null, []);
     const [fullPerson, careerSplits, awards] = await Promise.all([
       getPlayerDetails(person.id),
@@ -5345,7 +5571,16 @@
       getPlayerAwards(person.id)
     ]);
     if (requestId !== playerProfileRequestId) return;
-    playersBody.innerHTML = renderPlayerProfile(fullPerson || person, careerSplits, summarizeAwardTags(awards));
+    lastProfilePerson = fullPerson || person;
+    lastProfileCareerSplits = careerSplits;
+    lastProfileAwardTags = summarizeAwardTags(awards);
+
+    const seasons = Array.from(new Set(careerSplits.map(s => s.season))).sort((a, b) => Number(b) - Number(a));
+    if (seasons.length) {
+      playerSprayState = { personId: person.id, season: seasons[0], seasons, balls: null, loading: true };
+      loadPlayerSpray(person.id, seasons[0]);
+    }
+    rerenderPlayerProfile();
   }
 
   // Mirrors jumpToScorecardGame: leave the modal, switch tabs, load the
@@ -5414,17 +5649,33 @@
     if (!e.target.closest('.player-search-wrap')) playerSearchResults.hidden = true;
   });
   document.addEventListener('change', (e) => {
-    const sel = e.target.closest('select.spray-filter');
-    if (!sel) return;
-    const team = sel.getAttribute('data-team');
-    const val = sel.value;
-    sprayFilterState[team] = val;
-    const card = sel.closest('.spray-card');
-    if (!card) return;
-    card.querySelectorAll('g[data-batter]').forEach(g => {
-      const match = val === 'all' || g.getAttribute('data-batter') === val;
-      g.style.display = match ? '' : 'none';
-    });
+    const filterSel = e.target.closest('select.spray-filter');
+    if (filterSel) {
+      const team = filterSel.getAttribute('data-team');
+      const val = filterSel.value;
+      sprayFilterState[team] = val;
+      const card = filterSel.closest('.spray-card');
+      if (card) {
+        card.querySelectorAll('g[data-batter]').forEach(g => {
+          const match = val === 'all' || g.getAttribute('data-batter') === val;
+          g.style.display = match ? '' : 'none';
+        });
+      }
+      return;
+    }
+    const yearSel = e.target.closest('select.spray-year-select');
+    if (yearSel) {
+      const personId = Number(yearSel.getAttribute('data-player-id'));
+      const season = yearSel.value;
+      if (playerSprayState.personId !== personId) return;
+      const cacheKey = `${personId}-${season}`;
+      const cached = playerSeasonSprayCache[cacheKey];
+      playerSprayState.season = season;
+      playerSprayState.balls = cached !== undefined ? cached : null;
+      playerSprayState.loading = cached === undefined;
+      rerenderPlayerProfile();
+      if (cached === undefined) loadPlayerSpray(personId, season);
+    }
   });
   pitchClose.addEventListener('click', hidePitchPopup);
   pitchOverlay.addEventListener('click', (e) => {
