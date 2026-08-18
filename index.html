@@ -3583,7 +3583,14 @@
 
   function renderDailyGameTile(dateStr, game) {
     let rowsHtml, stateLabel, tileClass, watermarkHtml = '';
-    if (game.state === 'Live' && game.detailedState === 'In Progress') {
+    // Once play has actually started (i.e. not still pre-game Warmup), MLB
+    // flips detailedState away from 'In Progress' for all sorts of things
+    // that aren't real stoppages -- manager/umpire challenges, replay
+    // review, etc. The Daily tab should keep showing score + inning through
+    // all of those and only fall back to the status label for an actual
+    // delay/suspension.
+    const isRealDelay = game.detailedState && /delay|suspend/i.test(game.detailedState);
+    if (game.state === 'Live' && game.detailedState !== 'Warmup' && !isRealDelay) {
       rowsHtml = dailyTileRow(game.awayName, game.awayId, game.awayScore ?? 0, false)
         + dailyTileRow(game.homeName, game.homeId, game.homeScore ?? 0, false);
       stateLabel = `${formatInningState(game.inningState)} ${game.inningOrdinal || ''}`.trim();
