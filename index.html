@@ -1486,6 +1486,12 @@
     color: var(--ink-soft);
     margin-top: 4px;
   }
+  .player-profile-bt {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    margin-top: 2px;
+  }
 
   /* Season spray chart, below the Career table -- reuses the same
      .spray-card/.spray-header/.spray-legend look as the Scorecard tab's
@@ -5356,18 +5362,19 @@
     ].filter(Boolean).join(' &#183; ');
   }
   function playerBioLine(person) {
-    const bats = person.batSide && person.batSide.code;
-    const throwsHand = person.pitchHand && person.pitchHand.code;
-    const handedness = bats && throwsHand ? `Bats/Throws: ${bats}/${throwsHand}`
-      : bats ? `Bats: ${bats}`
-      : throwsHand ? `Throws: ${throwsHand}`
-      : null;
     return [
       person.currentAge != null ? `${person.currentAge} yrs` : null,
       person.height,
-      person.weight != null ? `${person.weight} lbs` : null,
-      handedness
+      person.weight != null ? `${person.weight} lbs` : null
     ].filter(Boolean).join(' &#183; ');
+  }
+  function playerBatsThrowsLine(person) {
+    const bats = person.batSide && person.batSide.code;
+    const throwsHand = person.pitchHand && person.pitchHand.code;
+    if (bats && throwsHand) return `Bats ${bats} / Throws ${throwsHand}`;
+    if (bats) return `Bats ${bats}`;
+    if (throwsHand) return `Throws ${throwsHand}`;
+    return null;
   }
 
   function renderPlayerSearchResults(people) {
@@ -5483,6 +5490,7 @@
     const watermarkHtml = teamId ? `<img class="player-profile-watermark" src="${capLogoUrl(teamId)}" alt="" aria-hidden="true">` : '';
     const meta = playerMetaLine(person);
     const bio = playerBioLine(person);
+    const bt = playerBatsThrowsLine(person);
     const awardsHtml = renderAwardTags(awardTags);
     const careerHtml = careerSplits === null
       ? '<div class="mlb-status-msg">Loading career stats&#8230;</div>'
@@ -5498,6 +5506,7 @@
           <div class="player-profile-name">${person.fullName}</div>
           ${meta ? `<div class="player-profile-meta">${meta}</div>` : ''}
           ${bio ? `<div class="player-profile-bio">${bio}</div>` : ''}
+          ${bt ? `<div class="player-profile-bt">${bt}</div>` : ''}
         </div>
       </div>
       ${awardsHtml}
