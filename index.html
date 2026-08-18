@@ -2577,7 +2577,16 @@
     }
     function findCell(rid, inning, uptoOrder) {
       const row = rowByPlayerId[rid];
-      return row ? activeCellFor(row.cells[inning], uptoOrder, rid) : null;
+      if (!row) return null;
+      const exact = activeCellFor(row.cells[inning], uptoOrder, rid);
+      if (exact) return exact;
+      // a pinch runner has no plate appearance of their own, so no cell is
+      // ever tagged with their playerId -- they've only ever taken over an
+      // existing runner's spot on base. Since rowByPlayerId already groups
+      // them into the same row as whoever they replaced (shared batting
+      // slot), fall back to that row's active cell so their movement still
+      // lands on the plate appearance that put the runner on base.
+      return activeCellFor(row.cells[inning], uptoOrder);
     }
 
     // pass 2: resolve baserunner movement/scoring and build advancement tags
