@@ -4718,11 +4718,32 @@
       const gameHasStarted = allPlays.some(p => (p.playEvents || []).some(pe => pe.isPitch));
       let liveBatterInfo = null;
       if (gameHasStarted && state === 'Live' && linescore.currentInning) {
+        // linescore.currentInning/inningHalf are a separately-updated summary
+        // field that can lag behind allPlays right at a half-inning handoff
+        // (the same staleness the comment below already calls out for
+        // linescore.offense.batter) -- if it lags long enough, this whole
+        // block computes for the half-inning that just ended and never
+        // finds the batter who's actually live, so no placeholder (or pitch
+        // dot) shows for that at-bat at all until it completes and the
+        // normal completed-play path in buildTeamRows picks it up by reading
+        // about.inning/about.halfInning straight off the play itself.
+        // allPlays doesn't have that lag -- the new half's leadoff play
+        // object appears there the instant it exists -- so prefer deriving
+        // effInning/effHalf from allPlays' own last entry, and only fall
+        // back to linescore's outs>=3 flip for the brief window between the
+        // 3rd out and that new play object existing.
+        const lastPlay = allPlays[allPlays.length - 1];
         let effInning = linescore.currentInning;
         let effHalf = (linescore.inningHalf || 'Top').toLowerCase();
-        if ((linescore.outs ?? 0) >= 3) {
-          if (effHalf === 'top') effHalf = 'bottom';
-          else { effHalf = 'top'; effInning += 1; }
+        if (lastPlay && lastPlay.about && typeof lastPlay.about.inning === 'number') {
+          effInning = lastPlay.about.inning;
+          effHalf = lastPlay.about.isTopInning ? 'top' : 'bottom';
+        }
+        if (!lastPlay || (lastPlay.about && lastPlay.about.isComplete)) {
+          if ((linescore.outs ?? 0) >= 3) {
+            if (effHalf === 'top') effHalf = 'bottom';
+            else { effHalf = 'top'; effInning += 1; }
+          }
         }
         const battingTeam = effHalf === 'top' ? 'away' : 'home';
         const battingRows = battingTeam === 'away' ? awayRows : homeRows;
