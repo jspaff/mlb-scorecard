@@ -2397,23 +2397,6 @@
     return desc;
   }
 
-  // As noted at NON_RESULT_EVENT_RE, MLB sometimes logs a pause as its own
-  // trailing top-level play sharing the batter's matchup, rather than as a
-  // playEvent embedded in the at-bat itself -- currentInterruption() alone
-  // misses that case. Detected as: the very last item in allPlays, for the
-  // same batter as `play`, with a genuine-pause result.event. Once a real
-  // pitch follows, MLB appends a newer play/playEvent and this stops
-  // matching on its own.
-  function trailingTopLevelPause(play, allPlays) {
-    const lastPlay = allPlays[allPlays.length - 1];
-    if (!lastPlay || lastPlay === play) return null;
-    const batterId = play.matchup && play.matchup.batter && play.matchup.batter.id;
-    const lastBatterId = lastPlay.matchup && lastPlay.matchup.batter && lastPlay.matchup.batter.id;
-    if (!batterId || batterId !== lastBatterId) return null;
-    const event = (lastPlay.result && lastPlay.result.event) || '';
-    return GENUINE_PAUSE_RE.test(event) ? event : null;
-  }
-
   // MLB's feed sometimes logs an interruption (mound visit, a timeout,
   // a pitching change mid-count, etc.) as its own top-level play with
   // result.type === 'atBat' and result.event set to the interruption's
@@ -4762,14 +4745,38 @@
           // defensive substitution, etc.) can land its own entry after
           // it, sharing the same matchup.batter and sometimes even
           // isComplete: false, and that must not make the live dot
-          // disappear mid-at-bat. NON_RESULT_EVENT_RE excludes those
-          // regardless of their isComplete state, since it's not
-          // consistent across interruption types.
-          const livePlay = allPlays.slice().reverse().find(p =>
+          // disappear mid-at-bat. Picked out structurally -- the most
+          // recent same-batter candidate that actually has pitch data --
+          // rather than by recognizing the interruption's description
+          // text (NON_RESULT_EVENT_RE/GENUINE_PAUSE_RE): a pause type MLB
+          // logs with wording those lists don't happen to cover would
+          // otherwise get treated as the live play itself and wipe out
+          // the real at-bat's pitch history, which is the actual bug this
+          // guards against.
+          const liveCandidates = allPlays.filter(p =>
             p.about && p.about.isComplete === false &&
-            p.matchup && p.matchup.batter && nextRowPlayerIds.has(p.matchup.batter.id) &&
-            !(p.result && NON_RESULT_EVENT_RE.test(p.result.event || ''))
+            p.matchup && p.matchup.batter && nextRowPlayerIds.has(p.matchup.batter.id)
           );
+          let livePlay = null;
+          for (let idx = liveCandidates.length - 1; idx >= 0; idx--) {
+            if (extractPitches(liveCandidates[idx]).length) { livePlay = liveCandidates[idx]; break; }
+          }
+          // No candidate has thrown a pitch yet -- either truly on-deck,
+          // or paused before its first pitch. Fall back to the most
+          // recent candidate so a pause starting before ball one still
+          // has something to report.
+          if (!livePlay) livePlay = liveCandidates[liveCandidates.length - 1] || null;
+          // Any same-batter candidate riding along after livePlay is a
+          // pause logged as its own trailing entry -- name it if its text
+          // matches a known pause term, otherwise fall back to a generic
+          // label so the pause still shows rather than silently doing
+          // nothing (the pitches staying put is what actually matters).
+          const trailingPause = livePlay && liveCandidates[liveCandidates.length - 1] !== livePlay
+            ? liveCandidates[liveCandidates.length - 1] : null;
+          const trailingPauseText = trailingPause
+            ? ((trailingPause.result && trailingPause.result.event && GENUINE_PAUSE_RE.test(trailingPause.result.event) && trailingPause.result.event)
+              || 'Play paused')
+            : null;
           const livePitches = livePlay ? extractPitches(livePlay) : [];
           if (livePitches.length && slotIndex >= (columnsPerInning[effInning] || 1)) {
             columnsPerInning[effInning] = slotIndex + 1;
@@ -4783,7 +4790,7 @@
               events: livePlay ? extractEvents(livePlay) : [],
               ...(livePlay ? extractHandedness(livePlay) : { batSide: null, pitchHand: null }),
               currentInterruption: livePlay
-                ? (currentInterruption(livePlay) || trailingTopLevelPause(livePlay, allPlays))
+                ? (currentInterruption(livePlay) || trailingPauseText)
                 : null,
               batterName: (isFeedMatch && feedBatter.fullName) || nextRow.players[nextRow.players.length - 1].name,
               pitcherFullName: (linescore.defense && linescore.defense.pitcher && linescore.defense.pitcher.fullName) || ''
