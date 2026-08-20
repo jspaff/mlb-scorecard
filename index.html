@@ -2090,14 +2090,42 @@
       return [];
     }
   }
+  // The leaders endpoint has no as-of-date filtering of its own (a bare
+  // `date` or `startDate`/`endDate` param is silently ignored, always
+  // returning current season totals) -- so an as-of-date board is built by
+  // hand: pull a wider season-long candidate pool, then hydrate each
+  // candidate's homeRuns as of `date` via a single batched byDateRange
+  // request, and re-rank locally. The pool is capped at 50, so a player
+  // outside this season's top 50 who happened to be leading earlier in the
+  // year wouldn't show up -- an accepted approximation given the endpoint's
+  // limits.
   async function getHrLeaders(season, date) {
     const key = `${season}-${date}`;
     if (hrLeadersCache[key] !== undefined) return hrLeadersCache[key];
     try {
-      const url = `https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=homeRuns&season=${season}&sportId=1&limit=30&startDate=${season}-01-01&endDate=${date}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      const leaders = (data.leagueLeaders && data.leagueLeaders[0] && data.leagueLeaders[0].leaders) || [];
+      const poolUrl = `https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=homeRuns&season=${season}&sportId=1&limit=50`;
+      const poolRes = await fetch(poolUrl);
+      const poolData = await poolRes.json();
+      const pool = (poolData.leagueLeaders && poolData.leagueLeaders[0] && poolData.leagueLeaders[0].leaders) || [];
+      if (!pool.length) {
+        hrLeadersCache[key] = [];
+        return [];
+      }
+      const ids = pool.map(l => l.person.id).join(',');
+      const statsUrl = `https://statsapi.mlb.com/api/v1/people?personIds=${ids}&hydrate=${encodeURIComponent(`stats(group=[hitting],type=[byDateRange],startDate=${season}-01-01,endDate=${date})`)}`;
+      const statsRes = await fetch(statsUrl);
+      const statsData = await statsRes.json();
+      const hrById = {};
+      (statsData.people || []).forEach(p => {
+        const split = p.stats && p.stats[0] && p.stats[0].splits && p.stats[0].splits[0];
+        hrById[p.id] = (split && split.stat && split.stat.homeRuns) || 0;
+      });
+      const leaders = pool
+        .map(l => ({ ...l, value: hrById[l.person.id] || 0 }))
+        .filter(l => l.value > 0)
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 30)
+        .map((l, i) => ({ ...l, rank: i + 1 }));
       hrLeadersCache[key] = leaders;
       return leaders;
     } catch (e) {
