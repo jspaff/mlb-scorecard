@@ -2094,7 +2094,7 @@
     const key = `${season}-${date}`;
     if (hrLeadersCache[key] !== undefined) return hrLeadersCache[key];
     try {
-      const url = `https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=homeRuns&season=${season}&sportId=1&limit=30&date=${date}`;
+      const url = `https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=homeRuns&season=${season}&sportId=1&limit=30&startDate=${season}-01-01&endDate=${date}`;
       const res = await fetch(url);
       const data = await res.json();
       const leaders = (data.leagueLeaders && data.leagueLeaders[0] && data.leagueLeaders[0].leaders) || [];
