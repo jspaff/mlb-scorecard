@@ -863,6 +863,16 @@
   .standings-grid-single { grid-template-columns: 1fr; max-width: 360px; margin: 0 auto; }
   .lb-rank { width: 22px; color: var(--ink-soft); }
   .lb-hr { width: 30px; font-weight: 700; }
+  .lb-row { padding: 5px 0; }
+  .lb-headshot {
+    width: 28px;
+    height: 28px;
+    flex: none;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--paper-line);
+    border: 1px solid var(--paper-line);
+  }
 
   .schedule-month-block { margin-bottom: 18px; }
   .schedule-month-block:last-child { margin-bottom: 0; }
@@ -3180,8 +3190,9 @@
       const id = l.person && l.person.id;
       const name = (l.person && l.person.fullName) || '';
       playerStore[id] = { id, name, pos: '', team: teamNickname(l.team), season, todayStats: {} };
-      return `<div class="standings-row">
+      return `<div class="standings-row lb-row">
         <span class="standings-num lb-rank">${l.rank}</span>
+        <img class="lb-headshot" src="${headshotUrl(id, 48)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
         <button type="button" class="standings-team player-name-btn" data-player-id="${id}">${name} <span class="hr-team">${teamAbbr(l.team)}</span></button>
         <span class="standings-num lb-hr">${l.value}</span>
       </div>`;
