@@ -861,7 +861,25 @@
   }
   .standings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 32px; }
   .standings-grid-single { grid-template-columns: 1fr; max-width: 320px; margin: 0 auto; }
+  .lb-header { max-width: 320px; margin: 0 auto; }
+  .lb-grid {
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(30, auto);
+    column-gap: 32px;
+    max-width: 320px;
+    margin: 0 auto;
+  }
   .lb-rank { width: 24px; font-size: 15px; color: var(--ink-soft); }
+  @media (min-width: 700px) {
+    .lb-header, .lb-grid { max-width: 660px; }
+    .lb-grid { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(15, auto); }
+  }
+  @media (min-width: 1050px) {
+    .lb-header, .lb-grid { max-width: 1000px; }
+    .lb-grid { grid-template-columns: 1fr 1fr 1fr; grid-template-rows: repeat(10, auto); }
+  }
   .lb-row { padding: 6px 0; position: relative; }
   .lb-row-content { display: flex; align-items: center; gap: 6px; flex: 1 1 auto; min-width: 0; position: relative; z-index: 1; }
   .lb-headshot {
@@ -2072,14 +2090,43 @@
       return [];
     }
   }
-  async function getHrLeaders(season) {
-    if (hrLeadersCache[season] !== undefined) return hrLeadersCache[season];
+  // The leaders endpoint has no as-of-date filtering of its own (a bare
+  // `date` or `startDate`/`endDate` param is silently ignored, always
+  // returning current season totals) -- so an as-of-date board is built by
+  // hand: pull a wider season-long candidate pool, then hydrate each
+  // candidate's homeRuns as of `date` via a single batched byDateRange
+  // request, and re-rank locally. The pool is capped at 50, so a player
+  // outside this season's top 50 who happened to be leading earlier in the
+  // year wouldn't show up -- an accepted approximation given the endpoint's
+  // limits.
+  async function getHrLeaders(season, date) {
+    const key = `${season}-${date}`;
+    if (hrLeadersCache[key] !== undefined) return hrLeadersCache[key];
     try {
-      const url = `https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=homeRuns&season=${season}&sportId=1&limit=25`;
-      const res = await fetch(url);
-      const data = await res.json();
-      const leaders = (data.leagueLeaders && data.leagueLeaders[0] && data.leagueLeaders[0].leaders) || [];
-      hrLeadersCache[season] = leaders;
+      const poolUrl = `https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=homeRuns&season=${season}&sportId=1&limit=50`;
+      const poolRes = await fetch(poolUrl);
+      const poolData = await poolRes.json();
+      const pool = (poolData.leagueLeaders && poolData.leagueLeaders[0] && poolData.leagueLeaders[0].leaders) || [];
+      if (!pool.length) {
+        hrLeadersCache[key] = [];
+        return [];
+      }
+      const ids = pool.map(l => l.person.id).join(',');
+      const statsUrl = `https://statsapi.mlb.com/api/v1/people?personIds=${ids}&hydrate=${encodeURIComponent(`stats(group=[hitting],type=[byDateRange],startDate=${season}-01-01,endDate=${date})`)}`;
+      const statsRes = await fetch(statsUrl);
+      const statsData = await statsRes.json();
+      const hrById = {};
+      (statsData.people || []).forEach(p => {
+        const split = p.stats && p.stats[0] && p.stats[0].splits && p.stats[0].splits[0];
+        hrById[p.id] = (split && split.stat && split.stat.homeRuns) || 0;
+      });
+      const leaders = pool
+        .map(l => ({ ...l, value: hrById[l.person.id] || 0 }))
+        .filter(l => l.value > 0)
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 30)
+        .map((l, i) => ({ ...l, rank: i + 1 }));
+      hrLeadersCache[key] = leaders;
       return leaders;
     } catch (e) {
       return [];
@@ -3209,9 +3256,9 @@
     return `<div class="pitch-header">Standings</div><div class="pitch-subheader">Wild Card &#8226; As of ${date}</div>${grid}`;
   }
 
-  function renderHrLeaderboard(leaders, season) {
+  function renderHrLeaderboard(leaders, season, date) {
     if (!leaders.length) {
-      return `<div class="pitch-header">Home Run Leaders</div><div class="pitch-empty">Home run leaders not available for this season.</div>`;
+      return `<div class="pitch-header">Home Run Leaders</div><div class="pitch-empty">Home run leaders not available for this date.</div>`;
     }
     const rows = leaders.map(l => {
       const id = l.person && l.person.id;
@@ -3230,17 +3277,13 @@
         </div>
       </div>`;
     }).join('');
-    return `<div class="pitch-header">Home Run Leaders</div><div class="pitch-subheader">${season} Season</div>
-      <div class="standings-grid standings-grid-single">
-        <div class="standings-col">
-          <div class="standings-row standings-header-row">
-            <span class="standings-num lb-rank">#</span>
-            <span class="standings-team">Player</span>
-            <span class="standings-num lb-hr-label">HR</span>
-          </div>
-          ${rows}
-        </div>
-      </div>`;
+    return `<div class="pitch-header">Home Run Leaders</div><div class="pitch-subheader">${season} Season &#8226; As of ${date}</div>
+      <div class="standings-row standings-header-row lb-header">
+        <span class="standings-num lb-rank">#</span>
+        <span class="standings-team">Player</span>
+        <span class="standings-num lb-hr-label">HR</span>
+      </div>
+      <div class="lb-grid">${rows}</div>`;
   }
 
   function renderPlayerModalContent(info, seasonStat, awardTags) {
@@ -4723,8 +4766,8 @@
     try {
       const season = dateStr.slice(0, 4);
       if (standingsView === 'homeruns') {
-        const leaders = await getHrLeaders(season);
-        standingsBody.innerHTML = `<div class="sheet">${renderHrLeaderboard(leaders, season)}</div>`;
+        const leaders = await getHrLeaders(season, dateStr);
+        standingsBody.innerHTML = `<div class="sheet">${renderHrLeaderboard(leaders, season, dateStr)}</div>`;
         return;
       }
       const records = await getStandings(season, dateStr);
