@@ -129,20 +129,6 @@
     box-shadow: 0 2px 0 rgba(0,0,0,0.25) inset, 0 4px 14px rgba(0,0,0,0.35);
   }
 
-  /* Desktop prototype: standings + HR leaders side by side instead of
-     behind the view-toggle -- see standingsWideQuery in the script. The
-     toggle's Home Runs button only applies to the narrow/tabbed layout,
-     since the board is always visible once this rule is active. */
-  .standings-wide {
-    display: grid;
-    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
-    gap: 14px;
-    align-items: start;
-  }
-  @media (min-width: 1000px) {
-    #standingsViewToggle .view-toggle-btn[data-view="homeruns"] { display: none; }
-  }
-
   /* Pinned to the bottom of the screen instead of stacking a second sticky
      element under .tab-header -- the score is always visible while
      scrolling the grid, but there's nothing else anchored to the same
@@ -1823,7 +1809,6 @@
   const body = document.getElementById('mlbBody');
   const scoreBottomBar = document.getElementById('scoreBottomBar');
   const standingsBody = document.getElementById('standingsBody');
-  const standingsPanel = document.getElementById('standingsPanel');
   const standingsDateInput = document.getElementById('standingsDatePick');
   const dailyBody = document.getElementById('dailyBody');
   const dailyDateInput = document.getElementById('dailyDatePick');
@@ -4733,26 +4718,10 @@
     await fetchAndRender(gamePk);
   }
 
-  // Prototype: on a wide-enough viewport, show the Home Runs board next to
-  // the standings instead of behind the view-toggle, so the toggle stops
-  // hiding the two panels from each other on desktop.
-  const standingsWideQuery = window.matchMedia('(min-width: 1000px)');
-
   async function loadStandings(dateStr) {
     standingsBody.innerHTML = '<div class="mlb-status-msg">Loading standings&#8230;</div>';
     try {
       const season = dateStr.slice(0, 4);
-      if (standingsWideQuery.matches) {
-        const [records, leaders] = await Promise.all([getStandings(season, dateStr), getHrLeaders(season)]);
-        const main = standingsView === 'wildcard'
-          ? renderWildcardContent(records, dateStr)
-          : renderStandingsContent(records, dateStr);
-        standingsBody.innerHTML = `<div class="standings-wide">
-          <div class="sheet">${main}</div>
-          <div class="sheet">${renderHrLeaderboard(leaders, season)}</div>
-        </div>`;
-        return;
-      }
       if (standingsView === 'homeruns') {
         const leaders = await getHrLeaders(season);
         standingsBody.innerHTML = `<div class="sheet">${renderHrLeaderboard(leaders, season)}</div>`;
@@ -5174,13 +5143,6 @@
     document.querySelectorAll('#standingsViewToggle .view-toggle-btn')
       .forEach(b => b.classList.toggle('active', b === btn));
     loadStandings(standingsDateInput.value);
-  });
-
-  // Re-render on crossing the wide-layout breakpoint (e.g. resizing the
-  // window or rotating a tablet) so the standings panel doesn't get stuck
-  // showing the wrong layout for the current viewport.
-  standingsWideQuery.addEventListener('change', () => {
-    if (!standingsPanel.hidden) loadStandings(standingsDateInput.value);
   });
 
   const pitchOverlay = document.getElementById('pitchOverlay');
