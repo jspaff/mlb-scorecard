@@ -862,7 +862,8 @@
   .standings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 32px; }
   .standings-grid-single { grid-template-columns: 1fr; max-width: 400px; margin: 0 auto; }
   .lb-rank { width: 24px; font-size: 15px; color: var(--ink-soft); }
-  .lb-row { padding: 6px 0; }
+  .lb-row { padding: 6px 0; position: relative; }
+  .lb-row-content { display: flex; align-items: center; gap: 6px; flex: 1 1 auto; min-width: 0; position: relative; z-index: 1; }
   .lb-headshot {
     width: 36px;
     height: 50px;
@@ -874,24 +875,23 @@
   }
   button.lb-name-btn { display: inline-flex; align-items: center; gap: 5px; }
   .lb-hr-cell {
-    position: relative;
     width: 40px;
     flex: none;
     height: 34px;
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: visible;
   }
   .lb-hr-watermark {
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 46px;
-    height: 46px;
+    width: 64px;
+    height: 64px;
     transform: translate(-50%, -50%);
     object-fit: contain;
-    opacity: 0.22;
+    opacity: 0.16;
+    pointer-events: none;
   }
   .lb-hr {
     position: relative;
@@ -3221,10 +3221,13 @@
       const headshot = `https://img.mlbstatic.com/mlb-photos/image/upload/w_60,h_84,q_100,f_auto,c_fill,g_face/v1/people/${id}/headshot/67/current`;
       const logoWatermark = teamId ? `<img class="lb-hr-watermark" src="${capLogoUrl(teamId)}" alt="">` : '';
       return `<div class="standings-row lb-row">
-        <span class="standings-num lb-rank">${l.rank}</span>
-        <img class="lb-headshot" src="${headshot}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
-        <button type="button" class="standings-team lb-name-btn player-name-btn" data-player-id="${id}">${name} <span class="hr-team">${teamAbbr(l.team)}</span></button>
-        <span class="lb-hr-cell">${logoWatermark}<span class="lb-hr">${l.value}</span></span>
+        ${logoWatermark}
+        <div class="lb-row-content">
+          <span class="standings-num lb-rank">${l.rank}</span>
+          <img class="lb-headshot" src="${headshot}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+          <button type="button" class="standings-team lb-name-btn player-name-btn" data-player-id="${id}">${name} <span class="hr-team">${teamAbbr(l.team)}</span></button>
+          <span class="lb-hr-cell"><span class="lb-hr">${l.value}</span></span>
+        </div>
       </div>`;
     }).join('');
     return `<div class="pitch-header">Home Run Leaders</div><div class="pitch-subheader">${season} Season</div>
