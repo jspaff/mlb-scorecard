@@ -860,21 +860,44 @@
     border-bottom: 1px solid var(--paper-line);
   }
   .standings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 32px; }
-  .standings-grid-single { grid-template-columns: 1fr; max-width: 360px; margin: 0 auto; }
-  .lb-rank { width: 22px; color: var(--ink-soft); }
-  .lb-hr { width: 30px; font-weight: 700; }
-  .lb-row { padding: 5px 0; }
+  .standings-grid-single { grid-template-columns: 1fr; max-width: 400px; margin: 0 auto; }
+  .lb-rank { width: 24px; font-size: 14px; color: var(--ink-soft); }
+  .lb-row { padding: 6px 0; }
   .lb-headshot {
-    width: 32px;
-    height: 44px;
+    width: 36px;
+    height: 50px;
     flex: none;
     border-radius: 4px;
     object-fit: cover;
     background: var(--paper-line);
     border: 1px solid var(--paper-line);
   }
-  button.lb-name-btn { display: inline-flex; align-items: center; gap: 5px; }
-  .lb-team-logo { width: 16px; height: 16px; flex: none; object-fit: contain; }
+  button.lb-name-btn { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; }
+  .lb-hr-cell {
+    position: relative;
+    width: 40px;
+    flex: none;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .lb-hr-watermark {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    opacity: 0.22;
+  }
+  .lb-hr {
+    position: relative;
+    z-index: 1;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 700;
+    font-size: 16px;
+  }
+  .lb-hr-label { width: 40px; }
 
   .schedule-month-block { margin-bottom: 18px; }
   .schedule-month-block:last-child { margin-bottom: 0; }
@@ -3194,12 +3217,12 @@
       const name = (l.person && l.person.fullName) || '';
       playerStore[id] = { id, name, pos: '', team: teamNickname(l.team), season, todayStats: {} };
       const headshot = `https://img.mlbstatic.com/mlb-photos/image/upload/w_60,h_84,q_100,f_auto,c_fill,g_face/v1/people/${id}/headshot/67/current`;
-      const logo = teamId ? `<img class="lb-team-logo" src="${capLogoUrl(teamId)}" alt="">` : '';
+      const logoWatermark = teamId ? `<img class="lb-hr-watermark" src="${capLogoUrl(teamId)}" alt="">` : '';
       return `<div class="standings-row lb-row">
         <span class="standings-num lb-rank">${l.rank}</span>
         <img class="lb-headshot" src="${headshot}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
-        <button type="button" class="standings-team lb-name-btn player-name-btn" data-player-id="${id}">${logo}${name} <span class="hr-team">${teamAbbr(l.team)}</span></button>
-        <span class="standings-num lb-hr">${l.value}</span>
+        <button type="button" class="standings-team lb-name-btn player-name-btn" data-player-id="${id}">${name} <span class="hr-team">${teamAbbr(l.team)}</span></button>
+        <span class="lb-hr-cell">${logoWatermark}<span class="lb-hr">${l.value}</span></span>
       </div>`;
     }).join('');
     return `<div class="pitch-header">Home Run Leaders</div><div class="pitch-subheader">${season} Season</div>
@@ -3208,7 +3231,7 @@
           <div class="standings-row standings-header-row">
             <span class="standings-num lb-rank">#</span>
             <span class="standings-team">Player</span>
-            <span class="standings-num lb-hr">HR</span>
+            <span class="standings-num lb-hr-label">HR</span>
           </div>
           ${rows}
         </div>
