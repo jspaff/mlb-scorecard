@@ -860,6 +860,46 @@
     border-bottom: 1px solid var(--paper-line);
   }
   .standings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 32px; }
+  .standings-grid-single { grid-template-columns: 1fr; max-width: 320px; margin: 0 auto; }
+  .lb-rank { width: 24px; font-size: 15px; color: var(--ink-soft); }
+  .lb-row { padding: 6px 0; position: relative; }
+  .lb-row-content { display: flex; align-items: center; gap: 6px; flex: 1 1 auto; min-width: 0; position: relative; z-index: 1; }
+  .lb-headshot {
+    width: 36px;
+    height: 50px;
+    flex: none;
+    border-radius: 4px;
+    object-fit: cover;
+    background: var(--paper-line);
+    border: 1px solid var(--paper-line);
+  }
+  button.lb-name-btn { display: inline-flex; align-items: center; gap: 5px; }
+  .lb-hr-cell {
+    width: 40px;
+    flex: none;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .lb-hr-watermark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 64px;
+    height: 64px;
+    transform: translate(-50%, -50%);
+    object-fit: contain;
+    opacity: 0.16;
+    pointer-events: none;
+  }
+  .lb-hr {
+    position: relative;
+    z-index: 1;
+    font-weight: 700;
+    font-size: 17px;
+  }
+  .lb-hr-label { width: 40px; }
 
   .schedule-month-block { margin-bottom: 18px; }
   .schedule-month-block:last-child { margin-bottom: 0; }
@@ -1672,6 +1712,7 @@
       <div class="view-toggle" id="standingsViewToggle">
         <button type="button" class="view-toggle-btn active" data-view="division">Division</button>
         <button type="button" class="view-toggle-btn" data-view="wildcard">Wild Card</button>
+        <button type="button" class="view-toggle-btn" data-view="homeruns">Home Runs</button>
       </div>
     </div>
     <div class="mlb-controls" data-tab-controls="schedule" hidden>
@@ -1815,6 +1856,7 @@
   const PALETTE = { ink: '#f3ecdb', gold: '#d9a91a', brick: '#e0604a', ball: '#4f7a5f', paper: '#3b4336', gray: '#8a8478' };
   const gameLogCache = {};
   const standingsCache = {};
+  const hrLeadersCache = {};
   const venueCache = {};
   // The live-feed's gameData.venue is often just {id, name, link} -- city
   // lives on the dedicated venue endpoint instead. Cached by venue id since
@@ -2027,6 +2069,19 @@
       return standingsCache[key];
     } catch (e) {
       standingsCache[key] = [];
+      return [];
+    }
+  }
+  async function getHrLeaders(season) {
+    if (hrLeadersCache[season] !== undefined) return hrLeadersCache[season];
+    try {
+      const url = `https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=homeRuns&season=${season}&sportId=1&limit=25`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const leaders = (data.leagueLeaders && data.leagueLeaders[0] && data.leagueLeaders[0].leaders) || [];
+      hrLeadersCache[season] = leaders;
+      return leaders;
+    } catch (e) {
       return [];
     }
   }
@@ -3152,6 +3207,40 @@
       <div class="standings-col">${renderLeague(nlDivisions(divisions), 'NL')}</div>
     </div>`;
     return `<div class="pitch-header">Standings</div><div class="pitch-subheader">Wild Card &#8226; As of ${date}</div>${grid}`;
+  }
+
+  function renderHrLeaderboard(leaders, season) {
+    if (!leaders.length) {
+      return `<div class="pitch-header">Home Run Leaders</div><div class="pitch-empty">Home run leaders not available for this season.</div>`;
+    }
+    const rows = leaders.map(l => {
+      const id = l.person && l.person.id;
+      const teamId = l.team && l.team.id;
+      const name = (l.person && l.person.fullName) || '';
+      playerStore[id] = { id, name, pos: '', team: teamNickname(l.team), season, todayStats: {} };
+      const headshot = `https://img.mlbstatic.com/mlb-photos/image/upload/w_60,h_84,q_100,f_auto,c_fill,g_face/v1/people/${id}/headshot/67/current`;
+      const logoWatermark = teamId ? `<img class="lb-hr-watermark" src="${capLogoUrl(teamId)}" alt="">` : '';
+      return `<div class="standings-row lb-row">
+        ${logoWatermark}
+        <div class="lb-row-content">
+          <span class="standings-num lb-rank">${l.rank}</span>
+          <img class="lb-headshot" src="${headshot}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+          <button type="button" class="standings-team lb-name-btn player-name-btn" data-player-id="${id}">${name} <span class="hr-team">${teamAbbr(l.team)}</span></button>
+          <span class="lb-hr-cell"><span class="lb-hr">${l.value}</span></span>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="pitch-header">Home Run Leaders</div><div class="pitch-subheader">${season} Season</div>
+      <div class="standings-grid standings-grid-single">
+        <div class="standings-col">
+          <div class="standings-row standings-header-row">
+            <span class="standings-num lb-rank">#</span>
+            <span class="standings-team">Player</span>
+            <span class="standings-num lb-hr-label">HR</span>
+          </div>
+          ${rows}
+        </div>
+      </div>`;
   }
 
   function renderPlayerModalContent(info, seasonStat, awardTags) {
@@ -4633,6 +4722,11 @@
     standingsBody.innerHTML = '<div class="mlb-status-msg">Loading standings&#8230;</div>';
     try {
       const season = dateStr.slice(0, 4);
+      if (standingsView === 'homeruns') {
+        const leaders = await getHrLeaders(season);
+        standingsBody.innerHTML = `<div class="sheet">${renderHrLeaderboard(leaders, season)}</div>`;
+        return;
+      }
       const records = await getStandings(season, dateStr);
       const content = standingsView === 'wildcard'
         ? renderWildcardContent(records, dateStr)
