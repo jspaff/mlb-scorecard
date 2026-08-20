@@ -865,14 +865,16 @@
   .lb-hr { width: 30px; font-weight: 700; }
   .lb-row { padding: 5px 0; }
   .lb-headshot {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 44px;
     flex: none;
-    border-radius: 50%;
+    border-radius: 4px;
     object-fit: cover;
     background: var(--paper-line);
     border: 1px solid var(--paper-line);
   }
+  button.lb-name-btn { display: inline-flex; align-items: center; gap: 5px; }
+  .lb-team-logo { width: 16px; height: 16px; flex: none; object-fit: contain; }
 
   .schedule-month-block { margin-bottom: 18px; }
   .schedule-month-block:last-child { margin-bottom: 0; }
@@ -3188,12 +3190,15 @@
     }
     const rows = leaders.map(l => {
       const id = l.person && l.person.id;
+      const teamId = l.team && l.team.id;
       const name = (l.person && l.person.fullName) || '';
       playerStore[id] = { id, name, pos: '', team: teamNickname(l.team), season, todayStats: {} };
+      const headshot = `https://img.mlbstatic.com/mlb-photos/image/upload/w_60,h_84,q_100,f_auto,c_fill,g_face/v1/people/${id}/headshot/67/current`;
+      const logo = teamId ? `<img class="lb-team-logo" src="${capLogoUrl(teamId)}" alt="">` : '';
       return `<div class="standings-row lb-row">
         <span class="standings-num lb-rank">${l.rank}</span>
-        <img class="lb-headshot" src="${headshotUrl(id, 48)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
-        <button type="button" class="standings-team player-name-btn" data-player-id="${id}">${name} <span class="hr-team">${teamAbbr(l.team)}</span></button>
+        <img class="lb-headshot" src="${headshot}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+        <button type="button" class="standings-team lb-name-btn player-name-btn" data-player-id="${id}">${logo}${name} <span class="hr-team">${teamAbbr(l.team)}</span></button>
         <span class="standings-num lb-hr">${l.value}</span>
       </div>`;
     }).join('');
