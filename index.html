@@ -2327,11 +2327,29 @@
   }
 
   // Even dominant-baseline="central" doesn't land Overpass 800's cap-height
-  // dead center by default -- measured the rendered glyph's actual ink
-  // bounding box at this exact font/weight/size (a screenshot + pixel scan,
-  // not a guess) and found y="11" (not the geometric y="10") puts the ink's
-  // true vertical center on the circle's center. If the font, weight, or
-  // font-size here ever changes, this offset needs remeasuring the same way.
+  // dead center by default -- CSS/SVG baseline keywords approximate a
+  // font's metrics, they don't guarantee a specific glyph's ink is
+  // symmetric around them. y="11" (not the geometric y="10", which is the
+  // circle's own cy) is an empirically measured value, not a formula: it's
+  // specific to this exact font+weight+size and isn't guaranteed to scale
+  // linearly if any of those change.
+  //
+  // If you resize this ring/font, remeasure rather than eyeballing it or
+  // guessing a new offset:
+  //   1. Render just the <text> (no circle) at the new size, at some
+  //      candidate y, on its own small page.
+  //   2. Screenshot it and scan pixel rows for the glyph's ink color to
+  //      find its actual top/bottom -- i.e. its true rendered bounding box,
+  //      not the box CSS/SVG claims it occupies.
+  //   3. delta = target_center_y - ((ink_top + ink_bottom) / 2); the
+  //      relationship is linear in y, so one measurement gives you the
+  //      exact new y (candidate_y + delta) -- no need to iterate.
+  //   4. Re-render at that y to confirm the ink center lands on the
+  //      circle's cy before shipping it.
+  // This is what caught the original bug: both plain CSS line-height
+  // centering and SVG's dominant-baseline="central" looked plausible but
+  // were both measurably off -- only checking actual rendered pixels
+  // caught it.
   function hitRingSVG() {
     const { ink } = PALETTE;
     return `<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
