@@ -236,24 +236,28 @@
     align-items: center;
     gap: 4px;
   }
+  /* Fixed height + flex centering (rather than relying on the font's own
+     line-height) so every header -- plain word or ringed letter -- occupies
+     an identical box and the dot rows underneath line up regardless of
+     font-loading/metrics differences across browsers. */
   .monster-count-label {
+    display: flex;
+    align-items: center;
+    height: 15px;
     font-family: 'Overpass', sans-serif;
     font-weight: 800;
     font-size: 11px;
+    line-height: 1;
     letter-spacing: 0.09em;
     text-transform: uppercase;
     color: var(--ink);
   }
   /* Mirrors the circled-H light on the real Monster panel -- same label
-     face as BALLS/STRIKES/OUTS, just ringed since it's a single letter
+     face/box as BALLS/STRIKES/OUTS, just ringed since it's a single letter
      rather than a word. */
   .monster-count-label-circled {
-    display: flex;
-    align-items: center;
     justify-content: center;
     width: 15px;
-    height: 15px;
-    line-height: 1;
     padding: 0;
     border-radius: 50%;
     border: 1.5px solid var(--ink);
