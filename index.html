@@ -222,7 +222,7 @@
   .monster-panel {
     display: inline-flex;
     align-items: stretch;
-    margin: 6px 0 2px;
+    margin: 0 0 2px;
     border-left: 2.5px solid var(--ink);
     border-right: 2.5px solid var(--ink);
     border-bottom: 2.5px solid var(--ink);
@@ -5382,14 +5382,17 @@
       // carries the score, but there's no equivalent replacement once the
       // game (and that panel) has ended, so Final keeps them.
       const showRunsInStrip = state === 'Final';
+      const gameSummaryButtonHtml = `<button type="button" class="box-score-link">Game Summary</button>`;
       // Same logic for the team names themselves -- Live leaves nothing
       // above the monster-panel's box score at all, not even "OAK @ BOS",
       // since monsterCountHtml (truthy only when the panel is rendering)
-      // is the signal for "the panel already covers this."
+      // is the signal for "the panel already covers this." The Game Summary
+      // button moves down below the whole panel instead (see the final
+      // scoreBottomBar template) rather than sitting in this now-empty strip.
       const scoreStripHtml = `
-        ${monsterCountHtml ? '' : `<span class="score-strip-teams">${awayAbbr}${showRunsInStrip ? ` <span class="score-strip-run">${awayRuns}</span>` : ''} @ ${homeAbbr}${showRunsInStrip ? ` <span class="score-strip-run">${homeRuns}</span>` : ''}</span>`}
+        <span class="score-strip-teams">${awayAbbr}${showRunsInStrip ? ` <span class="score-strip-run">${awayRuns}</span>` : ''} @ ${homeAbbr}${showRunsInStrip ? ` <span class="score-strip-run">${homeRuns}</span>` : ''}</span>
         ${compactStateHtml ? `<span class="score-strip-state">${compactStateHtml}</span>` : ''}
-        <button type="button" class="box-score-link">Game Summary</button>
+        ${gameSummaryButtonHtml}
       `;
 
       // Fed to showCurrentGameSummary() when the link above is clicked --
@@ -5417,12 +5420,20 @@
 
       // Lives in the fixed bottom bar (#scoreBottomBar), not in .sheet --
       // see .score-bottom-bar for why.
-      scoreBottomBar.innerHTML = `
-        <div class="score-strip">${scoreStripHtml}</div>
-        ${monsterCountHtml ? `<div class="monster-panel">
+      // Live keeps the box score flush against the top of the bar (no strip
+      // above it) and drops the Game Summary button to the very bottom
+      // instead; every other state still uses the plain top strip since
+      // there's no panel here to push the button out of.
+      scoreBottomBar.innerHTML = monsterCountHtml ? `
+        <div class="monster-panel">
           <div class="monster-panel-left">${monsterBoxScoreHtml}${monsterCountHtml}</div>
           <div class="monster-panel-right">${monsterRHEHtml}${monsterBasesHtml}</div>
-        </div>` : ''}
+        </div>
+        ${subLineHtml ? `<div class="score-strip-sub">${subLineHtml}</div>` : ''}
+        ${lastPlayHtml}
+        <div class="score-strip">${gameSummaryButtonHtml}</div>
+      ` : `
+        <div class="score-strip">${scoreStripHtml}</div>
         ${subLineHtml ? `<div class="score-strip-sub">${subLineHtml}</div>` : ''}
         ${lastPlayHtml}
       `;
