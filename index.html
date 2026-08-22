@@ -214,22 +214,21 @@
   }
 
   /* Green Monster-style count band: sign-painted (Overpass, same face as the
-     .badge labels) BALLS/STRIKES/OUTS headers over dot rows that fill in
-     bright green/red as the count climbs, standing in for the manual
-     scoreboard's lit panels without an actual glow effect. Dot counts (3/2/2)
-     match the max value ever live-rendered -- a 4th ball, 3rd strike, or 3rd
-     out ends the at-bat/half-inning before it would show. The whole band
-     gets an ink-line box, echoing the painted border around the Monster's
-     ball/strike/out panel. */
+     .badge labels) BALLS/STRIKES/OUTS/H headers over dot rows that fill in
+     bright green/red as the count climbs (or a hit lands), standing in for
+     the manual scoreboard's lit panels without an actual glow effect. Ball/
+     hit dot counts (3/1) and strike/out dot counts (2/2) match the max value
+     ever live-rendered -- a 4th ball, 3rd strike, or 3rd out ends the at-bat/
+     half-inning before it would show, and the H dot only ever needs one.
+     display: inline-flex + the straight (unrounded) ink-line border keeps
+     the box hugging just this content instead of the full bar width. */
   .monster-count {
-    display: flex;
+    display: inline-flex;
     align-items: flex-start;
-    justify-content: flex-start;
     gap: 18px;
     margin: 6px 0 2px;
     padding: 8px 12px;
     border: 1.5px solid var(--ink);
-    border-radius: 5px;
   }
   .monster-count-group {
     display: flex;
@@ -256,23 +255,6 @@
   .monster-dot-red { background: var(--brick-dim); }
   .monster-dot.is-lit { background: var(--monster-green); border-color: var(--monster-green); }
   .monster-dot-red.is-lit { background: var(--brick); border-color: var(--brick); }
-  /* The circled-H hit indicator has no dot row under it, so it sits with
-     the labels instead of stretching to the group columns' full height. */
-  .monster-hit-group { align-self: flex-start; padding-top: 1px; }
-  .monster-hit-badge {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 15px;
-    height: 15px;
-    border-radius: 50%;
-    border: 1.5px solid var(--ink-soft);
-    font-family: 'Overpass', sans-serif;
-    font-weight: 800;
-    font-size: 9px;
-    color: var(--ink-soft);
-  }
-  .monster-hit-badge.is-lit { border-color: var(--ink); background: var(--ink); color: var(--paper); }
 
   .gs-top-row {
     display: flex;
@@ -5146,8 +5128,9 @@
               <span class="monster-count-label">Outs</span>
               <span class="monster-count-dots">${dots(2, outs, true)}</span>
             </div>
-            <div class="monster-count-group monster-hit-group">
-              <span class="monster-hit-badge ${hitLit ? 'is-lit' : ''}">H</span>
+            <div class="monster-count-group">
+              <span class="monster-count-label">H</span>
+              <span class="monster-count-dots">${dots(1, hitLit ? 1 : 0, false)}</span>
             </div>
           </div>`;
         subLineHtml = (batter || pitcher)
