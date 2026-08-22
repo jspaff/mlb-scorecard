@@ -236,37 +236,44 @@
     align-items: center;
     gap: 4px;
   }
-  /* Fixed height + a matching line-height (the classic single-line vertical
-     centering trick, not flex-centering -- some mobile browsers were
-     inflating a flex-centered box to the glyph's own metrics instead of
-     respecting the explicit height) plus overflow:hidden as a hard clamp,
-     so every header -- plain word or ringed letter -- occupies an identical
-     15px box no matter what a given font/browser wants to do with a single
-     bold capital letter, and the dot rows underneath line up. */
+  /* A fixed-height slot that's *only* job is keeping every dot row lined up
+     -- it's deliberately separate from the label/ring inside it, so however
+     BALLS/STRIKES/OUTS text or the H ring wants to size and center itself
+     internally, the slot's own height (and thus where the dot row starts)
+     never moves. */
+  .monster-count-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 20px;
+  }
   .monster-count-label {
-    display: inline-block;
-    height: 15px;
-    line-height: 15px;
-    overflow: hidden;
     font-family: 'Overpass', sans-serif;
     font-weight: 800;
     font-size: 11px;
+    line-height: 1;
     letter-spacing: 0.09em;
     text-transform: uppercase;
     color: var(--ink);
   }
   /* Mirrors the circled-H light on the real Monster panel -- same label
-     face/box as BALLS/STRIKES/OUTS, just ringed since it's a single letter
-     rather than a word. line-height is the 15px box minus the 1.5px border
-     on each side, so the glyph centers in the ring's visible interior. */
+     face as BALLS/STRIKES/OUTS, just ringed since it's a single letter
+     rather than a word. Deliberately roomier than the letter itself (20px
+     ring around an 11px glyph) so the glyph has real breathing room instead
+     of a hairline-thin margin that any sub-pixel rounding makes look off. */
   .monster-count-label-circled {
-    width: 15px;
-    line-height: 12px;
-    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
     border: 1.5px solid var(--ink);
-    letter-spacing: 0;
-    text-align: center;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 800;
+    font-size: 11px;
+    line-height: 1;
+    color: var(--ink);
   }
   .monster-count-dots { display: flex; gap: 3px; }
   .monster-dot {
@@ -5141,19 +5148,19 @@
         monsterCountHtml = `
           <div class="monster-count">
             <div class="monster-count-group">
-              <span class="monster-count-label">Balls</span>
+              <div class="monster-count-header"><span class="monster-count-label">Balls</span></div>
               <span class="monster-count-dots">${dots(3, balls, false)}</span>
             </div>
             <div class="monster-count-group">
-              <span class="monster-count-label">Strikes</span>
+              <div class="monster-count-header"><span class="monster-count-label">Strikes</span></div>
               <span class="monster-count-dots">${dots(2, strikes, true)}</span>
             </div>
             <div class="monster-count-group">
-              <span class="monster-count-label">Outs</span>
+              <div class="monster-count-header"><span class="monster-count-label">Outs</span></div>
               <span class="monster-count-dots">${dots(2, outs, true)}</span>
             </div>
             <div class="monster-count-group">
-              <span class="monster-count-label monster-count-label-circled">H</span>
+              <div class="monster-count-header"><span class="monster-count-label-circled">H</span></div>
               <span class="monster-count-dots">${dots(1, hitLit ? 1 : 0, false)}</span>
             </div>
           </div>`;
