@@ -26,7 +26,10 @@
     --ink-soft: #c3c8bb;
     --gold: #d9a91a;
     --brick: #e0604a;
+    --brick-dim: #5c4038;
     --frame: #54796d;
+    --monster-green: #3fae56;
+    --monster-green-dim: #33422e;
   }
 
   #mlb-root * { box-sizing: border-box; }
@@ -181,12 +184,9 @@
     color: var(--ink-soft);
     white-space: nowrap;
   }
-  .score-strip-count {
+  .score-strip-bases {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 11.5px;
-    color: var(--ink-soft);
     white-space: nowrap;
   }
   .box-score-link {
@@ -212,6 +212,61 @@
     color: var(--ink-soft);
     padding-bottom: 8px;
   }
+
+  /* Green Monster-style count band: sign-painted (Overpass, same face as the
+     .badge labels) BALLS/STRIKES/OUTS/H headers over dot rows that fill in
+     bright green/red as the count climbs (or a hit lands), standing in for
+     the manual scoreboard's lit panels without an actual glow effect. Ball/
+     hit dot counts (3/1) and strike/out dot counts (2/2) match the max value
+     ever live-rendered -- a 4th ball, 3rd strike, or 3rd out ends the at-bat/
+     half-inning before it would show, and the H dot only ever needs one.
+     display: inline-flex + the straight (unrounded) ink-line border keeps
+     the box hugging just this content instead of the full bar width. */
+  .monster-count {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: 18px;
+    margin: 6px 0 2px;
+    padding: 8px 12px;
+    border: 2.5px solid var(--ink);
+  }
+  .monster-count-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  /* A fixed-height slot that's *only* job is keeping every dot row lined up
+     -- it's deliberately separate from the label/ring inside it, so however
+     BALLS/STRIKES/OUTS text or the H ring wants to size and center itself
+     internally, the slot's own height (and thus where the dot row starts)
+     never moves. */
+  .monster-count-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 20px;
+  }
+  .monster-count-label {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 800;
+    font-size: 11px;
+    line-height: 1;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .monster-count-dots { display: flex; gap: 3px; }
+  .monster-dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--monster-green-dim);
+    border: 1px solid rgba(0,0,0,0.3);
+  }
+  .monster-dot-red { background: var(--brick-dim); }
+  .monster-dot.is-lit { background: var(--monster-green); border-color: var(--monster-green); }
+  .monster-dot-red.is-lit { background: var(--brick); border-color: var(--brick); }
 
   .gs-top-row {
     display: flex;
@@ -2269,6 +2324,39 @@
     if (prefix) return seq.length > 1 ? seqStr : prefix + seqStr;
     if (!event) return '';
     return event.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 3);
+  }
+
+  // Even dominant-baseline="central" doesn't land Overpass 800's cap-height
+  // dead center by default -- CSS/SVG baseline keywords approximate a
+  // font's metrics, they don't guarantee a specific glyph's ink is
+  // symmetric around them. y="11" (not the geometric y="10", which is the
+  // circle's own cy) is an empirically measured value, not a formula: it's
+  // specific to this exact font+weight+size and isn't guaranteed to scale
+  // linearly if any of those change.
+  //
+  // If you resize this ring/font, remeasure rather than eyeballing it or
+  // guessing a new offset:
+  //   1. Render just the <text> (no circle) at the new size, at some
+  //      candidate y, on its own small page.
+  //   2. Screenshot it and scan pixel rows for the glyph's ink color to
+  //      find its actual top/bottom -- i.e. its true rendered bounding box,
+  //      not the box CSS/SVG claims it occupies.
+  //   3. delta = target_center_y - ((ink_top + ink_bottom) / 2); the
+  //      relationship is linear in y, so one measurement gives you the
+  //      exact new y (candidate_y + delta) -- no need to iterate.
+  //   4. Re-render at that y to confirm the ink center lands on the
+  //      circle's cy before shipping it.
+  // This is what caught the original bug: both plain CSS line-height
+  // centering and SVG's dominant-baseline="central" looked plausible but
+  // were both measurably off -- only checking actual rendered pixels
+  // caught it.
+  function hitRingSVG() {
+    const { ink } = PALETTE;
+    return `<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+      <circle cx="10" cy="10" r="8.5" fill="none" stroke="${ink}" stroke-width="1.5"/>
+      <text x="10" y="11" text-anchor="middle" dominant-baseline="central"
+        font-family="Overpass, sans-serif" font-weight="800" font-size="11" fill="${ink}">H</text>
+    </svg>`;
   }
 
   function diamondSVG(reached, scored, code, isOut, outEdge, specialEdges, ghostStart, calledLooking) {
@@ -5025,7 +5113,8 @@
       // game summary modal (opened via the "Game Summary" link) instead of
       // here, so the scorecard grid keeps the viewport.
       let compactStateHtml = '';
-      let compactCountHtml = '';
+      let basesMiniHtml = '';
+      let monsterCountHtml = '';
       let subLineHtml = '';
       let lastPlayHtml = '';
       // MLB flips abstractGameState to 'Live' during pre-game warmup, well
@@ -5052,14 +5141,43 @@
         const batter = offense.batter ? offense.batter.fullName : '';
         const pitcher = halfOver ? '' : ((linescore.defense && linescore.defense.pitcher) ? linescore.defense.pitcher.fullName : '');
 
-        const basesMiniHtml = `
-          <span class="diamond-mini">
+        basesMiniHtml = `
+          <span class="score-strip-bases"><span class="diamond-mini">
             <span class="base-mini second ${onSecond ? 'on' : ''}"></span>
             <span class="base-mini third ${onThird ? 'on' : ''}"></span>
             <span class="base-mini first ${onFirst ? 'on' : ''}"></span>
-          </span>`;
+          </span></span>`;
         compactStateHtml = `${inningHalf} ${inningNum}`;
-        compactCountHtml = `<span class="score-strip-count">${balls}-${strikes}, ${outs} out ${basesMiniHtml}</span>`;
+        // Dot counts (3/2/2) are the max value ever live -- a 4th ball, 3rd
+        // strike, or 3rd out ends the at-bat/half-inning before it'd show.
+        const dots = (total, lit, redClass) => Array.from({ length: total },
+          (_, i) => `<span class="monster-dot ${redClass ? 'monster-dot-red' : ''} ${i < lit ? 'is-lit' : ''}"></span>`
+        ).join('');
+        // allPlays' last entry is either the at-bat still in progress (no
+        // result yet) or the one that just ended -- once a new batter's
+        // first pitch posts a fresh entry, this naturally falls back dark.
+        const lastPlay = allPlays[allPlays.length - 1];
+        const lastEvent = lastPlay && lastPlay.result && lastPlay.result.event;
+        const hitLit = lastEvent === 'Single' || lastEvent === 'Double' || lastEvent === 'Triple' || lastEvent === 'Home Run';
+        monsterCountHtml = `
+          <div class="monster-count">
+            <div class="monster-count-group">
+              <div class="monster-count-header"><span class="monster-count-label">Balls</span></div>
+              <span class="monster-count-dots">${dots(3, balls, false)}</span>
+            </div>
+            <div class="monster-count-group">
+              <div class="monster-count-header"><span class="monster-count-label">Strikes</span></div>
+              <span class="monster-count-dots">${dots(2, strikes, true)}</span>
+            </div>
+            <div class="monster-count-group">
+              <div class="monster-count-header"><span class="monster-count-label">Outs</span></div>
+              <span class="monster-count-dots">${dots(2, outs, true)}</span>
+            </div>
+            <div class="monster-count-group">
+              <div class="monster-count-header">${hitRingSVG()}</div>
+              <span class="monster-count-dots">${dots(1, hitLit ? 1 : 0, false)}</span>
+            </div>
+          </div>`;
         subLineHtml = (batter || pitcher)
           ? `${batter ? 'At bat: ' + batter : ''}${pitcher ? ' &nbsp;&#183;&nbsp; Pitching: ' + pitcher : ''}`
           : '';
@@ -5092,7 +5210,7 @@
       const scoreStripHtml = `
         <span class="score-strip-teams">${awayAbbr}${showRuns ? ` <span class="score-strip-run">${awayRuns}</span>` : ''} @ ${homeAbbr}${showRuns ? ` <span class="score-strip-run">${homeRuns}</span>` : ''}</span>
         <span class="score-strip-state">${compactStateHtml}</span>
-        ${compactCountHtml}
+        ${basesMiniHtml}
         <button type="button" class="box-score-link">Game Summary</button>
       `;
 
@@ -5123,6 +5241,7 @@
       // see .score-bottom-bar for why.
       scoreBottomBar.innerHTML = `
         <div class="score-strip">${scoreStripHtml}</div>
+        ${monsterCountHtml}
         ${subLineHtml ? `<div class="score-strip-sub">${subLineHtml}</div>` : ''}
         ${lastPlayHtml}
       `;
