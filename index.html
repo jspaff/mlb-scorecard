@@ -256,25 +256,6 @@
     text-transform: uppercase;
     color: var(--ink);
   }
-  /* Mirrors the circled-H light on the real Monster panel -- same label
-     face as BALLS/STRIKES/OUTS, just ringed since it's a single letter
-     rather than a word. Deliberately roomier than the letter itself (20px
-     ring around an 11px glyph) so the glyph has real breathing room instead
-     of a hairline-thin margin that any sub-pixel rounding makes look off. */
-  .monster-count-label-circled {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    border: 1.5px solid var(--ink);
-    font-family: 'Overpass', sans-serif;
-    font-weight: 800;
-    font-size: 11px;
-    line-height: 1;
-    color: var(--ink);
-  }
   .monster-count-dots { display: flex; gap: 3px; }
   .monster-dot {
     width: 11px;
@@ -2343,6 +2324,19 @@
     if (prefix) return seq.length > 1 ? seqStr : prefix + seqStr;
     if (!event) return '';
     return event.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 3);
+  }
+
+  // Drawn as vector strokes rather than a text glyph -- centering a single
+  // capital letter in a circle via CSS/font line-height is notoriously
+  // inconsistent across browsers (fonts reserve descender space asymmetrically,
+  // so flex/line-height centering settles on the line box, not the glyph's own
+  // ink), while explicit SVG coordinates render identically everywhere.
+  function hitRingSVG() {
+    const { ink } = PALETTE;
+    return `<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+      <circle cx="10" cy="10" r="8.5" fill="none" stroke="${ink}" stroke-width="1.5"/>
+      <path d="M7 6V14M13 6V14M7 10H13" stroke="${ink}" stroke-width="1.8" stroke-linecap="square"/>
+    </svg>`;
   }
 
   function diamondSVG(reached, scored, code, isOut, outEdge, specialEdges, ghostStart, calledLooking) {
@@ -5160,7 +5154,7 @@
               <span class="monster-count-dots">${dots(2, outs, true)}</span>
             </div>
             <div class="monster-count-group">
-              <div class="monster-count-header"><span class="monster-count-label-circled">H</span></div>
+              <div class="monster-count-header">${hitRingSVG()}</div>
               <span class="monster-count-dots">${dots(1, hitLit ? 1 : 0, false)}</span>
             </div>
           </div>`;
