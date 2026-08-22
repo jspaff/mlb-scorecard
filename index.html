@@ -184,11 +184,6 @@
     color: var(--ink-soft);
     white-space: nowrap;
   }
-  .score-strip-bases {
-    display: flex;
-    align-items: center;
-    white-space: nowrap;
-  }
   .box-score-link {
     margin-left: auto;
     flex-shrink: 0;
@@ -206,6 +201,10 @@
     white-space: nowrap;
   }
   .box-score-link:hover, .box-score-link:focus-visible { color: var(--ink); border-color: var(--ink-soft); }
+  /* Left-aligned at the bottom of the live bar instead of the button's
+     usual margin-left:auto right-alignment (there's nothing else on this
+     line to push away from anymore). */
+  .score-strip-bottom .box-score-link { margin-left: 0; }
   .score-strip-sub {
     font-family: 'Inter', sans-serif;
     font-size: 12px;
@@ -213,22 +212,82 @@
     padding-bottom: 8px;
   }
 
-  /* Green Monster-style count band: sign-painted (Overpass, same face as the
-     .badge labels) BALLS/STRIKES/OUTS/H headers over dot rows that fill in
-     bright green/red as the count climbs (or a hit lands), standing in for
-     the manual scoreboard's lit panels without an actual glow effect. Ball/
-     hit dot counts (3/1) and strike/out dot counts (2/2) match the max value
-     ever live-rendered -- a 4th ball, 3rd strike, or 3rd out ends the at-bat/
-     half-inning before it would show, and the H dot only ever needs one.
-     display: inline-flex + the straight (unrounded) ink-line border keeps
-     the box hugging just this content instead of the full bar width. */
-  .monster-count {
+  /* Green Monster-style panel, two columns side by side: the linescore
+     (.monster-panel-left, itself the innings grid stacked over the
+     Balls/Strikes/Outs/H count band) and R/H/E (.monster-panel-right, the
+     totals grid stacked over the baserunner diamond). inline-flex + row
+     keeps the whole panel hugging its content's
+     width instead of stretching the full bottom-bar width; align-items:
+     stretch makes both columns match whichever is taller, so the shared
+     divider between them and the outer bottom border both run the full
+     height/width automatically. Open on top (no border-top) since only the
+     other three sides are meant to read as a frame, echoing the real
+     board's panel edges rather than boxing in the score-strip line above. */
+  .monster-panel {
     display: inline-flex;
+    align-items: stretch;
+    margin: 0 0 2px;
+    border-left: 2.5px solid var(--ink);
+    border-right: 2.5px solid var(--ink);
+    border-bottom: 2.5px solid var(--ink);
+  }
+  .monster-panel-left {
+    display: flex;
+    flex-direction: column;
+    padding: 6px 14px 9px;
+    border-right: 2px solid var(--ink);
+  }
+  .monster-panel-right {
+    display: flex;
+    flex-direction: column;
+    padding: 6px 14px 9px;
+  }
+  /* Mirrors .monster-count's own margin/padding/border-top exactly, so the
+     two horizontal dividers land on the same line across both columns.
+     Holds the baserunner diamond -- centered since it's narrower than the
+     R/H/E grid above it. */
+  .monster-rhe-spacer {
+    display: flex;
+    justify-content: center;
+    margin-top: 9px;
+    padding-top: 9px;
+    padding-bottom: 4px;
+    border-top: 2px solid var(--ink);
+  }
+  /* Scaled up from the old inline score-strip diamond (since removed) to
+     fill most of the R/H/E column's width now that it's the sole content
+     of this section -- same rotated-square-of-squares construction. */
+  .monster-bases {
+    width: 30px;
+    height: 30px;
+    position: relative;
+    transform: rotate(45deg);
+    margin-top: 12px;
+  }
+  .monster-bases-marker {
+    position: absolute;
+    width: 11px;
+    height: 11px;
+    border: 2px solid var(--ink-soft);
+  }
+  .monster-bases-marker.on { background: var(--gold); border-color: var(--gold); }
+  .monster-bases-marker.first { top: 0; right: 0; }
+  .monster-bases-marker.second { top: 0; left: 0; }
+  .monster-bases-marker.third { bottom: 0; left: 0; }
+  /* Sign-painted (Overpass, same face as the .badge labels) BALLS/STRIKES/
+     OUTS/H headers over dot rows that fill in bright green/red as the count
+     climbs (or a hit lands), standing in for the manual scoreboard's lit
+     panels without an actual glow effect. Ball/hit dot counts (3/1) and
+     strike/out dot counts (2/2) match the max value ever live-rendered --
+     a 4th ball, 3rd strike, or 3rd out ends the at-bat/half-inning before
+     it would show, and the H dot only ever needs one. */
+  .monster-count {
+    display: flex;
     align-items: flex-start;
-    gap: 18px;
-    margin: 6px 0 2px;
-    padding: 8px 12px;
-    border: 2.5px solid var(--ink);
+    gap: 20px;
+    margin-top: 9px;
+    padding-top: 9px;
+    border-top: 2px solid var(--ink);
   }
   .monster-count-group {
     display: flex;
@@ -240,23 +299,26 @@
      -- it's deliberately separate from the label/ring inside it, so however
      BALLS/STRIKES/OUTS text or the H ring wants to size and center itself
      internally, the slot's own height (and thus where the dot row starts)
-     never moves. */
+     never moves. Matches the H ring's own 21px size (see hitRingSVG). */
   .monster-count-header {
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 20px;
+    height: 21px;
   }
   .monster-count-label {
     font-family: 'Overpass', sans-serif;
     font-weight: 800;
-    font-size: 11px;
+    font-size: 12px;
     line-height: 1;
     letter-spacing: 0.09em;
     text-transform: uppercase;
     color: var(--ink);
   }
-  .monster-count-dots { display: flex; gap: 3px; }
+  /* Dots stay at the original 11px (the size they were before the 13px pass)
+     even though the surrounding text sized up to 12px -- text and dots are
+     tuned independently here. */
+  .monster-count-dots { display: flex; gap: 4px; }
   .monster-dot {
     width: 11px;
     height: 11px;
@@ -267,6 +329,58 @@
   .monster-dot-red { background: var(--brick-dim); }
   .monster-dot.is-lit { background: var(--monster-green); border-color: var(--monster-green); }
   .monster-dot-red.is-lit { background: var(--brick); border-color: var(--brick); }
+
+  /* Fenway-style linescore. Innings group in 3s (1-3/4-6/7-9, extras
+     trailing) with a wider gap between groups than within one --
+     .monster-box-cell is a fixed width so every column (the header numbers
+     and both teams' runs) lines up regardless of digit count. The header
+     row deliberately matches the data rows' size/weight/color -- no
+     separate dimmed style -- since it's reusing the same face as the
+     BALLS/STRIKES/OUTS labels above. */
+  .monster-box {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .monster-box-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .monster-box-team {
+    min-width: 48px;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .monster-box-groups { display: flex; gap: 12px; }
+  .monster-box-group { display: flex; gap: 4px; }
+  .monster-box-cell {
+    width: 13px;
+    text-align: center;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--ink);
+  }
+  /* Recessed-slot look for the actual number cells (away/home innings and
+     R/H/E, whether or not a value has posted yet) -- the header row (1-9,
+     R/H/E) is excluded via :not(.monster-box-header), staying plain text
+     like the real board's painted labels above the physical slots. */
+  .monster-box-row:not(.monster-box-header) .monster-box-cell {
+    height: 16px;
+    line-height: 16px;
+    border-radius: 2px;
+    background: rgba(0, 0, 0, 0.22);
+    box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.5), inset 0 -1px 1px rgba(255, 255, 255, 0.05);
+  }
+  /* A run posted in the half-inning still being played -- reverts to plain
+     ink automatically once that half ends, since renderMonsterBoxScore only
+     applies this class while linescore says the half is still live. */
+  .monster-box-cell.monster-live-run { color: var(--gold); }
 
   .gs-top-row {
     display: flex;
@@ -623,13 +737,6 @@
     text-decoration: none;
   }
   .hr-watch:hover, .hr-watch:focus-visible { text-decoration: underline; }
-
-  .diamond-mini { width: 15px; height: 15px; position: relative; transform: rotate(45deg); vertical-align: middle; }
-  .base-mini { position: absolute; width: 5.5px; height: 5.5px; border: 1.1px solid var(--ink-soft); }
-  .base-mini.on { background: var(--gold); border-color: var(--gold); }
-  .base-mini.first { top: 0; right: 0; }
-  .base-mini.second { top: 0; left: 0; }
-  .base-mini.third { bottom: 0; left: 0; }
 
   .last-play {
     font-family: 'Inter', sans-serif;
@@ -2329,10 +2436,13 @@
   // Even dominant-baseline="central" doesn't land Overpass 800's cap-height
   // dead center by default -- CSS/SVG baseline keywords approximate a
   // font's metrics, they don't guarantee a specific glyph's ink is
-  // symmetric around them. y="11" (not the geometric y="10", which is the
-  // circle's own cy) is an empirically measured value, not a formula: it's
-  // specific to this exact font+weight+size and isn't guaranteed to scale
-  // linearly if any of those change.
+  // symmetric around them. y="10.75" (not the geometric y="10.5", which is
+  // the circle's own cy) is an empirically measured value, not a formula:
+  // it's specific to this exact font+weight+size (remeasured each time this
+  // has resized -- 20px/font-size 11, then 23px/font-size 13, now 21px/
+  // font-size 12 -- and the offset has never scaled proportionally between
+  // sizes, confirming step 3 below can't be skipped by just scaling the old
+  // offset).
   //
   // If you resize this ring/font, remeasure rather than eyeballing it or
   // guessing a new offset:
@@ -2352,10 +2462,10 @@
   // caught it.
   function hitRingSVG() {
     const { ink } = PALETTE;
-    return `<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
-      <circle cx="10" cy="10" r="8.5" fill="none" stroke="${ink}" stroke-width="1.5"/>
-      <text x="10" y="11" text-anchor="middle" dominant-baseline="central"
-        font-family="Overpass, sans-serif" font-weight="800" font-size="11" fill="${ink}">H</text>
+    return `<svg width="21" height="21" viewBox="0 0 21 21" aria-hidden="true">
+      <circle cx="10.5" cy="10.5" r="8.95" fill="none" stroke="${ink}" stroke-width="1.6"/>
+      <text x="10.5" y="10.75" text-anchor="middle" dominant-baseline="central"
+        font-family="Overpass, sans-serif" font-weight="800" font-size="12" fill="${ink}">H</text>
     </svg>`;
   }
 
@@ -3528,6 +3638,102 @@
       <thead>${head}</thead>
       <tbody>${row(awayName, true)}${row(homeName, false)}</tbody>
     </table></div></div>`;
+  }
+
+  // Fenway-style linescore for the Scorecard tab's fixed bottom bar: just
+  // team names and runs by inning, grouped 1-3/4-6/7-9 (any extra innings
+  // trail in their own group) with a wider gap between groups than within
+  // one -- no P/R/H/E columns, unlike renderBoxScore's full game-summary
+  // table. Reuses renderBoxScore's isPastInning logic so a skipped bottom
+  // half (walk-off, game called) still shows 0 instead of a blank.
+  function renderMonsterBoxScore(linescore, awayAbbr, homeAbbr) {
+    const innings = linescore.innings || [];
+    const numInnings = Math.max(innings.length, 9);
+    const groups = [];
+    for (let i = 1; i <= numInnings; i += 3) groups.push([i, Math.min(i + 2, numInnings)]);
+
+    // A half-inning's cell reads gold only while that half is still being
+    // played -- linescore.inningHalf lags a tick behind the actual state
+    // (see the halfOver comment elsewhere), so a half genuinely in progress
+    // is 'Top'/'Bottom' with outs < 3; the moment it hits 3 outs (or the
+    // game moves to the next inning), this cell falls back to plain ink on
+    // the next render, same way the H hit light and monster-dot lit states
+    // reset themselves each poll rather than needing an explicit "turn off."
+    const halfOver = (linescore.outs ?? 0) >= 3;
+    const liveHalf = halfOver ? null : linescore.inningHalf;
+
+    function cell(n, isAway) {
+      const inn = innings[n - 1];
+      const side = inn && (isAway ? inn.away : inn.home);
+      const hasRuns = side && side.runs != null;
+      const isPastInning = n <= (linescore.currentInning || 0) - 1;
+      const val = hasRuns ? side.runs : (isPastInning ? 0 : '');
+      const isLiveHalfForSide = isAway ? liveHalf === 'Top' : liveHalf === 'Bottom';
+      const isLive = val && n === linescore.currentInning && isLiveHalfForSide;
+      return `<span class="monster-box-cell${isLive ? ' monster-live-run' : ''}">${val}</span>`;
+    }
+
+    function group([start, end], render) {
+      let cells = '';
+      for (let n = start; n <= end; n++) cells += render(n);
+      return `<div class="monster-box-group">${cells}</div>`;
+    }
+
+    const headerHtml = groups.map(g => group(g, n => `<span class="monster-box-cell">${n}</span>`)).join('');
+    const awayHtml = groups.map(g => group(g, n => cell(n, true))).join('');
+    const homeHtml = groups.map(g => group(g, n => cell(n, false))).join('');
+
+    return `<div class="monster-box">
+      <div class="monster-box-row monster-box-header">
+        <span class="monster-box-team"></span>
+        <div class="monster-box-groups">${headerHtml}</div>
+      </div>
+      <div class="monster-box-row">
+        <span class="monster-box-team">${awayAbbr}</span>
+        <div class="monster-box-groups">${awayHtml}</div>
+      </div>
+      <div class="monster-box-row">
+        <span class="monster-box-team">${homeAbbr}</span>
+        <div class="monster-box-groups">${homeHtml}</div>
+      </div>
+    </div>`;
+  }
+
+  // Sits to the right of renderMonsterBoxScore's innings grid, reusing its
+  // exact cell/group classes (not a separate size) so this reads as a 4th
+  // group of 3 the same way any other 3-inning group would, just split off
+  // by the panel's internal divider instead of the usual inter-group gap.
+  function renderMonsterRHE(linescore) {
+    const teams = linescore.teams || {};
+
+    function row(tot, isHeader) {
+      const cells = isHeader
+        ? ['R', 'H', 'E']
+        : [(tot && tot.runs) ?? 0, (tot && tot.hits) ?? 0, (tot && tot.errors) ?? 0];
+      const cellsHtml = cells.map(v => `<span class="monster-box-cell">${v}</span>`).join('');
+      return `<div class="monster-box-row${isHeader ? ' monster-box-header' : ''}">
+        <div class="monster-box-groups"><div class="monster-box-group">${cellsHtml}</div></div>
+      </div>`;
+    }
+
+    return `<div class="monster-box">
+      ${row(null, true)}
+      ${row(teams.away, false)}
+      ${row(teams.home, false)}
+    </div>`;
+  }
+
+  // Sits below renderMonsterRHE() in the panel's bottom-right, inside the
+  // matching .monster-rhe-spacer divider. Scaled-up version of what used to
+  // be an inline diamond next to the score strip.
+  function renderMonsterBases(onFirst, onSecond, onThird) {
+    return `<div class="monster-rhe-spacer">
+      <div class="monster-bases">
+        <span class="monster-bases-marker second ${onSecond ? 'on' : ''}"></span>
+        <span class="monster-bases-marker third ${onThird ? 'on' : ''}"></span>
+        <span class="monster-bases-marker first ${onFirst ? 'on' : ''}"></span>
+      </div>
+    </div>`;
   }
 
   // Before a lineup is posted (future games have no battingOrder data yet),
@@ -5112,9 +5318,13 @@
       // inning-by-inning box score, and top-play highlights all live in the
       // game summary modal (opened via the "Game Summary" link) instead of
       // here, so the scorecard grid keeps the viewport.
+      const awayAbbr = (gameData.teams.away.abbreviation) || awayName;
+      const homeAbbr = (gameData.teams.home.abbreviation) || homeName;
       let compactStateHtml = '';
-      let basesMiniHtml = '';
       let monsterCountHtml = '';
+      let monsterBoxScoreHtml = '';
+      let monsterRHEHtml = '';
+      let monsterBasesHtml = '';
       let subLineHtml = '';
       let lastPlayHtml = '';
       // MLB flips abstractGameState to 'Live' during pre-game warmup, well
@@ -5129,25 +5339,18 @@
         const strikes = halfOver ? 0 : (linescore.strikes ?? 0);
         const outs = halfOver ? 0 : (linescore.outs ?? 0);
         const offense = halfOver ? {} : (linescore.offense || {});
-        // linescore.inningHalf is only ever 'Top'/'Bottom'; halfOver derives
-        // the fuller 'Middle'/'End' state, then formatInningState (shared
-        // with the Daily tab's tile) does the abbreviation.
-        const halfState = halfOver
-          ? (linescore.inningHalf === 'Top' ? 'Middle' : 'End')
-          : (linescore.inningHalf === 'Top' ? 'Top' : 'Bottom');
-        const inningHalf = formatInningState(halfState);
         const inningNum = linescore.currentInning;
         const onFirst = !!offense.first, onSecond = !!offense.second, onThird = !!offense.third;
         const batter = offense.batter ? offense.batter.fullName : '';
         const pitcher = halfOver ? '' : ((linescore.defense && linescore.defense.pitcher) ? linescore.defense.pitcher.fullName : '');
 
-        basesMiniHtml = `
-          <span class="score-strip-bases"><span class="diamond-mini">
-            <span class="base-mini second ${onSecond ? 'on' : ''}"></span>
-            <span class="base-mini third ${onThird ? 'on' : ''}"></span>
-            <span class="base-mini first ${onFirst ? 'on' : ''}"></span>
-          </span></span>`;
-        compactStateHtml = `${inningHalf} ${inningNum}`;
+        // No compactStateHtml here (unlike the Final/preview branches below)
+        // and no run numbers in the strip either -- see showRunsInStrip --
+        // since the monster-panel below now covers the score, inning state,
+        // and baserunners in more detail than the old compact strip did.
+        monsterBoxScoreHtml = renderMonsterBoxScore(linescore, awayAbbr, homeAbbr);
+        monsterRHEHtml = renderMonsterRHE(linescore);
+        monsterBasesHtml = renderMonsterBases(onFirst, onSecond, onThird);
         // Dot counts (3/2/2) are the max value ever live -- a 4th ball, 3rd
         // strike, or 3rd out ends the at-bat/half-inning before it'd show.
         const dots = (total, lit, redClass) => Array.from({ length: total },
@@ -5202,16 +5405,25 @@
           : '';
       }
 
-      const awayAbbr = (gameData.teams.away.abbreviation) || awayName;
-      const homeAbbr = (gameData.teams.home.abbreviation) || homeName;
       const showRuns = state === 'Live' || state === 'Final';
       const awayRuns = (linescore.teams && linescore.teams.away && linescore.teams.away.runs) ?? 0;
       const homeRuns = (linescore.teams && linescore.teams.home && linescore.teams.home.runs) ?? 0;
+      // Only Final still shows the run numbers in the compact strip -- Live
+      // drops them (see the comment above) since the monster-panel already
+      // carries the score, but there's no equivalent replacement once the
+      // game (and that panel) has ended, so Final keeps them.
+      const showRunsInStrip = state === 'Final';
+      const gameSummaryButtonHtml = `<button type="button" class="box-score-link">Game Summary</button>`;
+      // Same logic for the team names themselves -- Live leaves nothing
+      // above the monster-panel's box score at all, not even "OAK @ BOS",
+      // since monsterCountHtml (truthy only when the panel is rendering)
+      // is the signal for "the panel already covers this." The Game Summary
+      // button moves down below the whole panel instead (see the final
+      // scoreBottomBar template) rather than sitting in this now-empty strip.
       const scoreStripHtml = `
-        <span class="score-strip-teams">${awayAbbr}${showRuns ? ` <span class="score-strip-run">${awayRuns}</span>` : ''} @ ${homeAbbr}${showRuns ? ` <span class="score-strip-run">${homeRuns}</span>` : ''}</span>
-        <span class="score-strip-state">${compactStateHtml}</span>
-        ${basesMiniHtml}
-        <button type="button" class="box-score-link">Game Summary</button>
+        <span class="score-strip-teams">${awayAbbr}${showRunsInStrip ? ` <span class="score-strip-run">${awayRuns}</span>` : ''} @ ${homeAbbr}${showRunsInStrip ? ` <span class="score-strip-run">${homeRuns}</span>` : ''}</span>
+        ${compactStateHtml ? `<span class="score-strip-state">${compactStateHtml}</span>` : ''}
+        ${gameSummaryButtonHtml}
       `;
 
       // Fed to showCurrentGameSummary() when the link above is clicked --
@@ -5239,9 +5451,20 @@
 
       // Lives in the fixed bottom bar (#scoreBottomBar), not in .sheet --
       // see .score-bottom-bar for why.
-      scoreBottomBar.innerHTML = `
+      // Live keeps the box score flush against the top of the bar (no strip
+      // above it) and drops the Game Summary button to the very bottom
+      // instead; every other state still uses the plain top strip since
+      // there's no panel here to push the button out of.
+      scoreBottomBar.innerHTML = monsterCountHtml ? `
+        <div class="monster-panel">
+          <div class="monster-panel-left">${monsterBoxScoreHtml}${monsterCountHtml}</div>
+          <div class="monster-panel-right">${monsterRHEHtml}${monsterBasesHtml}</div>
+        </div>
+        ${subLineHtml ? `<div class="score-strip-sub">${subLineHtml}</div>` : ''}
+        ${lastPlayHtml}
+        <div class="score-strip score-strip-bottom">${gameSummaryButtonHtml}</div>
+      ` : `
         <div class="score-strip">${scoreStripHtml}</div>
-        ${monsterCountHtml}
         ${subLineHtml ? `<div class="score-strip-sub">${subLineHtml}</div>` : ''}
         ${lastPlayHtml}
       `;
