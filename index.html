@@ -213,22 +213,36 @@
     padding-bottom: 8px;
   }
 
-  /* Green Monster-style count band: sign-painted (Overpass, same face as the
-     .badge labels) BALLS/STRIKES/OUTS/H headers over dot rows that fill in
-     bright green/red as the count climbs (or a hit lands), standing in for
-     the manual scoreboard's lit panels without an actual glow effect. Ball/
-     hit dot counts (3/1) and strike/out dot counts (2/2) match the max value
-     ever live-rendered -- a 4th ball, 3rd strike, or 3rd out ends the at-bat/
-     half-inning before it would show, and the H dot only ever needs one.
-     display: inline-flex + the straight (unrounded) ink-line border keeps
-     the box hugging just this content instead of the full bar width. */
-  .monster-count {
+  /* Green Monster-style panel: the linescore (.monster-box) sits above the
+     Balls/Strikes/Outs/H count band (.monster-count), both wrapped in
+     .monster-panel so their left/right ink-line borders run continuously
+     past the seam between them -- open on top (no border-top) since only
+     the bottom and sides are meant to read as a frame, echoing the real
+     board's panel edges rather than boxing in the score-strip line above.
+     inline-flex + column keeps the panel hugging its content's width
+     instead of stretching the full bottom-bar width; both children stretch
+     to match whichever is wider (usually the 9-inning linescore). */
+  .monster-panel {
     display: inline-flex;
-    align-items: flex-start;
-    gap: 18px;
+    flex-direction: column;
     margin: 6px 0 2px;
-    padding: 8px 12px;
-    border: 2.5px solid var(--ink);
+    padding: 6px 14px 9px;
+    border-left: 2.5px solid var(--ink);
+    border-right: 2.5px solid var(--ink);
+    border-bottom: 2.5px solid var(--ink);
+  }
+  /* Sign-painted (Overpass, same face as the .badge labels) BALLS/STRIKES/
+     OUTS/H headers over dot rows that fill in bright green/red as the count
+     climbs (or a hit lands), standing in for the manual scoreboard's lit
+     panels without an actual glow effect. Ball/hit dot counts (3/1) and
+     strike/out dot counts (2/2) match the max value ever live-rendered --
+     a 4th ball, 3rd strike, or 3rd out ends the at-bat/half-inning before
+     it would show, and the H dot only ever needs one. */
+  .monster-count {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    margin-top: 9px;
   }
   .monster-count-group {
     display: flex;
@@ -240,26 +254,26 @@
      -- it's deliberately separate from the label/ring inside it, so however
      BALLS/STRIKES/OUTS text or the H ring wants to size and center itself
      internally, the slot's own height (and thus where the dot row starts)
-     never moves. */
+     never moves. Matches the H ring's own 23px size (see hitRingSVG). */
   .monster-count-header {
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 20px;
+    height: 23px;
   }
   .monster-count-label {
     font-family: 'Overpass', sans-serif;
     font-weight: 800;
-    font-size: 11px;
+    font-size: 13px;
     line-height: 1;
     letter-spacing: 0.09em;
     text-transform: uppercase;
     color: var(--ink);
   }
-  .monster-count-dots { display: flex; gap: 3px; }
+  .monster-count-dots { display: flex; gap: 4px; }
   .monster-dot {
-    width: 11px;
-    height: 11px;
+    width: 13px;
+    height: 13px;
     border-radius: 50%;
     background: var(--monster-green-dim);
     border: 1px solid rgba(0,0,0,0.3);
@@ -268,42 +282,42 @@
   .monster-dot.is-lit { background: var(--monster-green); border-color: var(--monster-green); }
   .monster-dot-red.is-lit { background: var(--brick); border-color: var(--brick); }
 
-  /* Fenway-style linescore, sitting above the count band. Innings group in
-     3s (1-3/4-6/7-9, extras trailing) with a wider gap between groups than
-     within one -- .monster-box-cell is a fixed width so every column (the
-     header numbers and both teams' runs) lines up regardless of digit
-     count. */
+  /* Fenway-style linescore. Innings group in 3s (1-3/4-6/7-9, extras
+     trailing) with a wider gap between groups than within one --
+     .monster-box-cell is a fixed width so every column (the header numbers
+     and both teams' runs) lines up regardless of digit count. The header
+     row deliberately matches the data rows' size/weight/color -- no
+     separate dimmed style -- since it's reusing the same face as the
+     BALLS/STRIKES/OUTS labels above. */
   .monster-box {
     display: flex;
     flex-direction: column;
-    gap: 3px;
-    margin: 6px 0 0;
+    gap: 4px;
   }
   .monster-box-row {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
   }
   .monster-box-team {
-    min-width: 44px;
+    min-width: 50px;
     font-family: 'Overpass', sans-serif;
     font-weight: 800;
-    font-size: 11px;
+    font-size: 13px;
     letter-spacing: 0.05em;
     text-transform: uppercase;
     color: var(--ink);
   }
-  .monster-box-groups { display: flex; gap: 10px; }
-  .monster-box-group { display: flex; gap: 5px; }
+  .monster-box-groups { display: flex; gap: 12px; }
+  .monster-box-group { display: flex; gap: 6px; }
   .monster-box-cell {
-    width: 12px;
+    width: 14px;
     text-align: center;
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
-    font-size: 11px;
+    font-size: 13px;
     color: var(--ink);
   }
-  .monster-box-header .monster-box-cell { font-weight: 800; color: var(--ink-soft); }
 
   .gs-top-row {
     display: flex;
@@ -2366,10 +2380,12 @@
   // Even dominant-baseline="central" doesn't land Overpass 800's cap-height
   // dead center by default -- CSS/SVG baseline keywords approximate a
   // font's metrics, they don't guarantee a specific glyph's ink is
-  // symmetric around them. y="11" (not the geometric y="10", which is the
-  // circle's own cy) is an empirically measured value, not a formula: it's
-  // specific to this exact font+weight+size and isn't guaranteed to scale
-  // linearly if any of those change.
+  // symmetric around them. y="11.58" (not the geometric y="11.5", which is
+  // the circle's own cy) is an empirically measured value, not a formula:
+  // it's specific to this exact font+weight+size (remeasured when the ring
+  // grew from 20px/font-size 11 to 23px/font-size 13 -- the two candidate
+  // offsets weren't proportional, confirming step 3 below can't be skipped
+  // by just scaling the old offset).
   //
   // If you resize this ring/font, remeasure rather than eyeballing it or
   // guessing a new offset:
@@ -2389,10 +2405,10 @@
   // caught it.
   function hitRingSVG() {
     const { ink } = PALETTE;
-    return `<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
-      <circle cx="10" cy="10" r="8.5" fill="none" stroke="${ink}" stroke-width="1.5"/>
-      <text x="10" y="11" text-anchor="middle" dominant-baseline="central"
-        font-family="Overpass, sans-serif" font-weight="800" font-size="11" fill="${ink}">H</text>
+    return `<svg width="23" height="23" viewBox="0 0 23 23" aria-hidden="true">
+      <circle cx="11.5" cy="11.5" r="9.8" fill="none" stroke="${ink}" stroke-width="1.75"/>
+      <text x="11.5" y="11.58" text-anchor="middle" dominant-baseline="central"
+        font-family="Overpass, sans-serif" font-weight="800" font-size="13" fill="${ink}">H</text>
     </svg>`;
   }
 
@@ -5327,8 +5343,7 @@
       // see .score-bottom-bar for why.
       scoreBottomBar.innerHTML = `
         <div class="score-strip">${scoreStripHtml}</div>
-        ${monsterBoxScoreHtml}
-        ${monsterCountHtml}
+        ${monsterCountHtml ? `<div class="monster-panel">${monsterBoxScoreHtml}${monsterCountHtml}</div>` : ''}
         ${subLineHtml ? `<div class="score-strip-sub">${subLineHtml}</div>` : ''}
         ${lastPlayHtml}
       `;
