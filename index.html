@@ -201,6 +201,10 @@
     white-space: nowrap;
   }
   .box-score-link:hover, .box-score-link:focus-visible { color: var(--ink); border-color: var(--ink-soft); }
+  /* Left-aligned at the bottom of the live bar instead of the button's
+     usual margin-left:auto right-alignment (there's nothing else on this
+     line to push away from anymore). */
+  .score-strip-bottom .box-score-link { margin-left: 0; }
   .score-strip-sub {
     font-family: 'Inter', sans-serif;
     font-size: 12px;
@@ -5458,7 +5462,7 @@
         </div>
         ${subLineHtml ? `<div class="score-strip-sub">${subLineHtml}</div>` : ''}
         ${lastPlayHtml}
-        <div class="score-strip">${gameSummaryButtonHtml}</div>
+        <div class="score-strip score-strip-bottom">${gameSummaryButtonHtml}</div>
       ` : `
         <div class="score-strip">${scoreStripHtml}</div>
         ${subLineHtml ? `<div class="score-strip-sub">${subLineHtml}</div>` : ''}
