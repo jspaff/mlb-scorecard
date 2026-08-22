@@ -2326,22 +2326,17 @@
     return event.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 3);
   }
 
-  // Drawn as vector strokes rather than a text glyph -- centering a single
-  // capital letter in a circle via CSS/font line-height is notoriously
-  // inconsistent across browsers (fonts reserve descender space asymmetrically,
-  // so flex/line-height centering settles on the line box, not the glyph's own
-  // ink), while explicit SVG coordinates render identically everywhere.
-  // dominant-baseline="central" centers on the font's own central/cap-height
-  // metric, not the full ascent+descent line box that CSS line-height/flex
-  // centering uses -- the latter is what made the H visually sit low (fonts
-  // reserve descender space for g/y/p even on a letter that doesn't need it).
-  // Keeping this as real Overpass text (not a drawn shape) matches the other
-  // headers' face instead of looking like a separate icon.
+  // Even dominant-baseline="central" doesn't land Overpass 800's cap-height
+  // dead center by default -- measured the rendered glyph's actual ink
+  // bounding box at this exact font/weight/size (a screenshot + pixel scan,
+  // not a guess) and found y="11" (not the geometric y="10") puts the ink's
+  // true vertical center on the circle's center. If the font, weight, or
+  // font-size here ever changes, this offset needs remeasuring the same way.
   function hitRingSVG() {
     const { ink } = PALETTE;
     return `<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
       <circle cx="10" cy="10" r="8.5" fill="none" stroke="${ink}" stroke-width="1.5"/>
-      <text x="10" y="10.5" text-anchor="middle" dominant-baseline="central"
+      <text x="10" y="11" text-anchor="middle" dominant-baseline="central"
         font-family="Overpass, sans-serif" font-weight="800" font-size="11" fill="${ink}">H</text>
     </svg>`;
   }
