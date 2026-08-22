@@ -236,28 +236,32 @@
     align-items: center;
     gap: 4px;
   }
-  /* Fixed height + flex centering (rather than relying on the font's own
-     line-height) so every header -- plain word or ringed letter -- occupies
-     an identical box and the dot rows underneath line up regardless of
-     font-loading/metrics differences across browsers. */
+  /* Fixed height + a matching line-height (the classic single-line vertical
+     centering trick, not flex-centering -- some mobile browsers were
+     inflating a flex-centered box to the glyph's own metrics instead of
+     respecting the explicit height) plus overflow:hidden as a hard clamp,
+     so every header -- plain word or ringed letter -- occupies an identical
+     15px box no matter what a given font/browser wants to do with a single
+     bold capital letter, and the dot rows underneath line up. */
   .monster-count-label {
-    display: flex;
-    align-items: center;
+    display: inline-block;
     height: 15px;
+    line-height: 15px;
+    overflow: hidden;
     font-family: 'Overpass', sans-serif;
     font-weight: 800;
     font-size: 11px;
-    line-height: 1;
     letter-spacing: 0.09em;
     text-transform: uppercase;
     color: var(--ink);
   }
   /* Mirrors the circled-H light on the real Monster panel -- same label
      face/box as BALLS/STRIKES/OUTS, just ringed since it's a single letter
-     rather than a word. */
+     rather than a word. line-height is the 15px box minus the 1.5px border
+     on each side, so the glyph centers in the ring's visible interior. */
   .monster-count-label-circled {
-    justify-content: center;
     width: 15px;
+    line-height: 12px;
     padding: 0;
     border-radius: 50%;
     border: 1.5px solid var(--ink);
