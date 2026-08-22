@@ -268,6 +268,43 @@
   .monster-dot.is-lit { background: var(--monster-green); border-color: var(--monster-green); }
   .monster-dot-red.is-lit { background: var(--brick); border-color: var(--brick); }
 
+  /* Fenway-style linescore, sitting above the count band. Innings group in
+     3s (1-3/4-6/7-9, extras trailing) with a wider gap between groups than
+     within one -- .monster-box-cell is a fixed width so every column (the
+     header numbers and both teams' runs) lines up regardless of digit
+     count. */
+  .monster-box {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin: 6px 0 0;
+  }
+  .monster-box-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .monster-box-team {
+    min-width: 44px;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .monster-box-groups { display: flex; gap: 10px; }
+  .monster-box-group { display: flex; gap: 5px; }
+  .monster-box-cell {
+    width: 12px;
+    text-align: center;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    color: var(--ink);
+  }
+  .monster-box-header .monster-box-cell { font-weight: 800; color: var(--ink-soft); }
+
   .gs-top-row {
     display: flex;
     align-items: flex-start;
@@ -3530,6 +3567,53 @@
     </table></div></div>`;
   }
 
+  // Fenway-style linescore for the Scorecard tab's fixed bottom bar: just
+  // team names and runs by inning, grouped 1-3/4-6/7-9 (any extra innings
+  // trail in their own group) with a wider gap between groups than within
+  // one -- no P/R/H/E columns, unlike renderBoxScore's full game-summary
+  // table. Reuses renderBoxScore's isPastInning logic so a skipped bottom
+  // half (walk-off, game called) still shows 0 instead of a blank.
+  function renderMonsterBoxScore(linescore, awayAbbr, homeAbbr) {
+    const innings = linescore.innings || [];
+    const numInnings = Math.max(innings.length, 9);
+    const groups = [];
+    for (let i = 1; i <= numInnings; i += 3) groups.push([i, Math.min(i + 2, numInnings)]);
+
+    function cell(n, isAway) {
+      const inn = innings[n - 1];
+      const side = inn && (isAway ? inn.away : inn.home);
+      const hasRuns = side && side.runs != null;
+      const isPastInning = n <= (linescore.currentInning || 0) - 1;
+      const val = hasRuns ? side.runs : (isPastInning ? 0 : '');
+      return `<span class="monster-box-cell">${val}</span>`;
+    }
+
+    function group([start, end], render) {
+      let cells = '';
+      for (let n = start; n <= end; n++) cells += render(n);
+      return `<div class="monster-box-group">${cells}</div>`;
+    }
+
+    const headerHtml = groups.map(g => group(g, n => `<span class="monster-box-cell">${n}</span>`)).join('');
+    const awayHtml = groups.map(g => group(g, n => cell(n, true))).join('');
+    const homeHtml = groups.map(g => group(g, n => cell(n, false))).join('');
+
+    return `<div class="monster-box">
+      <div class="monster-box-row monster-box-header">
+        <span class="monster-box-team"></span>
+        <div class="monster-box-groups">${headerHtml}</div>
+      </div>
+      <div class="monster-box-row">
+        <span class="monster-box-team">${awayAbbr}</span>
+        <div class="monster-box-groups">${awayHtml}</div>
+      </div>
+      <div class="monster-box-row">
+        <span class="monster-box-team">${homeAbbr}</span>
+        <div class="monster-box-groups">${homeHtml}</div>
+      </div>
+    </div>`;
+  }
+
   // Before a lineup is posted (future games have no battingOrder data yet),
   // buildTeamRows has nothing to return -- fill in 9 empty slots so the grid
   // still renders at its normal height instead of collapsing to no rows.
@@ -5112,9 +5196,12 @@
       // inning-by-inning box score, and top-play highlights all live in the
       // game summary modal (opened via the "Game Summary" link) instead of
       // here, so the scorecard grid keeps the viewport.
+      const awayAbbr = (gameData.teams.away.abbreviation) || awayName;
+      const homeAbbr = (gameData.teams.home.abbreviation) || homeName;
       let compactStateHtml = '';
       let basesMiniHtml = '';
       let monsterCountHtml = '';
+      let monsterBoxScoreHtml = '';
       let subLineHtml = '';
       let lastPlayHtml = '';
       // MLB flips abstractGameState to 'Live' during pre-game warmup, well
@@ -5148,6 +5235,7 @@
             <span class="base-mini first ${onFirst ? 'on' : ''}"></span>
           </span></span>`;
         compactStateHtml = `${inningHalf} ${inningNum}`;
+        monsterBoxScoreHtml = renderMonsterBoxScore(linescore, awayAbbr, homeAbbr);
         // Dot counts (3/2/2) are the max value ever live -- a 4th ball, 3rd
         // strike, or 3rd out ends the at-bat/half-inning before it'd show.
         const dots = (total, lit, redClass) => Array.from({ length: total },
@@ -5202,8 +5290,6 @@
           : '';
       }
 
-      const awayAbbr = (gameData.teams.away.abbreviation) || awayName;
-      const homeAbbr = (gameData.teams.home.abbreviation) || homeName;
       const showRuns = state === 'Live' || state === 'Final';
       const awayRuns = (linescore.teams && linescore.teams.away && linescore.teams.away.runs) ?? 0;
       const homeRuns = (linescore.teams && linescore.teams.home && linescore.teams.home.runs) ?? 0;
@@ -5241,6 +5327,7 @@
       // see .score-bottom-bar for why.
       scoreBottomBar.innerHTML = `
         <div class="score-strip">${scoreStripHtml}</div>
+        ${monsterBoxScoreHtml}
         ${monsterCountHtml}
         ${subLineHtml ? `<div class="score-strip-sub">${subLineHtml}</div>` : ''}
         ${lastPlayHtml}
