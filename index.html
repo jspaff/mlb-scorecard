@@ -26,7 +26,10 @@
     --ink-soft: #c3c8bb;
     --gold: #d9a91a;
     --brick: #e0604a;
+    --brick-dim: #5c4038;
     --frame: #54796d;
+    --monster-green: #3fae56;
+    --monster-green-dim: #33422e;
   }
 
   #mlb-root * { box-sizing: border-box; }
@@ -181,12 +184,9 @@
     color: var(--ink-soft);
     white-space: nowrap;
   }
-  .score-strip-count {
+  .score-strip-bases {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 11.5px;
-    color: var(--ink-soft);
     white-space: nowrap;
   }
   .box-score-link {
@@ -212,6 +212,43 @@
     color: var(--ink-soft);
     padding-bottom: 8px;
   }
+
+  /* Green Monster-style count band: sign-painted (Overpass, same face as the
+     .badge labels) BALLS/STRIKES/OUTS headers over dot rows that fill in
+     bright green/red as the count climbs, standing in for the manual
+     scoreboard's lit panels without an actual glow effect. Dot counts (3/2/2)
+     match the max value ever live-rendered -- a 4th ball, 3rd strike, or 3rd
+     out ends the at-bat/half-inning before it would show. */
+  .monster-count {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 6px 0 2px;
+  }
+  .monster-count-group {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .monster-count-label {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .monster-count-dots { display: flex; gap: 4px; }
+  .monster-dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--monster-green-dim);
+    border: 1px solid rgba(0,0,0,0.3);
+  }
+  .monster-dot-red { background: var(--brick-dim); }
+  .monster-dot.is-lit { background: var(--monster-green); border-color: var(--monster-green); }
+  .monster-dot-red.is-lit { background: var(--brick); border-color: var(--brick); }
 
   .gs-top-row {
     display: flex;
@@ -5025,7 +5062,8 @@
       // game summary modal (opened via the "Game Summary" link) instead of
       // here, so the scorecard grid keeps the viewport.
       let compactStateHtml = '';
-      let compactCountHtml = '';
+      let basesMiniHtml = '';
+      let monsterCountHtml = '';
       let subLineHtml = '';
       let lastPlayHtml = '';
       // MLB flips abstractGameState to 'Live' during pre-game warmup, well
@@ -5052,14 +5090,33 @@
         const batter = offense.batter ? offense.batter.fullName : '';
         const pitcher = halfOver ? '' : ((linescore.defense && linescore.defense.pitcher) ? linescore.defense.pitcher.fullName : '');
 
-        const basesMiniHtml = `
-          <span class="diamond-mini">
+        basesMiniHtml = `
+          <span class="score-strip-bases"><span class="diamond-mini">
             <span class="base-mini second ${onSecond ? 'on' : ''}"></span>
             <span class="base-mini third ${onThird ? 'on' : ''}"></span>
             <span class="base-mini first ${onFirst ? 'on' : ''}"></span>
-          </span>`;
+          </span></span>`;
         compactStateHtml = `${inningHalf} ${inningNum}`;
-        compactCountHtml = `<span class="score-strip-count">${balls}-${strikes}, ${outs} out ${basesMiniHtml}</span>`;
+        // Dot counts (3/2/2) are the max value ever live -- a 4th ball, 3rd
+        // strike, or 3rd out ends the at-bat/half-inning before it'd show.
+        const dots = (total, lit, redClass) => Array.from({ length: total },
+          (_, i) => `<span class="monster-dot ${redClass ? 'monster-dot-red' : ''} ${i < lit ? 'is-lit' : ''}"></span>`
+        ).join('');
+        monsterCountHtml = `
+          <div class="monster-count">
+            <div class="monster-count-group">
+              <span class="monster-count-label">Balls</span>
+              <span class="monster-count-dots">${dots(3, balls, false)}</span>
+            </div>
+            <div class="monster-count-group">
+              <span class="monster-count-label">Strikes</span>
+              <span class="monster-count-dots">${dots(2, strikes, true)}</span>
+            </div>
+            <div class="monster-count-group">
+              <span class="monster-count-label">Outs</span>
+              <span class="monster-count-dots">${dots(2, outs, true)}</span>
+            </div>
+          </div>`;
         subLineHtml = (batter || pitcher)
           ? `${batter ? 'At bat: ' + batter : ''}${pitcher ? ' &nbsp;&#183;&nbsp; Pitching: ' + pitcher : ''}`
           : '';
@@ -5092,7 +5149,7 @@
       const scoreStripHtml = `
         <span class="score-strip-teams">${awayAbbr}${showRuns ? ` <span class="score-strip-run">${awayRuns}</span>` : ''} @ ${homeAbbr}${showRuns ? ` <span class="score-strip-run">${homeRuns}</span>` : ''}</span>
         <span class="score-strip-state">${compactStateHtml}</span>
-        ${compactCountHtml}
+        ${basesMiniHtml}
         <button type="button" class="box-score-link">Game Summary</button>
       `;
 
@@ -5123,6 +5180,7 @@
       // see .score-bottom-bar for why.
       scoreBottomBar.innerHTML = `
         <div class="score-strip">${scoreStripHtml}</div>
+        ${monsterCountHtml}
         ${subLineHtml ? `<div class="score-strip-sub">${subLineHtml}</div>` : ''}
         ${lastPlayHtml}
       `;
