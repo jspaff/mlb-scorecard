@@ -218,12 +218,18 @@
      bright green/red as the count climbs, standing in for the manual
      scoreboard's lit panels without an actual glow effect. Dot counts (3/2/2)
      match the max value ever live-rendered -- a 4th ball, 3rd strike, or 3rd
-     out ends the at-bat/half-inning before it would show. */
+     out ends the at-bat/half-inning before it would show. The whole band
+     gets an ink-line box, echoing the painted border around the Monster's
+     ball/strike/out panel. */
   .monster-count {
     display: flex;
+    align-items: flex-start;
     justify-content: flex-start;
     gap: 18px;
-    padding: 6px 0 2px;
+    margin: 6px 0 2px;
+    padding: 8px 12px;
+    border: 1.5px solid var(--ink);
+    border-radius: 5px;
   }
   .monster-count-group {
     display: flex;
@@ -250,6 +256,23 @@
   .monster-dot-red { background: var(--brick-dim); }
   .monster-dot.is-lit { background: var(--monster-green); border-color: var(--monster-green); }
   .monster-dot-red.is-lit { background: var(--brick); border-color: var(--brick); }
+  /* The circled-H hit indicator has no dot row under it, so it sits with
+     the labels instead of stretching to the group columns' full height. */
+  .monster-hit-group { align-self: flex-start; padding-top: 1px; }
+  .monster-hit-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    border: 1.5px solid var(--ink-soft);
+    font-family: 'Overpass', sans-serif;
+    font-weight: 800;
+    font-size: 9px;
+    color: var(--ink-soft);
+  }
+  .monster-hit-badge.is-lit { border-color: var(--ink); background: var(--ink); color: var(--paper); }
 
   .gs-top-row {
     display: flex;
@@ -5103,6 +5126,12 @@
         const dots = (total, lit, redClass) => Array.from({ length: total },
           (_, i) => `<span class="monster-dot ${redClass ? 'monster-dot-red' : ''} ${i < lit ? 'is-lit' : ''}"></span>`
         ).join('');
+        // allPlays' last entry is either the at-bat still in progress (no
+        // result yet) or the one that just ended -- once a new batter's
+        // first pitch posts a fresh entry, this naturally falls back dark.
+        const lastPlay = allPlays[allPlays.length - 1];
+        const lastEvent = lastPlay && lastPlay.result && lastPlay.result.event;
+        const hitLit = lastEvent === 'Single' || lastEvent === 'Double' || lastEvent === 'Triple' || lastEvent === 'Home Run';
         monsterCountHtml = `
           <div class="monster-count">
             <div class="monster-count-group">
@@ -5116,6 +5145,9 @@
             <div class="monster-count-group">
               <span class="monster-count-label">Outs</span>
               <span class="monster-count-dots">${dots(2, outs, true)}</span>
+            </div>
+            <div class="monster-count-group monster-hit-group">
+              <span class="monster-hit-badge ${hitLit ? 'is-lit' : ''}">H</span>
             </div>
           </div>`;
         subLineHtml = (batter || pitcher)
