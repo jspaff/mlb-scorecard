@@ -228,7 +228,7 @@
     gap: 18px;
     margin: 6px 0 2px;
     padding: 8px 12px;
-    border: 1.5px solid var(--ink);
+    border: 2.5px solid var(--ink);
   }
   .monster-count-group {
     display: flex;
@@ -243,6 +243,19 @@
     letter-spacing: 0.09em;
     text-transform: uppercase;
     color: var(--ink);
+  }
+  /* Mirrors the circled-H light on the real Monster panel -- same label
+     face as BALLS/STRIKES/OUTS, just ringed since it's a single letter
+     rather than a word. */
+  .monster-count-label-circled {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    border: 1.5px solid var(--ink);
+    letter-spacing: 0;
   }
   .monster-count-dots { display: flex; gap: 3px; }
   .monster-dot {
@@ -5129,7 +5142,7 @@
               <span class="monster-count-dots">${dots(2, outs, true)}</span>
             </div>
             <div class="monster-count-group">
-              <span class="monster-count-label">H</span>
+              <span class="monster-count-label monster-count-label-circled">H</span>
               <span class="monster-count-dots">${dots(1, hitLit ? 1 : 0, false)}</span>
             </div>
           </div>`;
