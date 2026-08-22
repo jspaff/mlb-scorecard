@@ -213,23 +213,46 @@
     padding-bottom: 8px;
   }
 
-  /* Green Monster-style panel: the linescore (.monster-box) sits above the
-     Balls/Strikes/Outs/H count band (.monster-count), both wrapped in
-     .monster-panel so their left/right ink-line borders run continuously
-     past the seam between them -- open on top (no border-top) since only
-     the bottom and sides are meant to read as a frame, echoing the real
-     board's panel edges rather than boxing in the score-strip line above.
-     inline-flex + column keeps the panel hugging its content's width
-     instead of stretching the full bottom-bar width; both children stretch
-     to match whichever is wider (usually the 9-inning linescore). */
+  /* Green Monster-style panel, two columns side by side: the linescore
+     (.monster-panel-left, itself the innings grid stacked over the
+     Balls/Strikes/Outs/H count band) and R/H/E (.monster-panel-right, the
+     totals grid stacked over a currently-blank spacer reserved for future
+     content). inline-flex + row keeps the whole panel hugging its content's
+     width instead of stretching the full bottom-bar width; align-items:
+     stretch makes both columns match whichever is taller, so the shared
+     divider between them and the outer bottom border both run the full
+     height/width automatically. Open on top (no border-top) since only the
+     other three sides are meant to read as a frame, echoing the real
+     board's panel edges rather than boxing in the score-strip line above. */
   .monster-panel {
     display: inline-flex;
-    flex-direction: column;
+    align-items: stretch;
     margin: 6px 0 2px;
-    padding: 6px 14px 9px;
     border-left: 2.5px solid var(--ink);
     border-right: 2.5px solid var(--ink);
     border-bottom: 2.5px solid var(--ink);
+  }
+  .monster-panel-left {
+    display: flex;
+    flex-direction: column;
+    padding: 6px 14px 9px;
+    border-right: 2px solid var(--ink);
+  }
+  .monster-panel-right {
+    display: flex;
+    flex-direction: column;
+    padding: 6px 14px 9px;
+  }
+  /* Mirrors .monster-count's own margin/padding/border-top exactly, so the
+     two horizontal dividers land on the same line across both columns, and
+     matches its content height (21px header + 4px gap + 11px dot row) so
+     the panel's bottom border stays level even though this side has no
+     content yet. */
+  .monster-rhe-spacer {
+    margin-top: 9px;
+    padding-top: 9px;
+    border-top: 2px solid var(--ink);
+    min-height: 36px;
   }
   /* Sign-painted (Overpass, same face as the .badge labels) BALLS/STRIKES/
      OUTS/H headers over dot rows that fill in bright green/red as the count
@@ -314,7 +337,7 @@
     color: var(--ink);
   }
   .monster-box-groups { display: flex; gap: 12px; }
-  .monster-box-group { display: flex; gap: 6px; }
+  .monster-box-group { display: flex; gap: 4px; }
   .monster-box-cell {
     width: 13px;
     text-align: center;
@@ -3636,6 +3659,31 @@
     </div>`;
   }
 
+  // Sits to the right of renderMonsterBoxScore's innings grid, reusing its
+  // exact cell/group classes (not a separate size) so this reads as a 4th
+  // group of 3 the same way any other 3-inning group would, just split off
+  // by the panel's internal divider instead of the usual inter-group gap.
+  function renderMonsterRHE(linescore) {
+    const teams = linescore.teams || {};
+
+    function row(tot, isHeader) {
+      const cells = isHeader
+        ? ['R', 'H', 'E']
+        : [(tot && tot.runs) ?? 0, (tot && tot.hits) ?? 0, (tot && tot.errors) ?? 0];
+      const cellsHtml = cells.map(v => `<span class="monster-box-cell">${v}</span>`).join('');
+      return `<div class="monster-box-row${isHeader ? ' monster-box-header' : ''}">
+        <div class="monster-box-groups"><div class="monster-box-group">${cellsHtml}</div></div>
+      </div>`;
+    }
+
+    return `<div class="monster-box">
+      ${row(null, true)}
+      ${row(teams.away, false)}
+      ${row(teams.home, false)}
+    </div>
+    <div class="monster-rhe-spacer"></div>`;
+  }
+
   // Before a lineup is posted (future games have no battingOrder data yet),
   // buildTeamRows has nothing to return -- fill in 9 empty slots so the grid
   // still renders at its normal height instead of collapsing to no rows.
@@ -5224,6 +5272,7 @@
       let basesMiniHtml = '';
       let monsterCountHtml = '';
       let monsterBoxScoreHtml = '';
+      let monsterRHEHtml = '';
       let subLineHtml = '';
       let lastPlayHtml = '';
       // MLB flips abstractGameState to 'Live' during pre-game warmup, well
@@ -5258,6 +5307,7 @@
           </span></span>`;
         compactStateHtml = `${inningHalf} ${inningNum}`;
         monsterBoxScoreHtml = renderMonsterBoxScore(linescore, awayAbbr, homeAbbr);
+        monsterRHEHtml = renderMonsterRHE(linescore);
         // Dot counts (3/2/2) are the max value ever live -- a 4th ball, 3rd
         // strike, or 3rd out ends the at-bat/half-inning before it'd show.
         const dots = (total, lit, redClass) => Array.from({ length: total },
@@ -5349,7 +5399,10 @@
       // see .score-bottom-bar for why.
       scoreBottomBar.innerHTML = `
         <div class="score-strip">${scoreStripHtml}</div>
-        ${monsterCountHtml ? `<div class="monster-panel">${monsterBoxScoreHtml}${monsterCountHtml}</div>` : ''}
+        ${monsterCountHtml ? `<div class="monster-panel">
+          <div class="monster-panel-left">${monsterBoxScoreHtml}${monsterCountHtml}</div>
+          <div class="monster-panel-right">${monsterRHEHtml}</div>
+        </div>` : ''}
         ${subLineHtml ? `<div class="score-strip-sub">${subLineHtml}</div>` : ''}
         ${lastPlayHtml}
       `;
