@@ -221,14 +221,15 @@
      out ends the at-bat/half-inning before it would show. */
   .monster-count {
     display: flex;
-    justify-content: space-between;
-    gap: 14px;
+    justify-content: flex-start;
+    gap: 18px;
     padding: 6px 0 2px;
   }
   .monster-count-group {
     display: flex;
-    align-items: center;
-    gap: 7px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
   }
   .monster-count-label {
     font-family: 'Overpass', sans-serif;
@@ -238,7 +239,7 @@
     text-transform: uppercase;
     color: var(--ink-soft);
   }
-  .monster-count-dots { display: flex; gap: 4px; }
+  .monster-count-dots { display: flex; gap: 3px; }
   .monster-dot {
     width: 11px;
     height: 11px;
