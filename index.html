@@ -258,7 +258,7 @@
     height: 30px;
     position: relative;
     transform: rotate(45deg);
-    margin-top: 4px;
+    margin-top: 12px;
   }
   .monster-bases-marker {
     position: absolute;
@@ -5382,8 +5382,12 @@
       // carries the score, but there's no equivalent replacement once the
       // game (and that panel) has ended, so Final keeps them.
       const showRunsInStrip = state === 'Final';
+      // Same logic for the team names themselves -- Live leaves nothing
+      // above the monster-panel's box score at all, not even "OAK @ BOS",
+      // since monsterCountHtml (truthy only when the panel is rendering)
+      // is the signal for "the panel already covers this."
       const scoreStripHtml = `
-        <span class="score-strip-teams">${awayAbbr}${showRunsInStrip ? ` <span class="score-strip-run">${awayRuns}</span>` : ''} @ ${homeAbbr}${showRunsInStrip ? ` <span class="score-strip-run">${homeRuns}</span>` : ''}</span>
+        ${monsterCountHtml ? '' : `<span class="score-strip-teams">${awayAbbr}${showRunsInStrip ? ` <span class="score-strip-run">${awayRuns}</span>` : ''} @ ${homeAbbr}${showRunsInStrip ? ` <span class="score-strip-run">${homeRuns}</span>` : ''}</span>`}
         ${compactStateHtml ? `<span class="score-strip-state">${compactStateHtml}</span>` : ''}
         <button type="button" class="box-score-link">Game Summary</button>
       `;
