@@ -226,18 +226,29 @@
   .monster-panel {
     display: inline-flex;
     align-items: stretch;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     margin: 0 0 2px;
     border-left: 2.5px solid var(--ink);
     border-right: 2.5px solid var(--ink);
     border-bottom: 2.5px solid var(--ink);
   }
+  .monster-panel::-webkit-scrollbar { height: 7px; }
+  .monster-panel::-webkit-scrollbar-track { background: var(--paper-line); border-radius: 4px; }
+  .monster-panel::-webkit-scrollbar-thumb { background: var(--ink-soft); border-radius: 4px; }
+  /* flex-shrink:0 on both columns -- deep extra innings should make the
+     whole panel scroll horizontally (via the overflow-x above), not
+     squeeze the innings grid or count band down to fit. */
   .monster-panel-left {
     display: flex;
     flex-direction: column;
+    flex-shrink: 0;
     padding: 6px 14px 9px;
     border-right: 2px solid var(--ink);
   }
   .monster-panel-right {
+    flex-shrink: 0;
     display: flex;
     flex-direction: column;
     padding: 6px 14px 9px;
