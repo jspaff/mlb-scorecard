@@ -238,6 +238,13 @@
   .monster-panel::-webkit-scrollbar { height: 7px; }
   .monster-panel::-webkit-scrollbar-track { background: var(--paper-line); border-radius: 4px; }
   .monster-panel::-webkit-scrollbar-thumb { background: var(--ink-soft); border-radius: 4px; }
+  /* The Game Summary modal is narrower than the Scorecard tab's full-width
+     bottom bar, so an extra-innings game's monster-panel is more likely to
+     need this horizontal scroll here -- still scrollable (swipe/drag), just
+     without the visible track/thumb cluttering the modal. The Scorecard
+     tab's own bottom-bar panel keeps the visible scrollbar above. */
+  #gameSummaryOverlay .monster-panel { scrollbar-width: none; }
+  #gameSummaryOverlay .monster-panel::-webkit-scrollbar { display: none; }
   /* Holds the Game Summary link once it moves out of the score-strip (Live/
      Final both replace that strip with .monster-panel above) -- .box-score-
      link's own margin-left:auto has no flex parent here, so centering comes
@@ -1511,11 +1518,6 @@
      modal (e.g. clicking a batted-ball dot in the spray chart), so it needs
      to render above every other .pitch-overlay regardless of DOM order. */
   #pitchOverlay { z-index: 200; }
-  /* Wider than every other .pitch-modal -- this is the one that holds the
-     monster-panel box score (see renderMonsterScoreboard), and the base
-     360px max-width was forcing it into its own horizontal scrollbar even
-     for a routine 9-inning game. */
-  #gameSummaryOverlay .pitch-modal { max-width: 480px; }
   .pitch-modal {
     position: relative;
     background: var(--paper);
