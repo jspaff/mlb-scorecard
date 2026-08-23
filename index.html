@@ -115,6 +115,44 @@
     max-width: 260px;
   }
   select:focus, input:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
+  /* input[type=date]'s own text is rendered by the browser in whatever
+     locale format it picks (MM/DD/YYYY, DD/MM/YYYY, ...) with no way to
+     restyle just that text -- so instead of fighting it, the real input
+     goes fully invisible and absolutely fills this wrapper (still gets
+     clicks anywhere in it, still opens the native picker), while
+     .date-display-text sits in-flow showing whatever short format we want
+     (see formatShortDate), kept in sync on every value change. Same
+     pattern as a custom file-upload button over a hidden <input type=file>. */
+  .date-display { position: relative; display: inline-flex; }
+  .date-display-text {
+    display: inline-flex;
+    align-items: center;
+    background: var(--paper);
+    color: var(--ink);
+    border: 1px solid var(--paper-line);
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-family: 'Oswald', sans-serif;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  .date-display-input:focus + .date-display-text {
+    outline: 2px solid var(--gold);
+    outline-offset: 1px;
+  }
+  .date-display-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    padding: 0;
+    border: 0;
+    max-width: none;
+  }
 
   .mlb-status-msg {
     font-family: 'IBM Plex Mono', monospace;
@@ -236,18 +274,6 @@
   .monster-panel::-webkit-scrollbar { height: 7px; }
   .monster-panel::-webkit-scrollbar-track { background: var(--paper-line); border-radius: 4px; }
   .monster-panel::-webkit-scrollbar-thumb { background: var(--ink-soft); border-radius: 4px; }
-  /* The Game Summary modal is narrower than the Scorecard tab's full-width
-     bottom bar, so an extra-innings game's monster-panel is more likely to
-     need this horizontal scroll here -- still scrollable (swipe/drag), just
-     without the visible track/thumb cluttering the modal. The Scorecard
-     tab's own bottom-bar panel keeps the visible scrollbar above. */
-  #gameSummaryOverlay .monster-panel { scrollbar-width: none; }
-  #gameSummaryOverlay .monster-panel::-webkit-scrollbar { display: none; }
-  /* Holds the Game Summary link once it moves out of the score-strip (Live/
-     Final both replace that strip with .monster-panel above) -- .box-score-
-     link's own margin-left:auto has no flex parent here, so centering comes
-     from .score-bottom-bar's text-align instead. */
-  .monster-panel-footer { margin-top: 4px; }
   /* flex-shrink:0 on both columns -- deep extra innings should make the
      whole panel scroll horizontally (via the overflow-x above), not
      squeeze the innings grid or count band down to fit. */
@@ -255,14 +281,14 @@
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
-    padding: 6px 14px 9px;
+    padding: 6px 11px 9px;
     border-right: 2px solid var(--ink);
   }
   .monster-panel-right {
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
-    padding: 6px 14px 9px;
+    padding: 6px 11px 9px;
   }
   /* Mirrors .monster-count's own margin/padding/border-top exactly, so the
      two horizontal dividers land on the same line across both columns.
@@ -391,7 +417,7 @@
     text-transform: uppercase;
     color: var(--ink);
   }
-  .monster-box-groups { display: flex; gap: 12px; }
+  .monster-box-groups { display: flex; gap: 10px; }
   .monster-box-group { display: flex; gap: 4px; }
   .monster-box-cell {
     width: 13px;
@@ -1850,7 +1876,10 @@
     <div class="mlb-controls" data-tab-controls="daily">
       <div class="date-nav">
         <button type="button" class="date-nav-btn" id="dailyDatePrev" aria-label="Previous day">&#8249;</button>
-        <input type="date" id="dailyDatePick" />
+        <div class="date-display">
+          <input type="date" class="date-display-input" id="dailyDatePick" />
+          <span class="date-display-text" id="dailyDatePickText"></span>
+        </div>
         <button type="button" class="date-nav-btn" id="dailyDateNext" aria-label="Next day">&#8250;</button>
       </div>
       <div class="view-toggle" id="dailyViewToggle">
@@ -1862,15 +1891,22 @@
     <div class="mlb-controls" data-tab-controls="scorecard" hidden>
       <div class="date-nav">
         <button type="button" class="date-nav-btn" id="datePrev" aria-label="Previous day">&#8249;</button>
-        <input type="date" id="datePick" />
+        <div class="date-display">
+          <input type="date" class="date-display-input" id="datePick" />
+          <span class="date-display-text" id="datePickText"></span>
+        </div>
         <button type="button" class="date-nav-btn" id="dateNext" aria-label="Next day">&#8250;</button>
       </div>
       <select id="gamePick"><option>Loading games&#8230;</option></select>
+      <button type="button" class="box-score-link" id="gameSummaryTopBtn">Game Summary</button>
     </div>
     <div class="mlb-controls" data-tab-controls="standings" hidden>
       <div class="date-nav">
         <button type="button" class="date-nav-btn" id="standingsDatePrev" aria-label="Previous day">&#8249;</button>
-        <input type="date" id="standingsDatePick" />
+        <div class="date-display">
+          <input type="date" class="date-display-input" id="standingsDatePick" />
+          <span class="date-display-text" id="standingsDatePickText"></span>
+        </div>
         <button type="button" class="date-nav-btn" id="standingsDateNext" aria-label="Next day">&#8250;</button>
       </div>
       <div class="view-toggle" id="standingsViewToggle">
@@ -1969,13 +2005,28 @@
 <script>
 (function() {
   const dateInput = document.getElementById('datePick');
+  const dateInputText = document.getElementById('datePickText');
   const gameSelect = document.getElementById('gamePick');
   const body = document.getElementById('mlbBody');
   const scoreBottomBar = document.getElementById('scoreBottomBar');
   const standingsBody = document.getElementById('standingsBody');
   const standingsDateInput = document.getElementById('standingsDatePick');
+  const standingsDateInputText = document.getElementById('standingsDatePickText');
   const dailyBody = document.getElementById('dailyBody');
   const dailyDateInput = document.getElementById('dailyDatePick');
+  const dailyDateInputText = document.getElementById('dailyDatePickText');
+  // input[type=date]'s own displayed text follows the browser/OS locale
+  // (MM/DD/YYYY, DD/MM/YYYY, ...) with no way to restyle it -- see
+  // .date-display's comment. Every one of the three date pickers pairs its
+  // real (invisible) input with a .date-display-text span kept in sync via
+  // this, rather than each tab reimplementing the same "Aug 23" formatting.
+  function formatShortDate(dateStr) {
+    return new Date(dateStr + 'T00:00:00Z').toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' });
+  }
+  function setDateInputValue(input, textEl, value) {
+    input.value = value;
+    textEl.textContent = formatShortDate(value);
+  }
   let pollTimer = null;
   // The currently loaded game, in the same shape renderGameSummaryGame()
   // expects, so the Scorecard tab's "Game Summary" link can reuse the exact
@@ -2314,9 +2365,9 @@
     const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
     return local.toISOString().slice(0, 10);
   }
-  dateInput.value = todayStr();
-  standingsDateInput.value = todayStr();
-  dailyDateInput.value = todayStr();
+  setDateInputValue(dateInput, dateInputText, todayStr());
+  setDateInputValue(standingsDateInput, standingsDateInputText, todayStr());
+  setDateInputValue(dailyDateInput, dailyDateInputText, todayStr());
 
   async function dateHasStartedGame(dateStr) {
     try {
@@ -3578,22 +3629,26 @@
     return ` <span class="gs-weather">&#183; ${parts.join(' &#183; ')}</span>`;
   }
 
-  // Dot + label for the top-row status tag next to the venue name.
+  // Dot + label for the top-row status tag next to the venue name. Keeps
+  // this to a handful of broad statuses rather than surfacing every
+  // detailedState MLB reports -- a Live game reads as "Live" through
+  // whatever's momentarily happening inside it (a pitching change, a
+  // manager challenge, a review), the same way a paper scorecard wouldn't
+  // annotate every pause. Only an actual delay is worth calling out as
+  // something other than the game just being underway.
   function renderStateBadge(game) {
     if (game.state === 'Final') return `<span class="badge badge-final"><span class="badge-dot"></span>Final</span>`;
-    // MLB flips abstractGameState to 'Live' during pre-game warmup, confirmed
-    // well ahead of first pitch (e.g. detailedState: 'Warmup' 30+ minutes
-    // out) -- 'Live' alone doesn't mean the game has actually started, so
-    // only badge it that way once detailedState agrees play is underway.
-    if (game.state === 'Live' && game.detailedState === 'In Progress') {
-      return `<span class="badge badge-live"><span class="badge-dot"></span>Live</span>`;
+    if (game.state === 'Live') {
+      const isDelay = game.detailedState && /delay/i.test(game.detailedState);
+      const label = isDelay ? game.detailedState : 'Live';
+      return `<span class="badge badge-live"><span class="badge-dot"></span>${label}</span>`;
     }
     const label = game.detailedState && game.detailedState !== 'Scheduled' ? game.detailedState : 'Upcoming';
     return `<span class="badge badge-preview"><span class="badge-dot"></span>${label}</span>`;
   }
 
   // Fenway-style linescore reused for both the Scorecard tab's fixed bottom
-  // bar and the Game Summary modal (see renderMonsterScoreboard): just team
+  // bar and the Game Summary modal (see renderMonsterPanel): just team
   // names and runs by inning, grouped 1-3/4-6/7-9 (any extra innings trail
   // in their own group) with a wider gap between groups than within one --
   // no P/R/H/E columns, that's renderMonsterRHE's job. A skipped bottom
@@ -3676,18 +3731,6 @@
     </div>`;
   }
 
-  // Green-Monster-style box+R/H/E pair, without the live Balls/Strikes/Outs/
-  // baserunner band from the Scorecard tab's own .monster-panel -- that band
-  // only makes sense for a game actually being played right now, not a
-  // summary someone can open for any past (or currently live) game. Used by
-  // the Game Summary modal in place of the old plain renderBoxScore table.
-  function renderMonsterScoreboard(linescore, awayAbbr, homeAbbr) {
-    return `<div class="monster-panel">
-      <div class="monster-panel-left">${renderMonsterBoxScore(linescore, awayAbbr, homeAbbr)}</div>
-      <div class="monster-panel-right">${renderMonsterRHE(linescore)}</div>
-    </div>`;
-  }
-
   // Sits below renderMonsterRHE() in the panel's bottom-right, inside the
   // matching .monster-rhe-spacer divider. Scaled-up version of what used to
   // be an inline diamond next to the score strip. `hidden` is set once a
@@ -3700,6 +3743,68 @@
         <span class="monster-bases-marker third ${onThird ? 'on' : ''}"></span>
         <span class="monster-bases-marker first ${onFirst ? 'on' : ''}"></span>
       </div>
+    </div>`;
+  }
+
+  // Whether at least one real pitch has been thrown anywhere in the game --
+  // MLB flips abstractGameState to 'Live' during pre-game warmup, well ahead
+  // of first pitch, so 'Live' alone doesn't mean genuinely in progress.
+  // Shared by every caller of renderMonsterPanel so a Live-but-warming-up
+  // game reads the same way (collapsed band, same as Final) wherever it's
+  // shown.
+  function hasGameStarted(allPlays) {
+    return (allPlays || []).some(p => (p.playEvents || []).some(pe => pe.isPitch));
+  }
+
+  // Full Green-Monster-style panel: innings box + R/H/E always, plus the
+  // live Balls/Strikes/Outs/H count band and baserunner diamond -- shown
+  // while isLive is true, collapsed away (see .is-hidden) otherwise. Shared
+  // by the Scorecard tab's fixed bottom bar and the Game Summary modal so
+  // both stay consistent: the full board while a game's actually being
+  // played, collapsed to just the box score once it's Final, regardless of
+  // which one you're looking at it from.
+  function renderMonsterPanel(linescore, awayAbbr, homeAbbr, allPlays, isLive) {
+    const halfOver = (linescore.outs ?? 0) >= 3;
+    const balls = (isLive && !halfOver) ? (linescore.balls ?? 0) : 0;
+    const strikes = (isLive && !halfOver) ? (linescore.strikes ?? 0) : 0;
+    const outs = (isLive && !halfOver) ? (linescore.outs ?? 0) : 0;
+    const offense = (isLive && !halfOver) ? (linescore.offense || {}) : {};
+    const onFirst = !!offense.first, onSecond = !!offense.second, onThird = !!offense.third;
+
+    // Dot counts (3/2/2) are the max value ever live -- a 4th ball, 3rd
+    // strike, or 3rd out ends the at-bat/half-inning before it'd show.
+    const dots = (total, lit, redClass) => Array.from({ length: total },
+      (_, i) => `<span class="monster-dot ${redClass ? 'monster-dot-red' : ''} ${i < lit ? 'is-lit' : ''}"></span>`
+    ).join('');
+    // allPlays' last entry is either the at-bat still in progress (no
+    // result yet) or the one that just ended -- once a new batter's first
+    // pitch posts a fresh entry, this naturally falls back dark.
+    const lastPlay = allPlays[allPlays.length - 1];
+    const lastEvent = isLive && lastPlay && lastPlay.result && lastPlay.result.event;
+    const hitLit = lastEvent === 'Single' || lastEvent === 'Double' || lastEvent === 'Triple' || lastEvent === 'Home Run';
+    const countHtml = `
+      <div class="monster-count${isLive ? '' : ' is-hidden'}">
+        <div class="monster-count-group">
+          <div class="monster-count-header"><span class="monster-count-label">Balls</span></div>
+          <span class="monster-count-dots">${dots(3, balls, false)}</span>
+        </div>
+        <div class="monster-count-group">
+          <div class="monster-count-header"><span class="monster-count-label">Strikes</span></div>
+          <span class="monster-count-dots">${dots(2, strikes, true)}</span>
+        </div>
+        <div class="monster-count-group">
+          <div class="monster-count-header"><span class="monster-count-label">Outs</span></div>
+          <span class="monster-count-dots">${dots(2, outs, true)}</span>
+        </div>
+        <div class="monster-count-group">
+          <div class="monster-count-header">${hitRingSVG()}</div>
+          <span class="monster-count-dots">${dots(1, hitLit ? 1 : 0, false)}</span>
+        </div>
+      </div>`;
+
+    return `<div class="monster-panel">
+      <div class="monster-panel-left">${renderMonsterBoxScore(linescore, awayAbbr, homeAbbr)}${countHtml}</div>
+      <div class="monster-panel-right">${renderMonsterRHE(linescore)}${renderMonsterBases(onFirst, onSecond, onThird, !isLive)}</div>
     </div>`;
   }
 
@@ -4124,7 +4229,7 @@
   function jumpToScorecardGame(dateStr, gamePk) {
     hideGameSummaryModal();
     Tabs.switchTo('scorecard');
-    dateInput.value = dateStr;
+    setDateInputValue(dateInput, dateInputText, dateStr);
     loadSchedule(dateStr, gamePk);
   }
 
@@ -4408,13 +4513,16 @@
     }
   }
 
-  dailyDateInput.addEventListener('change', () => loadDailySummary(dailyDateInput.value));
+  dailyDateInput.addEventListener('change', () => {
+    dailyDateInputText.textContent = formatShortDate(dailyDateInput.value);
+    loadDailySummary(dailyDateInput.value);
+  });
   document.getElementById('dailyDatePrev').addEventListener('click', () => {
-    dailyDateInput.value = addDays(dailyDateInput.value, -1);
+    setDateInputValue(dailyDateInput, dailyDateInputText, addDays(dailyDateInput.value, -1));
     loadDailySummary(dailyDateInput.value);
   });
   document.getElementById('dailyDateNext').addEventListener('click', () => {
-    dailyDateInput.value = addDays(dailyDateInput.value, 1);
+    setDateInputValue(dailyDateInput, dailyDateInputText, addDays(dailyDateInput.value, 1));
     loadDailySummary(dailyDateInput.value);
   });
   document.getElementById('dailyViewToggle').addEventListener('click', (e) => {
@@ -4685,8 +4793,11 @@
     // and Schedule tabs only know the score, so their Live/Final games
     // fetch the inning-by-inning grid lazily into this same slot (see
     // loadGameSummaryExtrasInto), alongside the WPA highlights below.
+    // game.allPlays rides along with it (see currentGameSummary) so a Live
+    // game's panel here shows the same live count/baserunner band it does
+    // on the Scorecard tab, not just the box score.
     const boxScoreHtml = game.linescore
-      ? renderMonsterScoreboard(game.linescore, awayAbbr, homeAbbr)
+      ? renderMonsterPanel(game.linescore, awayAbbr, homeAbbr, game.allPlays || [], game.state === 'Live' && hasGameStarted(game.allPlays))
       : ((game.state === 'Final' || game.state === 'Live')
           ? `<div id="boxScore-${game.gamePk}" class="box-score-slot"><div class="potg-loading">Loading box score&#8230;</div></div>`
           : '');
@@ -4836,11 +4947,14 @@
       const feedData = await feedRes.json();
       const linescore = feedData.liveData && feedData.liveData.linescore;
       const weather = feedData.gameData && feedData.gameData.weather;
-      if (!includeHighlights) return { leaders: [], playOfGame: null, linescore, weather };
+      // Fed to renderMonsterPanel by loadGameSummaryExtrasInto so a Live
+      // game's box score there shows the same live count/baserunner band
+      // the Scorecard tab's own bottom bar does, not just the box score.
+      const allPlays = (feedData.liveData && feedData.liveData.plays && feedData.liveData.plays.allPlays) || [];
+      if (!includeHighlights) return { leaders: [], playOfGame: null, linescore, weather, allPlays };
 
       const wpRes = await fetch(`https://statsapi.mlb.com/api/v1/game/${gamePk}/winProbability`);
       const wpData = await wpRes.json();
-      const allPlays = (feedData.liveData && feedData.liveData.plays && feedData.liveData.plays.allPlays) || [];
       const wp = Array.isArray(wpData) ? wpData : [];
 
       const totals = {};
@@ -4885,11 +4999,11 @@
           : buildBatterStatLineParts(stats && stats.batting);
         return { id: p.id, name: p.name, statLine: renderStatLineParts(statParts) };
       });
-      const result = { leaders, playOfGame, linescore, weather };
+      const result = { leaders, playOfGame, linescore, weather, allPlays };
       if (includeHighlights) gameHighlightsCache[gamePk] = result;
       return result;
     } catch (e) {
-      return { leaders: [], playOfGame: null, linescore: null, weather: null };
+      return { leaders: [], playOfGame: null, linescore: null, weather: null, allPlays: [] };
     }
   }
 
@@ -4943,7 +5057,7 @@
 
   async function loadGameSummaryExtrasInto(game, requestId) {
     const includeHighlights = game.state === 'Final';
-    const { leaders, playOfGame, linescore, weather } = await fetchGameHighlights(game.gamePk, includeHighlights);
+    const { leaders, playOfGame, linescore, weather, allPlays } = await fetchGameHighlights(game.gamePk, includeHighlights);
     if (requestId !== gameSummaryRequestId) return;
     if (includeHighlights) {
       const wpaEl = document.getElementById(`wpaLeaders-${game.gamePk}`);
@@ -4951,7 +5065,11 @@
     }
     if (!game.linescore) {
       const boxEl = document.getElementById(`boxScore-${game.gamePk}`);
-      if (boxEl) boxEl.outerHTML = linescore ? renderMonsterScoreboard(linescore, game.awayAbbr, game.homeAbbr) : '';
+      if (boxEl) {
+        boxEl.outerHTML = linescore
+          ? renderMonsterPanel(linescore, game.awayAbbr, game.homeAbbr, allPlays, game.state === 'Live' && hasGameStarted(allPlays))
+          : '';
+      }
     }
     if (!game.weather) {
       const weatherEl = document.getElementById(`weather-${game.gamePk}`);
@@ -4996,15 +5114,14 @@
         body.innerHTML = '<div class="mlb-status-msg">No MLB games scheduled on this date.</div>';
         return;
       }
+      // Just "NYY @ BOS" -- state/time is redundant with the Daily tab's own
+      // game tiles, and once a game's picked, the Scorecard tab's controls
+      // bar and monster-panel already show its state/score in more detail
+      // than a dropdown option ever could.
       gameSelect.innerHTML = games.map(g => {
-        const away = teamNickname(g.teams.away.team);
-        const home = teamNickname(g.teams.home.team);
-        const state = g.status.abstractGameState;
-        let tag = '';
-        if (state === 'Live') tag = ' &#8212; LIVE';
-        else if (state === 'Final') tag = ' &#8212; Final';
-        else tag = ` &#8212; ${formatGameTime(g.gameDate)}`;
-        return `<option value="${g.gamePk}">${away} @ ${home}${tag}</option>`;
+        const away = teamAbbr(g.teams.away.team);
+        const home = teamAbbr(g.teams.home.team);
+        return `<option value="${g.gamePk}">${away} @ ${home}</option>`;
       }).join('');
 
       const preferred = preferredGamePk && games.find(g => String(g.gamePk) === String(preferredGamePk));
@@ -5113,7 +5230,7 @@
       // alone isn't "the game has started." Require at least one real pitch
       // to exist anywhere in the game first, or the on-deck diamond shows up
       // for the leadoff batter during warmup with nothing behind it yet.
-      const gameHasStarted = allPlays.some(p => (p.playEvents || []).some(pe => pe.isPitch));
+      const gameHasStarted = hasGameStarted(allPlays);
       let liveBatterInfo = null;
       if (gameHasStarted && state === 'Live' && linescore.currentInning) {
         // linescore.currentInning/inningHalf are a separately-updated summary
@@ -5288,10 +5405,7 @@
       const awayAbbr = (gameData.teams.away.abbreviation) || awayName;
       const homeAbbr = (gameData.teams.home.abbreviation) || homeName;
       let compactStateHtml = '';
-      let monsterCountHtml = '';
-      let monsterBoxScoreHtml = '';
-      let monsterRHEHtml = '';
-      let monsterBasesHtml = '';
+      let monsterPanelHtml = '';
       let subLineHtml = '';
       // MLB flips abstractGameState to 'Live' during pre-game warmup, well
       // ahead of first pitch -- gameHasStarted (at least one real pitch
@@ -5300,56 +5414,15 @@
       // are already populated with placeholder-ish values during warmup and
       // would otherwise render as a fabricated live count.
       if ((state === 'Live' && gameHasStarted) || state === 'Final') {
-        const isLive = state === 'Live';
-        const halfOver = (linescore.outs ?? 0) >= 3;
-        const balls = (isLive && !halfOver) ? (linescore.balls ?? 0) : 0;
-        const strikes = (isLive && !halfOver) ? (linescore.strikes ?? 0) : 0;
-        const outs = (isLive && !halfOver) ? (linescore.outs ?? 0) : 0;
-        const offense = (isLive && !halfOver) ? (linescore.offense || {}) : {};
-        const onFirst = !!offense.first, onSecond = !!offense.second, onThird = !!offense.third;
-
         // No compactStateHtml here (unlike the preview branch below) and no
         // run numbers in the strip either -- see showRunsInStrip -- since
         // the monster-panel below now covers the score, inning state, and
         // baserunners in more detail than the old compact strip did. This
         // now also covers Final -- the panel stays up instead of the whole
         // scoreboard being replaced by the plain strip once the game ends,
-        // just with its live count/baserunner row hidden (see is-hidden
-        // below and renderMonsterBases).
-        monsterBoxScoreHtml = renderMonsterBoxScore(linescore, awayAbbr, homeAbbr);
-        monsterRHEHtml = renderMonsterRHE(linescore);
-        monsterBasesHtml = renderMonsterBases(onFirst, onSecond, onThird, !isLive);
-        // Dot counts (3/2/2) are the max value ever live -- a 4th ball, 3rd
-        // strike, or 3rd out ends the at-bat/half-inning before it'd show.
-        const dots = (total, lit, redClass) => Array.from({ length: total },
-          (_, i) => `<span class="monster-dot ${redClass ? 'monster-dot-red' : ''} ${i < lit ? 'is-lit' : ''}"></span>`
-        ).join('');
-        // allPlays' last entry is either the at-bat still in progress (no
-        // result yet) or the one that just ended -- once a new batter's
-        // first pitch posts a fresh entry, this naturally falls back dark.
-        // Suppressed once Final, same as the rest of this row -- see isLive.
-        const lastPlay = allPlays[allPlays.length - 1];
-        const lastEvent = isLive && lastPlay && lastPlay.result && lastPlay.result.event;
-        const hitLit = lastEvent === 'Single' || lastEvent === 'Double' || lastEvent === 'Triple' || lastEvent === 'Home Run';
-        monsterCountHtml = `
-          <div class="monster-count${isLive ? '' : ' is-hidden'}">
-            <div class="monster-count-group">
-              <div class="monster-count-header"><span class="monster-count-label">Balls</span></div>
-              <span class="monster-count-dots">${dots(3, balls, false)}</span>
-            </div>
-            <div class="monster-count-group">
-              <div class="monster-count-header"><span class="monster-count-label">Strikes</span></div>
-              <span class="monster-count-dots">${dots(2, strikes, true)}</span>
-            </div>
-            <div class="monster-count-group">
-              <div class="monster-count-header"><span class="monster-count-label">Outs</span></div>
-              <span class="monster-count-dots">${dots(2, outs, true)}</span>
-            </div>
-            <div class="monster-count-group">
-              <div class="monster-count-header">${hitRingSVG()}</div>
-              <span class="monster-count-dots">${dots(1, hitLit ? 1 : 0, false)}</span>
-            </div>
-          </div>`;
+        // just with its live count/baserunner row collapsed (see
+        // renderMonsterPanel/is-hidden).
+        monsterPanelHtml = renderMonsterPanel(linescore, awayAbbr, homeAbbr, allPlays, state === 'Live');
       } else {
         const startTime = gameData.datetime && gameData.datetime.dateTime ? new Date(gameData.datetime.dateTime) : null;
         compactStateHtml = detailedState;
@@ -5361,22 +5434,24 @@
       const showRuns = state === 'Live' || state === 'Final';
       const awayRuns = (linescore.teams && linescore.teams.away && linescore.teams.away.runs) ?? 0;
       const homeRuns = (linescore.teams && linescore.teams.home && linescore.teams.home.runs) ?? 0;
-      const gameSummaryButtonHtml = `<button type="button" class="box-score-link">Game Summary</button>`;
       // scoreStripHtml only ever renders now for the preview (game hasn't
       // started) branch above -- Live and Final both take the monster-panel
-      // path instead (see monsterBoxScoreHtml below), so there's no score
+      // path instead (see monsterPanelHtml below), so there's no score
       // to show here and no team abbreviations either, just the detailed
-      // status and first-pitch time.
+      // status and first-pitch time. The Game Summary link itself lives in
+      // the tab's controls bar now (#gameSummaryTopBtn, next to the game
+      // picker) rather than down here, so it doesn't need to be rebuilt
+      // per-state.
       const scoreStripHtml = `
         <span class="score-strip-teams">${awayAbbr} @ ${homeAbbr}</span>
         ${compactStateHtml ? `<span class="score-strip-state">${compactStateHtml}</span>` : ''}
-        ${gameSummaryButtonHtml}
       `;
 
       // Fed to showCurrentGameSummary() when the link above is clicked --
       // reuses the exact same modal the Daily/Schedule tabs open, just with
-      // this game's linescore already attached so its box score renders
-      // instantly instead of needing the lazy fetch those tabs rely on.
+      // this game's linescore and allPlays already attached so its own
+      // monster-panel (see renderGameSummaryGame) renders instantly instead
+      // of needing the lazy fetch those tabs rely on.
       currentGameSummary = {
         gamePk,
         dateStr: officialDate,
@@ -5387,6 +5462,7 @@
         state, detailedState,
         gameDate: gameData.datetime && gameData.datetime.dateTime,
         linescore: showRuns ? linescore : null,
+        allPlays: showRuns ? allPlays : null,
         weather: gameData.weather || null,
         venueHtml: renderVenueHeader(gameData.venue && gameData.venue.name, venue, undefined, renderStateBadge({ state, detailedState }))
       };
@@ -5398,19 +5474,12 @@
 
       // Lives in the fixed bottom bar (#scoreBottomBar), not in .sheet --
       // see .score-bottom-bar for why.
-      // Live and Final both show just the monster-panel, centered, with the
-      // Game Summary link underneath it instead of alongside a score strip
-      // -- no strip, no At Bat/Pitching line, no Previous Batter. Only the
-      // preview state (game hasn't started) still uses the original
-      // top-strip layout with the button inline, since there's no panel
-      // there to replace it.
-      scoreBottomBar.innerHTML = monsterBoxScoreHtml ? `
-        <div class="monster-panel">
-          <div class="monster-panel-left">${monsterBoxScoreHtml}${monsterCountHtml}</div>
-          <div class="monster-panel-right">${monsterRHEHtml}${monsterBasesHtml}</div>
-        </div>
-        <div class="monster-panel-footer">${gameSummaryButtonHtml}</div>
-      ` : `
+      // Live and Final both show just the monster-panel, centered -- no
+      // strip, no At Bat/Pitching line, no Previous Batter, no Game Summary
+      // button (that's up in the controls bar now). Only the preview state
+      // (game hasn't started) still uses the original top-strip layout,
+      // since there's no panel there to replace it.
+      scoreBottomBar.innerHTML = monsterPanelHtml ? monsterPanelHtml : `
         <div class="score-strip">${scoreStripHtml}</div>
         ${subLineHtml ? `<div class="score-strip-sub">${subLineHtml}</div>` : ''}
       `;
@@ -5446,24 +5515,30 @@
     }
   }
 
-  dateInput.addEventListener('change', () => loadSchedule(dateInput.value));
+  dateInput.addEventListener('change', () => {
+    dateInputText.textContent = formatShortDate(dateInput.value);
+    loadSchedule(dateInput.value);
+  });
   document.getElementById('datePrev').addEventListener('click', () => {
-    dateInput.value = addDays(dateInput.value, -1);
+    setDateInputValue(dateInput, dateInputText, addDays(dateInput.value, -1));
     loadSchedule(dateInput.value);
   });
   document.getElementById('dateNext').addEventListener('click', () => {
-    dateInput.value = addDays(dateInput.value, 1);
+    setDateInputValue(dateInput, dateInputText, addDays(dateInput.value, 1));
     loadSchedule(dateInput.value);
   });
   gameSelect.addEventListener('change', () => loadGame(gameSelect.value));
 
-  standingsDateInput.addEventListener('change', () => loadStandings(standingsDateInput.value));
+  standingsDateInput.addEventListener('change', () => {
+    standingsDateInputText.textContent = formatShortDate(standingsDateInput.value);
+    loadStandings(standingsDateInput.value);
+  });
   document.getElementById('standingsDatePrev').addEventListener('click', () => {
-    standingsDateInput.value = addDays(standingsDateInput.value, -1);
+    setDateInputValue(standingsDateInput, standingsDateInputText, addDays(standingsDateInput.value, -1));
     loadStandings(standingsDateInput.value);
   });
   document.getElementById('standingsDateNext').addEventListener('click', () => {
-    standingsDateInput.value = addDays(standingsDateInput.value, 1);
+    setDateInputValue(standingsDateInput, standingsDateInputText, addDays(standingsDateInput.value, 1));
     loadStandings(standingsDateInput.value);
   });
 
@@ -6059,7 +6134,7 @@
   Tabs.register('daily', {
     init: () => {
       findLastStartedDate().then(dateStr => {
-        dailyDateInput.value = dateStr;
+        setDateInputValue(dailyDateInput, dailyDateInputText, dateStr);
         loadDailySummary(dateStr);
       });
     }
