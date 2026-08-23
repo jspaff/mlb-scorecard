@@ -3571,15 +3571,19 @@
     return ` <span class="gs-weather">&#183; ${parts.join(' &#183; ')}</span>`;
   }
 
-  // Dot + label for the top-row status tag next to the venue name.
+  // Dot + label for the top-row status tag next to the venue name. Keeps
+  // this to a handful of broad statuses rather than surfacing every
+  // detailedState MLB reports -- a Live game reads as "Live" through
+  // whatever's momentarily happening inside it (a pitching change, a
+  // manager challenge, a review), the same way a paper scorecard wouldn't
+  // annotate every pause. Only an actual delay is worth calling out as
+  // something other than the game just being underway.
   function renderStateBadge(game) {
     if (game.state === 'Final') return `<span class="badge badge-final"><span class="badge-dot"></span>Final</span>`;
-    // MLB flips abstractGameState to 'Live' during pre-game warmup, confirmed
-    // well ahead of first pitch (e.g. detailedState: 'Warmup' 30+ minutes
-    // out) -- 'Live' alone doesn't mean the game has actually started, so
-    // only badge it that way once detailedState agrees play is underway.
-    if (game.state === 'Live' && game.detailedState === 'In Progress') {
-      return `<span class="badge badge-live"><span class="badge-dot"></span>Live</span>`;
+    if (game.state === 'Live') {
+      const isDelay = game.detailedState && /delay/i.test(game.detailedState);
+      const label = isDelay ? game.detailedState : 'Live';
+      return `<span class="badge badge-live"><span class="badge-dot"></span>${label}</span>`;
     }
     const label = game.detailedState && game.detailedState !== 'Scheduled' ? game.detailedState : 'Upcoming';
     return `<span class="badge badge-preview"><span class="badge-dot"></span>${label}</span>`;
