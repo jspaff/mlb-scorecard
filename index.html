@@ -378,10 +378,14 @@
   .monster-box-row {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
   }
+  /* min-width sized for the longest real abbreviation (3 letters, e.g. WSH)
+     plus a little breathing room -- was 48px, noticeably wider than any
+     abbreviation actually needs, leaving a gap in front of the first
+     inning column. */
   .monster-box-team {
-    min-width: 48px;
+    min-width: 34px;
     font-family: 'Overpass', sans-serif;
     font-weight: 800;
     font-size: 12px;
