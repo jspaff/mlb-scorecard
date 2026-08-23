@@ -115,6 +115,44 @@
     max-width: 260px;
   }
   select:focus, input:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
+  /* input[type=date]'s own text is rendered by the browser in whatever
+     locale format it picks (MM/DD/YYYY, DD/MM/YYYY, ...) with no way to
+     restyle just that text -- so instead of fighting it, the real input
+     goes fully invisible and absolutely fills this wrapper (still gets
+     clicks anywhere in it, still opens the native picker), while
+     .date-display-text sits in-flow showing whatever short format we want
+     (see formatShortDate), kept in sync on every value change. Same
+     pattern as a custom file-upload button over a hidden <input type=file>. */
+  .date-display { position: relative; display: inline-flex; }
+  .date-display-text {
+    display: inline-flex;
+    align-items: center;
+    background: var(--paper);
+    color: var(--ink);
+    border: 1px solid var(--paper-line);
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-family: 'Oswald', sans-serif;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  .date-display-input:focus + .date-display-text {
+    outline: 2px solid var(--gold);
+    outline-offset: 1px;
+  }
+  .date-display-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    padding: 0;
+    border: 0;
+    max-width: none;
+  }
 
   .mlb-status-msg {
     font-family: 'IBM Plex Mono', monospace;
@@ -1838,7 +1876,10 @@
     <div class="mlb-controls" data-tab-controls="daily">
       <div class="date-nav">
         <button type="button" class="date-nav-btn" id="dailyDatePrev" aria-label="Previous day">&#8249;</button>
-        <input type="date" id="dailyDatePick" />
+        <div class="date-display">
+          <input type="date" class="date-display-input" id="dailyDatePick" />
+          <span class="date-display-text" id="dailyDatePickText"></span>
+        </div>
         <button type="button" class="date-nav-btn" id="dailyDateNext" aria-label="Next day">&#8250;</button>
       </div>
       <div class="view-toggle" id="dailyViewToggle">
@@ -1850,7 +1891,10 @@
     <div class="mlb-controls" data-tab-controls="scorecard" hidden>
       <div class="date-nav">
         <button type="button" class="date-nav-btn" id="datePrev" aria-label="Previous day">&#8249;</button>
-        <input type="date" id="datePick" />
+        <div class="date-display">
+          <input type="date" class="date-display-input" id="datePick" />
+          <span class="date-display-text" id="datePickText"></span>
+        </div>
         <button type="button" class="date-nav-btn" id="dateNext" aria-label="Next day">&#8250;</button>
       </div>
       <select id="gamePick"><option>Loading games&#8230;</option></select>
@@ -1859,7 +1903,10 @@
     <div class="mlb-controls" data-tab-controls="standings" hidden>
       <div class="date-nav">
         <button type="button" class="date-nav-btn" id="standingsDatePrev" aria-label="Previous day">&#8249;</button>
-        <input type="date" id="standingsDatePick" />
+        <div class="date-display">
+          <input type="date" class="date-display-input" id="standingsDatePick" />
+          <span class="date-display-text" id="standingsDatePickText"></span>
+        </div>
         <button type="button" class="date-nav-btn" id="standingsDateNext" aria-label="Next day">&#8250;</button>
       </div>
       <div class="view-toggle" id="standingsViewToggle">
@@ -1958,13 +2005,28 @@
 <script>
 (function() {
   const dateInput = document.getElementById('datePick');
+  const dateInputText = document.getElementById('datePickText');
   const gameSelect = document.getElementById('gamePick');
   const body = document.getElementById('mlbBody');
   const scoreBottomBar = document.getElementById('scoreBottomBar');
   const standingsBody = document.getElementById('standingsBody');
   const standingsDateInput = document.getElementById('standingsDatePick');
+  const standingsDateInputText = document.getElementById('standingsDatePickText');
   const dailyBody = document.getElementById('dailyBody');
   const dailyDateInput = document.getElementById('dailyDatePick');
+  const dailyDateInputText = document.getElementById('dailyDatePickText');
+  // input[type=date]'s own displayed text follows the browser/OS locale
+  // (MM/DD/YYYY, DD/MM/YYYY, ...) with no way to restyle it -- see
+  // .date-display's comment. Every one of the three date pickers pairs its
+  // real (invisible) input with a .date-display-text span kept in sync via
+  // this, rather than each tab reimplementing the same "Aug 23" formatting.
+  function formatShortDate(dateStr) {
+    return new Date(dateStr + 'T00:00:00Z').toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' });
+  }
+  function setDateInputValue(input, textEl, value) {
+    input.value = value;
+    textEl.textContent = formatShortDate(value);
+  }
   let pollTimer = null;
   // The currently loaded game, in the same shape renderGameSummaryGame()
   // expects, so the Scorecard tab's "Game Summary" link can reuse the exact
@@ -2303,9 +2365,9 @@
     const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
     return local.toISOString().slice(0, 10);
   }
-  dateInput.value = todayStr();
-  standingsDateInput.value = todayStr();
-  dailyDateInput.value = todayStr();
+  setDateInputValue(dateInput, dateInputText, todayStr());
+  setDateInputValue(standingsDateInput, standingsDateInputText, todayStr());
+  setDateInputValue(dailyDateInput, dailyDateInputText, todayStr());
 
   async function dateHasStartedGame(dateStr) {
     try {
@@ -4167,7 +4229,7 @@
   function jumpToScorecardGame(dateStr, gamePk) {
     hideGameSummaryModal();
     Tabs.switchTo('scorecard');
-    dateInput.value = dateStr;
+    setDateInputValue(dateInput, dateInputText, dateStr);
     loadSchedule(dateStr, gamePk);
   }
 
@@ -4451,13 +4513,16 @@
     }
   }
 
-  dailyDateInput.addEventListener('change', () => loadDailySummary(dailyDateInput.value));
+  dailyDateInput.addEventListener('change', () => {
+    dailyDateInputText.textContent = formatShortDate(dailyDateInput.value);
+    loadDailySummary(dailyDateInput.value);
+  });
   document.getElementById('dailyDatePrev').addEventListener('click', () => {
-    dailyDateInput.value = addDays(dailyDateInput.value, -1);
+    setDateInputValue(dailyDateInput, dailyDateInputText, addDays(dailyDateInput.value, -1));
     loadDailySummary(dailyDateInput.value);
   });
   document.getElementById('dailyDateNext').addEventListener('click', () => {
-    dailyDateInput.value = addDays(dailyDateInput.value, 1);
+    setDateInputValue(dailyDateInput, dailyDateInputText, addDays(dailyDateInput.value, 1));
     loadDailySummary(dailyDateInput.value);
   });
   document.getElementById('dailyViewToggle').addEventListener('click', (e) => {
@@ -5450,24 +5515,30 @@
     }
   }
 
-  dateInput.addEventListener('change', () => loadSchedule(dateInput.value));
+  dateInput.addEventListener('change', () => {
+    dateInputText.textContent = formatShortDate(dateInput.value);
+    loadSchedule(dateInput.value);
+  });
   document.getElementById('datePrev').addEventListener('click', () => {
-    dateInput.value = addDays(dateInput.value, -1);
+    setDateInputValue(dateInput, dateInputText, addDays(dateInput.value, -1));
     loadSchedule(dateInput.value);
   });
   document.getElementById('dateNext').addEventListener('click', () => {
-    dateInput.value = addDays(dateInput.value, 1);
+    setDateInputValue(dateInput, dateInputText, addDays(dateInput.value, 1));
     loadSchedule(dateInput.value);
   });
   gameSelect.addEventListener('change', () => loadGame(gameSelect.value));
 
-  standingsDateInput.addEventListener('change', () => loadStandings(standingsDateInput.value));
+  standingsDateInput.addEventListener('change', () => {
+    standingsDateInputText.textContent = formatShortDate(standingsDateInput.value);
+    loadStandings(standingsDateInput.value);
+  });
   document.getElementById('standingsDatePrev').addEventListener('click', () => {
-    standingsDateInput.value = addDays(standingsDateInput.value, -1);
+    setDateInputValue(standingsDateInput, standingsDateInputText, addDays(standingsDateInput.value, -1));
     loadStandings(standingsDateInput.value);
   });
   document.getElementById('standingsDateNext').addEventListener('click', () => {
-    standingsDateInput.value = addDays(standingsDateInput.value, 1);
+    setDateInputValue(standingsDateInput, standingsDateInputText, addDays(standingsDateInput.value, 1));
     loadStandings(standingsDateInput.value);
   });
 
@@ -6063,7 +6134,7 @@
   Tabs.register('daily', {
     init: () => {
       findLastStartedDate().then(dateStr => {
-        dailyDateInput.value = dateStr;
+        setDateInputValue(dailyDateInput, dailyDateInputText, dateStr);
         loadDailySummary(dateStr);
       });
     }
