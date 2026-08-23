@@ -348,11 +348,13 @@
   .monster-dot-red.is-lit { background: var(--brick); border-color: var(--brick); }
   /* Once a game is Final there's no live count or baserunners left to show,
      but the row still renders (see renderMonsterBases/the Scorecard tab's
-     monster-count markup) rather than being left out -- visibility:hidden
-     keeps its layout space and the divider line above it, so the panel
-     doesn't change shape or lose its cross-column divider going from Live
-     to Final. */
-  .monster-count.is-hidden, .monster-rhe-spacer.is-hidden { visibility: hidden; }
+     monster-count markup) rather than being left out entirely -- keeping the
+     markup (instead of an `if` at the call site) means the two columns'
+     structure stays identical between Live and Final, so this is the only
+     place the collapse needs to happen. display:none collapses the row (and
+     its divider) out of the panel completely rather than just hiding its
+     content. */
+  .monster-count.is-hidden, .monster-rhe-spacer.is-hidden { display: none; }
 
   /* Fenway-style linescore. Innings group in 3s (1-3/4-6/7-9, extras
      trailing) with a wider gap between groups than within one --
@@ -1509,6 +1511,11 @@
      modal (e.g. clicking a batted-ball dot in the spray chart), so it needs
      to render above every other .pitch-overlay regardless of DOM order. */
   #pitchOverlay { z-index: 200; }
+  /* Wider than every other .pitch-modal -- this is the one that holds the
+     monster-panel box score (see renderMonsterScoreboard), and the base
+     360px max-width was forcing it into its own horizontal scrollbar even
+     for a routine 9-inning game. */
+  #gameSummaryOverlay .pitch-modal { max-width: 480px; }
   .pitch-modal {
     position: relative;
     background: var(--paper);
