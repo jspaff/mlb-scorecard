@@ -220,10 +220,10 @@
      keeps the whole panel hugging its content's
      width instead of stretching the full bottom-bar width; align-items:
      stretch makes both columns match whichever is taller, so the shared
-     divider between them and the outer bottom border both run the full
-     height/width automatically. Open on top (no border-top) since only the
-     other three sides are meant to read as a frame, echoing the real
-     board's panel edges rather than boxing in the score-strip line above. */
+     divider between them and the border all run the full height/width
+     automatically. Closed on all four sides now that nothing (the old
+     score-strip) sits directly above it in the Live/Final layouts -- reads
+     as a fully framed board panel rather than one open at the top. */
   .monster-panel {
     display: inline-flex;
     align-items: stretch;
@@ -231,9 +231,7 @@
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     margin: 0 0 2px;
-    border-left: 2.5px solid var(--ink);
-    border-right: 2.5px solid var(--ink);
-    border-bottom: 2.5px solid var(--ink);
+    border: 2.5px solid var(--ink);
   }
   .monster-panel::-webkit-scrollbar { height: 7px; }
   .monster-panel::-webkit-scrollbar-track { background: var(--paper-line); border-radius: 4px; }
