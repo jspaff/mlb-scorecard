@@ -84,14 +84,23 @@
   .tab-btn.active { color: var(--ink); border-bottom-color: var(--gold); }
   .tab-panel[hidden] { display: none; }
   .mlb-controls[hidden] { display: none; }
-  .date-nav { display: flex; align-items: center; gap: 4px; }
-  .date-nav-btn {
+  /* One bordered pill instead of three separate boxes (arrow / date / arrow)
+     -- overflow:hidden clips the buttons' own corners to the shared
+     border-radius, and align-items:stretch makes every segment match
+     whichever is tallest so a single border traces the whole control. */
+  .date-nav {
+    display: flex;
+    align-items: stretch;
     background: var(--paper);
-    color: var(--ink);
     border: 1px solid var(--paper-line);
     border-radius: 6px;
-    width: 28px;
-    height: 30px;
+    overflow: hidden;
+  }
+  .date-nav-btn {
+    background: none;
+    color: var(--ink);
+    border: none;
+    width: 24px;
     font-family: 'Oswald', sans-serif;
     font-weight: 600;
     font-size: 14px;
@@ -99,9 +108,11 @@
     cursor: pointer;
   }
   .date-nav-btn:hover { background: rgba(28, 58, 44, 0.1); }
-  .date-nav-btn:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
+  /* Negative offset keeps the ring inside the shared pill border instead of
+     spilling out over the neighboring segment. */
+  .date-nav-btn:focus { outline: 2px solid var(--gold); outline-offset: -2px; }
   .date-nav-btn:disabled { opacity: 0.35; cursor: default; }
-  .date-nav-btn:disabled:hover { background: var(--paper); }
+  .date-nav-btn:disabled:hover { background: none; }
   select, input[type=date], input[type=text] {
     background: var(--paper);
     color: var(--ink);
@@ -124,14 +135,17 @@
      (see formatShortDate), kept in sync on every value change. Same
      pattern as a custom file-upload button over a hidden <input type=file>. */
   .date-display { position: relative; display: inline-flex; }
+  /* Sits between the two .date-nav-btn arrows as the pill's middle segment
+     -- no border/background of its own (the shared .date-nav border already
+     traces the whole control), just thin dividers so the three segments
+     still read as distinct without three separate boxes. */
   .date-display-text {
     display: inline-flex;
     align-items: center;
-    background: var(--paper);
     color: var(--ink);
-    border: 1px solid var(--paper-line);
-    border-radius: 6px;
-    padding: 7px 10px;
+    border-left: 1px solid var(--paper-line);
+    border-right: 1px solid var(--paper-line);
+    padding: 7px 8px;
     font-family: 'Oswald', sans-serif;
     font-weight: 500;
     letter-spacing: 0.02em;
@@ -140,7 +154,7 @@
   }
   .date-display-input:focus + .date-display-text {
     outline: 2px solid var(--gold);
-    outline-offset: 1px;
+    outline-offset: -2px;
   }
   .date-display-input {
     position: absolute;
@@ -227,23 +241,26 @@
     color: var(--ink-soft);
     white-space: nowrap;
   }
+  /* Matches the controls bar's own select/date-picker styling (see the
+     shared select/input rule below) rather than its old standalone look,
+     now that it lives in that same controls bar next to them. */
   .box-score-link {
     margin-left: auto;
     flex-shrink: 0;
-    background: none;
+    background: var(--paper);
+    color: var(--ink);
     border: 1px solid var(--paper-line);
-    border-radius: 5px;
-    color: var(--ink-soft);
-    font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 10px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    padding: 5px 8px;
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-family: 'Oswald', sans-serif;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    font-size: 13px;
     cursor: pointer;
     white-space: nowrap;
   }
-  .box-score-link:hover, .box-score-link:focus-visible { color: var(--ink); border-color: var(--ink-soft); }
+  .box-score-link:hover { background: rgba(28, 58, 44, 0.1); }
+  .box-score-link:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
   .score-strip-sub {
     font-family: 'Inter', sans-serif;
     font-size: 12px;
