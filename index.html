@@ -145,7 +145,15 @@
     background: var(--paper);
     border-top: 1px solid var(--paper-line);
     box-shadow: 0 -6px 14px -4px rgba(11, 15, 12, 0.45);
-    padding: 8px 18px calc(8px + env(safe-area-inset-bottom, 0px));
+    /* max() instead of a straight calc() addition -- on Android Chrome,
+       env(safe-area-inset-bottom) doesn't reliably report the gesture-nav
+       bar's real height (that API is mainly an iOS Safari thing), so
+       relying on it alone can under-pad the bar there, leaving the page's
+       own background visible below it. A flat 28px minimum comfortably
+       covers a typical Android gesture-nav bar's height as a fallback,
+       while still deferring to the real safe-area value when it's actually
+       reported (e.g. iOS) and that's larger. */
+    padding: 8px 18px max(28px, calc(8px + env(safe-area-inset-bottom, 0px)));
   }
   .score-bottom-bar[hidden], .score-bottom-bar:empty { display: none; }
 
@@ -2013,24 +2021,6 @@
   const gameSelect = document.getElementById('gamePick');
   const body = document.getElementById('mlbBody');
   const scoreBottomBar = document.getElementById('scoreBottomBar');
-  // Some Android Chrome builds leave a gap between a position:fixed;bottom:0
-  // element and the *actual* visible bottom edge -- unlike iOS Safari,
-  // env(safe-area-inset-bottom) doesn't reliably report the gesture-nav
-  // bar's height there, so CSS-only padding (see .score-bottom-bar) can't
-  // close it on its own. The VisualViewport API reports the real visible
-  // area regardless, so nudge the bar's own `bottom` up by whatever gap
-  // exists between that and the window's full height, re-checked whenever
-  // the visual viewport changes (toolbar show/hide, gesture nav, etc).
-  if (window.visualViewport) {
-    const syncBottomBarOffset = () => {
-      const vv = window.visualViewport;
-      const gap = window.innerHeight - (vv.height + vv.offsetTop);
-      scoreBottomBar.style.bottom = Math.max(gap, 0) + 'px';
-    };
-    window.visualViewport.addEventListener('resize', syncBottomBarOffset);
-    window.visualViewport.addEventListener('scroll', syncBottomBarOffset);
-    syncBottomBarOffset();
-  }
   const standingsBody = document.getElementById('standingsBody');
   const standingsDateInput = document.getElementById('standingsDatePick');
   const dailyBody = document.getElementById('dailyBody');
