@@ -146,6 +146,11 @@
     border-top: 1px solid var(--paper-line);
     box-shadow: 0 -6px 14px -4px rgba(11, 15, 12, 0.45);
     padding: 8px 18px calc(8px + env(safe-area-inset-bottom, 0px));
+    /* Centers .monster-panel (an inline-flex box) when it's the bar's only
+       content during a live game -- has no effect on the plain top-strip
+       layout used everywhere else, since .score-strip is a full-width flex
+       container (block-level), not an inline box text-align can move. */
+    text-align: center;
   }
   .score-bottom-bar[hidden], .score-bottom-bar:empty { display: none; }
 
@@ -201,10 +206,6 @@
     white-space: nowrap;
   }
   .box-score-link:hover, .box-score-link:focus-visible { color: var(--ink); border-color: var(--ink-soft); }
-  /* Left-aligned at the bottom of the live bar instead of the button's
-     usual margin-left:auto right-alignment (there's nothing else on this
-     line to push away from anymore). */
-  .score-strip-bottom .box-score-link { margin-left: 0; }
   .score-strip-sub {
     font-family: 'Inter', sans-serif;
     font-size: 12px;
@@ -226,18 +227,29 @@
   .monster-panel {
     display: inline-flex;
     align-items: stretch;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     margin: 0 0 2px;
     border-left: 2.5px solid var(--ink);
     border-right: 2.5px solid var(--ink);
     border-bottom: 2.5px solid var(--ink);
   }
+  .monster-panel::-webkit-scrollbar { height: 7px; }
+  .monster-panel::-webkit-scrollbar-track { background: var(--paper-line); border-radius: 4px; }
+  .monster-panel::-webkit-scrollbar-thumb { background: var(--ink-soft); border-radius: 4px; }
+  /* flex-shrink:0 on both columns -- deep extra innings should make the
+     whole panel scroll horizontally (via the overflow-x above), not
+     squeeze the innings grid or count band down to fit. */
   .monster-panel-left {
     display: flex;
     flex-direction: column;
+    flex-shrink: 0;
     padding: 6px 14px 9px;
     border-right: 2px solid var(--ink);
   }
   .monster-panel-right {
+    flex-shrink: 0;
     display: flex;
     flex-direction: column;
     padding: 6px 14px 9px;
@@ -737,24 +749,6 @@
     text-decoration: none;
   }
   .hr-watch:hover, .hr-watch:focus-visible { text-decoration: underline; }
-
-  .last-play {
-    font-family: 'Inter', sans-serif;
-    font-size: 12px;
-    color: var(--ink-soft);
-    margin-top: -4px;
-    margin-bottom: 14px;
-    padding-bottom: 6px;
-  }
-  .last-play-label {
-    font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 9px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--gold);
-    margin-right: 7px;
-  }
 
   .team-block { margin-bottom: 20px; }
   .team-block:last-child { margin-bottom: 8px; }
@@ -5326,7 +5320,6 @@
       let monsterRHEHtml = '';
       let monsterBasesHtml = '';
       let subLineHtml = '';
-      let lastPlayHtml = '';
       // MLB flips abstractGameState to 'Live' during pre-game warmup, well
       // ahead of first pitch -- gameHasStarted (at least one real pitch
       // thrown anywhere in the game) is what actually distinguishes "in
@@ -5339,10 +5332,7 @@
         const strikes = halfOver ? 0 : (linescore.strikes ?? 0);
         const outs = halfOver ? 0 : (linescore.outs ?? 0);
         const offense = halfOver ? {} : (linescore.offense || {});
-        const inningNum = linescore.currentInning;
         const onFirst = !!offense.first, onSecond = !!offense.second, onThird = !!offense.third;
-        const batter = offense.batter ? offense.batter.fullName : '';
-        const pitcher = halfOver ? '' : ((linescore.defense && linescore.defense.pitcher) ? linescore.defense.pitcher.fullName : '');
 
         // No compactStateHtml here (unlike the Final/preview branches below)
         // and no run numbers in the strip either -- see showRunsInStrip --
@@ -5381,20 +5371,6 @@
               <span class="monster-count-dots">${dots(1, hitLit ? 1 : 0, false)}</span>
             </div>
           </div>`;
-        subLineHtml = (batter || pitcher)
-          ? `${batter ? 'At bat: ' + batter : ''}${pitcher ? ' &nbsp;&#183;&nbsp; Pitching: ' + pitcher : ''}`
-          : '';
-
-        const currentHalf = (linescore.inningHalf || '').toLowerCase();
-        const completedAtBats = allPlays.filter(p =>
-          p.result && p.result.type === 'atBat' && p.result.description &&
-          !NON_RESULT_EVENT_RE.test(p.result.event || '') &&
-          p.about && p.about.inning === inningNum && (p.about.halfInning || '').toLowerCase() === currentHalf
-        );
-        const prevPlay = completedAtBats[completedAtBats.length - 1];
-        if (prevPlay) {
-          lastPlayHtml = `<div class="last-play"><span class="last-play-label">Previous Batter</span>${prevPlay.result.description}</div>`;
-        }
       } else if (state === 'Final') {
         compactStateHtml = 'Final';
       } else {
@@ -5451,22 +5427,18 @@
 
       // Lives in the fixed bottom bar (#scoreBottomBar), not in .sheet --
       // see .score-bottom-bar for why.
-      // Live keeps the box score flush against the top of the bar (no strip
-      // above it) and drops the Game Summary button to the very bottom
-      // instead; every other state still uses the plain top strip since
-      // there's no panel here to push the button out of.
+      // Live shows nothing but the monster-panel itself, centered -- no
+      // strip, no At Bat/Pitching line, no Previous Batter, no Game Summary
+      // button. Every other state still uses the original top-strip layout
+      // with the button, since there's no panel there to replace it.
       scoreBottomBar.innerHTML = monsterCountHtml ? `
         <div class="monster-panel">
           <div class="monster-panel-left">${monsterBoxScoreHtml}${monsterCountHtml}</div>
           <div class="monster-panel-right">${monsterRHEHtml}${monsterBasesHtml}</div>
         </div>
-        ${subLineHtml ? `<div class="score-strip-sub">${subLineHtml}</div>` : ''}
-        ${lastPlayHtml}
-        <div class="score-strip score-strip-bottom">${gameSummaryButtonHtml}</div>
       ` : `
         <div class="score-strip">${scoreStripHtml}</div>
         ${subLineHtml ? `<div class="score-strip-sub">${subLineHtml}</div>` : ''}
-        ${lastPlayHtml}
       `;
 
       body.innerHTML = `
