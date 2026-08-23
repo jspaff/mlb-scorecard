@@ -241,23 +241,26 @@
     color: var(--ink-soft);
     white-space: nowrap;
   }
+  /* Matches the controls bar's own select/date-picker styling (see the
+     shared select/input rule below) rather than its old standalone look,
+     now that it lives in that same controls bar next to them. */
   .box-score-link {
     margin-left: auto;
     flex-shrink: 0;
-    background: none;
+    background: var(--paper);
+    color: var(--ink);
     border: 1px solid var(--paper-line);
-    border-radius: 5px;
-    color: var(--ink-soft);
-    font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 10px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    padding: 5px 8px;
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-family: 'Oswald', sans-serif;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    font-size: 13px;
     cursor: pointer;
     white-space: nowrap;
   }
-  .box-score-link:hover, .box-score-link:focus-visible { color: var(--ink); border-color: var(--ink-soft); }
+  .box-score-link:hover { background: rgba(28, 58, 44, 0.1); }
+  .box-score-link:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
   .score-strip-sub {
     font-family: 'Inter', sans-serif;
     font-size: 12px;
