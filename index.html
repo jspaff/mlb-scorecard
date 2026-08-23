@@ -236,11 +236,6 @@
   .monster-panel::-webkit-scrollbar { height: 7px; }
   .monster-panel::-webkit-scrollbar-track { background: var(--paper-line); border-radius: 4px; }
   .monster-panel::-webkit-scrollbar-thumb { background: var(--ink-soft); border-radius: 4px; }
-  /* Holds the Game Summary link once it moves out of the score-strip (Live/
-     Final both replace that strip with .monster-panel above) -- .box-score-
-     link's own margin-left:auto has no flex parent here, so centering comes
-     from .score-bottom-bar's text-align instead. */
-  .monster-panel-footer { margin-top: 4px; }
   /* flex-shrink:0 on both columns -- deep extra innings should make the
      whole panel scroll horizontally (via the overflow-x above), not
      squeeze the innings grid or count band down to fit. */
@@ -1859,6 +1854,7 @@
         <button type="button" class="date-nav-btn" id="dateNext" aria-label="Next day">&#8250;</button>
       </div>
       <select id="gamePick"><option>Loading games&#8230;</option></select>
+      <button type="button" class="box-score-link" id="gameSummaryTopBtn">Game Summary</button>
     </div>
     <div class="mlb-controls" data-tab-controls="standings" hidden>
       <div class="date-nav">
@@ -5374,16 +5370,17 @@
       const showRuns = state === 'Live' || state === 'Final';
       const awayRuns = (linescore.teams && linescore.teams.away && linescore.teams.away.runs) ?? 0;
       const homeRuns = (linescore.teams && linescore.teams.home && linescore.teams.home.runs) ?? 0;
-      const gameSummaryButtonHtml = `<button type="button" class="box-score-link">Game Summary</button>`;
       // scoreStripHtml only ever renders now for the preview (game hasn't
       // started) branch above -- Live and Final both take the monster-panel
       // path instead (see monsterPanelHtml below), so there's no score
       // to show here and no team abbreviations either, just the detailed
-      // status and first-pitch time.
+      // status and first-pitch time. The Game Summary link itself lives in
+      // the tab's controls bar now (#gameSummaryTopBtn, next to the game
+      // picker) rather than down here, so it doesn't need to be rebuilt
+      // per-state.
       const scoreStripHtml = `
         <span class="score-strip-teams">${awayAbbr} @ ${homeAbbr}</span>
         ${compactStateHtml ? `<span class="score-strip-state">${compactStateHtml}</span>` : ''}
-        ${gameSummaryButtonHtml}
       `;
 
       // Fed to showCurrentGameSummary() when the link above is clicked --
@@ -5413,16 +5410,12 @@
 
       // Lives in the fixed bottom bar (#scoreBottomBar), not in .sheet --
       // see .score-bottom-bar for why.
-      // Live and Final both show just the monster-panel, centered, with the
-      // Game Summary link underneath it instead of alongside a score strip
-      // -- no strip, no At Bat/Pitching line, no Previous Batter. Only the
-      // preview state (game hasn't started) still uses the original
-      // top-strip layout with the button inline, since there's no panel
-      // there to replace it.
-      scoreBottomBar.innerHTML = monsterPanelHtml ? `
-        ${monsterPanelHtml}
-        <div class="monster-panel-footer">${gameSummaryButtonHtml}</div>
-      ` : `
+      // Live and Final both show just the monster-panel, centered -- no
+      // strip, no At Bat/Pitching line, no Previous Batter, no Game Summary
+      // button (that's up in the controls bar now). Only the preview state
+      // (game hasn't started) still uses the original top-strip layout,
+      // since there's no panel there to replace it.
+      scoreBottomBar.innerHTML = monsterPanelHtml ? monsterPanelHtml : `
         <div class="score-strip">${scoreStripHtml}</div>
         ${subLineHtml ? `<div class="score-strip-sub">${subLineHtml}</div>` : ''}
       `;
