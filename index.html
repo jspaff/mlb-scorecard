@@ -220,10 +220,10 @@
      keeps the whole panel hugging its content's
      width instead of stretching the full bottom-bar width; align-items:
      stretch makes both columns match whichever is taller, so the shared
-     divider between them and the outer bottom border both run the full
-     height/width automatically. Open on top (no border-top) since only the
-     other three sides are meant to read as a frame, echoing the real
-     board's panel edges rather than boxing in the score-strip line above. */
+     divider between them and the border all run the full height/width
+     automatically. Closed on all four sides now that nothing (the old
+     score-strip) sits directly above it in the Live/Final layouts -- reads
+     as a fully framed board panel rather than one open at the top. */
   .monster-panel {
     display: inline-flex;
     align-items: stretch;
@@ -231,13 +231,23 @@
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     margin: 0 0 2px;
-    border-left: 2.5px solid var(--ink);
-    border-right: 2.5px solid var(--ink);
-    border-bottom: 2.5px solid var(--ink);
+    border: 2.5px solid var(--ink);
   }
   .monster-panel::-webkit-scrollbar { height: 7px; }
   .monster-panel::-webkit-scrollbar-track { background: var(--paper-line); border-radius: 4px; }
   .monster-panel::-webkit-scrollbar-thumb { background: var(--ink-soft); border-radius: 4px; }
+  /* The Game Summary modal is narrower than the Scorecard tab's full-width
+     bottom bar, so an extra-innings game's monster-panel is more likely to
+     need this horizontal scroll here -- still scrollable (swipe/drag), just
+     without the visible track/thumb cluttering the modal. The Scorecard
+     tab's own bottom-bar panel keeps the visible scrollbar above. */
+  #gameSummaryOverlay .monster-panel { scrollbar-width: none; }
+  #gameSummaryOverlay .monster-panel::-webkit-scrollbar { display: none; }
+  /* Holds the Game Summary link once it moves out of the score-strip (Live/
+     Final both replace that strip with .monster-panel above) -- .box-score-
+     link's own margin-left:auto has no flex parent here, so centering comes
+     from .score-bottom-bar's text-align instead. */
+  .monster-panel-footer { margin-top: 4px; }
   /* flex-shrink:0 on both columns -- deep extra innings should make the
      whole panel scroll horizontally (via the overflow-x above), not
      squeeze the innings grid or count band down to fit. */
@@ -341,6 +351,15 @@
   .monster-dot-red { background: var(--brick-dim); }
   .monster-dot.is-lit { background: var(--monster-green); border-color: var(--monster-green); }
   .monster-dot-red.is-lit { background: var(--brick); border-color: var(--brick); }
+  /* Once a game is Final there's no live count or baserunners left to show,
+     but the row still renders (see renderMonsterBases/the Scorecard tab's
+     monster-count markup) rather than being left out entirely -- keeping the
+     markup (instead of an `if` at the call site) means the two columns'
+     structure stays identical between Live and Final, so this is the only
+     place the collapse needs to happen. display:none collapses the row (and
+     its divider) out of the panel completely rather than just hiding its
+     content. */
+  .monster-count.is-hidden, .monster-rhe-spacer.is-hidden { display: none; }
 
   /* Fenway-style linescore. Innings group in 3s (1-3/4-6/7-9, extras
      trailing) with a wider gap between groups than within one --
@@ -357,10 +376,14 @@
   .monster-box-row {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
   }
+  /* min-width sized for the longest real abbreviation (3 letters, e.g. WSH)
+     plus a little breathing room -- was 48px, noticeably wider than any
+     abbreviation actually needs, leaving a gap in front of the first
+     inning column. */
   .monster-box-team {
-    min-width: 48px;
+    min-width: 34px;
     font-family: 'Overpass', sans-serif;
     font-weight: 800;
     font-size: 12px;
@@ -417,44 +440,11 @@
     color: var(--ink-soft);
     margin-top: 1px;
   }
-  .box-score { margin-bottom: 14px; }
-  table.box-table {
-    border-collapse: collapse;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 13px;
-    min-width: 100%;
-  }
-  table.box-table th {
-    font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 11.5px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
-    text-align: center;
-    padding: 1px 4px 3px;
-    border-bottom: 1px solid var(--ink);
-  }
-  table.box-table th.box-stat { border-left: 1px solid var(--paper-line); }
-  table.box-table td {
-    text-align: center;
-    padding: 2px 4px;
-    color: var(--ink);
-    border-bottom: 1px solid var(--paper-line);
-    font-family: 'Special Elite', monospace;
-  }
-  table.box-table tr:last-child td { border-bottom: none; }
-  table.box-table td.box-team {
-    text-align: left;
-    font-family: 'Oswald', sans-serif;
-    font-weight: 600;
-    font-size: 14px;
-    letter-spacing: 0.02em;
-    white-space: nowrap;
-    padding-right: 10px;
-  }
-  table.box-table td.box-stat { border-left: 1px solid var(--paper-line); font-weight: 700; }
-  .run-scored { font-weight: 700; color: var(--ink); }
+  /* Extra spacing under the Game Summary modal's box score (.monster-panel
+     there defaults to a tighter 2px margin, tuned for the fixed bottom bar
+     where it's the last thing on screen) so it doesn't crowd the game
+     highlights/CTA below it. */
+  .game-summary-game .monster-panel { margin-bottom: 14px; }
 
   .badge {
     display: flex;
@@ -3602,44 +3592,13 @@
     return `<span class="badge badge-preview"><span class="badge-dot"></span>${label}</span>`;
   }
 
-  function renderBoxScore(linescore, awayName, homeName) {
-    const innings = linescore.innings || [];
-    const numInnings = Math.max(innings.length, 9);
-    const teams = linescore.teams || {};
-
-    let head = '<tr><th class="box-team"></th>';
-    for (let i = 1; i <= numInnings; i++) head += `<th>${i}</th>`;
-    head += '<th class="box-stat">R</th><th class="box-stat">H</th><th class="box-stat">E</th></tr>';
-
-    function row(teamName, isAway) {
-      let cells = `<td class="box-team">${teamName}</td>`;
-      for (let i = 0; i < numInnings; i++) {
-        const inn = innings[i];
-        const side = inn && (isAway ? inn.away : inn.home);
-        const hasRuns = side && side.runs != null;
-        const isPastInning = i < (linescore.currentInning || 0) - 1;
-        const val = hasRuns ? side.runs : (isPastInning ? 0 : '');
-        const display = val === 0 ? '0' : (val === '' ? '' : val);
-        cells += `<td>${val ? `<span class="run-scored">${display}</span>` : display}</td>`;
-      }
-      const tot = isAway ? teams.away : teams.home;
-      const totalRuns = (tot && tot.runs) ?? 0;
-      cells += `<td class="box-stat">${totalRuns ? `<span class="run-scored">${totalRuns}</span>` : totalRuns}</td><td class="box-stat">${(tot && tot.hits) ?? 0}</td><td class="box-stat">${(tot && tot.errors) ?? 0}</td>`;
-      return `<tr>${cells}</tr>`;
-    }
-
-    return `<div class="box-score"><div class="table-scroll"><table class="box-table">
-      <thead>${head}</thead>
-      <tbody>${row(awayName, true)}${row(homeName, false)}</tbody>
-    </table></div></div>`;
-  }
-
-  // Fenway-style linescore for the Scorecard tab's fixed bottom bar: just
-  // team names and runs by inning, grouped 1-3/4-6/7-9 (any extra innings
-  // trail in their own group) with a wider gap between groups than within
-  // one -- no P/R/H/E columns, unlike renderBoxScore's full game-summary
-  // table. Reuses renderBoxScore's isPastInning logic so a skipped bottom
-  // half (walk-off, game called) still shows 0 instead of a blank.
+  // Fenway-style linescore reused for both the Scorecard tab's fixed bottom
+  // bar and the Game Summary modal (see renderMonsterScoreboard): just team
+  // names and runs by inning, grouped 1-3/4-6/7-9 (any extra innings trail
+  // in their own group) with a wider gap between groups than within one --
+  // no P/R/H/E columns, that's renderMonsterRHE's job. A skipped bottom
+  // half (walk-off, game called) shows 0 instead of a blank, via
+  // isPastInning below.
   function renderMonsterBoxScore(linescore, awayAbbr, homeAbbr) {
     const innings = linescore.innings || [];
     const numInnings = Math.max(innings.length, 9);
@@ -3717,11 +3676,25 @@
     </div>`;
   }
 
+  // Green-Monster-style box+R/H/E pair, without the live Balls/Strikes/Outs/
+  // baserunner band from the Scorecard tab's own .monster-panel -- that band
+  // only makes sense for a game actually being played right now, not a
+  // summary someone can open for any past (or currently live) game. Used by
+  // the Game Summary modal in place of the old plain renderBoxScore table.
+  function renderMonsterScoreboard(linescore, awayAbbr, homeAbbr) {
+    return `<div class="monster-panel">
+      <div class="monster-panel-left">${renderMonsterBoxScore(linescore, awayAbbr, homeAbbr)}</div>
+      <div class="monster-panel-right">${renderMonsterRHE(linescore)}</div>
+    </div>`;
+  }
+
   // Sits below renderMonsterRHE() in the panel's bottom-right, inside the
   // matching .monster-rhe-spacer divider. Scaled-up version of what used to
-  // be an inline diamond next to the score strip.
-  function renderMonsterBases(onFirst, onSecond, onThird) {
-    return `<div class="monster-rhe-spacer">
+  // be an inline diamond next to the score strip. `hidden` is set once a
+  // game is Final -- see the .monster-count is-hidden comment at the call
+  // site for why this stays in the DOM instead of being left out.
+  function renderMonsterBases(onFirst, onSecond, onThird, hidden) {
+    return `<div class="monster-rhe-spacer${hidden ? ' is-hidden' : ''}">
       <div class="monster-bases">
         <span class="monster-bases-marker second ${onSecond ? 'on' : ''}"></span>
         <span class="monster-bases-marker third ${onThird ? 'on' : ''}"></span>
@@ -4713,7 +4686,7 @@
     // fetch the inning-by-inning grid lazily into this same slot (see
     // loadGameSummaryExtrasInto), alongside the WPA highlights below.
     const boxScoreHtml = game.linescore
-      ? renderBoxScore(game.linescore, game.awayName, game.homeName)
+      ? renderMonsterScoreboard(game.linescore, awayAbbr, homeAbbr)
       : ((game.state === 'Final' || game.state === 'Live')
           ? `<div id="boxScore-${game.gamePk}" class="box-score-slot"><div class="potg-loading">Loading box score&#8230;</div></div>`
           : '');
@@ -4978,7 +4951,7 @@
     }
     if (!game.linescore) {
       const boxEl = document.getElementById(`boxScore-${game.gamePk}`);
-      if (boxEl) boxEl.outerHTML = linescore ? renderBoxScore(linescore, game.awayName, game.homeName) : '';
+      if (boxEl) boxEl.outerHTML = linescore ? renderMonsterScoreboard(linescore, game.awayAbbr, game.homeAbbr) : '';
     }
     if (!game.weather) {
       const weatherEl = document.getElementById(`weather-${game.gamePk}`);
@@ -5326,21 +5299,26 @@
       // progress" from "warming up," since linescore.currentInning/outs/etc.
       // are already populated with placeholder-ish values during warmup and
       // would otherwise render as a fabricated live count.
-      if (state === 'Live' && gameHasStarted) {
+      if ((state === 'Live' && gameHasStarted) || state === 'Final') {
+        const isLive = state === 'Live';
         const halfOver = (linescore.outs ?? 0) >= 3;
-        const balls = halfOver ? 0 : (linescore.balls ?? 0);
-        const strikes = halfOver ? 0 : (linescore.strikes ?? 0);
-        const outs = halfOver ? 0 : (linescore.outs ?? 0);
-        const offense = halfOver ? {} : (linescore.offense || {});
+        const balls = (isLive && !halfOver) ? (linescore.balls ?? 0) : 0;
+        const strikes = (isLive && !halfOver) ? (linescore.strikes ?? 0) : 0;
+        const outs = (isLive && !halfOver) ? (linescore.outs ?? 0) : 0;
+        const offense = (isLive && !halfOver) ? (linescore.offense || {}) : {};
         const onFirst = !!offense.first, onSecond = !!offense.second, onThird = !!offense.third;
 
-        // No compactStateHtml here (unlike the Final/preview branches below)
-        // and no run numbers in the strip either -- see showRunsInStrip --
-        // since the monster-panel below now covers the score, inning state,
-        // and baserunners in more detail than the old compact strip did.
+        // No compactStateHtml here (unlike the preview branch below) and no
+        // run numbers in the strip either -- see showRunsInStrip -- since
+        // the monster-panel below now covers the score, inning state, and
+        // baserunners in more detail than the old compact strip did. This
+        // now also covers Final -- the panel stays up instead of the whole
+        // scoreboard being replaced by the plain strip once the game ends,
+        // just with its live count/baserunner row hidden (see is-hidden
+        // below and renderMonsterBases).
         monsterBoxScoreHtml = renderMonsterBoxScore(linescore, awayAbbr, homeAbbr);
         monsterRHEHtml = renderMonsterRHE(linescore);
-        monsterBasesHtml = renderMonsterBases(onFirst, onSecond, onThird);
+        monsterBasesHtml = renderMonsterBases(onFirst, onSecond, onThird, !isLive);
         // Dot counts (3/2/2) are the max value ever live -- a 4th ball, 3rd
         // strike, or 3rd out ends the at-bat/half-inning before it'd show.
         const dots = (total, lit, redClass) => Array.from({ length: total },
@@ -5349,11 +5327,12 @@
         // allPlays' last entry is either the at-bat still in progress (no
         // result yet) or the one that just ended -- once a new batter's
         // first pitch posts a fresh entry, this naturally falls back dark.
+        // Suppressed once Final, same as the rest of this row -- see isLive.
         const lastPlay = allPlays[allPlays.length - 1];
-        const lastEvent = lastPlay && lastPlay.result && lastPlay.result.event;
+        const lastEvent = isLive && lastPlay && lastPlay.result && lastPlay.result.event;
         const hitLit = lastEvent === 'Single' || lastEvent === 'Double' || lastEvent === 'Triple' || lastEvent === 'Home Run';
         monsterCountHtml = `
-          <div class="monster-count">
+          <div class="monster-count${isLive ? '' : ' is-hidden'}">
             <div class="monster-count-group">
               <div class="monster-count-header"><span class="monster-count-label">Balls</span></div>
               <span class="monster-count-dots">${dots(3, balls, false)}</span>
@@ -5371,8 +5350,6 @@
               <span class="monster-count-dots">${dots(1, hitLit ? 1 : 0, false)}</span>
             </div>
           </div>`;
-      } else if (state === 'Final') {
-        compactStateHtml = 'Final';
       } else {
         const startTime = gameData.datetime && gameData.datetime.dateTime ? new Date(gameData.datetime.dateTime) : null;
         compactStateHtml = detailedState;
@@ -5384,20 +5361,14 @@
       const showRuns = state === 'Live' || state === 'Final';
       const awayRuns = (linescore.teams && linescore.teams.away && linescore.teams.away.runs) ?? 0;
       const homeRuns = (linescore.teams && linescore.teams.home && linescore.teams.home.runs) ?? 0;
-      // Only Final still shows the run numbers in the compact strip -- Live
-      // drops them (see the comment above) since the monster-panel already
-      // carries the score, but there's no equivalent replacement once the
-      // game (and that panel) has ended, so Final keeps them.
-      const showRunsInStrip = state === 'Final';
       const gameSummaryButtonHtml = `<button type="button" class="box-score-link">Game Summary</button>`;
-      // Same logic for the team names themselves -- Live leaves nothing
-      // above the monster-panel's box score at all, not even "OAK @ BOS",
-      // since monsterCountHtml (truthy only when the panel is rendering)
-      // is the signal for "the panel already covers this." The Game Summary
-      // button moves down below the whole panel instead (see the final
-      // scoreBottomBar template) rather than sitting in this now-empty strip.
+      // scoreStripHtml only ever renders now for the preview (game hasn't
+      // started) branch above -- Live and Final both take the monster-panel
+      // path instead (see monsterBoxScoreHtml below), so there's no score
+      // to show here and no team abbreviations either, just the detailed
+      // status and first-pitch time.
       const scoreStripHtml = `
-        <span class="score-strip-teams">${awayAbbr}${showRunsInStrip ? ` <span class="score-strip-run">${awayRuns}</span>` : ''} @ ${homeAbbr}${showRunsInStrip ? ` <span class="score-strip-run">${homeRuns}</span>` : ''}</span>
+        <span class="score-strip-teams">${awayAbbr} @ ${homeAbbr}</span>
         ${compactStateHtml ? `<span class="score-strip-state">${compactStateHtml}</span>` : ''}
         ${gameSummaryButtonHtml}
       `;
@@ -5427,15 +5398,18 @@
 
       // Lives in the fixed bottom bar (#scoreBottomBar), not in .sheet --
       // see .score-bottom-bar for why.
-      // Live shows nothing but the monster-panel itself, centered -- no
-      // strip, no At Bat/Pitching line, no Previous Batter, no Game Summary
-      // button. Every other state still uses the original top-strip layout
-      // with the button, since there's no panel there to replace it.
-      scoreBottomBar.innerHTML = monsterCountHtml ? `
+      // Live and Final both show just the monster-panel, centered, with the
+      // Game Summary link underneath it instead of alongside a score strip
+      // -- no strip, no At Bat/Pitching line, no Previous Batter. Only the
+      // preview state (game hasn't started) still uses the original
+      // top-strip layout with the button inline, since there's no panel
+      // there to replace it.
+      scoreBottomBar.innerHTML = monsterBoxScoreHtml ? `
         <div class="monster-panel">
           <div class="monster-panel-left">${monsterBoxScoreHtml}${monsterCountHtml}</div>
           <div class="monster-panel-right">${monsterRHEHtml}${monsterBasesHtml}</div>
         </div>
+        <div class="monster-panel-footer">${gameSummaryButtonHtml}</div>
       ` : `
         <div class="score-strip">${scoreStripHtml}</div>
         ${subLineHtml ? `<div class="score-strip-sub">${subLineHtml}</div>` : ''}
