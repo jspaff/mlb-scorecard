@@ -3861,7 +3861,21 @@
         return i === 0 ? btn : `<span class="sub-note">&#8594; ${btn}</span>`;
       }).join('<br/>');
       const posHtml = r.players.map((p, i) => i === 0 ? p.pos : `<span class="sub-note">${p.pos}</span>`).join('<br/>');
-      let cells = `<td class="ply">${nameHtml}</td><td class="pos">${posHtml}</td>`;
+      // the pitcher-change divider only makes sense as a full-row line -- find
+      // this row's earliest plate appearance and, if it marks a new pitcher,
+      // carry that border onto the name/pos cells too so it isn't cut short
+      // right where it meets the sticky name column
+      let leadCellChanged = false;
+      outer:
+      for (let i = 1; i <= numInnings; i++) {
+        const cols = (columnsPerInning && columnsPerInning[i]) || 1;
+        const cellArr = r.cells[i] || [];
+        for (let k = 0; k < cols; k++) {
+          if (cellArr[k]) { leadCellChanged = !!cellArr[k].pitcherChanged; break outer; }
+        }
+      }
+      const leadCls = leadCellChanged ? ' pitcher-change' : '';
+      let cells = `<td class="ply${leadCls}">${nameHtml}</td><td class="pos${leadCls}">${posHtml}</td>`;
       for (let i = 1; i <= numInnings; i++) {
         const cols = (columnsPerInning && columnsPerInning[i]) || 1;
         const cellArr = r.cells[i] || [];
