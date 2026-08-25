@@ -1396,7 +1396,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    padding-right: 8px;
+    padding: 3px 0;
     width: 118px;
     position: sticky;
     left: 0;
@@ -1404,6 +1404,15 @@
     box-shadow: 2px 0 4px rgba(28,58,44,0.08);
     z-index: 2;
   }
+  table.scorecard-table td.ply .player-name-btn {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--paper-line);
+    border-radius: 0;
+  }
+  table.scorecard-table td.ply .sub-note { display: block; padding: 1px 8px; }
+  table.scorecard-table td.ply .sub-note .player-name-btn { display: inline-block; width: auto; }
   table.scorecard-table td.pos {
     text-align: center;
     color: var(--ink-soft);
