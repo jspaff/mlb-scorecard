@@ -7,7 +7,7 @@
 // deploy that changes index.html (not just edits to this file), or
 // installed clients can sit a full version behind indefinitely, each reload
 // only fetching the update that shows up on the load after it.
-const CACHE_NAME = 'mlb-scorecard-v75';
+const CACHE_NAME = 'mlb-scorecard-v76';
 const APP_SHELL = [
   './',
   './index.html',
