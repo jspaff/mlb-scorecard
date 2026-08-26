@@ -205,6 +205,23 @@
     text-align: center;
   }
   .score-bottom-bar[hidden], .score-bottom-bar:empty { display: none; }
+  /* Above this width there's room beside the grid that the full-bleed bar
+     was just leaving blank -- so it un-pins from the edges and becomes a
+     self-sized card floating over the grid's bottom-right corner instead.
+     Only `right`/`bottom` are set (no `left`), so the fixed box shrink-wraps
+     its content -- same trick as the panel's own inline-flex sizing --
+     rather than stretching edge to edge like the narrow-screen bar above. */
+  @media (min-width: 860px) {
+    .score-bottom-bar {
+      left: auto;
+      right: 22px;
+      bottom: 22px;
+      border-top: none;
+      border-radius: 10px;
+      box-shadow: 0 10px 26px -8px rgba(11, 15, 12, 0.55);
+      padding: 8px 14px;
+    }
+  }
 
   /* Reserves room at the bottom of the scorecard grid so the last rows
      aren't hidden behind the fixed .score-bottom-bar sitting on top of
