@@ -528,10 +528,7 @@
     color: var(--ink-soft);
     margin-bottom: 10px;
   }
-  .gs-score-num { font-family: 'IBM Plex Mono', monospace; font-weight: 700; }
   .gs-score-sep { font-family: 'IBM Plex Mono', monospace; opacity: 0.45; }
-  .gs-score-team.gs-winner { color: var(--ink); }
-  .gs-score-num.gs-winner { color: var(--gold); }
   .pog-section {
     margin-top: 14px;
     padding-top: 12px;
@@ -4778,26 +4775,21 @@
   const gameSummaryClose = document.getElementById('gameSummaryClose');
 
   function renderGameSummaryGame(dateStr, game, multi) {
-    const hasScore = game.homeScore != null && game.awayScore != null && (game.state === 'Final' || game.state === 'Live');
     // Falls back to the full name wherever an abbreviation isn't known --
     // it always is for Daily/Schedule/Scorecard's own games, but stays
     // graceful if renderGameSummaryGame is ever fed something else.
     const awayAbbr = game.awayAbbr || game.awayName;
     const homeAbbr = game.homeAbbr || game.homeName;
-    const homeWon = game.state === 'Final' && game.homeScore > game.awayScore;
-    const awayWon = game.state === 'Final' && game.awayScore > game.homeScore;
 
-    // The score line doubles as the matchup line -- it names both teams
-    // via abbreviation whether or not there's a result yet ("NYY - BOS"
-    // pre-game, "NYY 3 - 2 BOS" once there's a score), so there's no
-    // separate "Team @ Team" heading to keep in sync with it.
-    const scoreHtml = `
+    // This is only the matchup line pre-game ("NYY - BOS", no result yet) --
+    // once the game is Live/Final, the box score panel below (boxScoreHtml)
+    // already names both teams and their score, so showing this too would
+    // just repeat it.
+    const scoreHtml = (game.state === 'Final' || game.state === 'Live') ? '' : `
       <div class="gs-score-line">
-        <span class="gs-score-team${awayWon ? ' gs-winner' : ''}">${awayAbbr}</span>
-        ${hasScore ? `<span class="gs-score-num${awayWon ? ' gs-winner' : ''}">${game.awayScore}</span>` : ''}
+        <span class="gs-score-team">${awayAbbr}</span>
         <span class="gs-score-sep">&#8211;</span>
-        ${hasScore ? `<span class="gs-score-num${homeWon ? ' gs-winner' : ''}">${game.homeScore}</span>` : ''}
-        <span class="gs-score-team${homeWon ? ' gs-winner' : ''}">${homeAbbr}</span>
+        <span class="gs-score-team">${homeAbbr}</span>
       </div>`;
 
     // game.weather is only ever supplied by the Scorecard tab's "Box Score"
