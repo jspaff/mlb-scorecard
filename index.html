@@ -4987,11 +4987,12 @@
       const wpData = await wpRes.json();
       const wp = Array.isArray(wpData) ? wpData : [];
 
+      const personIndex = feedData.gameData && feedData.gameData.players;
       const totals = {};
       const credit = (person, role, amount) => {
         if (!person || person.id == null) return;
         const key = person.id + '-' + role;
-        const t = totals[key] || (totals[key] = { id: person.id, name: person.fullName, role, wpa: 0 });
+        const t = totals[key] || (totals[key] = { id: person.id, name: person.fullName, lastName: lastNameOf(person, personIndex), role, wpa: 0 });
         t.wpa += amount;
       };
       let playOfGame = null;
@@ -5041,7 +5042,7 @@
           season,
           todayStats: (stats && (stats.batting || stats.pitching)) || {}
         };
-        return { id: p.id, name: p.name, statLine: renderStatLineParts(statParts) };
+        return { id: p.id, name: p.name, lastName: p.lastName, statLine: renderStatLineParts(statParts) };
       });
       const result = { leaders, playOfGame, linescore, weather, allPlays };
       if (includeHighlights) gameHighlightsCache[gamePk] = result;
@@ -5071,7 +5072,7 @@
       return `
         <div class="potg-player">
           <img class="potg-headshot" src="${headshotUrl(p.id)}" alt="" loading="lazy" onerror="this.style.display='none'">
-          <button type="button" class="player-name-btn potg-player-name" data-player-id="${p.id}">${p.name}</button>
+          <button type="button" class="player-name-btn potg-player-name" data-player-id="${p.id}" title="${p.name}">${p.lastName}</button>
           ${p.statLine ? `<div class="potg-stat-line">${p.statLine}</div>` : ''}
         </div>`;
     }).join('');
@@ -5109,8 +5110,11 @@
     }
     if (!game.linescore) {
       const boxEl = document.getElementById(`boxScore-${game.gamePk}`);
+      // innerHTML, not outerHTML -- boxEl itself carries the .gs-box-score
+      // class that centers .monster-panel; replacing the whole element would
+      // drop that wrapper along with the loading placeholder inside it.
       if (boxEl) {
-        boxEl.outerHTML = linescore
+        boxEl.innerHTML = linescore
           ? renderMonsterPanel(linescore, game.awayAbbr, game.homeAbbr, allPlays, game.state === 'Live' && hasGameStarted(allPlays))
           : '';
       }
