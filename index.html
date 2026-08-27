@@ -486,8 +486,12 @@
   /* Extra spacing under the Game Summary modal's box score (.monster-panel
      there defaults to a tighter 2px margin, tuned for the fixed bottom bar
      where it's the last thing on screen) so it doesn't crowd the game
-     highlights/CTA below it. */
+     highlights/CTA below it. .monster-panel is an inline-flex box, so
+     centering it takes text-align: center on its wrapper -- same trick
+     .score-bottom-bar uses on the Scorecard tab -- rather than affecting
+     the rest of the modal's left-aligned text. */
   .game-summary-game .monster-panel { margin-bottom: 14px; }
+  .gs-box-score { text-align: center; }
 
   .badge {
     display: flex;
@@ -513,21 +517,6 @@
     margin-bottom: 10px;
   }
   .gs-weather { color: var(--ink-soft); }
-  .gs-score-line {
-    display: flex;
-    align-items: baseline;
-    gap: 7px;
-    font-family: 'Oswald', sans-serif;
-    font-weight: 600;
-    font-size: 21px;
-    text-transform: uppercase;
-    color: var(--ink-soft);
-    margin-bottom: 10px;
-  }
-  .gs-score-num { font-family: 'IBM Plex Mono', monospace; font-weight: 700; }
-  .gs-score-sep { font-family: 'IBM Plex Mono', monospace; opacity: 0.45; }
-  .gs-score-team.gs-winner { color: var(--ink); }
-  .gs-score-num.gs-winner { color: var(--gold); }
   .pog-section {
     margin-top: 14px;
     padding-top: 12px;
@@ -590,17 +579,13 @@
     border: 1px solid var(--gold);
     box-shadow: 0 1px 0 var(--paper-line);
   }
-  .potg-player-name {
-    font-family: 'Special Elite', monospace;
-    font-size: 11px;
-    color: var(--ink);
-    line-height: 1.25;
-  }
+  .potg-player-name { max-width: 100%; }
   .potg-stat-line {
-    font-family: 'IBM Plex Mono', monospace;
-    font-weight: 600;
-    font-size: 11px;
-    color: var(--gold);
+    font-family: 'Oswald', sans-serif;
+    font-weight: 500;
+    font-size: 11.5px;
+    letter-spacing: 0.02em;
+    color: var(--ink);
   }
   .potg-stat { white-space: nowrap; }
   .modal-cta {
@@ -4778,27 +4763,11 @@
   const gameSummaryClose = document.getElementById('gameSummaryClose');
 
   function renderGameSummaryGame(dateStr, game, multi) {
-    const hasScore = game.homeScore != null && game.awayScore != null && (game.state === 'Final' || game.state === 'Live');
     // Falls back to the full name wherever an abbreviation isn't known --
     // it always is for Daily/Schedule/Scorecard's own games, but stays
     // graceful if renderGameSummaryGame is ever fed something else.
     const awayAbbr = game.awayAbbr || game.awayName;
     const homeAbbr = game.homeAbbr || game.homeName;
-    const homeWon = game.state === 'Final' && game.homeScore > game.awayScore;
-    const awayWon = game.state === 'Final' && game.awayScore > game.homeScore;
-
-    // The score line doubles as the matchup line -- it names both teams
-    // via abbreviation whether or not there's a result yet ("NYY - BOS"
-    // pre-game, "NYY 3 - 2 BOS" once there's a score), so there's no
-    // separate "Team @ Team" heading to keep in sync with it.
-    const scoreHtml = `
-      <div class="gs-score-line">
-        <span class="gs-score-team${awayWon ? ' gs-winner' : ''}">${awayAbbr}</span>
-        ${hasScore ? `<span class="gs-score-num${awayWon ? ' gs-winner' : ''}">${game.awayScore}</span>` : ''}
-        <span class="gs-score-sep">&#8211;</span>
-        ${hasScore ? `<span class="gs-score-num${homeWon ? ' gs-winner' : ''}">${game.homeScore}</span>` : ''}
-        <span class="gs-score-team${homeWon ? ' gs-winner' : ''}">${homeAbbr}</span>
-      </div>`;
 
     // game.weather is only ever supplied by the Scorecard tab's "Box Score"
     // link, which already has the live feed's gameData loaded -- Daily and
@@ -4820,17 +4789,17 @@
 
     // game.linescore is only ever supplied by the Scorecard tab's "Box
     // Score" link, which already has the full live feed loaded -- Daily
-    // and Schedule tabs only know the score, so their Live/Final games
-    // fetch the inning-by-inning grid lazily into this same slot (see
-    // loadGameSummaryExtrasInto), alongside the WPA highlights below.
-    // game.allPlays rides along with it (see currentGameSummary) so a Live
-    // game's panel here shows the same live count/baserunner band it does
-    // on the Scorecard tab, not just the box score.
+    // and Schedule tabs only know the score, so every game (pre-game
+    // included, so the box score is the one place team names/score show up
+    // instead of a separate matchup line) fetches the inning-by-inning grid
+    // lazily into this same slot (see loadGameSummaryExtrasInto), alongside
+    // the WPA highlights below. game.allPlays rides along with it (see
+    // currentGameSummary) so a Live game's panel here shows the same live
+    // count/baserunner band it does on the Scorecard tab, not just the box
+    // score.
     const boxScoreHtml = game.linescore
-      ? renderMonsterPanel(game.linescore, awayAbbr, homeAbbr, game.allPlays || [], game.state === 'Live' && hasGameStarted(game.allPlays))
-      : ((game.state === 'Final' || game.state === 'Live')
-          ? `<div id="boxScore-${game.gamePk}" class="box-score-slot"><div class="potg-loading">Loading box score&#8230;</div></div>`
-          : '');
+      ? `<div class="gs-box-score">${renderMonsterPanel(game.linescore, awayAbbr, homeAbbr, game.allPlays || [], game.state === 'Live' && hasGameStarted(game.allPlays))}</div>`
+      : `<div id="boxScore-${game.gamePk}" class="box-score-slot gs-box-score"><div class="potg-loading">Loading box score&#8230;</div></div>`;
 
     // Top play/players highlights only make sense once a game is over --
     // a Live game's WPA swings are still in motion.
@@ -4852,7 +4821,6 @@
         ${multi ? `<div class="gs-game-label">Game ${game.gameNumber}</div>` : ''}
         ${topRowHtml}
         ${dateLineHtml}
-        ${scoreHtml}
         ${boxScoreHtml}
         ${wpaHtml}
         ${ctaHtml}
@@ -4877,16 +4845,18 @@
     const requestId = ++gameSummaryRequestId;
     gameSummaryModalBody.innerHTML = renderGameSummaryContent(dateStr, games, headerLabel);
     gameSummaryOverlay.classList.add('open');
-    // Venue (name+city) applies to every game regardless of state; box
-    // score and highlights only make sense once a game has actually
-    // started, so those stay gated to Live/Final. A Live game whose
+    // Venue (name+city) applies to every game regardless of state. The box
+    // score now shows for every game including pre-game (Preview never has
+    // g.linescore, so it always needs the fetch); highlights still only
+    // make sense once a game has actually started, gated inside
+    // fetchGameHighlights itself via includeHighlights. A Live game whose
     // linescore and weather are already known (the Scorecard tab's own
     // "Game Summary" link, via currentGameSummary) has nothing left for
     // this to fetch -- renderGameSummaryGame won't have left a placeholder
-    // for either, and a Live game never gets the highlights placeholder --
-    // so skip it instead of fetching the whole feed for nothing.
+    // for either -- so skip it instead of fetching the whole feed for
+    // nothing.
     games.filter(g => !g.venueHtml && g.venueId).forEach(g => loadVenueInto(g, requestId));
-    games.filter(g => g.state === 'Final' || (g.state === 'Live' && (!g.linescore || !g.weather)))
+    games.filter(g => g.state === 'Final' || !g.linescore || !g.weather)
       .forEach(g => loadGameSummaryExtrasInto(g, requestId));
   }
 
@@ -4987,11 +4957,12 @@
       const wpData = await wpRes.json();
       const wp = Array.isArray(wpData) ? wpData : [];
 
+      const personIndex = feedData.gameData && feedData.gameData.players;
       const totals = {};
       const credit = (person, role, amount) => {
         if (!person || person.id == null) return;
         const key = person.id + '-' + role;
-        const t = totals[key] || (totals[key] = { id: person.id, name: person.fullName, role, wpa: 0 });
+        const t = totals[key] || (totals[key] = { id: person.id, name: person.fullName, lastName: lastNameOf(person, personIndex), role, wpa: 0 });
         t.wpa += amount;
       };
       let playOfGame = null;
@@ -5021,13 +4992,27 @@
       });
 
       const boxscore = feedData.liveData && feedData.liveData.boxscore;
+      const season = (feedData.gameData && feedData.gameData.datetime && feedData.gameData.datetime.officialDate || '').slice(0, 4);
       const leaders = Object.values(totals).sort((a, b) => b.wpa - a.wpa).slice(0, 3).map(p => {
         const boxPlayer = findBoxscorePlayer(boxscore, p.id);
         const stats = boxPlayer && boxPlayer.stats;
         const statParts = p.role === 'pitcher'
           ? buildPitcherStatLineParts(stats && stats.pitching)
           : buildBatterStatLineParts(stats && stats.batting);
-        return { id: p.id, name: p.name, statLine: renderStatLineParts(statParts) };
+        // Populate playerStore so the clickable name button works even if the
+        // Scorecard tab (the usual source of these entries, see renderTeamTable)
+        // was never opened for this game.
+        const isAway = boxscore && boxscore.teams.away.players && boxscore.teams.away.players['ID' + p.id];
+        const team = feedData.gameData && feedData.gameData.teams && feedData.gameData.teams[isAway ? 'away' : 'home'];
+        playerStore[p.id] = {
+          id: p.id,
+          name: p.name,
+          pos: (boxPlayer && boxPlayer.position && boxPlayer.position.abbreviation) || '',
+          team: teamNickname(team),
+          season,
+          todayStats: (stats && (stats.batting || stats.pitching)) || {}
+        };
+        return { id: p.id, name: p.name, lastName: p.lastName, statLine: renderStatLineParts(statParts) };
       });
       const result = { leaders, playOfGame, linescore, weather, allPlays };
       if (includeHighlights) gameHighlightsCache[gamePk] = result;
@@ -5057,7 +5042,7 @@
       return `
         <div class="potg-player">
           <img class="potg-headshot" src="${headshotUrl(p.id)}" alt="" loading="lazy" onerror="this.style.display='none'">
-          <div class="potg-player-name">${p.name}</div>
+          <button type="button" class="player-name-btn potg-player-name" data-player-id="${p.id}" title="${p.name}">${p.lastName}</button>
           ${p.statLine ? `<div class="potg-stat-line">${p.statLine}</div>` : ''}
         </div>`;
     }).join('');
@@ -5095,8 +5080,11 @@
     }
     if (!game.linescore) {
       const boxEl = document.getElementById(`boxScore-${game.gamePk}`);
+      // innerHTML, not outerHTML -- boxEl itself carries the .gs-box-score
+      // class that centers .monster-panel; replacing the whole element would
+      // drop that wrapper along with the loading placeholder inside it.
       if (boxEl) {
-        boxEl.outerHTML = linescore
+        boxEl.innerHTML = linescore
           ? renderMonsterPanel(linescore, game.awayAbbr, game.homeAbbr, allPlays, game.state === 'Live' && hasGameStarted(allPlays))
           : '';
       }
@@ -6154,9 +6142,15 @@
   // full page there. playerStore only has the name/pos/team the scorecard
   // grid already had on hand -- showPlayerProfile re-fetches everything
   // else (team, bio, career stats) the same as a normal search selection.
+  // Closes both the quick-look player modal and the game summary modal --
+  // whichever (if either) is actually open -- since this is called both
+  // from inside the player modal's own CTA and directly off a Players of
+  // the Game name button nested inside the game summary modal; closeOverlay
+  // is a no-op on an overlay that isn't open.
   function jumpToPlayerProfile(playerId) {
     const info = playerStore[playerId];
     hidePlayerModal();
+    hideGameSummaryModal();
     Tabs.switchTo('players');
     showPlayerProfile({ id: playerId, fullName: (info && info.name) || '' });
   }
@@ -6205,7 +6199,14 @@
     const sprayBtn = e.target.closest('.spray-btn');
     if (sprayBtn) showSprayModal(sprayBtn.getAttribute('data-team'));
     const playerBtn = e.target.closest('.player-name-btn');
-    if (playerBtn) showPlayerModal(playerBtn.getAttribute('data-player-id'));
+    if (playerBtn) {
+      // Players of the Game already lives inside the game summary modal --
+      // stacking the quick-look player modal on top of that would be a
+      // modal-over-modal, so it jumps straight to the Players tab instead
+      // of going through showPlayerModal like every other name button does.
+      if (playerBtn.classList.contains('potg-player-name')) jumpToPlayerProfile(playerBtn.getAttribute('data-player-id'));
+      else showPlayerModal(playerBtn.getAttribute('data-player-id'));
+    }
     const teamChartBtn = e.target.closest('.standings-team-btn');
     if (teamChartBtn) {
       const teamId = teamChartBtn.getAttribute('data-team-id');
