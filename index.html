@@ -594,12 +594,7 @@
     border: 1px solid var(--gold);
     box-shadow: 0 1px 0 var(--paper-line);
   }
-  .potg-player-name {
-    font-family: 'Special Elite', monospace;
-    font-size: 11px;
-    color: var(--ink);
-    line-height: 1.25;
-  }
+  .potg-player-name { max-width: 100%; }
   .potg-stat-line {
     font-family: 'IBM Plex Mono', monospace;
     font-weight: 600;
@@ -5025,12 +5020,26 @@
       });
 
       const boxscore = feedData.liveData && feedData.liveData.boxscore;
+      const season = (feedData.gameData && feedData.gameData.datetime && feedData.gameData.datetime.officialDate || '').slice(0, 4);
       const leaders = Object.values(totals).sort((a, b) => b.wpa - a.wpa).slice(0, 3).map(p => {
         const boxPlayer = findBoxscorePlayer(boxscore, p.id);
         const stats = boxPlayer && boxPlayer.stats;
         const statParts = p.role === 'pitcher'
           ? buildPitcherStatLineParts(stats && stats.pitching)
           : buildBatterStatLineParts(stats && stats.batting);
+        // Populate playerStore so the clickable name button works even if the
+        // Scorecard tab (the usual source of these entries, see renderTeamTable)
+        // was never opened for this game.
+        const isAway = boxscore && boxscore.teams.away.players && boxscore.teams.away.players['ID' + p.id];
+        const team = feedData.gameData && feedData.gameData.teams && feedData.gameData.teams[isAway ? 'away' : 'home'];
+        playerStore[p.id] = {
+          id: p.id,
+          name: p.name,
+          pos: (boxPlayer && boxPlayer.position && boxPlayer.position.abbreviation) || '',
+          team: teamNickname(team),
+          season,
+          todayStats: (stats && (stats.batting || stats.pitching)) || {}
+        };
         return { id: p.id, name: p.name, statLine: renderStatLineParts(statParts) };
       });
       const result = { leaders, playOfGame, linescore, weather, allPlays };
@@ -5061,7 +5070,7 @@
       return `
         <div class="potg-player">
           <img class="potg-headshot" src="${headshotUrl(p.id)}" alt="" loading="lazy" onerror="this.style.display='none'">
-          <div class="potg-player-name">${p.name}</div>
+          <button type="button" class="player-name-btn potg-player-name" data-player-id="${p.id}">${p.name}</button>
           ${p.statLine ? `<div class="potg-stat-line">${p.statLine}</div>` : ''}
         </div>`;
     }).join('');
