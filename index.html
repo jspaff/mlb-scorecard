@@ -486,8 +486,12 @@
   /* Extra spacing under the Game Summary modal's box score (.monster-panel
      there defaults to a tighter 2px margin, tuned for the fixed bottom bar
      where it's the last thing on screen) so it doesn't crowd the game
-     highlights/CTA below it. */
+     highlights/CTA below it. .monster-panel is an inline-flex box, so
+     centering it takes text-align: center on its wrapper -- same trick
+     .score-bottom-bar uses on the Scorecard tab -- rather than affecting
+     the rest of the modal's left-aligned text. */
   .game-summary-game .monster-panel { margin-bottom: 14px; }
+  .gs-box-score { text-align: center; }
 
   .badge {
     display: flex;
@@ -4827,9 +4831,9 @@
     // game's panel here shows the same live count/baserunner band it does
     // on the Scorecard tab, not just the box score.
     const boxScoreHtml = game.linescore
-      ? renderMonsterPanel(game.linescore, awayAbbr, homeAbbr, game.allPlays || [], game.state === 'Live' && hasGameStarted(game.allPlays))
+      ? `<div class="gs-box-score">${renderMonsterPanel(game.linescore, awayAbbr, homeAbbr, game.allPlays || [], game.state === 'Live' && hasGameStarted(game.allPlays))}</div>`
       : ((game.state === 'Final' || game.state === 'Live')
-          ? `<div id="boxScore-${game.gamePk}" class="box-score-slot"><div class="potg-loading">Loading box score&#8230;</div></div>`
+          ? `<div id="boxScore-${game.gamePk}" class="box-score-slot gs-box-score"><div class="potg-loading">Loading box score&#8230;</div></div>`
           : '');
 
     // Top play/players highlights only make sense once a game is over --
