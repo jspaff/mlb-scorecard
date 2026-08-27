@@ -517,18 +517,6 @@
     margin-bottom: 10px;
   }
   .gs-weather { color: var(--ink-soft); }
-  .gs-score-line {
-    display: flex;
-    align-items: baseline;
-    gap: 7px;
-    font-family: 'Oswald', sans-serif;
-    font-weight: 600;
-    font-size: 21px;
-    text-transform: uppercase;
-    color: var(--ink-soft);
-    margin-bottom: 10px;
-  }
-  .gs-score-sep { font-family: 'IBM Plex Mono', monospace; opacity: 0.45; }
   .pog-section {
     margin-top: 14px;
     padding-top: 12px;
@@ -4781,17 +4769,6 @@
     const awayAbbr = game.awayAbbr || game.awayName;
     const homeAbbr = game.homeAbbr || game.homeName;
 
-    // This is only the matchup line pre-game ("NYY - BOS", no result yet) --
-    // once the game is Live/Final, the box score panel below (boxScoreHtml)
-    // already names both teams and their score, so showing this too would
-    // just repeat it.
-    const scoreHtml = (game.state === 'Final' || game.state === 'Live') ? '' : `
-      <div class="gs-score-line">
-        <span class="gs-score-team">${awayAbbr}</span>
-        <span class="gs-score-sep">&#8211;</span>
-        <span class="gs-score-team">${homeAbbr}</span>
-      </div>`;
-
     // game.weather is only ever supplied by the Scorecard tab's "Box Score"
     // link, which already has the live feed's gameData loaded -- Daily and
     // Schedule tabs only know the score, so their Live/Final games fetch it
@@ -4812,17 +4789,17 @@
 
     // game.linescore is only ever supplied by the Scorecard tab's "Box
     // Score" link, which already has the full live feed loaded -- Daily
-    // and Schedule tabs only know the score, so their Live/Final games
-    // fetch the inning-by-inning grid lazily into this same slot (see
-    // loadGameSummaryExtrasInto), alongside the WPA highlights below.
-    // game.allPlays rides along with it (see currentGameSummary) so a Live
-    // game's panel here shows the same live count/baserunner band it does
-    // on the Scorecard tab, not just the box score.
+    // and Schedule tabs only know the score, so every game (pre-game
+    // included, so the box score is the one place team names/score show up
+    // instead of a separate matchup line) fetches the inning-by-inning grid
+    // lazily into this same slot (see loadGameSummaryExtrasInto), alongside
+    // the WPA highlights below. game.allPlays rides along with it (see
+    // currentGameSummary) so a Live game's panel here shows the same live
+    // count/baserunner band it does on the Scorecard tab, not just the box
+    // score.
     const boxScoreHtml = game.linescore
       ? `<div class="gs-box-score">${renderMonsterPanel(game.linescore, awayAbbr, homeAbbr, game.allPlays || [], game.state === 'Live' && hasGameStarted(game.allPlays))}</div>`
-      : ((game.state === 'Final' || game.state === 'Live')
-          ? `<div id="boxScore-${game.gamePk}" class="box-score-slot gs-box-score"><div class="potg-loading">Loading box score&#8230;</div></div>`
-          : '');
+      : `<div id="boxScore-${game.gamePk}" class="box-score-slot gs-box-score"><div class="potg-loading">Loading box score&#8230;</div></div>`;
 
     // Top play/players highlights only make sense once a game is over --
     // a Live game's WPA swings are still in motion.
@@ -4844,7 +4821,6 @@
         ${multi ? `<div class="gs-game-label">Game ${game.gameNumber}</div>` : ''}
         ${topRowHtml}
         ${dateLineHtml}
-        ${scoreHtml}
         ${boxScoreHtml}
         ${wpaHtml}
         ${ctaHtml}
@@ -4869,16 +4845,18 @@
     const requestId = ++gameSummaryRequestId;
     gameSummaryModalBody.innerHTML = renderGameSummaryContent(dateStr, games, headerLabel);
     gameSummaryOverlay.classList.add('open');
-    // Venue (name+city) applies to every game regardless of state; box
-    // score and highlights only make sense once a game has actually
-    // started, so those stay gated to Live/Final. A Live game whose
+    // Venue (name+city) applies to every game regardless of state. The box
+    // score now shows for every game including pre-game (Preview never has
+    // g.linescore, so it always needs the fetch); highlights still only
+    // make sense once a game has actually started, gated inside
+    // fetchGameHighlights itself via includeHighlights. A Live game whose
     // linescore and weather are already known (the Scorecard tab's own
     // "Game Summary" link, via currentGameSummary) has nothing left for
     // this to fetch -- renderGameSummaryGame won't have left a placeholder
-    // for either, and a Live game never gets the highlights placeholder --
-    // so skip it instead of fetching the whole feed for nothing.
+    // for either -- so skip it instead of fetching the whole feed for
+    // nothing.
     games.filter(g => !g.venueHtml && g.venueId).forEach(g => loadVenueInto(g, requestId));
-    games.filter(g => g.state === 'Final' || (g.state === 'Live' && (!g.linescore || !g.weather)))
+    games.filter(g => g.state === 'Final' || !g.linescore || !g.weather)
       .forEach(g => loadGameSummaryExtrasInto(g, requestId));
   }
 
@@ -6164,9 +6142,15 @@
   // full page there. playerStore only has the name/pos/team the scorecard
   // grid already had on hand -- showPlayerProfile re-fetches everything
   // else (team, bio, career stats) the same as a normal search selection.
+  // Closes both the quick-look player modal and the game summary modal --
+  // whichever (if either) is actually open -- since this is called both
+  // from inside the player modal's own CTA and directly off a Players of
+  // the Game name button nested inside the game summary modal; closeOverlay
+  // is a no-op on an overlay that isn't open.
   function jumpToPlayerProfile(playerId) {
     const info = playerStore[playerId];
     hidePlayerModal();
+    hideGameSummaryModal();
     Tabs.switchTo('players');
     showPlayerProfile({ id: playerId, fullName: (info && info.name) || '' });
   }
@@ -6215,7 +6199,14 @@
     const sprayBtn = e.target.closest('.spray-btn');
     if (sprayBtn) showSprayModal(sprayBtn.getAttribute('data-team'));
     const playerBtn = e.target.closest('.player-name-btn');
-    if (playerBtn) showPlayerModal(playerBtn.getAttribute('data-player-id'));
+    if (playerBtn) {
+      // Players of the Game already lives inside the game summary modal --
+      // stacking the quick-look player modal on top of that would be a
+      // modal-over-modal, so it jumps straight to the Players tab instead
+      // of going through showPlayerModal like every other name button does.
+      if (playerBtn.classList.contains('potg-player-name')) jumpToPlayerProfile(playerBtn.getAttribute('data-player-id'));
+      else showPlayerModal(playerBtn.getAttribute('data-player-id'));
+    }
     const teamChartBtn = e.target.closest('.standings-team-btn');
     if (teamChartBtn) {
       const teamId = teamChartBtn.getAttribute('data-team-id');
