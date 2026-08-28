@@ -4109,8 +4109,15 @@
     // result yet) or the one that just ended -- once a new batter's first
     // pitch posts a fresh entry, this naturally falls back dark.
     const lastPlay = allPlays[allPlays.length - 1];
-    const lastEvent = isLive && lastPlay && lastPlay.result && lastPlay.result.event;
-    const hitLit = lastEvent === 'Single' || lastEvent === 'Double' || lastEvent === 'Triple' || lastEvent === 'Home Run';
+    // Lights on the ball put in play, not on the official hit ruling --
+    // scoring a play as a hit (vs. an error) can lag well behind the pitch
+    // itself, so this reads the last pitch's own in-play result instead of
+    // waiting on lastPlay.result.event. Matches classifyResult's own
+    // in-play/out split, and accepts the tradeoff that a sac fly or a
+    // scorer's-error-turned-no-hit will light it too.
+    const lastPitchEvent = lastPlay && (lastPlay.playEvents || []).filter(pe => pe.isPitch).pop();
+    const lastPitchDesc = lastPitchEvent && lastPitchEvent.details && lastPitchEvent.details.description;
+    const hitLit = isLive && !!lastPitchDesc && classifyResult(lastPitchDesc) === 'inplay-safe';
     const countHtml = `
       <div class="monster-count${isLive ? '' : ' is-hidden'}">
         <div class="monster-count-group">
