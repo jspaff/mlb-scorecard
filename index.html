@@ -1867,6 +1867,13 @@
   @media (max-width: 520px) {
     .sheet { padding: 14px; }
     .score-bottom-bar { padding-left: 14px; padding-right: 14px; }
+    /* Reclaims width for the Green Monster box score in the Game Summary
+       modal (and every other .pitch-modal) -- on a narrow phone the default
+       20px overlay inset + 18px modal padding left just barely too little
+       room for a full 9-inning .monster-panel, tripping its own
+       overflow-x: auto for a sliver of scrollbar. */
+    .pitch-overlay { padding: 10px; }
+    .pitch-modal { padding: 12px; }
     .standings-grid { grid-template-columns: 1fr; }
     .roster-columns { flex-direction: column; gap: 14px 0; }
     .calendar-day { min-height: 52px; padding: 2px 1px 3px; }
