@@ -1968,25 +1968,31 @@
     }
     table.scorecard-table th.pos, table.scorecard-table td.pos { left: 34px; }
     table.scorecard-table td.pos { padding-left: 0; }
-    table.scorecard-table td.ply .player-name-btn { padding: 1px 2px; }
-    table.scorecard-table td.ply { line-height: 1.1; }
-    /* The <br> joining stacked entries (see nameHtml/posHtml) is the actual
-       remaining source of vertical gap between a starter and its
-       substitute -- an empty line's height comes from the font-size/
-       line-height in effect at that point (td.ply's own 12px/1.1 line ~=
-       13px), not from anything padding-related, so no amount of padding
-       trimming on the button/sub-note touches it. Shrinking the <br>'s own
-       font-size shrinks that blank line down with it. Pos gets the same
-       treatment so its stacked entries stay in sync with Player's. */
-    table.scorecard-table td.ply br, table.scorecard-table td.pos br { font-size: 2px; line-height: 2px; }
-    /* Substitute lines match the starter's own alignment/spacing here
-       instead of the indented, more spaced-out look that's fine at full
-       Player width but just wastes room at 34px -- no left padding (so it
-       doesn't read as indented relative to the starter above it) and no
-       vertical padding (so stacked substitutions sit closer together). The
-       arrow itself is dropped too -- at jersey-number width there's no room
-       to spare for it, and the numbers stacking in an exact column is a
-       clearer "who replaced whom" cue on their own than the arrow was. */
+    /* The real culprit: Player's entries are <button>s (their own border +
+       padding + line-height on top of whatever the cell contributes) while
+       Pos's entries are bare text (just a line-height, no border/padding of
+       their own) -- so even with the <br> between entries shrunk to
+       nothing, a button's total height was taller than a line of plain
+       text, and every substitute drifted further out of sync with its Pos
+       entry the more of them stacked up. Fixed by making both exactly the
+       same height per entry: an absolute px line-height (not a multiplier)
+       set once on both cells, inherited as-is by everything inside them --
+       button text, plain Pos text, and the <br> between entries alike --
+       regardless of their different font-sizes; and stripping the button
+       down to no border/no vertical padding so its box doesn't add
+       anything beyond that one shared line-height.  */
+    table.scorecard-table td.ply, table.scorecard-table td.pos { line-height: 13px; }
+    /* Entries themselves stay at the shared 13px line-height above (that's
+       what keeps Player/Pos in sync); this more specific selector only
+       overrides the <br> between them, so the gap it renders is a small,
+       explicit 4px instead of another full 13px line. */
+    table.scorecard-table td.ply br, table.scorecard-table td.pos br { line-height: 4px; }
+    table.scorecard-table td.ply .player-name-btn { padding: 0 2px; border: none; }
+    /* No left padding on substitute lines either, so they don't read as
+       indented relative to the starter above them -- fine at full Player
+       width, but wastes room at 34px. The arrow is dropped too -- no room
+       to spare for it, and the numbers/positions stacking in exact rows is
+       a clearer "who replaced whom" cue on their own than the arrow was. */
     table.scorecard-table td.ply .sub-note { padding: 0; }
     .sub-arrow { display: none; }
   }
