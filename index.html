@@ -888,6 +888,10 @@
     padding-bottom: 3px;
     border-bottom: 1px solid var(--paper-line);
   }
+  /* Team names (nicknames, not full city + name -- see teamNickname) never
+     wrap, so a "Multiple" traded year or a longer nickname can't blow out
+     the row height. */
+  table.career-table td:nth-child(2) { white-space: nowrap; }
   /* Team stints under a traded year -- indented and muted so the combined
      year row above them still reads as the primary line. */
   table.career-table tr.career-team-subrow td {
@@ -3300,7 +3304,7 @@
     return `<div class="player-spray-section">
       <div class="spray-card">
         <div class="spray-header">
-          <div class="spray-title">Spray Chart &#8212; ${state.season}</div>
+          <div class="spray-title">Spray Chart</div>
         </div>
         ${bodyHtml}
       </div>
@@ -5909,7 +5913,7 @@
 
   function playerMetaLine(person) {
     return [
-      person.currentTeam && teamNickname(person.currentTeam),
+      person.currentTeam && person.currentTeam.name,
       person.primaryPosition && person.primaryPosition.abbreviation
     ].filter(Boolean).join(' &#183; ');
   }
@@ -5983,7 +5987,7 @@
         agg = { season: s.season, teams: [], gamesPlayed: 0, atBats: 0, hits: 0, doubles: 0, triples: 0, homeRuns: 0, baseOnBalls: 0, hitByPitch: 0, sacFlies: 0, totalBases: 0, stolenBases: 0, caughtStealing: 0 };
         bySeason.set(s.season, agg);
       }
-      const teamName = s.team && (s.team.abbreviation || s.team.name);
+      const teamName = s.team && teamNickname(s.team);
       if (teamName && !agg.teams.includes(teamName)) agg.teams.push(teamName);
       agg.gamesPlayed += stat.gamesPlayed || 0;
       agg.atBats += stat.atBats || 0;
@@ -6025,7 +6029,7 @@
       const subRows = stints.length > 1
         ? stints.map(s => {
             const stat = s.stat || {};
-            const teamName = (s.team && (s.team.abbreviation || s.team.name)) || '&#8212;';
+            const teamName = (s.team && teamNickname(s.team)) || '&#8212;';
             return `<tr class="career-team-subrow"><td></td><td>${teamName}</td><td>${stat.gamesPlayed ?? '&#8212;'}</td><td>${stat.avg ?? '&#8212;'}</td><td>${stat.obp ?? '&#8212;'}</td><td>${stat.slg ?? '&#8212;'}</td><td>${stat.doubles ?? '&#8212;'}</td><td>${stat.triples ?? '&#8212;'}</td><td>${stat.homeRuns ?? '&#8212;'}</td><td>${stat.stolenBases ?? '&#8212;'}</td><td>${stat.caughtStealing ?? '&#8212;'}</td></tr>`;
           }).join('')
         : '';
