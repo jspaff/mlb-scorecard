@@ -789,6 +789,18 @@
     color: var(--ink);
   }
   .team-header-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  /* Wraps just the header + the scrollable table (not the pitcher card
+     below, which has its own flex-wrap layout and would otherwise dominate
+     the shrink-to-fit width if it were included) so that on a wide screen,
+     giving this a fit-content width makes it exactly as wide as the table's
+     own natural width (see table.scorecard-table's min-width comment) --
+     which in turn pushes the header's Full Roster/Spray Chart buttons via
+     justify-content: space-between to land right above the final inning's
+     right edge, instead of trailing off into empty space at the edge of a
+     wide viewport. */
+  @media (min-width: 700px) {
+    .team-scorecard-wrap { width: fit-content; }
+  }
 
   .spray-card {
     margin-top: 8px;
@@ -1335,6 +1347,13 @@
     min-width: 640px;
     table-layout: fixed;
   }
+  /* A little extra breathing room on a wide screen -- also raises the floor
+     that .team-scorecard-wrap's fit-content shrink-wrap (above) resolves
+     to for a short game, so the header/button row doesn't end up narrower
+     than feels right just because a game hasn't gone many innings. */
+  @media (min-width: 700px) {
+    table.scorecard-table { min-width: 760px; }
+  }
   table.scorecard-table th {
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
@@ -1353,14 +1372,14 @@
   /* Pos is frozen right alongside Player now (left offset = Player's own
      118px width) instead of scrolling off with the innings -- the box-shadow
      is what actually marks the freeze boundary, see td.pos below for why
-     it's a shadow and not a border-right. */
+     it's an inset shadow and not a border-right. */
   table.scorecard-table th.pos {
     width: 34px;
     position: sticky;
     left: 118px;
     background: var(--paper);
     z-index: 3;
-    box-shadow: 1px 0 0 rgba(243, 236, 219, 0.18);
+    box-shadow: inset -1px 0 0 rgba(243, 236, 219, 0.18);
   }
   table.scorecard-table th.inning-cont { border-left: none; color: var(--gold); }
 
@@ -1397,12 +1416,15 @@
   table.scorecard-table td.ply .sub-note { display: block; padding: 1px 8px; }
   table.scorecard-table td.ply .sub-note .player-name-btn { display: inline-block; width: auto; }
   /* Frozen alongside Player (see th.pos) rather than scrolling off with the
-     innings -- Pos is the last frozen column now, so the box-shadow (a hard
-     1px line, not a blur) that used to mark td.ply's right edge moves here.
-     A real border-right would work too, but border-collapse can miscollapse
+     innings -- Pos is the last frozen column now, so the hairline that used
+     to mark td.ply's right edge moves here. Two reasons this is an inset
+     box-shadow rather than border-right: (1) border-collapse can miscollapse
      a border from an unrelated scrolling cell onto this sticky column and
      leave it pinned in view after that cell scrolls away (same reasoning as
-     the td.pitcher-change comment below) -- box-shadow never collapses. */
+     the td.pitcher-change comment below); (2) a non-inset shadow on a sticky
+     table cell gets clipped and simply doesn't render on mobile Safari --
+     inset keeps the whole shadow inside the cell's own box, sidestepping
+     that. */
   table.scorecard-table td.pos {
     text-align: center;
     color: var(--ink-soft);
@@ -1417,7 +1439,7 @@
     left: 118px;
     background: var(--paper);
     z-index: 2;
-    box-shadow: 1px 0 0 rgba(243, 236, 219, 0.18);
+    box-shadow: inset -1px 0 0 rgba(243, 236, 219, 0.18);
   }
   table.scorecard-table td.cell { width: 52px; height: 64px; padding: 3px 1px 7px; }
   table.scorecard-table td.sub-divider { border-left: 1px dashed rgba(28,58,44,0.3); }
@@ -3916,15 +3938,17 @@
     }).join('');
 
     return `<div class="team-block">
-      <div class="team-header">
-        <div class="team-name">${teamName}</div>
-        <div class="team-header-btns">
-          <button class="roster-btn" data-team="${teamName}">Full Roster</button>
-          <button class="spray-btn" data-team="${teamName}">Spray Chart</button>
+      <div class="team-scorecard-wrap">
+        <div class="team-header">
+          <div class="team-name">${teamName}</div>
+          <div class="team-header-btns">
+            <button class="roster-btn" data-team="${teamName}">Full Roster</button>
+            <button class="spray-btn" data-team="${teamName}">Spray Chart</button>
+          </div>
         </div>
-      </div>
-      <div class="table-scroll">
-        <table class="scorecard-table"><thead>${head}</thead><tbody>${bodyRows}</tbody></table>
+        <div class="table-scroll">
+          <table class="scorecard-table"><thead>${head}</thead><tbody>${bodyRows}</tbody></table>
+        </div>
       </div>
       ${pitcherCardHtml || ''}
     </div>`;
