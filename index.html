@@ -1714,6 +1714,9 @@
     font-size: 13px;
     color: var(--ink-soft);
     margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .player-profile-bio {
     font-family: 'IBM Plex Mono', monospace;
@@ -1728,24 +1731,13 @@
     margin-top: 2px;
   }
 
-  /* Season spray chart, below the Career table -- reuses the same
+  /* Current-season spray chart, below the Career table -- reuses the same
      .spray-card/.spray-header/.spray-legend look as the Scorecard tab's
-     per-game chart (just a year <select> instead of a batter filter), but
-     capped to a max-width and centered so it doesn't blow up to the full
-     width of the sheet on a wide screen. */
+     per-game chart, but capped to a max-width and centered so it doesn't
+     blow up to the full width of the sheet on a wide screen. */
   .player-spray-section { margin-top: 4px; }
   .player-spray-section .spray-card { max-width: 420px; margin: 0 auto; }
   .player-spray-section .spray-card > svg { max-width: 320px; }
-  .spray-year-select {
-    font-family: 'Inter', sans-serif;
-    font-size: 10.5px;
-    background: var(--paper);
-    color: var(--ink);
-    border: 1px solid var(--paper-line);
-    border-radius: 4px;
-    padding: 2px 5px;
-    max-width: 100px;
-  }
   table.pitch-table { width: 100%; border-collapse: collapse; font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
   table.pitch-table th {
     font-family: 'Overpass', sans-serif;
@@ -2062,13 +2054,13 @@
   // Single-active-profile state for the player-page spray chart widget --
   // mirrors sprayFilterState's module-scoped pattern, but keyed implicitly
   // to whichever profile is currently open rather than by team name, since
-  // only one player profile is ever shown at a time. Reset in
-  // showPlayerProfile, updated by loadPlayerSpray and the year <select>.
-  let playerSprayState = { personId: null, season: null, seasons: [], balls: null, loading: false };
-  // Bumped on every profile switch and every year-dropdown change so a
-  // slow, now-superseded fetch (a different player, or a season the user
-  // has since clicked away from) can't overwrite state a newer request
-  // already wrote -- same guard pattern as xRequestId elsewhere in the file.
+  // only one player profile is ever shown at a time. Always the current
+  // season -- no year picker. Reset in showPlayerProfile, updated by
+  // loadPlayerSpray once its fetch resolves.
+  let playerSprayState = { personId: null, season: null, balls: null, loading: false };
+  // Bumped on every profile switch so a slow, now-superseded fetch (a
+  // different player) can't overwrite state a newer request already wrote --
+  // same guard pattern as xRequestId elsewhere in the file.
   let playerSprayToken = 0;
   // Last-rendered profile inputs, kept so the spray widget can re-render on
   // its own (once its fetch resolves) without re-fetching person/career/
@@ -3281,18 +3273,15 @@
     </div>`;
   }
 
-  // Player profile's season spray chart, shown below the Career table.
-  // Same field/dot drawing and .spray-card/.spray-header/.spray-legend
-  // look as the Scorecard tab's per-game chart above -- just a year
-  // <select> instead of a batter filter, and no per-dot filtering since
-  // there's only ever one batter. Sizing (bigger than a corner widget, but
-  // capped so it doesn't take over the sheet on a wide screen) is handled
-  // by the .player-spray-section rule in the stylesheet.
+  // Player profile's current-season spray chart, shown below the Career
+  // table. Same field/dot drawing and .spray-card/.spray-header/.spray-legend
+  // look as the Scorecard tab's per-game chart above -- always the current
+  // season (no year picker), and no per-dot filtering since there's only
+  // ever one batter. Sizing (bigger than a corner widget, but capped so it
+  // doesn't take over the sheet on a wide screen) is handled by the
+  // .player-spray-section rule in the stylesheet.
   function renderPlayerSprayWidget(state) {
-    if (!state.seasons.length) return '';
-    const yearOptions = state.seasons
-      .map(s => `<option value="${s}"${String(s) === String(state.season) ? ' selected' : ''}>${s}</option>`)
-      .join('');
+    if (!state.season) return '';
     let bodyHtml;
     if (state.loading) {
       bodyHtml = '<div class="mlb-status-msg">Loading spray chart&#8230;</div>';
@@ -3311,8 +3300,7 @@
     return `<div class="player-spray-section">
       <div class="spray-card">
         <div class="spray-header">
-          <div class="spray-title">Spray Chart</div>
-          <select class="spray-year-select" data-player-id="${state.personId}">${yearOptions}</select>
+          <div class="spray-title">Spray Chart &#8212; ${state.season}</div>
         </div>
         ${bodyHtml}
       </div>
@@ -5921,7 +5909,7 @@
 
   function playerMetaLine(person) {
     return [
-      person.currentTeam && person.currentTeam.name,
+      person.currentTeam && teamNickname(person.currentTeam),
       person.primaryPosition && person.primaryPosition.abbreviation
     ].filter(Boolean).join(' &#183; ');
   }
@@ -6082,8 +6070,7 @@
 
   // Re-renders the profile from the last-fetched person/career/awards data
   // without re-fetching them -- used when the spray widget's own fetch
-  // resolves (or the year dropdown changes), since none of that touches
-  // person/career/awards.
+  // resolves, since that doesn't touch person/career/awards.
   function rerenderPlayerProfile() {
     if (!lastProfilePerson) return;
     playersBody.innerHTML = renderPlayerProfile(lastProfilePerson, lastProfileCareerSplits, lastProfileAwardTags);
@@ -6112,7 +6099,9 @@
     const person = { ...rawPerson, id: Number(rawPerson.id) };
     const requestId = ++playerProfileRequestId;
     playerSprayToken++; // abandon any spray fetch still in flight for whatever was open before
-    playerSprayState = { personId: person.id, season: null, seasons: [], balls: null, loading: false };
+    const currentSeason = new Date().getFullYear();
+    playerSprayState = { personId: person.id, season: currentSeason, balls: null, loading: true };
+    loadPlayerSpray(person.id, currentSeason);
     playersBody.innerHTML = renderPlayerProfile(person, null, []);
     const [fullPerson, careerSplits, awards] = await Promise.all([
       getPlayerDetails(person.id),
@@ -6123,12 +6112,6 @@
     lastProfilePerson = fullPerson || person;
     lastProfileCareerSplits = careerSplits;
     lastProfileAwardTags = summarizeAwardTags(awards);
-
-    const seasons = Array.from(new Set(careerSplits.map(s => s.season))).sort((a, b) => Number(b) - Number(a));
-    if (seasons.length) {
-      playerSprayState = { personId: person.id, season: seasons[0], seasons, balls: null, loading: true };
-      loadPlayerSpray(person.id, seasons[0]);
-    }
     rerenderPlayerProfile();
   }
 
@@ -6223,20 +6206,6 @@
           g.style.display = match ? '' : 'none';
         });
       }
-      return;
-    }
-    const yearSel = e.target.closest('select.spray-year-select');
-    if (yearSel) {
-      const personId = Number(yearSel.getAttribute('data-player-id'));
-      const season = yearSel.value;
-      if (playerSprayState.personId !== personId) return;
-      const cacheKey = `${personId}-${season}`;
-      const cached = playerSeasonSprayCache[cacheKey];
-      playerSprayState.season = season;
-      playerSprayState.balls = cached !== undefined ? cached : null;
-      playerSprayState.loading = cached === undefined;
-      rerenderPlayerProfile();
-      if (cached === undefined) loadPlayerSpray(personId, season);
     }
   });
   pitchClose.addEventListener('click', hidePitchPopup);
