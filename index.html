@@ -40,10 +40,14 @@
     border-radius: 10px;
     font-family: 'Inter', sans-serif;
     min-height: 100%;
-    /* Kept in sync with .tab-header's real height by syncTabHeaderHeight()
-       -- read by .scorecard-sidebar's sticky offset so it clamps to just
-       below the sticky header instead of sliding under it. */
+    /* Kept in sync with .tab-header's real height and #mlb-root's own
+       distance from the viewport's right edge by syncSidebarOffsets() --
+       read by .scorecard-sidebar (position: fixed) so it clamps to just
+       below the sticky header instead of overlapping it, and lines its
+       right edge up with the grid's right edge instead of the viewport's,
+       since #mlb-root is rarely viewport-width itself. */
     --tab-header-h: 0px;
+    --sidebar-right: 18px;
   }
 
   .mlb-controls { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -236,19 +240,33 @@
     .score-bottom-bar { display: none !important; }
     #mlbBody { padding-bottom: 0; }
     .scorecard-sidebar {
-      display: block;
+      display: flex;
+      flex-direction: column;
       width: 320px;
       flex-shrink: 0;
-      position: sticky;
+      /* Pinned to the viewport, not sticky-in-flow -- .scorecard-main's own
+         scrollbar (the page can grow tall with a long extra-innings grid)
+         must never drag this along with it. Matches how .score-bottom-bar
+         handles the same requirement below the breakpoint (position: fixed),
+         just anchored under the header instead of to the bottom edge. */
+      position: fixed;
       /* Set from JS (syncTabHeaderHeight) to the sticky .tab-header's own
          height, since that header's content differs per tab and can wrap
          onto a second line at some widths -- a fixed guess here would
-         either leave a gap or let the sidebar's top edge slide under it. */
+         either leave a gap or overlap it. sidebarRightOffset (also JS-set)
+         keeps the panel's right edge aligned with the grid's right edge
+         instead of the viewport's, since #mlb-root is rarely viewport-width
+         itself (it's padded and can be embedded in a narrower host page). */
       top: calc(var(--tab-header-h, 0px) + 14px);
+      right: var(--sidebar-right, 18px);
       max-height: calc(100vh - var(--tab-header-h, 0px) - 28px);
-      overflow-y: auto;
     }
-    .sidebar-atbat:empty { display: none; }
+    /* Reserves the width .scorecard-sidebar would otherwise occupy -- now
+       that it's position: fixed (out of flow), .scorecard-layout's own
+       flex gap no longer does this, so the grid needs an explicit margin
+       matching the sidebar's width (320px) plus the same 16px gap or its
+       horizontal scroller would run underneath the fixed panel. */
+    .scorecard-main { margin-right: 336px; }
   }
 
   /* The scorecard grid is the point of this tab, so the header stays down
@@ -1701,37 +1719,43 @@
     box-shadow: 0 10px 40px rgba(0,0,0,0.5);
   }
 
-  /* Wraps the monster scoreboard (renderMonsterPanel's markup, written in
-     here verbatim by fetchAndRender -- see sidebarMonsterPanel) in its own
-     "Green Monster" wall-colored card, so it reads as a real panel instead
-     of floating unbounded on #mlb-root's own --frame background (which is
-     a lighter, less saturated green than this) -- flush against the top of
-     .scorecard-sidebar so it lines up with .sheet's top edge on the left.
-     .monster-box-cell/.monster-count-label/etc. already use --ink for text,
-     which this card gives a proper dark backdrop to; that pairing is the
-     same one .tab-header already relies on against --frame, just deeper. */
-  #sidebarMonsterPanel:not(:empty) {
+  /* .scorecard-sidebar (see the wide breakpoint above) is one shared card
+     -- a "Green Monster" wall-colored wrapper -- for both the monster
+     scoreboard (renderMonsterPanel's markup, written in here verbatim by
+     fetchAndRender -- see sidebarMonsterPanel) and the live at-bat tracker
+     below it, rather than two separately-boxed pieces. overflow: hidden
+     clips #sidebarMonsterPanel's flush top corners and .sidebar-atbat's
+     flush bottom corners to the outer card's own border-radius; the
+     internal scroll for content taller than the viewport (see max-height
+     above) lives on .sidebar-atbat alone, not this outer card, precisely
+     so the monster scoreboard at the top never scrolls out of view. */
+  .scorecard-sidebar {
     background: var(--monster-green-dim);
     border-radius: 8px;
-    padding: 14px;
     box-shadow: 0 2px 0 rgba(0,0,0,0.25) inset, 0 4px 14px rgba(0,0,0,0.35);
+    overflow: hidden;
   }
   /* .monster-panel itself is inline-flex and sized to its content -- center
      it in the card rather than letting it hug the left edge. */
-  #sidebarMonsterPanel { text-align: center; }
+  #sidebarMonsterPanel:not(:empty) { padding: 14px; text-align: center; }
 
-  /* Sits below the monster scoreboard in .scorecard-sidebar (see the wide
-     breakpoint above) and reuses the same inner markup/classes as
-     #pitchModalBody (.pitch-header, .pitch-table, .loc-section, ...) --
-     see renderPitchDetailHtml -- just in an always-visible column instead
-     of a dismissible overlay, so it has its own chrome rather than
-     .pitch-modal's (no close button, no backdrop, full column width). */
-  .sidebar-atbat {
+  /* Reuses the same inner markup/classes as #pitchModalBody (.pitch-header,
+     .pitch-table, .loc-section, ...) -- see renderPitchDetailHtml -- just
+     laid out in an always-visible panel section instead of a dismissible
+     overlay (no close button, no backdrop). Its own --paper background
+     (distinct from the monster-green section above it) marks it as a
+     separate zone within the one shared card, and its own scrollbar (see
+     .scorecard-sidebar above) is what lets the pitch table grow row by row
+     without the panel's overall height pushing anything above it around. */
+  .sidebar-atbat:not(:empty) {
     background: var(--paper);
-    border-radius: 8px;
     padding: 14px;
-    margin-top: 16px;
-    box-shadow: 0 2px 0 rgba(0,0,0,0.25) inset, 0 4px 14px rgba(0,0,0,0.35);
+    overflow-y: auto;
+    /* Takes whatever vertical space is left in the fixed-height card below
+       the monster scoreboard (min-height: 0 is what lets a flex child
+       actually shrink and scroll instead of overflowing its parent). */
+    flex: 1 1 auto;
+    min-height: 0;
   }
   .pitch-close {
     position: absolute;
@@ -6008,12 +6032,18 @@
 
     const locationHtml = pitches.length ? renderPitchLocation(pitches, c.batSide, c.pitchHand, c.isComplete, newPitchNums) : '';
 
+    // Zone plot before the pitch table (not after, as MLB's own gameday
+    // usually lays it out) -- in the always-on sidebar this table keeps
+    // growing pitch by pitch over the course of a live at-bat, and with the
+    // zone above it that growth pushes nothing but the events/description
+    // below further down, rather than shoving the zone itself down the
+    // page on every new pitch.
     return `
       <div class="pitch-header">${c.batterName || 'Batter'}</div>
       <div class="pitch-subheader">vs ${c.pitcherFullName || 'pitcher'}</div>
       ${c.videoUrl ? `<a class="pog-watch" href="${c.videoUrl}" target="_blank" rel="noopener noreferrer">Watch &#9654;</a>` : ''}
-      ${rows}
       ${locationHtml}
+      ${rows}
       ${reviewsHtml}
       ${eventsHtml}
       ${c.playDesc ? `<div class="pitch-final-desc">${c.playDesc}</div>` : ''}
@@ -6443,16 +6473,25 @@
     showPlayerProfile({ id: playerId, fullName: (info && info.name) || '' });
   }
 
-  // Feeds .scorecard-sidebar's sticky top offset (--tab-header-h, read in
-  // CSS) so the sidebar clamps to just below the sticky .tab-header instead
-  // of sliding under it -- the header's own height isn't a fixed constant,
-  // since its controls row differs per tab and can wrap at some widths.
+  // Feeds .scorecard-sidebar's fixed top/right offsets (--tab-header-h and
+  // --sidebar-right, read in CSS) so the sidebar (position: fixed, so page
+  // scroll never drags it -- see .scorecard-sidebar) clamps to just below
+  // the sticky .tab-header instead of overlapping it, and lines its right
+  // edge up with #mlb-root's own right edge instead of the viewport's --
+  // neither is a fixed constant: the header's controls row differs per tab
+  // and can wrap at some widths, and #mlb-root itself may not be
+  // viewport-width (padded, possibly embedded in a narrower host page).
   const mlbRootEl = document.getElementById('mlb-root');
   const tabHeaderEl = document.querySelector('.tab-header');
-  function syncTabHeaderHeight() {
-    if (mlbRootEl && tabHeaderEl) mlbRootEl.style.setProperty('--tab-header-h', tabHeaderEl.offsetHeight + 'px');
+  function syncSidebarOffsets() {
+    if (!mlbRootEl || !tabHeaderEl) return;
+    mlbRootEl.style.setProperty('--tab-header-h', tabHeaderEl.offsetHeight + 'px');
+    const rootRect = mlbRootEl.getBoundingClientRect();
+    const rootRightPadding = parseFloat(getComputedStyle(mlbRootEl).paddingRight) || 0;
+    const rightOffset = Math.max(0, window.innerWidth - rootRect.right + rootRightPadding);
+    mlbRootEl.style.setProperty('--sidebar-right', rightOffset + 'px');
   }
-  window.addEventListener('resize', syncTabHeaderHeight);
+  window.addEventListener('resize', syncSidebarOffsets);
 
   Tabs.register('daily', {
     init: () => {
@@ -6462,7 +6501,7 @@
       });
     }
   });
-  Tabs.register('scorecard', { onShow: syncTabHeaderHeight });
+  Tabs.register('scorecard', { onShow: syncSidebarOffsets });
   Tabs.register('standings', { init: () => loadStandings(standingsDateInput.value) });
   Tabs.register('schedule', { init: () => { populateTeamSelect(scheduleTeamSelect, SCHEDULE_TEAM_KEY); loadTeamSchedule(scheduleTeamSelect.value); } });
   Tabs.register('roster', { init: () => { populateTeamSelect(rosterTabTeamSelect, ROSTER_TAB_TEAM_KEY); loadRosterTab(rosterTabTeamSelect.value); } });
