@@ -1970,6 +1970,15 @@
     table.scorecard-table td.pos { padding-left: 0; }
     table.scorecard-table td.ply .player-name-btn { padding: 1px 2px; }
     table.scorecard-table td.ply { line-height: 1.1; }
+    /* The <br> joining stacked entries (see nameHtml/posHtml) is the actual
+       remaining source of vertical gap between a starter and its
+       substitute -- an empty line's height comes from the font-size/
+       line-height in effect at that point (td.ply's own 12px/1.1 line ~=
+       13px), not from anything padding-related, so no amount of padding
+       trimming on the button/sub-note touches it. Shrinking the <br>'s own
+       font-size shrinks that blank line down with it. Pos gets the same
+       treatment so its stacked entries stay in sync with Player's. */
+    table.scorecard-table td.ply br, table.scorecard-table td.pos br { font-size: 2px; line-height: 2px; }
     /* Substitute lines match the starter's own alignment/spacing here
        instead of the indented, more spaced-out look that's fine at full
        Player width but just wastes room at 34px -- no left padding (so it
