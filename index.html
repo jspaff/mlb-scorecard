@@ -1347,17 +1347,7 @@
   table.scorecard-table th.pos { text-align: center; }
   table.scorecard-table th.ply { position: sticky; left: 0; background: var(--paper); z-index: 3; width: 118px; }
   table.scorecard-table th.pos { width: 34px; }
-  table.scorecard-table th.stat { width: 62px; }
-  table.scorecard-table th.stat-hab { width: 42px; border-left: 1px solid var(--paper-line); }
-  table.scorecard-table th.stat-extra {
-    width: 82px;
-    padding-left: 2px;
-    padding-right: 2px;
-    letter-spacing: 0.01em;
-  }
-  table.scorecard-table th.stat-rbi { width: 34px; }
   table.scorecard-table th.inning-cont { border-left: none; color: var(--gold); }
-  table.scorecard-table th.stat { border-left: 1px solid var(--paper-line); white-space: nowrap; }
 
   table.scorecard-table td {
     text-align: center;
@@ -1474,10 +1464,6 @@
     white-space: nowrap;
     border-top: 1px solid var(--paper);
   }
-  table.scorecard-table td.stat { font-weight: 600; white-space: nowrap; padding: 3px 4px; font-family: 'Special Elite', monospace; }
-  table.scorecard-table td.stat-hab { border-left: 1px solid var(--paper-line); width: 42px; }
-  table.scorecard-table td.stat-extra { width: 82px; padding-left: 2px; padding-right: 2px; }
-  table.scorecard-table td.stat-rbi { width: 34px; }
   .sub-note { font-size: 10px; color: var(--ink-soft); opacity: 0.85; font-style: italic; }
 
   .footnote {
@@ -3830,7 +3816,7 @@
       const cols = (columnsPerInning && columnsPerInning[i]) || 1;
       for (let k = 0; k < cols; k++) head += `<th${k > 0 ? ' class="inning-cont"' : ''}>${i}</th>`;
     }
-    head += `<th class="stat stat-hab">H-AB</th><th class="stat stat-extra">BB-2B-3B-HR</th><th class="stat stat-rbi">RBI</th></tr>`;
+    head += `</tr>`;
 
     const bodyRows = rows.map(r => {
       const nameHtml = r.players.map((p, i) => {
@@ -3897,23 +3883,6 @@
           cells += `<td class="${cls}">${cellHtml}</td>`;
         }
       }
-      const habLine = (p, i) => {
-        const s = p.stats;
-        const txt = `${s.hits ?? 0}-${s.atBats ?? 0}`;
-        return i === 0 ? txt : `<span class="sub-note">${txt}</span>`;
-      };
-      const extraLine = (p, i) => {
-        const s = p.stats;
-        const txt = `${s.baseOnBalls ?? 0}-${s.doubles ?? 0}-${s.triples ?? 0}-${s.homeRuns ?? 0}`;
-        return i === 0 ? txt : `<span class="sub-note">${txt}</span>`;
-      };
-      const rbiLine = (p, i) => {
-        const txt = `${p.stats.rbi ?? 0}`;
-        return i === 0 ? txt : `<span class="sub-note">${txt}</span>`;
-      };
-      cells += `<td class="stat stat-hab">${r.players.map(habLine).join('<br/>')}</td>`;
-      cells += `<td class="stat stat-extra">${r.players.map(extraLine).join('<br/>')}</td>`;
-      cells += `<td class="stat stat-rbi">${r.players.map(rbiLine).join('<br/>')}</td>`;
       return `<tr>${cells}</tr>`;
     }).join('');
 
