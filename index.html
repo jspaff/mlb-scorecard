@@ -40,6 +40,10 @@
     border-radius: 10px;
     font-family: 'Inter', sans-serif;
     min-height: 100%;
+    /* Kept in sync with .tab-header's real height by syncTabHeaderHeight()
+       -- read by .scorecard-sidebar's sticky offset so it clamps to just
+       below the sticky header instead of sliding under it. */
+    --tab-header-h: 0px;
   }
 
   .mlb-controls { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -209,8 +213,43 @@
   /* Reserves room at the bottom of the scorecard grid so the last rows
      aren't hidden behind the fixed .score-bottom-bar sitting on top of
      them -- #mlbBody is the scorecard tab's own content container, so
-     this doesn't affect any other tab's .sheet. */
+     this doesn't affect any other tab's .sheet. Undone by the wide-screen
+     rule below, which drops the fixed bar entirely. */
   #mlbBody { padding-bottom: 90px; }
+
+  /* Below the wide breakpoint this is a plain single-column stack --
+     .scorecard-sidebar stays display:none (see the breakpoint below) and
+     .score-bottom-bar (fixed to the viewport) carries the monster
+     scoreboard instead. min-width: 0 on the main column is required for a
+     flex child to actually shrink instead of imposing its content's
+     intrinsic width (the frozen-column scorecard grid's horizontal
+     scroller would otherwise blow out the row rather than scrolling). */
+  .scorecard-layout { display: flex; align-items: flex-start; gap: 16px; }
+  .scorecard-main { flex: 1; min-width: 0; }
+  .scorecard-sidebar { display: none; }
+
+  @media (min-width: 1100px) {
+    /* The bottom bar and the sidebar are two skins on the same data (see
+       fetchAndRender, which now writes the monster panel into both) --
+       wide screens get the sidebar instead of the fixed bar, so the grid
+       no longer needs bottom padding to clear it. */
+    .score-bottom-bar { display: none !important; }
+    #mlbBody { padding-bottom: 0; }
+    .scorecard-sidebar {
+      display: block;
+      width: 320px;
+      flex-shrink: 0;
+      position: sticky;
+      /* Set from JS (syncTabHeaderHeight) to the sticky .tab-header's own
+         height, since that header's content differs per tab and can wrap
+         onto a second line at some widths -- a fixed guess here would
+         either leave a gap or let the sidebar's top edge slide under it. */
+      top: calc(var(--tab-header-h, 0px) + 14px);
+      max-height: calc(100vh - var(--tab-header-h, 0px) - 28px);
+      overflow-y: auto;
+    }
+    .sidebar-atbat:empty { display: none; }
+  }
 
   /* The scorecard grid is the point of this tab, so the header stays down
      to a single-line score strip -- venue info and the inning-by-inning
@@ -1661,6 +1700,20 @@
     padding: 18px;
     box-shadow: 0 10px 40px rgba(0,0,0,0.5);
   }
+
+  /* Sits below the monster scoreboard in .scorecard-sidebar (see the wide
+     breakpoint above) and reuses the same inner markup/classes as
+     #pitchModalBody (.pitch-header, .pitch-table, .loc-section, ...) --
+     see renderPitchDetailHtml -- just in an always-visible column instead
+     of a dismissible overlay, so it has its own chrome rather than
+     .pitch-modal's (no close button, no backdrop, full column width). */
+  .sidebar-atbat {
+    background: var(--paper);
+    border-radius: 8px;
+    padding: 14px;
+    margin-top: 16px;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.25) inset, 0 4px 14px rgba(0,0,0,0.35);
+  }
   .pitch-close {
     position: absolute;
     top: 10px;
@@ -2089,8 +2142,17 @@
     </div>
   </div>
   <div class="tab-panel" data-tab-panel="scorecard" id="scorecardPanel" hidden>
-    <div id="mlbBody">
-      <div class="mlb-status-msg">Loading today's schedule&#8230;</div>
+    <div class="scorecard-layout">
+      <div id="mlbBody" class="scorecard-main">
+        <div class="mlb-status-msg">Loading today's schedule&#8230;</div>
+      </div>
+      <!-- Wide-screen-only companion column -- see .scorecard-sidebar. Empty
+           and inert (display: none) below the width breakpoint, so it costs
+           nothing on mobile. -->
+      <div class="scorecard-sidebar" id="scorecardSidebar">
+        <div id="sidebarMonsterPanel"></div>
+        <div id="sidebarAtBat" class="sidebar-atbat"></div>
+      </div>
     </div>
   </div>
   <div class="tab-panel" data-tab-panel="standings" id="standingsPanel" hidden>
@@ -2159,6 +2221,8 @@
   const gameSelect = document.getElementById('gamePick');
   const body = document.getElementById('mlbBody');
   const scoreBottomBar = document.getElementById('scoreBottomBar');
+  const sidebarMonsterPanel = document.getElementById('sidebarMonsterPanel');
+  const sidebarAtBatEl = document.getElementById('sidebarAtBat');
   const standingsBody = document.getElementById('standingsBody');
   const standingsDateInput = document.getElementById('standingsDatePick');
   const standingsDateInputText = document.getElementById('standingsDatePickText');
@@ -5253,6 +5317,8 @@
     gameSelect.innerHTML = '<option>Loading games&#8230;</option>';
     body.innerHTML = '<div class="mlb-status-msg">Fetching schedule for ' + dateStr + '&#8230;</div>';
     scoreBottomBar.innerHTML = '';
+    sidebarMonsterPanel.innerHTML = '';
+    updateSidebarAtBat(null);
     clearInterval(pollTimer);
     try {
       const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}`);
@@ -5483,6 +5549,16 @@
           }
         }
       }
+      // Matches the pkey format renderTeamTable/buildTeamRows' cell loop
+      // stamps onto pitchStore for this exact liveBatterInfo cell (see
+      // isLiveCell there) -- computed independently here, from the same
+      // liveBatterInfo fields, rather than threaded back out of that render
+      // call, so the wide-screen sidebar (see updateSidebarAtBat below) can
+      // look the live at-bat up in pitchStore right after body.innerHTML
+      // populates it.
+      const livePkey = liveBatterInfo
+        ? `${liveBatterInfo.team === 'away' ? awayName : homeName}-${liveBatterInfo.rowSlot}-${liveBatterInfo.inning}-${liveBatterInfo.slotIndex}`
+        : null;
 
       // away.starterPitcherId is the pitcher who faced the away batters --
       // i.e. the HOME team's starter -- and belongs under the away
@@ -5621,17 +5697,21 @@
       // snap every table-scroll back to scrollLeft 0 on each poll
       const scrollLefts = Array.from(body.querySelectorAll('.table-scroll')).map(el => el.scrollLeft);
 
-      // Lives in the fixed bottom bar (#scoreBottomBar), not in .sheet --
-      // see .score-bottom-bar for why.
-      // Live and Final both show just the monster-panel, centered -- no
-      // strip, no At Bat/Pitching line, no Previous Batter, no Game Summary
-      // button (that's up in the controls bar now). Only the preview state
-      // (game hasn't started) still uses the original top-strip layout,
-      // since there's no panel there to replace it.
-      scoreBottomBar.innerHTML = monsterPanelHtml ? monsterPanelHtml : `
+      // Lives in the fixed bottom bar (#scoreBottomBar) below the wide
+      // breakpoint, not in .sheet -- see .score-bottom-bar for why -- and in
+      // #sidebarMonsterPanel (the same markup, just also written into the
+      // wide-screen sidebar's top slot) above it. Live and Final both show
+      // just the monster-panel, centered -- no strip, no At Bat/Pitching
+      // line, no Previous Batter, no Game Summary button (that's up in the
+      // controls bar now). Only the preview state (game hasn't started)
+      // still uses the original top-strip layout, since there's no panel
+      // there to replace it.
+      const scoreBarHtml = monsterPanelHtml ? monsterPanelHtml : `
         <div class="score-strip">${scoreStripHtml}</div>
         ${subLineHtml ? `<div class="score-strip-sub">${subLineHtml}</div>` : ''}
       `;
+      scoreBottomBar.innerHTML = scoreBarHtml;
+      sidebarMonsterPanel.innerHTML = scoreBarHtml;
 
       body.innerHTML = `
         <div class="sheet">
@@ -5644,6 +5724,12 @@
       body.querySelectorAll('.table-scroll').forEach((el, i) => {
         if (scrollLefts[i]) el.scrollLeft = scrollLefts[i];
       });
+
+      // The wide-screen sidebar's own live-at-bat tracker -- livePkey was
+      // computed above from liveBatterInfo, and is only now safe to look up
+      // in pitchStore since the renderTeamTable calls just above are what
+      // populate it (see the isLiveCell branch in that cell-building loop).
+      updateSidebarAtBat(livePkey);
 
       clearInterval(pollTimer);
       if (state === 'Live') pollTimer = setInterval(() => fetchAndRender(gamePk), 7000);
@@ -5661,6 +5747,8 @@
       if (requestId !== fetchAndRenderRequestId) return;
       body.innerHTML = apiErrorMsg('game data');
       scoreBottomBar.innerHTML = '';
+      sidebarMonsterPanel.innerHTML = '';
+      updateSidebarAtBat(null);
     }
   }
 
@@ -5859,21 +5947,13 @@
     </div>`;
   }
 
-  function showPitchPopup(pkey) {
-    const c = pitchStore[pkey];
-    if (!c) return;
-    // A poll refresh re-renders whatever popup is already open by calling
-    // this again with the same pkey -- that's the only time a newly-arrived
-    // pitch should glow. Opening a pkey fresh (or a different one) shows its
-    // full pitch history at once, with nothing to call out as "just arrived".
-    const isRefresh = pkey === currentOpenPkey;
-    currentOpenPkey = pkey;
+  // Builds the at-bat detail markup shared by the dismissible popup
+  // (#pitchModalBody) and the always-on wide-screen sidebar (#sidebarAtBat)
+  // -- see showPitchPopup and updateSidebarAtBat, the two callers, each of
+  // which tracks its own "what's already been rendered" state so a poll
+  // refresh only glows the pitch(es) new to *that* consumer.
+  function renderPitchDetailHtml(c, newPitchNums) {
     const pitches = c.pitches || [];
-    const newPitchNums = new Set();
-    if (isRefresh) {
-      pitches.forEach(p => { if ((p.num || 0) > lastRenderedPitchNum) newPitchNums.add(p.num); });
-    }
-    lastRenderedPitchNum = pitches.reduce((max, p) => Math.max(max, p.num || 0), 0);
     let rows = '';
     if (pitches.length) {
       rows = pitches.map(p => `
@@ -5909,7 +5989,7 @@
 
     const locationHtml = pitches.length ? renderPitchLocation(pitches, c.batSide, c.pitchHand, c.isComplete, newPitchNums) : '';
 
-    pitchModalBody.innerHTML = `
+    return `
       <div class="pitch-header">${c.batterName || 'Batter'}</div>
       <div class="pitch-subheader">vs ${c.pitcherFullName || 'pitcher'}</div>
       ${c.videoUrl ? `<a class="pog-watch" href="${c.videoUrl}" target="_blank" rel="noopener noreferrer">Watch &#9654;</a>` : ''}
@@ -5919,16 +5999,35 @@
       ${eventsHtml}
       ${c.playDesc ? `<div class="pitch-final-desc">${c.playDesc}</div>` : ''}
     `;
+  }
+
+  function showPitchPopup(pkey) {
+    const c = pitchStore[pkey];
+    if (!c) return;
+    // A poll refresh re-renders whatever popup is already open by calling
+    // this again with the same pkey -- that's the only time a newly-arrived
+    // pitch should glow. Opening a pkey fresh (or a different one) shows its
+    // full pitch history at once, with nothing to call out as "just arrived".
+    const isRefresh = pkey === currentOpenPkey;
+    currentOpenPkey = pkey;
+    const pitches = c.pitches || [];
+    const newPitchNums = new Set();
+    if (isRefresh) {
+      pitches.forEach(p => { if ((p.num || 0) > lastRenderedPitchNum) newPitchNums.add(p.num); });
+    }
+    lastRenderedPitchNum = pitches.reduce((max, p) => Math.max(max, p.num || 0), 0);
+    pitchModalBody.innerHTML = renderPitchDetailHtml(c, newPitchNums);
     pitchOverlay.classList.add('open');
-    wirePitchLocationSync();
+    wirePitchLocationSync(pitchModalBody);
   }
 
   // Hovering a table row highlights its dot in the location plot and vice
   // versa -- both sides carry the pitch number in data-num so no extra
-  // state is needed to find the match.
-  function wirePitchLocationSync() {
-    const rows = pitchModalBody.querySelectorAll('table.pitch-table tr[data-num]');
-    const dots = pitchModalBody.querySelectorAll('.loc-dot[data-num]');
+  // state is needed to find the match. Shared by the popup and the sidebar
+  // tracker, each wiring up its own container's rows/dots independently.
+  function wirePitchLocationSync(container) {
+    const rows = container.querySelectorAll('table.pitch-table tr[data-num]');
+    const dots = container.querySelectorAll('.loc-dot[data-num]');
     if (!rows.length || !dots.length) return;
     const setActive = (num, on) => {
       if (!num) return;
@@ -5951,6 +6050,39 @@
     pitchOverlay.classList.remove('open');
     currentOpenPkey = null;
     lastRenderedPitchNum = 0;
+  }
+
+  // Wide-screen sidebar's own copy of the popup's "what's already showing"
+  // state (see currentOpenPkey/lastRenderedPitchNum above) -- kept separate
+  // so opening the popup for some other at-bat (e.g. a completed one earlier
+  // in the game) never fights with what the sidebar is tracking live, and
+  // vice versa.
+  let sidebarAtBatPkey = null;
+  let sidebarLastRenderedPitchNum = 0;
+
+  // Renders the live/current at-bat (see the livePkey computed in
+  // fetchAndRender) into the always-on #sidebarAtBat column. pkey is null
+  // whenever there's no at-bat actually in progress (game not started,
+  // between innings/at-bats, or Final) -- see the isLiveCell/liveBatterInfo
+  // gating in fetchAndRender for what counts as "in progress".
+  function updateSidebarAtBat(pkey) {
+    const c = pkey ? pitchStore[pkey] : null;
+    if (!c) {
+      sidebarAtBatPkey = null;
+      sidebarLastRenderedPitchNum = 0;
+      sidebarAtBatEl.innerHTML = '<div class="pitch-empty">No at-bat in progress.</div>';
+      return;
+    }
+    const isRefresh = pkey === sidebarAtBatPkey;
+    sidebarAtBatPkey = pkey;
+    const pitches = c.pitches || [];
+    const newPitchNums = new Set();
+    if (isRefresh) {
+      pitches.forEach(p => { if ((p.num || 0) > sidebarLastRenderedPitchNum) newPitchNums.add(p.num); });
+    }
+    sidebarLastRenderedPitchNum = pitches.reduce((max, p) => Math.max(max, p.num || 0), 0);
+    sidebarAtBatEl.innerHTML = renderPitchDetailHtml(c, newPitchNums);
+    wirePitchLocationSync(sidebarAtBatEl);
   }
 
   const rosterOverlay = document.getElementById('rosterOverlay');
@@ -6292,6 +6424,17 @@
     showPlayerProfile({ id: playerId, fullName: (info && info.name) || '' });
   }
 
+  // Feeds .scorecard-sidebar's sticky top offset (--tab-header-h, read in
+  // CSS) so the sidebar clamps to just below the sticky .tab-header instead
+  // of sliding under it -- the header's own height isn't a fixed constant,
+  // since its controls row differs per tab and can wrap at some widths.
+  const mlbRootEl = document.getElementById('mlb-root');
+  const tabHeaderEl = document.querySelector('.tab-header');
+  function syncTabHeaderHeight() {
+    if (mlbRootEl && tabHeaderEl) mlbRootEl.style.setProperty('--tab-header-h', tabHeaderEl.offsetHeight + 'px');
+  }
+  window.addEventListener('resize', syncTabHeaderHeight);
+
   Tabs.register('daily', {
     init: () => {
       findLastStartedDate().then(dateStr => {
@@ -6300,7 +6443,7 @@
       });
     }
   });
-  Tabs.register('scorecard');
+  Tabs.register('scorecard', { onShow: syncTabHeaderHeight });
   Tabs.register('standings', { init: () => loadStandings(standingsDateInput.value) });
   Tabs.register('schedule', { init: () => { populateTeamSelect(scheduleTeamSelect, SCHEDULE_TEAM_KEY); loadTeamSchedule(scheduleTeamSelect.value); } });
   Tabs.register('roster', { init: () => { populateTeamSelect(rosterTabTeamSelect, ROSTER_TAB_TEAM_KEY); loadRosterTab(rosterTabTeamSelect.value); } });
