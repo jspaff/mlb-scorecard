@@ -875,12 +875,33 @@
      fill the rest of the viewport, fit-content's whole reason for existing
      -- avoiding trailing empty space "at the edge of a wide viewport" per
      the comment above -- no longer applies at this width: the sidebar is
-     that edge now. Overrides back to a full-width table, same as before
-     fit-content was introduced; must come after the 700px rule above (same
-     specificity, so source order decides) to actually win at widths where
-     both queries match. */
+     that edge now. Overrides back to a full-width wrap AND table (see the
+     "No width: 100%" comment by table.scorecard-table below for why the
+     table itself normally stays auto-width) so the innings actually
+     stretch to reach it, rather than leaving the wrap wider than the
+     table's own content -- that would fill the wrap but still leave the
+     header buttons/pitcher card sitting past the last inning's real right
+     edge instead of landing on it. Must come after the 700px rule above
+     (same specificity on .team-scorecard-wrap, so source order decides) to
+     win at widths where both queries match -- table.scorecard-table's own
+     base rule never sets width at all (see its own comment), so there's no
+     ordering issue for that override regardless of where it sits. */
   @media (min-width: 1100px) {
     .team-scorecard-wrap { width: 100%; }
+    table.scorecard-table { width: 100%; }
+    /* table-layout: fixed's extra-width redistribution turns out NOT to
+       respect max-width on individual cells (tested: Player/Pos visibly
+       inflate past their pinned 96px/34px right along with the innings if
+       every column keeps an explicit width) -- CSS2.1's fixed-table
+       algorithm only guarantees unclaimed table width goes to columns
+       whose width is auto, not "capped". So Player/Pos keep their explicit
+       width (unaffected, as before) while the innings switch to auto here,
+       specifically to be the ones that receive 100% of the stretch --
+       .cell already covers every inning td regardless of its other
+       modifier classes (sub-divider/pitcher-change/starter-span), see
+       buildTeamRows' cls string. */
+    table.scorecard-table th:not(.ply):not(.pos) { width: auto; }
+    table.scorecard-table td.cell { width: auto; }
   }
 
   .spray-card {
