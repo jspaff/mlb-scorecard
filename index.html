@@ -3527,11 +3527,13 @@
     const todayHtml = `
       <div class="player-stat-line"><span class="psl-label">Today</span><span>${s.hits ?? 0}-${s.atBats ?? 0}, ${s.rbi ?? 0} RBI, ${s.baseOnBalls ?? 0} BB, ${s.homeRuns ?? 0} HR</span></div>`;
     const seasonHtml = seasonStat
-      ? `<div class="player-stat-line"><span class="psl-label">AVG</span><span>${seasonStat.avg ?? '&#8212;'}</span></div>
+      ? `<div class="player-stat-line"><span class="psl-label">G</span><span>${seasonStat.gamesPlayed ?? '&#8212;'}</span></div>
+         <div class="player-stat-line"><span class="psl-label">AVG</span><span>${seasonStat.avg ?? '&#8212;'}</span></div>
          <div class="player-stat-line"><span class="psl-label">OBP</span><span>${seasonStat.obp ?? '&#8212;'}</span></div>
          <div class="player-stat-line"><span class="psl-label">SLG</span><span>${seasonStat.slg ?? '&#8212;'}</span></div>
          <div class="player-stat-line"><span class="psl-label">HR</span><span>${seasonStat.homeRuns ?? '&#8212;'}</span></div>
-         <div class="player-stat-line"><span class="psl-label">RBI</span><span>${seasonStat.rbi ?? '&#8212;'}</span></div>`
+         <div class="player-stat-line"><span class="psl-label">RBI</span><span>${seasonStat.rbi ?? '&#8212;'}</span></div>
+         <div class="player-stat-line"><span class="psl-label">SB</span><span>${formatStolenBases(seasonStat.stolenBases, seasonStat.caughtStealing)}</span></div>`
       : `<div class="pitch-empty">Season stats not available.</div>`;
     const awardsHtml = renderAwardTags(awardTags);
     return `
@@ -6013,6 +6015,16 @@
     return value < 1 ? fixed.slice(1) : fixed;
   }
 
+  // Stolen bases as "made/attempted" (e.g. "20/24") instead of separate
+  // SB/CS columns -- reads the attempt rate at a glance the way a broadcast
+  // graphic would. null/undefined sb means the stat wasn't in the payload at
+  // all (as opposed to a real 0), so that's the only case that falls back to
+  // the table's usual em dash.
+  function formatStolenBases(sb, cs) {
+    if (sb == null) return '&#8212;';
+    return `${sb}/${sb + (cs || 0)}`;
+  }
+
   function renderCareerTable(splits) {
     const stintsBySeason = new Map();
     splits.forEach(s => {
@@ -6024,19 +6036,20 @@
       const avg = formatRate(y.hits, y.atBats);
       const obp = formatRate(y.hits + y.baseOnBalls + y.hitByPitch, y.atBats + y.baseOnBalls + y.hitByPitch + y.sacFlies);
       const slg = formatRate(y.totalBases, y.atBats);
-      const yearRow = `<tr class="career-year-row"><td>${y.season}</td><td>${team}</td><td>${y.gamesPlayed}</td><td>${avg}</td><td>${obp}</td><td>${slg}</td><td>${y.doubles}</td><td>${y.triples}</td><td>${y.homeRuns}</td><td>${y.stolenBases}</td><td>${y.caughtStealing}</td></tr>`;
+      const sb = formatStolenBases(y.stolenBases, y.caughtStealing);
+      const yearRow = `<tr class="career-year-row"><td>${y.season}</td><td>${team}</td><td>${y.gamesPlayed}</td><td>${avg}</td><td>${obp}</td><td>${slg}</td><td>${y.doubles}</td><td>${y.triples}</td><td>${y.homeRuns}</td><td>${sb}</td></tr>`;
       const stints = stintsBySeason.get(y.season) || [];
       const subRows = stints.length > 1
         ? stints.map(s => {
             const stat = s.stat || {};
             const teamName = (s.team && teamNickname(s.team)) || '&#8212;';
-            return `<tr class="career-team-subrow"><td></td><td>${teamName}</td><td>${stat.gamesPlayed ?? '&#8212;'}</td><td>${stat.avg ?? '&#8212;'}</td><td>${stat.obp ?? '&#8212;'}</td><td>${stat.slg ?? '&#8212;'}</td><td>${stat.doubles ?? '&#8212;'}</td><td>${stat.triples ?? '&#8212;'}</td><td>${stat.homeRuns ?? '&#8212;'}</td><td>${stat.stolenBases ?? '&#8212;'}</td><td>${stat.caughtStealing ?? '&#8212;'}</td></tr>`;
+            return `<tr class="career-team-subrow"><td></td><td>${teamName}</td><td>${stat.gamesPlayed ?? '&#8212;'}</td><td>${stat.avg ?? '&#8212;'}</td><td>${stat.obp ?? '&#8212;'}</td><td>${stat.slg ?? '&#8212;'}</td><td>${stat.doubles ?? '&#8212;'}</td><td>${stat.triples ?? '&#8212;'}</td><td>${stat.homeRuns ?? '&#8212;'}</td><td>${formatStolenBases(stat.stolenBases, stat.caughtStealing)}</td></tr>`;
           }).join('')
         : '';
       return yearRow + subRows;
     });
     return `<div class="table-scroll"><table class="pitch-table career-table">
-        <thead><tr><th>Year</th><th>Team</th><th>G</th><th>AVG</th><th>OBP</th><th>SLG</th><th>2B</th><th>3B</th><th>HR</th><th>SB</th><th>CS</th></tr></thead>
+        <thead><tr><th>Year</th><th>Team</th><th>G</th><th>AVG</th><th>OBP</th><th>SLG</th><th>2B</th><th>3B</th><th>HR</th><th>SB</th></tr></thead>
         <tbody>${rows.join('')}</tbody>
       </table></div>`;
   }
