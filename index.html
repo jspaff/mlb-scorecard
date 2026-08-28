@@ -233,6 +233,12 @@
   .scorecard-sidebar { display: none; }
 
   @media (min-width: 1100px) {
+    /* --sidebar-w is the one place this width is set -- .scorecard-main's
+       margin-right below derives from it instead of repeating the number,
+       so the two can never drift out of sync. Wide enough that the
+       monster scoreboard's innings grid (see .monster-box-cell's own
+       fixed width) needs less horizontal scrolling to reach extra innings. */
+    .scorecard-layout { --sidebar-w: 440px; }
     /* The bottom bar and the sidebar are two skins on the same data (see
        fetchAndRender, which now writes the monster panel into both) --
        wide screens get the sidebar instead of the fixed bar, so the grid
@@ -242,7 +248,7 @@
     .scorecard-sidebar {
       display: flex;
       flex-direction: column;
-      width: 320px;
+      width: var(--sidebar-w);
       flex-shrink: 0;
       /* Pinned to the viewport, not sticky-in-flow -- .scorecard-main's own
          scrollbar (the page can grow tall with a long extra-innings grid)
@@ -264,9 +270,9 @@
     /* Reserves the width .scorecard-sidebar would otherwise occupy -- now
        that it's position: fixed (out of flow), .scorecard-layout's own
        flex gap no longer does this, so the grid needs an explicit margin
-       matching the sidebar's width (320px) plus the same 16px gap or its
-       horizontal scroller would run underneath the fixed panel. */
-    .scorecard-main { margin-right: 336px; }
+       matching the sidebar's width (--sidebar-w) plus the same 16px gap or
+       its horizontal scroller would run underneath the fixed panel. */
+    .scorecard-main { margin-right: calc(var(--sidebar-w) + 16px); }
   }
 
   /* The scorecard grid is the point of this tab, so the header stays down
@@ -864,6 +870,17 @@
      that overflow to .table-scroll where it belongs. */
   @media (min-width: 700px) {
     .team-scorecard-wrap { width: fit-content; max-width: 100%; }
+  }
+  /* Once .scorecard-sidebar (see the wide breakpoint further up) is there to
+     fill the rest of the viewport, fit-content's whole reason for existing
+     -- avoiding trailing empty space "at the edge of a wide viewport" per
+     the comment above -- no longer applies at this width: the sidebar is
+     that edge now. Overrides back to a full-width table, same as before
+     fit-content was introduced; must come after the 700px rule above (same
+     specificity, so source order decides) to actually win at widths where
+     both queries match. */
+  @media (min-width: 1100px) {
+    .team-scorecard-wrap { width: 100%; }
   }
 
   .spray-card {
