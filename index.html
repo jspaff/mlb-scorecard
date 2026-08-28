@@ -3038,8 +3038,22 @@
   // unfiltered, that play gets treated as a completed at-bat: it grabs a
   // cell in the grid, and getPlayCode falls back to an initialism (e.g.
   // "Batter Timeout" -> "BT") that shows up in place of the real result.
+  //
+  // The same quirk shows up for baserunning-only events (a pickoff, a
+  // caught stealing, a stolen base, a wild pitch, a balk...) when one of
+  // them ends the half-inning while the current batter's plate appearance
+  // is still open -- MLB logs it under that same open atBatIndex, so
+  // without filtering it out here the *batter's* cell would show a
+  // fielder/baserunning code (e.g. "Pickoff 1B" -> "P1") that was never
+  // actually their result. The runner who was actually picked off/caught
+  // stealing/etc. still gets it recorded correctly -- as an outEdge/
+  // specialEdge on THEIR OWN diamond, via the play.runners walk in pass 2
+  // of buildTeamRows, which doesn't depend on this play counting as the
+  // batter's result. That batter's real plate appearance (still open)
+  // resumes as its own fresh play, usually leading off the next inning.
   const NON_RESULT_EVENT_RE = new RegExp(
-    [...PAUSE_TERMS, 'pitching change', 'pitching sub', 'defensive sub', 'defensive switch', 'offensive sub', 'game advisory'].join('|'),
+    [...PAUSE_TERMS, 'pitching change', 'pitching sub', 'defensive sub', 'defensive switch', 'offensive sub', 'game advisory',
+      'pickoff', 'caught stealing', 'stolen base', 'wild pitch', 'passed ball', 'balk', 'defensive indiff', 'runner out'].join('|'),
     'i'
   );
 
