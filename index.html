@@ -5980,13 +5980,17 @@
   // Catcher's-eye strike-zone plot: pX/pZ are feet from the plate's center
   // and feet off the ground respectively (see extractPitches). Renders
   // nothing if not one single pitch in the at-bat has location data, rather
-  // than showing an empty box. newPitchNums is the set of pitch numbers that
+  // than showing an empty box -- UNLESS allowEmpty is set, which skips that
+  // guard so the bare zone/plate can still render with no markers at all,
+  // for the sidebar's own "no at-bat in progress" placeholder (see
+  // sidebarAtBatPlaceholderHtml) where there's no real pitch data to ask
+  // for in the first place. newPitchNums is the set of pitch numbers that
   // just arrived since the last render of this same popup (see
   // showPitchPopup) -- empty on a fresh open, so nothing glows just from
   // clicking into an at-bat that already has a full pitch history.
-  function renderPitchLocation(pitches, batSide, pitchHand, isComplete, newPitchNums) {
+  function renderPitchLocation(pitches, batSide, pitchHand, isComplete, newPitchNums, allowEmpty) {
     const located = pitches.filter(p => typeof p.px === 'number' && typeof p.pz === 'number');
-    if (!located.length) return '';
+    if (!located.length && !allowEmpty) return '';
 
     const withZone = located.find(p => typeof p.szTop === 'number' && typeof p.szBot === 'number');
     const szTop = withZone ? withZone.szTop : 3.5;
@@ -6147,17 +6151,28 @@
   let sidebarAtBatPkey = null;
   let sidebarLastRenderedPitchNum = 0;
 
+  // Bare zone/plate with no batter box, pitcher release marker, or pitch
+  // dots -- keeps the sidebar's shape/proportions the same whether or not
+  // there's an at-bat to show, rather than collapsing to a line of text,
+  // so the panel doesn't visibly resize (and drag the fixed-position card's
+  // height around) every time play pauses between at-bats. allowEmpty is
+  // what lets renderPitchLocation draw the zone despite zero pitches.
+  function sidebarAtBatPlaceholderHtml() {
+    return `<div class="pitch-empty">No at-bat in progress.</div>${renderPitchLocation([], null, null, false, null, true)}`;
+  }
+
   // Renders the live/current at-bat (see the livePkey computed in
   // fetchAndRender) into the always-on #sidebarAtBat column. pkey is null
   // whenever there's no at-bat actually in progress (game not started,
   // between innings/at-bats, or Final) -- see the isLiveCell/liveBatterInfo
-  // gating in fetchAndRender for what counts as "in progress".
+  // gating in fetchAndRender for what counts as "in progress" -- in which
+  // case sidebarAtBatPlaceholderHtml() stands in with an empty zone.
   function updateSidebarAtBat(pkey) {
     const c = pkey ? pitchStore[pkey] : null;
     if (!c) {
       sidebarAtBatPkey = null;
       sidebarLastRenderedPitchNum = 0;
-      sidebarAtBatEl.innerHTML = '<div class="pitch-empty">No at-bat in progress.</div>';
+      sidebarAtBatEl.innerHTML = sidebarAtBatPlaceholderHtml();
       return;
     }
     const isRefresh = pkey === sidebarAtBatPkey;
