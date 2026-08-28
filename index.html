@@ -1701,6 +1701,25 @@
     box-shadow: 0 10px 40px rgba(0,0,0,0.5);
   }
 
+  /* Wraps the monster scoreboard (renderMonsterPanel's markup, written in
+     here verbatim by fetchAndRender -- see sidebarMonsterPanel) in its own
+     "Green Monster" wall-colored card, so it reads as a real panel instead
+     of floating unbounded on #mlb-root's own --frame background (which is
+     a lighter, less saturated green than this) -- flush against the top of
+     .scorecard-sidebar so it lines up with .sheet's top edge on the left.
+     .monster-box-cell/.monster-count-label/etc. already use --ink for text,
+     which this card gives a proper dark backdrop to; that pairing is the
+     same one .tab-header already relies on against --frame, just deeper. */
+  #sidebarMonsterPanel:not(:empty) {
+    background: var(--monster-green-dim);
+    border-radius: 8px;
+    padding: 14px;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.25) inset, 0 4px 14px rgba(0,0,0,0.35);
+  }
+  /* .monster-panel itself is inline-flex and sized to its content -- center
+     it in the card rather than letting it hug the left edge. */
+  #sidebarMonsterPanel { text-align: center; }
+
   /* Sits below the monster scoreboard in .scorecard-sidebar (see the wide
      breakpoint above) and reuses the same inner markup/classes as
      #pitchModalBody (.pitch-header, .pitch-table, .loc-section, ...) --
