@@ -6081,25 +6081,29 @@
   // -- see showPitchPopup and updateAtBatTrackers, the two callers, each of
   // which tracks its own "what's already been rendered" state so a poll
   // refresh only glows the pitch(es) new to *that* consumer.
+  // Table shell (headers included) always renders, tbody empty when there
+  // are no pitches yet -- same "structure stays, content changes" approach
+  // as renderPitchLocation's allowEmpty, so the table doesn't wink in and
+  // out (or get replaced by a text placeholder) around the exact moments
+  // the zone above it would otherwise be doing the same thing.
+  function renderPitchTable(pitches) {
+    const rowsHtml = pitches.map(p => `
+      <tr data-num="${p.num || ''}"${p.hasReview ? ' class="challenged"' : ''}>
+        <td class="pnum">${p.num || ''}</td>
+        <td>${p.type}${p.speed ? ' &#183; ' + p.speed + ' mph' : ''}</td>
+        <td class="${RESULT_CLASS(p.result)}">${p.result || ''}${p.hasReview ? ' <span class="abs-tag" title="ABS challenge">ABS</span>' : ''}</td>
+        <td class="pcount">${p.balls != null ? p.balls : ''}-${p.strikes != null ? p.strikes : ''}</td>
+      </tr>
+    `).join('');
+    return `<table class="pitch-table">
+      <thead><tr><th>#</th><th>Pitch</th><th>Result</th><th>Count</th></tr></thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>`;
+  }
+
   function renderPitchDetailHtml(c, newPitchNums) {
     const pitches = c.pitches || [];
-    let rows = '';
-    if (pitches.length) {
-      rows = pitches.map(p => `
-        <tr data-num="${p.num || ''}"${p.hasReview ? ' class="challenged"' : ''}>
-          <td class="pnum">${p.num || ''}</td>
-          <td>${p.type}${p.speed ? ' &#183; ' + p.speed + ' mph' : ''}</td>
-          <td class="${RESULT_CLASS(p.result)}">${p.result || ''}${p.hasReview ? ' <span class="abs-tag" title="ABS challenge">ABS</span>' : ''}</td>
-          <td class="pcount">${p.balls != null ? p.balls : ''}-${p.strikes != null ? p.strikes : ''}</td>
-        </tr>
-      `).join('');
-      rows = `<table class="pitch-table">
-        <thead><tr><th>#</th><th>Pitch</th><th>Result</th><th>Count</th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table>`;
-    } else {
-      rows = '<div class="pitch-empty">No pitch-by-pitch data available for this plate appearance.</div>';
-    }
+    const rows = renderPitchTable(pitches);
 
     const events = c.events || [];
     const eventsHtml = events.length
@@ -6203,16 +6207,18 @@
   let atBatTrackerPkey = null;
   let atBatTrackerLastRenderedPitchNum = 0;
 
-  // Bare zone/plate with no batter box, pitcher release marker, or pitch
-  // dots -- keeps each tracker's shape/proportions the same whether or not
-  // there's an at-bat to show, rather than collapsing to a line of text,
-  // so the panel doesn't visibly resize (and drag the fixed-position
-  // sidebar's height around) every time play pauses between at-bats.
-  // allowEmpty is what lets renderPitchLocation draw the zone despite zero
-  // pitches, and the batter/pitcher lines fall back to placeholder dashes
-  // the same way renderPitchDetailHtml does for a real at-bat with no name.
+  // Bare zone/plate and an empty (but header-visible) pitch table, with no
+  // batter box, pitcher release marker, or pitch rows -- keeps each
+  // tracker's shape/proportions the same whether or not there's an at-bat
+  // to show, rather than collapsing to a line of text, so the panel
+  // doesn't visibly resize (and drag the fixed-position sidebar's height
+  // around) every time play pauses between at-bats. allowEmpty is what
+  // lets renderPitchLocation draw the zone despite zero pitches,
+  // renderPitchTable([]) does the same for the table shell, and the
+  // batter/pitcher lines fall back to placeholder dashes the same way
+  // renderPitchDetailHtml does for a real at-bat with no name.
   function atBatTrackerPlaceholderHtml() {
-    return `<div class="pitch-header">&#8212;</div><div class="pitch-subheader">vs &#8212;</div><div class="pitch-empty">No at-bat in progress.</div>${renderPitchLocation([], null, null, false, null, true)}`;
+    return `<div class="pitch-header">&#8212;</div><div class="pitch-subheader">vs &#8212;</div><div class="pitch-empty">No at-bat in progress.</div>${renderPitchLocation([], null, null, false, null, true)}${renderPitchTable([])}`;
   }
 
   // Renders the live/current at-bat (see the livePkey computed in
