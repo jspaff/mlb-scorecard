@@ -1516,6 +1516,11 @@
     border-top: 1px solid var(--paper);
   }
   .sub-note { font-size: 10px; color: var(--ink-soft); opacity: 0.85; font-style: italic; }
+  /* Jersey-number fallback for the scorecard grid's Player buttons -- shown
+     only under the max-width: 520px breakpoint below, where it swaps places
+     with .pnb-name so the frozen Player column can shrink from last-name
+     width down to jersey-number width. */
+  .pnb-num { display: none; }
 
   .footnote {
     font-size: 10.5px;
@@ -1903,6 +1908,15 @@
     .cal-game-opp { font-size: 16px; margin-top: 2px; }
     .cal-daynum { font-size: 7px; }
     .calendar-day.is-dh .cal-game-opp { font-size: 12px; margin-top: 1px; }
+    /* The scorecard grid isn't built for a narrow screen and never will be
+       -- but the frozen Player column eating a fixed 118px of a phone's
+       width is the single biggest, cheapest thing to reclaim: swap the
+       last-name button for a jersey-number one and shrink the column (and
+       Pos's sticky offset, which has to match it) down to fit. */
+    .pnb-name { display: none; }
+    .pnb-num { display: inline; }
+    table.scorecard-table th.ply, table.scorecard-table td.ply { width: 56px; }
+    table.scorecard-table th.pos, table.scorecard-table td.pos { left: 56px; }
   }
 </style>
 </head>
@@ -2814,6 +2828,7 @@
         id: p.person.id,
         name: p.person.fullName,
         lastName: lastNameOf(p.person, personIndex),
+        number: p.jerseyNumber || '',
         pos: (p.position && p.position.abbreviation) || '',
         order,
         stats: (p.stats && p.stats.batting) || {}
@@ -3856,7 +3871,7 @@
   function placeholderLineupRows() {
     return Array.from({ length: 9 }, (_, i) => ({
       slot: i + 1,
-      players: [{ id: '', name: '', lastName: '', pos: '', order: (i + 1) * 100, stats: {} }],
+      players: [{ id: '', name: '', lastName: '', number: '', pos: '', order: (i + 1) * 100, stats: {} }],
       cells: {}
     }));
   }
@@ -3873,7 +3888,11 @@
       const nameHtml = r.players.map((p, i) => {
         if (!p.id) return '';
         playerStore[p.id] = { id: p.id, name: p.name, pos: p.pos, team: teamName, season, todayStats: p.stats };
-        const btn = `<button type="button" class="player-name-btn" data-player-id="${p.id}" title="${p.name}">${p.lastName}</button>`;
+        // Both spans always render; a narrow-mobile media query swaps which
+        // one is visible so the Player column can shrink to jersey-number
+        // width there instead of a whole last name -- see .pnb-num/.pnb-name.
+        const numLabel = p.number ? `#${p.number}` : p.lastName;
+        const btn = `<button type="button" class="player-name-btn" data-player-id="${p.id}" title="${p.name}"><span class="pnb-name">${p.lastName}</span><span class="pnb-num">${numLabel}</span></button>`;
         return i === 0 ? btn : `<span class="sub-note">&#8594; ${btn}</span>`;
       }).join('<br/>');
       const posHtml = r.players.map((p, i) => i === 0 ? p.pos : `<span class="sub-note">${p.pos}</span>`).join('<br/>');
