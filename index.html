@@ -1172,16 +1172,6 @@
   }
   .calendar-day.is-home .cal-game-opp { color: var(--paper); }
   .calendar-day.is-away .cal-game-opp { color: var(--ink); }
-  .cal-game-time {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 7.5px;
-    opacity: 0.75;
-    line-height: 1;
-    margin-bottom: 1px;
-    white-space: nowrap;
-  }
-  .calendar-day.is-home .cal-game-time { color: var(--paper); }
-  .calendar-day.is-away .cal-game-time { color: var(--ink); }
   .calendar-day.is-dh .cal-game-opp { font-size: 17px; margin-top: 1px; }
   .standings-team {
     flex: 1;
@@ -1878,7 +1868,6 @@
     .roster-columns { flex-direction: column; gap: 14px 0; }
     .calendar-day { min-height: 52px; padding: 2px 1px 3px; }
     .cal-game-opp { font-size: 16px; margin-top: 2px; }
-    .cal-game-time { font-size: 6.5px; }
     .cal-daynum { font-size: 7px; }
     .calendar-day.is-dh .cal-game-opp { font-size: 12px; margin-top: 1px; }
   }
@@ -4163,9 +4152,7 @@
       } else if (games && games.length) {
         const homeAway = games[0].isHome ? 'is-home' : 'is-away';
         const isDH = games.length > 1 ? ' is-dh' : '';
-        const lines = games.length > 1
-          ? games.map(g => `<div class="cal-game-opp">${g.opponent}</div>`).join('')
-          : `<div class="cal-game-opp">${games[0].opponent}</div><div class="cal-game-time">${formatGameTime(games[0].gameDate)}</div>`;
+        const lines = games.map(g => `<div class="cal-game-opp">${g.opponent}</div>`).join('');
         cells += `<div class="calendar-day is-game ${homeAway}${today}${isDH}" data-date="${dateStr}" tabindex="0" role="button">
           <div class="cal-daynum">${day}</div>
           ${lines}
