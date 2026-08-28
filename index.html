@@ -1368,18 +1368,37 @@
   }
   table.scorecard-table th.ply { text-align: left; }
   table.scorecard-table th.pos { text-align: center; }
-  table.scorecard-table th.ply { position: sticky; left: 0; background: var(--paper); z-index: 3; width: 118px; }
+  /* width/min-width/max-width are all pinned to the same value (not just
+     width) on every frozen cell below, and each also gets a transform hint
+     to force its own GPU compositing layer -- both are standard mitigations
+     for a well-documented class of WebKit bug where a sticky table cell's
+     rendered width visibly wobbles/squishes mid-scroll (it recomputes
+     against the scrollport instead of respecting the column's own defined
+     width) rather than staying fixed like a sticky block element would. */
+  table.scorecard-table th.ply {
+    position: sticky;
+    left: 0;
+    background: var(--paper);
+    z-index: 3;
+    width: 118px;
+    min-width: 118px;
+    max-width: 118px;
+    transform: translateZ(0);
+  }
   /* Pos is frozen right alongside Player now (left offset = Player's own
      118px width) instead of scrolling off with the innings -- the box-shadow
      is what actually marks the freeze boundary, see td.pos below for why
      it's an inset shadow and not a border-right. */
   table.scorecard-table th.pos {
     width: 34px;
+    min-width: 34px;
+    max-width: 34px;
     position: sticky;
     left: 118px;
     background: var(--paper);
     z-index: 3;
     box-shadow: inset -1px 0 0 rgba(243, 236, 219, 0.18);
+    transform: translateZ(0);
   }
   table.scorecard-table th.inning-cont { border-left: none; color: var(--gold); }
 
@@ -1401,10 +1420,13 @@
     text-overflow: ellipsis;
     padding: 3px 0;
     width: 118px;
+    min-width: 118px;
+    max-width: 118px;
     position: sticky;
     left: 0;
     background: var(--paper);
     z-index: 2;
+    transform: translateZ(0);
   }
   table.scorecard-table td.ply .player-name-btn {
     display: block;
@@ -1435,11 +1457,14 @@
     text-transform: uppercase;
     padding-right: 0;
     width: 34px;
+    min-width: 34px;
+    max-width: 34px;
     position: sticky;
     left: 118px;
     background: var(--paper);
     z-index: 2;
     box-shadow: inset -1px 0 0 rgba(243, 236, 219, 0.18);
+    transform: translateZ(0);
   }
   table.scorecard-table td.cell { width: 52px; height: 64px; padding: 3px 1px 7px; }
   table.scorecard-table td.sub-divider { border-left: 1px dashed rgba(28,58,44,0.3); }
@@ -1920,7 +1945,12 @@
        that just leaves the two looking mismatched as you scroll. */
     .pnb-name, .th-full { display: none; }
     .pnb-num, .th-short { display: inline; }
-    table.scorecard-table th.ply, table.scorecard-table td.ply { width: 34px; text-align: center; }
+    table.scorecard-table th.ply, table.scorecard-table td.ply {
+      width: 34px;
+      min-width: 34px;
+      max-width: 34px;
+      text-align: center;
+    }
     table.scorecard-table th.pos, table.scorecard-table td.pos { left: 34px; }
     table.scorecard-table td.pos { padding-left: 0; }
     /* Without this, the base 640px floor (comfortably covered before, once
