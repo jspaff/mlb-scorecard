@@ -1969,6 +1969,12 @@
     table.scorecard-table th.pos, table.scorecard-table td.pos { left: 34px; }
     table.scorecard-table td.pos { padding-left: 0; }
     table.scorecard-table td.ply .player-name-btn { padding: 2px 3px; }
+    /* Substitute lines match the starter's own alignment/spacing here
+       instead of the indented, more spaced-out look that's fine at full
+       Player width but just wastes room at 34px -- no left padding (so it
+       doesn't read as indented relative to the starter above it) and no
+       vertical padding (so stacked substitutions sit closer together). */
+    table.scorecard-table td.ply .sub-note { padding: 0; }
   }
 </style>
 </head>
