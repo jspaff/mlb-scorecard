@@ -1443,6 +1443,16 @@
     z-index: 2;
     transform: translateZ(0);
   }
+  /* A starter and any substitutes stack as flex items with an explicit gap,
+     rather than being <br>-joined inline content -- a <button>'s
+     line-height doesn't reliably inherit from an ancestor the way plain
+     text's does (browser default stylesheets tend to pin form controls to
+     line-height: normal), so Player's <button> entries and Pos's plain-text
+     ones drifted out of sync with each other however carefully the <br>
+     and line-heights were tuned to try to match them. flex + gap sidesteps
+     that: the space between entries is explicit and independent of what's
+     inside them. */
+  .ply-stack, .pos-stack { display: flex; flex-direction: column; gap: 3px; }
   table.scorecard-table td.ply .player-name-btn {
     display: block;
     width: 100%;
@@ -1968,26 +1978,30 @@
     }
     table.scorecard-table th.pos, table.scorecard-table td.pos { left: 34px; }
     table.scorecard-table td.pos { padding-left: 0; }
-    /* The real culprit: Player's entries are <button>s (their own border +
-       padding + line-height on top of whatever the cell contributes) while
-       Pos's entries are bare text (just a line-height, no border/padding of
-       their own) -- so even with the <br> between entries shrunk to
-       nothing, a button's total height was taller than a line of plain
-       text, and every substitute drifted further out of sync with its Pos
-       entry the more of them stacked up. Fixed by making both exactly the
-       same height per entry: an absolute px line-height (not a multiplier)
-       set once on both cells, inherited as-is by everything inside them --
-       button text, plain Pos text, and the <br> between entries alike --
-       regardless of their different font-sizes; and stripping the button
-       down to no border/no vertical padding so its box doesn't add
-       anything beyond that one shared line-height.  */
-    table.scorecard-table td.ply, table.scorecard-table td.pos { line-height: 13px; }
-    /* Entries themselves stay at the shared 13px line-height above (that's
-       what keeps Player/Pos in sync); this more specific selector only
-       overrides the <br> between them, so the gap it renders is a small,
-       explicit 4px instead of another full 13px line. */
-    table.scorecard-table td.ply br, table.scorecard-table td.pos br { line-height: 4px; }
-    table.scorecard-table td.ply .player-name-btn { padding: 0 2px; border: none; }
+    /* Tighter than the desktop default (see .ply-stack/.pos-stack above) --
+       and, critically, the same value in both columns so a starter and its
+       substitute(s) land at the same height in Player as in Pos. */
+    .ply-stack, .pos-stack { gap: 2px; }
+    /* Every entry in both stacks gets the same explicit height, centering
+       its own content within it -- this (not the gap above) is what
+       actually keeps Player and Pos in row-for-row sync: a <button> and a
+       bare line of text don't naturally render at the same height (a
+       button's own padding/border/line-height don't reliably match a plain
+       text line's), so without pinning both to one shared height here,
+       Pos's plain-text entries and Player's button entries drift apart the
+       more of them stack up, however tight the gap between them is. */
+    table.scorecard-table td.ply .ply-stack > .player-name-btn,
+    table.scorecard-table td.ply .sub-note,
+    table.scorecard-table td.pos .pos-stack > span {
+      height: 17px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    /* The starter's own button, not the .sub-note wrapper around a
+       substitute's -- box-sizing: border-box (already set above) means its
+       padding/border count toward that same 17px instead of adding to it. */
+    table.scorecard-table td.ply .player-name-btn { padding: 1px 3px; }
     /* No left padding on substitute lines either, so they don't read as
        indented relative to the starter above them -- fine at full Player
        width, but wastes room at 34px. The arrow is dropped too -- no room
@@ -3963,7 +3977,15 @@
     head += `</tr>`;
 
     const bodyRows = rows.map(r => {
-      const nameHtml = r.players.map((p, i) => {
+      // Both stacks use a flex column (see .ply-stack/.pos-stack) instead of
+      // <br>-joined inline content -- a <button>'s line-height doesn't
+      // reliably inherit from an ancestor the way plain text's does (browser
+      // default stylesheets tend to pin form controls to line-height:
+      // normal), so Player's and Pos's stacked entries would drift out of
+      // sync no matter how carefully the <br> and text line-heights were
+      // tuned to match. flex + gap sidesteps that entirely: the gap between
+      // entries is explicit and independent of what's inside them.
+      const nameHtml = `<div class="ply-stack">` + r.players.map((p, i) => {
         if (!p.id) return '';
         playerStore[p.id] = { id: p.id, name: p.name, pos: p.pos, team: teamName, season, todayStats: p.stats };
         // Both spans always render; a narrow-mobile media query swaps which
@@ -3972,8 +3994,10 @@
         const numLabel = p.number ? `#${p.number}` : p.lastName;
         const btn = `<button type="button" class="player-name-btn" data-player-id="${p.id}" title="${p.name}"><span class="pnb-name">${p.lastName}</span><span class="pnb-num">${numLabel}</span></button>`;
         return i === 0 ? btn : `<span class="sub-note"><span class="sub-arrow">&#8594; </span>${btn}</span>`;
-      }).join('<br/>');
-      const posHtml = r.players.map((p, i) => i === 0 ? p.pos : `<span class="sub-note">${p.pos}</span>`).join('<br/>');
+      }).join('') + `</div>`;
+      const posHtml = `<div class="pos-stack">` + r.players.map((p, i) =>
+        i === 0 ? `<span class="pos-main">${p.pos}</span>` : `<span class="sub-note">${p.pos}</span>`
+      ).join('') + `</div>`;
       let cells = `<td class="ply">${nameHtml}</td><td class="pos">${posHtml}</td>`;
       for (let i = 1; i <= numInnings; i++) {
         const cols = (columnsPerInning && columnsPerInning[i]) || 1;
