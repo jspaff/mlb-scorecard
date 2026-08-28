@@ -789,6 +789,18 @@
     color: var(--ink);
   }
   .team-header-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  /* Wraps just the header + the scrollable table (not the pitcher card
+     below, which has its own flex-wrap layout and would otherwise dominate
+     the shrink-to-fit width if it were included) so that on a wide screen,
+     giving this a fit-content width makes it exactly as wide as the table's
+     own natural width (see table.scorecard-table's min-width comment) --
+     which in turn pushes the header's Full Roster/Spray Chart buttons via
+     justify-content: space-between to land right above the final inning's
+     right edge, instead of trailing off into empty space at the edge of a
+     wide viewport. */
+  @media (min-width: 700px) {
+    .team-scorecard-wrap { width: fit-content; }
+  }
 
   .spray-card {
     margin-top: 8px;
@@ -888,6 +900,10 @@
     padding-bottom: 3px;
     border-bottom: 1px solid var(--paper-line);
   }
+  /* Team names (nicknames, not full city + name -- see teamNickname) never
+     wrap, so a "Multiple" traded year or a longer nickname can't blow out
+     the row height. */
+  table.career-table td:nth-child(2) { white-space: nowrap; }
   /* Team stints under a traded year -- indented and muted so the combined
      year row above them still reads as the primary line. */
   table.career-table tr.career-team-subrow td {
@@ -1172,16 +1188,6 @@
   }
   .calendar-day.is-home .cal-game-opp { color: var(--paper); }
   .calendar-day.is-away .cal-game-opp { color: var(--ink); }
-  .cal-game-time {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 7.5px;
-    opacity: 0.75;
-    line-height: 1;
-    margin-bottom: 1px;
-    white-space: nowrap;
-  }
-  .calendar-day.is-home .cal-game-time { color: var(--paper); }
-  .calendar-day.is-away .cal-game-time { color: var(--ink); }
   .calendar-day.is-dh .cal-game-opp { font-size: 17px; margin-top: 1px; }
   .standings-team {
     flex: 1;
@@ -1331,11 +1337,22 @@
   .table-scroll::-webkit-scrollbar-track { background: var(--paper-line); border-radius: 4px; }
   .table-scroll::-webkit-scrollbar-thumb { background: var(--ink-soft); border-radius: 4px; }
 
+  /* No width: 100% -- table-layout: fixed sizes every column from its th's
+     explicit width below, so letting the table's own width stay auto means
+     it sizes to the sum of those columns instead of stretching (and
+     proportionally inflating every column, the Player one worst of all)
+     to fill whatever the viewport happens to be. */
   table.scorecard-table {
     border-collapse: collapse;
-    width: 100%;
     min-width: 640px;
     table-layout: fixed;
+  }
+  /* A little extra breathing room on a wide screen -- also raises the floor
+     that .team-scorecard-wrap's fit-content shrink-wrap (above) resolves
+     to for a short game, so the header/button row doesn't end up narrower
+     than feels right just because a game hasn't gone many innings. */
+  @media (min-width: 700px) {
+    table.scorecard-table { min-width: 760px; }
   }
   table.scorecard-table th {
     font-family: 'Overpass', sans-serif;
@@ -1351,19 +1368,39 @@
   }
   table.scorecard-table th.ply { text-align: left; }
   table.scorecard-table th.pos { text-align: center; }
-  table.scorecard-table th.ply { position: sticky; left: 0; background: var(--paper); z-index: 3; width: 118px; }
-  table.scorecard-table th.pos { width: 34px; }
-  table.scorecard-table th.stat { width: 62px; }
-  table.scorecard-table th.stat-hab { width: 42px; border-left: 1px solid var(--paper-line); }
-  table.scorecard-table th.stat-extra {
-    width: 82px;
-    padding-left: 2px;
-    padding-right: 2px;
-    letter-spacing: 0.01em;
+  /* width/min-width/max-width are all pinned to the same value (not just
+     width) on every frozen cell below, and each also gets a transform hint
+     to force its own GPU compositing layer -- both are standard mitigations
+     for a well-documented class of WebKit bug where a sticky table cell's
+     rendered width visibly wobbles/squishes mid-scroll (it recomputes
+     against the scrollport instead of respecting the column's own defined
+     width) rather than staying fixed like a sticky block element would. */
+  table.scorecard-table th.ply {
+    position: sticky;
+    left: 0;
+    background: var(--paper);
+    z-index: 3;
+    width: 118px;
+    min-width: 118px;
+    max-width: 118px;
+    transform: translateZ(0);
   }
-  table.scorecard-table th.stat-rbi { width: 34px; }
+  /* Pos is frozen right alongside Player now (left offset = Player's own
+     118px width) instead of scrolling off with the innings -- the box-shadow
+     is what actually marks the freeze boundary, see td.pos below for why
+     it's an inset shadow and not a border-right. */
+  table.scorecard-table th.pos {
+    width: 34px;
+    min-width: 34px;
+    max-width: 34px;
+    position: sticky;
+    left: 118px;
+    background: var(--paper);
+    z-index: 3;
+    box-shadow: inset -1px 0 0 rgba(243, 236, 219, 0.18);
+    transform: translateZ(0);
+  }
   table.scorecard-table th.inning-cont { border-left: none; color: var(--gold); }
-  table.scorecard-table th.stat { border-left: 1px solid var(--paper-line); white-space: nowrap; }
 
   table.scorecard-table td {
     text-align: center;
@@ -1383,11 +1420,13 @@
     text-overflow: ellipsis;
     padding: 3px 0;
     width: 118px;
+    min-width: 118px;
+    max-width: 118px;
     position: sticky;
     left: 0;
     background: var(--paper);
-    box-shadow: 2px 0 4px rgba(28,58,44,0.08);
     z-index: 2;
+    transform: translateZ(0);
   }
   table.scorecard-table td.ply .player-name-btn {
     display: block;
@@ -1398,13 +1437,34 @@
   }
   table.scorecard-table td.ply .sub-note { display: block; padding: 1px 8px; }
   table.scorecard-table td.ply .sub-note .player-name-btn { display: inline-block; width: auto; }
+  /* Frozen alongside Player (see th.pos) rather than scrolling off with the
+     innings -- Pos is the last frozen column now, so the hairline that used
+     to mark td.ply's right edge moves here. Two reasons this is an inset
+     box-shadow rather than border-right: (1) border-collapse can miscollapse
+     a border from an unrelated scrolling cell onto this sticky column and
+     leave it pinned in view after that cell scrolls away (same reasoning as
+     the td.pitcher-change comment below); (2) a non-inset shadow on a sticky
+     table cell gets clipped and simply doesn't render on mobile Safari --
+     inset keeps the whole shadow inside the cell's own box, sidestepping
+     that. */
   table.scorecard-table td.pos {
     text-align: center;
     color: var(--ink-soft);
     font-size: 11px;
-    font-family: 'Special Elite', monospace;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
     padding-right: 0;
     width: 34px;
+    min-width: 34px;
+    max-width: 34px;
+    position: sticky;
+    left: 118px;
+    background: var(--paper);
+    z-index: 2;
+    box-shadow: inset -1px 0 0 rgba(243, 236, 219, 0.18);
+    transform: translateZ(0);
   }
   table.scorecard-table td.cell { width: 52px; height: 64px; padding: 3px 1px 7px; }
   table.scorecard-table td.sub-divider { border-left: 1px dashed rgba(28,58,44,0.3); }
@@ -1480,11 +1540,15 @@
     white-space: nowrap;
     border-top: 1px solid var(--paper);
   }
-  table.scorecard-table td.stat { font-weight: 600; white-space: nowrap; padding: 3px 4px; font-family: 'Special Elite', monospace; }
-  table.scorecard-table td.stat-hab { border-left: 1px solid var(--paper-line); width: 42px; }
-  table.scorecard-table td.stat-extra { width: 82px; padding-left: 2px; padding-right: 2px; }
-  table.scorecard-table td.stat-rbi { width: 34px; }
   .sub-note { font-size: 10px; color: var(--ink-soft); opacity: 0.85; font-style: italic; }
+  /* Jersey-number fallback for the scorecard grid's Player buttons -- shown
+     only under the max-width: 520px breakpoint below, where it swaps places
+     with .pnb-name so the frozen Player column can shrink from last-name
+     width down to jersey-number width. */
+  .pnb-num { display: none; }
+  /* Same swap for the Player column's own header text -- "Player" becomes
+     "#" to match, only under the max-width: 520px breakpoint below. */
+  .th-short { display: none; }
 
   .footnote {
     font-size: 10.5px;
@@ -1724,6 +1788,9 @@
     font-size: 13px;
     color: var(--ink-soft);
     margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .player-profile-bio {
     font-family: 'IBM Plex Mono', monospace;
@@ -1738,24 +1805,13 @@
     margin-top: 2px;
   }
 
-  /* Season spray chart, below the Career table -- reuses the same
+  /* Current-season spray chart, below the Career table -- reuses the same
      .spray-card/.spray-header/.spray-legend look as the Scorecard tab's
-     per-game chart (just a year <select> instead of a batter filter), but
-     capped to a max-width and centered so it doesn't blow up to the full
-     width of the sheet on a wide screen. */
+     per-game chart, but capped to a max-width and centered so it doesn't
+     blow up to the full width of the sheet on a wide screen. */
   .player-spray-section { margin-top: 4px; }
   .player-spray-section .spray-card { max-width: 420px; margin: 0 auto; }
   .player-spray-section .spray-card > svg { max-width: 320px; }
-  .spray-year-select {
-    font-family: 'Inter', sans-serif;
-    font-size: 10.5px;
-    background: var(--paper);
-    color: var(--ink);
-    border: 1px solid var(--paper-line);
-    border-radius: 4px;
-    padding: 2px 5px;
-    max-width: 100px;
-  }
   table.pitch-table { width: 100%; border-collapse: collapse; font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
   table.pitch-table th {
     font-family: 'Overpass', sans-serif;
@@ -1867,13 +1923,43 @@
   @media (max-width: 520px) {
     .sheet { padding: 14px; }
     .score-bottom-bar { padding-left: 14px; padding-right: 14px; }
+    /* Reclaims width for the Green Monster box score in the Game Summary
+       modal (and every other .pitch-modal) -- on a narrow phone the default
+       20px overlay inset + 18px modal padding left just barely too little
+       room for a full 9-inning .monster-panel, tripping its own
+       overflow-x: auto for a sliver of scrollbar. */
+    .pitch-overlay { padding: 10px; }
+    .pitch-modal { padding: 12px; }
     .standings-grid { grid-template-columns: 1fr; }
     .roster-columns { flex-direction: column; gap: 14px 0; }
-    .calendar-day { min-height: 52px; padding: 2px 1px 3px; }
+    .calendar-day { min-height: 42px; padding: 2px 1px; }
     .cal-game-opp { font-size: 16px; margin-top: 2px; }
-    .cal-game-time { font-size: 6.5px; }
     .cal-daynum { font-size: 7px; }
     .calendar-day.is-dh .cal-game-opp { font-size: 12px; margin-top: 1px; }
+    /* The scorecard grid isn't built for a narrow screen and never will be
+       -- but the frozen Player column eating a fixed 118px of a phone's
+       width is the single biggest, cheapest thing to reclaim: swap the
+       last-name button for a jersey-number one, its "Player" header for
+       "#", and shrink the column down to match Pos's own width exactly
+       (Pos's sticky offset moves with it) instead of a size in between
+       that just leaves the two looking mismatched as you scroll. */
+    .pnb-name, .th-full { display: none; }
+    .pnb-num, .th-short { display: inline; }
+    table.scorecard-table th.ply, table.scorecard-table td.ply {
+      width: 34px;
+      min-width: 34px;
+      max-width: 34px;
+      text-align: center;
+    }
+    table.scorecard-table th.pos, table.scorecard-table td.pos { left: 34px; }
+    table.scorecard-table td.pos { padding-left: 0; }
+    /* Without this, the base 640px floor (comfortably covered before, once
+       Player was 118px) exceeds a typical 9-inning game's new narrower
+       total (34+34+52*9 = 536px) -- table-layout: fixed would then
+       proportionally re-inflate every column, including the two just
+       narrowed above, right back out to fill that floor. */
+    table.scorecard-table { min-width: 0; }
+    table.scorecard-table td.ply .player-name-btn { padding: 2px 3px; }
   }
 </style>
 </head>
@@ -2066,13 +2152,13 @@
   // Single-active-profile state for the player-page spray chart widget --
   // mirrors sprayFilterState's module-scoped pattern, but keyed implicitly
   // to whichever profile is currently open rather than by team name, since
-  // only one player profile is ever shown at a time. Reset in
-  // showPlayerProfile, updated by loadPlayerSpray and the year <select>.
-  let playerSprayState = { personId: null, season: null, seasons: [], balls: null, loading: false };
-  // Bumped on every profile switch and every year-dropdown change so a
-  // slow, now-superseded fetch (a different player, or a season the user
-  // has since clicked away from) can't overwrite state a newer request
-  // already wrote -- same guard pattern as xRequestId elsewhere in the file.
+  // only one player profile is ever shown at a time. Always the current
+  // season -- no year picker. Reset in showPlayerProfile, updated by
+  // loadPlayerSpray once its fetch resolves.
+  let playerSprayState = { personId: null, season: null, balls: null, loading: false };
+  // Bumped on every profile switch so a slow, now-superseded fetch (a
+  // different player) can't overwrite state a newer request already wrote --
+  // same guard pattern as xRequestId elsewhere in the file.
   let playerSprayToken = 0;
   // Last-rendered profile inputs, kept so the spray widget can re-render on
   // its own (once its fetch resolves) without re-fetching person/career/
@@ -2785,6 +2871,7 @@
         id: p.person.id,
         name: p.person.fullName,
         lastName: lastNameOf(p.person, personIndex),
+        number: p.jerseyNumber || '',
         pos: (p.position && p.position.abbreviation) || '',
         order,
         stats: (p.stats && p.stats.batting) || {}
@@ -3285,18 +3372,15 @@
     </div>`;
   }
 
-  // Player profile's season spray chart, shown below the Career table.
-  // Same field/dot drawing and .spray-card/.spray-header/.spray-legend
-  // look as the Scorecard tab's per-game chart above -- just a year
-  // <select> instead of a batter filter, and no per-dot filtering since
-  // there's only ever one batter. Sizing (bigger than a corner widget, but
-  // capped so it doesn't take over the sheet on a wide screen) is handled
-  // by the .player-spray-section rule in the stylesheet.
+  // Player profile's current-season spray chart, shown below the Career
+  // table. Same field/dot drawing and .spray-card/.spray-header/.spray-legend
+  // look as the Scorecard tab's per-game chart above -- always the current
+  // season (no year picker), and no per-dot filtering since there's only
+  // ever one batter. Sizing (bigger than a corner widget, but capped so it
+  // doesn't take over the sheet on a wide screen) is handled by the
+  // .player-spray-section rule in the stylesheet.
   function renderPlayerSprayWidget(state) {
-    if (!state.seasons.length) return '';
-    const yearOptions = state.seasons
-      .map(s => `<option value="${s}"${String(s) === String(state.season) ? ' selected' : ''}>${s}</option>`)
-      .join('');
+    if (!state.season) return '';
     let bodyHtml;
     if (state.loading) {
       bodyHtml = '<div class="mlb-status-msg">Loading spray chart&#8230;</div>';
@@ -3316,7 +3400,6 @@
       <div class="spray-card">
         <div class="spray-header">
           <div class="spray-title">Spray Chart</div>
-          <select class="spray-year-select" data-player-id="${state.personId}">${yearOptions}</select>
         </div>
         ${bodyHtml}
       </div>
@@ -3539,11 +3622,13 @@
     const todayHtml = `
       <div class="player-stat-line"><span class="psl-label">Today</span><span>${s.hits ?? 0}-${s.atBats ?? 0}, ${s.rbi ?? 0} RBI, ${s.baseOnBalls ?? 0} BB, ${s.homeRuns ?? 0} HR</span></div>`;
     const seasonHtml = seasonStat
-      ? `<div class="player-stat-line"><span class="psl-label">AVG</span><span>${seasonStat.avg ?? '&#8212;'}</span></div>
+      ? `<div class="player-stat-line"><span class="psl-label">G</span><span>${seasonStat.gamesPlayed ?? '&#8212;'}</span></div>
+         <div class="player-stat-line"><span class="psl-label">AVG</span><span>${seasonStat.avg ?? '&#8212;'}</span></div>
          <div class="player-stat-line"><span class="psl-label">OBP</span><span>${seasonStat.obp ?? '&#8212;'}</span></div>
          <div class="player-stat-line"><span class="psl-label">SLG</span><span>${seasonStat.slg ?? '&#8212;'}</span></div>
          <div class="player-stat-line"><span class="psl-label">HR</span><span>${seasonStat.homeRuns ?? '&#8212;'}</span></div>
-         <div class="player-stat-line"><span class="psl-label">RBI</span><span>${seasonStat.rbi ?? '&#8212;'}</span></div>`
+         <div class="player-stat-line"><span class="psl-label">RBI</span><span>${seasonStat.rbi ?? '&#8212;'}</span></div>
+         <div class="player-stat-line"><span class="psl-label">SB</span><span>${formatStolenBases(seasonStat.stolenBases, seasonStat.caughtStealing)}</span></div>`
       : `<div class="pitch-empty">Season stats not available.</div>`;
     const awardsHtml = renderAwardTags(awardTags);
     return `
@@ -3829,24 +3914,28 @@
   function placeholderLineupRows() {
     return Array.from({ length: 9 }, (_, i) => ({
       slot: i + 1,
-      players: [{ id: '', name: '', lastName: '', pos: '', order: (i + 1) * 100, stats: {} }],
+      players: [{ id: '', name: '', lastName: '', number: '', pos: '', order: (i + 1) * 100, stats: {} }],
       cells: {}
     }));
   }
 
   function renderTeamTable(teamName, rows, numInnings, pitcherByInning, starterPitcherId, columnsPerInning, pitcherCardHtml, teamKey, liveBatterInfo, season) {
-    let head = `<tr><th class="ply">Player</th><th class="pos">Pos</th>`;
+    let head = `<tr><th class="ply"><span class="th-full">Player</span><span class="th-short">#</span></th><th class="pos">Pos</th>`;
     for (let i = 1; i <= numInnings; i++) {
       const cols = (columnsPerInning && columnsPerInning[i]) || 1;
       for (let k = 0; k < cols; k++) head += `<th${k > 0 ? ' class="inning-cont"' : ''}>${i}</th>`;
     }
-    head += `<th class="stat stat-hab">H-AB</th><th class="stat stat-extra">BB-2B-3B-HR</th><th class="stat stat-rbi">RBI</th></tr>`;
+    head += `</tr>`;
 
     const bodyRows = rows.map(r => {
       const nameHtml = r.players.map((p, i) => {
         if (!p.id) return '';
         playerStore[p.id] = { id: p.id, name: p.name, pos: p.pos, team: teamName, season, todayStats: p.stats };
-        const btn = `<button type="button" class="player-name-btn" data-player-id="${p.id}" title="${p.name}">${p.lastName}</button>`;
+        // Both spans always render; a narrow-mobile media query swaps which
+        // one is visible so the Player column can shrink to jersey-number
+        // width there instead of a whole last name -- see .pnb-num/.pnb-name.
+        const numLabel = p.number ? `#${p.number}` : p.lastName;
+        const btn = `<button type="button" class="player-name-btn" data-player-id="${p.id}" title="${p.name}"><span class="pnb-name">${p.lastName}</span><span class="pnb-num">${numLabel}</span></button>`;
         return i === 0 ? btn : `<span class="sub-note">&#8594; ${btn}</span>`;
       }).join('<br/>');
       const posHtml = r.players.map((p, i) => i === 0 ? p.pos : `<span class="sub-note">${p.pos}</span>`).join('<br/>');
@@ -3907,36 +3996,21 @@
           cells += `<td class="${cls}">${cellHtml}</td>`;
         }
       }
-      const habLine = (p, i) => {
-        const s = p.stats;
-        const txt = `${s.hits ?? 0}-${s.atBats ?? 0}`;
-        return i === 0 ? txt : `<span class="sub-note">${txt}</span>`;
-      };
-      const extraLine = (p, i) => {
-        const s = p.stats;
-        const txt = `${s.baseOnBalls ?? 0}-${s.doubles ?? 0}-${s.triples ?? 0}-${s.homeRuns ?? 0}`;
-        return i === 0 ? txt : `<span class="sub-note">${txt}</span>`;
-      };
-      const rbiLine = (p, i) => {
-        const txt = `${p.stats.rbi ?? 0}`;
-        return i === 0 ? txt : `<span class="sub-note">${txt}</span>`;
-      };
-      cells += `<td class="stat stat-hab">${r.players.map(habLine).join('<br/>')}</td>`;
-      cells += `<td class="stat stat-extra">${r.players.map(extraLine).join('<br/>')}</td>`;
-      cells += `<td class="stat stat-rbi">${r.players.map(rbiLine).join('<br/>')}</td>`;
       return `<tr>${cells}</tr>`;
     }).join('');
 
     return `<div class="team-block">
-      <div class="team-header">
-        <div class="team-name">${teamName}</div>
-        <div class="team-header-btns">
-          <button class="roster-btn" data-team="${teamName}">Full Roster</button>
-          <button class="spray-btn" data-team="${teamName}">Spray Chart</button>
+      <div class="team-scorecard-wrap">
+        <div class="team-header">
+          <div class="team-name">${teamName}</div>
+          <div class="team-header-btns">
+            <button class="roster-btn" data-team="${teamName}">Full Roster</button>
+            <button class="spray-btn" data-team="${teamName}">Spray Chart</button>
+          </div>
         </div>
-      </div>
-      <div class="table-scroll">
-        <table class="scorecard-table"><thead>${head}</thead><tbody>${bodyRows}</tbody></table>
+        <div class="table-scroll">
+          <table class="scorecard-table"><thead>${head}</thead><tbody>${bodyRows}</tbody></table>
+        </div>
       </div>
       ${pitcherCardHtml || ''}
     </div>`;
@@ -4156,9 +4230,7 @@
       } else if (games && games.length) {
         const homeAway = games[0].isHome ? 'is-home' : 'is-away';
         const isDH = games.length > 1 ? ' is-dh' : '';
-        const lines = games.length > 1
-          ? games.map(g => `<div class="cal-game-opp">${g.opponent}</div>`).join('')
-          : `<div class="cal-game-opp">${games[0].opponent}</div><div class="cal-game-time">${formatGameTime(games[0].gameDate)}</div>`;
+        const lines = games.map(g => `<div class="cal-game-opp">${g.opponent}</div>`).join('');
         cells += `<div class="calendar-day is-game ${homeAway}${today}${isDH}" data-date="${dateStr}" tabindex="0" role="button">
           <div class="cal-daynum">${day}</div>
           ${lines}
@@ -6001,7 +6073,7 @@
         agg = { season: s.season, teams: [], gamesPlayed: 0, atBats: 0, hits: 0, doubles: 0, triples: 0, homeRuns: 0, baseOnBalls: 0, hitByPitch: 0, sacFlies: 0, totalBases: 0, stolenBases: 0, caughtStealing: 0 };
         bySeason.set(s.season, agg);
       }
-      const teamName = s.team && (s.team.abbreviation || s.team.name);
+      const teamName = s.team && teamNickname(s.team);
       if (teamName && !agg.teams.includes(teamName)) agg.teams.push(teamName);
       agg.gamesPlayed += stat.gamesPlayed || 0;
       agg.atBats += stat.atBats || 0;
@@ -6027,6 +6099,16 @@
     return value < 1 ? fixed.slice(1) : fixed;
   }
 
+  // Stolen bases as "made/attempted" (e.g. "20/24") instead of separate
+  // SB/CS columns -- reads the attempt rate at a glance the way a broadcast
+  // graphic would. null/undefined sb means the stat wasn't in the payload at
+  // all (as opposed to a real 0), so that's the only case that falls back to
+  // the table's usual em dash.
+  function formatStolenBases(sb, cs) {
+    if (sb == null) return '&#8212;';
+    return `${sb}/${sb + (cs || 0)}`;
+  }
+
   function renderCareerTable(splits) {
     const stintsBySeason = new Map();
     splits.forEach(s => {
@@ -6038,19 +6120,20 @@
       const avg = formatRate(y.hits, y.atBats);
       const obp = formatRate(y.hits + y.baseOnBalls + y.hitByPitch, y.atBats + y.baseOnBalls + y.hitByPitch + y.sacFlies);
       const slg = formatRate(y.totalBases, y.atBats);
-      const yearRow = `<tr class="career-year-row"><td>${y.season}</td><td>${team}</td><td>${y.gamesPlayed}</td><td>${avg}</td><td>${obp}</td><td>${slg}</td><td>${y.doubles}</td><td>${y.triples}</td><td>${y.homeRuns}</td><td>${y.stolenBases}</td><td>${y.caughtStealing}</td></tr>`;
+      const sb = formatStolenBases(y.stolenBases, y.caughtStealing);
+      const yearRow = `<tr class="career-year-row"><td>${y.season}</td><td>${team}</td><td>${y.gamesPlayed}</td><td>${avg}</td><td>${obp}</td><td>${slg}</td><td>${y.doubles}</td><td>${y.triples}</td><td>${y.homeRuns}</td><td>${sb}</td></tr>`;
       const stints = stintsBySeason.get(y.season) || [];
       const subRows = stints.length > 1
         ? stints.map(s => {
             const stat = s.stat || {};
-            const teamName = (s.team && (s.team.abbreviation || s.team.name)) || '&#8212;';
-            return `<tr class="career-team-subrow"><td></td><td>${teamName}</td><td>${stat.gamesPlayed ?? '&#8212;'}</td><td>${stat.avg ?? '&#8212;'}</td><td>${stat.obp ?? '&#8212;'}</td><td>${stat.slg ?? '&#8212;'}</td><td>${stat.doubles ?? '&#8212;'}</td><td>${stat.triples ?? '&#8212;'}</td><td>${stat.homeRuns ?? '&#8212;'}</td><td>${stat.stolenBases ?? '&#8212;'}</td><td>${stat.caughtStealing ?? '&#8212;'}</td></tr>`;
+            const teamName = (s.team && teamNickname(s.team)) || '&#8212;';
+            return `<tr class="career-team-subrow"><td></td><td>${teamName}</td><td>${stat.gamesPlayed ?? '&#8212;'}</td><td>${stat.avg ?? '&#8212;'}</td><td>${stat.obp ?? '&#8212;'}</td><td>${stat.slg ?? '&#8212;'}</td><td>${stat.doubles ?? '&#8212;'}</td><td>${stat.triples ?? '&#8212;'}</td><td>${stat.homeRuns ?? '&#8212;'}</td><td>${formatStolenBases(stat.stolenBases, stat.caughtStealing)}</td></tr>`;
           }).join('')
         : '';
       return yearRow + subRows;
     });
     return `<div class="table-scroll"><table class="pitch-table career-table">
-        <thead><tr><th>Year</th><th>Team</th><th>G</th><th>AVG</th><th>OBP</th><th>SLG</th><th>2B</th><th>3B</th><th>HR</th><th>SB</th><th>CS</th></tr></thead>
+        <thead><tr><th>Year</th><th>Team</th><th>G</th><th>AVG</th><th>OBP</th><th>SLG</th><th>2B</th><th>3B</th><th>HR</th><th>SB</th></tr></thead>
         <tbody>${rows.join('')}</tbody>
       </table></div>`;
   }
@@ -6088,8 +6171,7 @@
 
   // Re-renders the profile from the last-fetched person/career/awards data
   // without re-fetching them -- used when the spray widget's own fetch
-  // resolves (or the year dropdown changes), since none of that touches
-  // person/career/awards.
+  // resolves, since that doesn't touch person/career/awards.
   function rerenderPlayerProfile() {
     if (!lastProfilePerson) return;
     playersBody.innerHTML = renderPlayerProfile(lastProfilePerson, lastProfileCareerSplits, lastProfileAwardTags);
@@ -6118,7 +6200,9 @@
     const person = { ...rawPerson, id: Number(rawPerson.id) };
     const requestId = ++playerProfileRequestId;
     playerSprayToken++; // abandon any spray fetch still in flight for whatever was open before
-    playerSprayState = { personId: person.id, season: null, seasons: [], balls: null, loading: false };
+    const currentSeason = new Date().getFullYear();
+    playerSprayState = { personId: person.id, season: currentSeason, balls: null, loading: true };
+    loadPlayerSpray(person.id, currentSeason);
     playersBody.innerHTML = renderPlayerProfile(person, null, []);
     const [fullPerson, careerSplits, awards] = await Promise.all([
       getPlayerDetails(person.id),
@@ -6129,12 +6213,6 @@
     lastProfilePerson = fullPerson || person;
     lastProfileCareerSplits = careerSplits;
     lastProfileAwardTags = summarizeAwardTags(awards);
-
-    const seasons = Array.from(new Set(careerSplits.map(s => s.season))).sort((a, b) => Number(b) - Number(a));
-    if (seasons.length) {
-      playerSprayState = { personId: person.id, season: seasons[0], seasons, balls: null, loading: true };
-      loadPlayerSpray(person.id, seasons[0]);
-    }
     rerenderPlayerProfile();
   }
 
@@ -6229,20 +6307,6 @@
           g.style.display = match ? '' : 'none';
         });
       }
-      return;
-    }
-    const yearSel = e.target.closest('select.spray-year-select');
-    if (yearSel) {
-      const personId = Number(yearSel.getAttribute('data-player-id'));
-      const season = yearSel.value;
-      if (playerSprayState.personId !== personId) return;
-      const cacheKey = `${personId}-${season}`;
-      const cached = playerSeasonSprayCache[cacheKey];
-      playerSprayState.season = season;
-      playerSprayState.balls = cached !== undefined ? cached : null;
-      playerSprayState.loading = cached === undefined;
-      rerenderPlayerProfile();
-      if (cached === undefined) loadPlayerSpray(personId, season);
     }
   });
   pitchClose.addEventListener('click', hidePitchPopup);
