@@ -6116,7 +6116,12 @@
         }).join('')}</div>`
       : '';
 
-    const locationHtml = pitches.length ? renderPitchLocation(pitches, c.batSide, c.pitchHand, c.isComplete, newPitchNums) : '';
+    // allowEmpty (true here unconditionally) is what keeps the zone itself
+    // from vanishing for a fresh at-bat whose first pitch hasn't landed in
+    // the feed yet (c exists, c.pitches is still []) -- the same bare-zone
+    // rendering the "no at-bat in progress" placeholder below uses, just
+    // reached from a real, in-progress at-bat instead of a null one.
+    const locationHtml = renderPitchLocation(pitches, c.batSide, c.pitchHand, c.isComplete, newPitchNums, true);
 
     // Zone plot before the pitch table (not after, as MLB's own gameday
     // usually lays it out) -- in the always-on sidebar this table keeps
