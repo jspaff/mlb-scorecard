@@ -1968,13 +1968,18 @@
     }
     table.scorecard-table th.pos, table.scorecard-table td.pos { left: 34px; }
     table.scorecard-table td.pos { padding-left: 0; }
-    table.scorecard-table td.ply .player-name-btn { padding: 2px 3px; }
+    table.scorecard-table td.ply .player-name-btn { padding: 1px 2px; }
+    table.scorecard-table td.ply { line-height: 1.1; }
     /* Substitute lines match the starter's own alignment/spacing here
        instead of the indented, more spaced-out look that's fine at full
        Player width but just wastes room at 34px -- no left padding (so it
        doesn't read as indented relative to the starter above it) and no
-       vertical padding (so stacked substitutions sit closer together). */
+       vertical padding (so stacked substitutions sit closer together). The
+       arrow itself is dropped too -- at jersey-number width there's no room
+       to spare for it, and the numbers stacking in an exact column is a
+       clearer "who replaced whom" cue on their own than the arrow was. */
     table.scorecard-table td.ply .sub-note { padding: 0; }
+    .sub-arrow { display: none; }
   }
 </style>
 </head>
@@ -3951,7 +3956,7 @@
         // width there instead of a whole last name -- see .pnb-num/.pnb-name.
         const numLabel = p.number ? `#${p.number}` : p.lastName;
         const btn = `<button type="button" class="player-name-btn" data-player-id="${p.id}" title="${p.name}"><span class="pnb-name">${p.lastName}</span><span class="pnb-num">${numLabel}</span></button>`;
-        return i === 0 ? btn : `<span class="sub-note">&#8594; ${btn}</span>`;
+        return i === 0 ? btn : `<span class="sub-note"><span class="sub-arrow">&#8594; </span>${btn}</span>`;
       }).join('<br/>');
       const posHtml = r.players.map((p, i) => i === 0 ? p.pos : `<span class="sub-note">${p.pos}</span>`).join('<br/>');
       let cells = `<td class="ply">${nameHtml}</td><td class="pos">${posHtml}</td>`;
