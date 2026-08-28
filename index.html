@@ -1758,17 +1758,20 @@
   }
 
   /* .scorecard-sidebar (see the wide breakpoint above) is one shared card
-     -- a "Green Monster" wall-colored wrapper -- for both the monster
-     scoreboard (renderMonsterPanel's markup, written in here verbatim by
-     fetchAndRender -- see sidebarMonsterPanel) and the live at-bat tracker
-     below it, rather than two separately-boxed pieces. overflow: hidden
-     clips #sidebarMonsterPanel's flush top corners and .sidebar-atbat's
-     flush bottom corners to the outer card's own border-radius; the
-     internal scroll for content taller than the viewport (see max-height
-     above) lives on .sidebar-atbat alone, not this outer card, precisely
-     so the monster scoreboard at the top never scrolls out of view. */
+     for both the monster scoreboard (renderMonsterPanel's markup, written
+     in here verbatim by fetchAndRender -- see sidebarMonsterPanel) and the
+     live at-bat tracker below it, rather than two separately-boxed pieces.
+     --paper (not a monster-green shade) matches every other card in the
+     app -- .sheet, .pitch-modal, .sidebar-atbat below -- for consistency
+     rather than a one-off green treatment just for this panel. overflow:
+     hidden clips #sidebarMonsterPanel's flush top corners and
+     .sidebar-atbat's flush bottom corners to the outer card's own
+     border-radius; the internal scroll for content taller than the
+     viewport (see max-height above) lives on .sidebar-atbat alone, not
+     this outer card, precisely so the monster scoreboard at the top never
+     scrolls out of view. */
   .scorecard-sidebar {
-    background: var(--monster-green-dim);
+    background: var(--paper);
     border-radius: 8px;
     box-shadow: 0 2px 0 rgba(0,0,0,0.25) inset, 0 4px 14px rgba(0,0,0,0.35);
     overflow: hidden;
@@ -1781,13 +1784,11 @@
      .pitch-table, .loc-section, ...) -- see renderPitchDetailHtml -- just
      laid out in an always-visible panel section instead of a dismissible
      overlay (no close button, no backdrop). Shares .scorecard-sidebar's own
-     monster-green-dim background (no background of its own -- a --paper
-     background here read as a second, off-theme green next to the
-     scoreboard's, not as one cohesive card) with just a hairline divider,
-     the same one .tab-bar uses against this same background, to mark where
-     the scoreboard ends. Its own scrollbar (see .scorecard-sidebar above)
-     is what lets the pitch table grow row by row without the panel's
-     overall height pushing anything above it around. */
+     --paper background (no background of its own) with just a hairline
+     divider, the same one .tab-bar uses against this same background, to
+     mark where the scoreboard ends. Its own scrollbar (see
+     .scorecard-sidebar above) is what lets the pitch table grow row by row
+     without the panel's overall height pushing anything above it around. */
   .sidebar-atbat:not(:empty) {
     border-top: 1px solid rgba(243, 236, 219, 0.15);
     padding: 14px;
