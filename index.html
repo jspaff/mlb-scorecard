@@ -791,10 +791,10 @@
   .team-header-btns { display: flex; gap: 8px; flex-wrap: wrap; }
   /* Wraps the header, the scrollable table, and the pitcher card, so that on
      a wide screen, giving this a fit-content width makes it exactly as wide
-     as the table's own natural width (see table.scorecard-table's min-width
-     comment) -- which in turn pushes the header's Full Roster/Spray Chart
-     buttons via justify-content: space-between, and the pitcher card's own
-     right edge, to land right above the final inning's right edge, instead
+     as the table's own natural width -- which in turn pushes the header's
+     Full Roster/Spray Chart buttons via justify-content: space-between, and
+     the pitcher card's own right edge, to land right above the final
+     inning's right edge, instead
      of trailing off into empty space at the edge of a wide viewport.
      max-width: 100% is doing the real work on a viewport that's wide enough
      to hit this breakpoint but still narrower than a many-extra-innings
@@ -1349,17 +1349,25 @@
      it sizes to the sum of those columns instead of stretching (and
      proportionally inflating every column, the Player one worst of all)
      to fill whatever the viewport happens to be. */
+  /* border-collapse: separate (not collapse) -- WebKit has a long-standing
+     bug where position: sticky on a table cell miscalculates its own offset
+     mid-scroll specifically when the table uses collapsed borders (this is
+     the actual mechanism behind Pos sliding into Player while scrolling,
+     which pinning width/min-width/max-width on the frozen cells didn't fully
+     fix). border-spacing: 0 keeps cells visually flush the way collapse did,
+     without the bug. */
+  /* No min-width floor here -- table-layout: fixed distributes any width
+     the table is forced to beyond the sum of its own column widths by
+     inflating every column proportionally, including the frozen Player/Pos
+     ones, regardless of their own pinned min-width/max-width (that
+     redistribution operates at the table's column-tracking level, above
+     individual cells). A short game's table just being a little narrower
+     than some arbitrary floor is a smaller cost than that. */
   table.scorecard-table {
-    border-collapse: collapse;
-    min-width: 640px;
+    border-collapse: separate;
+    border-spacing: 0;
+    min-width: 0;
     table-layout: fixed;
-  }
-  /* A little extra breathing room on a wide screen -- also raises the floor
-     that .team-scorecard-wrap's fit-content shrink-wrap (above) resolves
-     to for a short game, so the header/button row doesn't end up narrower
-     than feels right just because a game hasn't gone many innings. */
-  @media (min-width: 700px) {
-    table.scorecard-table { min-width: 760px; }
   }
   table.scorecard-table th {
     font-family: 'Overpass', sans-serif;
@@ -1387,13 +1395,13 @@
     left: 0;
     background: var(--paper);
     z-index: 3;
-    width: 118px;
-    min-width: 118px;
-    max-width: 118px;
+    width: 96px;
+    min-width: 96px;
+    max-width: 96px;
     transform: translateZ(0);
   }
   /* Pos is frozen right alongside Player now (left offset = Player's own
-     118px width) instead of scrolling off with the innings -- the box-shadow
+     96px width) instead of scrolling off with the innings -- the box-shadow
      is what actually marks the freeze boundary, see td.pos below for why
      it's an inset shadow and not a border-right. */
   table.scorecard-table th.pos {
@@ -1401,7 +1409,7 @@
     min-width: 34px;
     max-width: 34px;
     position: sticky;
-    left: 118px;
+    left: 96px;
     background: var(--paper);
     z-index: 3;
     box-shadow: inset -1px 0 0 rgba(243, 236, 219, 0.18);
@@ -1426,9 +1434,9 @@
     overflow: hidden;
     text-overflow: ellipsis;
     padding: 3px 0;
-    width: 118px;
-    min-width: 118px;
-    max-width: 118px;
+    width: 96px;
+    min-width: 96px;
+    max-width: 96px;
     position: sticky;
     left: 0;
     background: var(--paper);
@@ -1441,19 +1449,17 @@
     box-sizing: border-box;
     background: var(--paper-line);
     border-radius: 0;
+    padding: 2px 4px;
   }
   table.scorecard-table td.ply .sub-note { display: block; padding: 1px 8px; }
   table.scorecard-table td.ply .sub-note .player-name-btn { display: inline-block; width: auto; }
   /* Frozen alongside Player (see th.pos) rather than scrolling off with the
      innings -- Pos is the last frozen column now, so the hairline that used
-     to mark td.ply's right edge moves here. Two reasons this is an inset
-     box-shadow rather than border-right: (1) border-collapse can miscollapse
-     a border from an unrelated scrolling cell onto this sticky column and
-     leave it pinned in view after that cell scrolls away (same reasoning as
-     the td.pitcher-change comment below); (2) a non-inset shadow on a sticky
-     table cell gets clipped and simply doesn't render on mobile Safari --
-     inset keeps the whole shadow inside the cell's own box, sidestepping
-     that. */
+     to mark td.ply's right edge moves here, as an inset box-shadow rather
+     than border-right so it can't get clipped and simply fail to render on
+     mobile Safari (a non-inset shadow on a sticky table cell has that
+     problem; inset keeps the whole shadow inside the cell's own box,
+     sidestepping it). */
   table.scorecard-table td.pos {
     text-align: center;
     color: var(--ink-soft);
@@ -1467,7 +1473,7 @@
     min-width: 34px;
     max-width: 34px;
     position: sticky;
-    left: 118px;
+    left: 96px;
     background: var(--paper);
     z-index: 2;
     box-shadow: inset -1px 0 0 rgba(243, 236, 219, 0.18);
@@ -1475,10 +1481,12 @@
   }
   table.scorecard-table td.cell { width: 52px; height: 64px; padding: 3px 1px 7px; }
   table.scorecard-table td.sub-divider { border-left: 1px dashed rgba(28,58,44,0.3); }
-  /* an inset shadow instead of border-top: with border-collapse, a real
-     border on this cell can get miscollapsed onto the sticky .ply/.pos
-     columns and stay pinned in view when the cell itself has scrolled
-     out of frame. box-shadow never participates in border collapsing. */
+  /* an inset shadow instead of border-top: back when this table used
+     border-collapse: collapse (it now uses separate, see above), a real
+     border on this cell could get miscollapsed onto the sticky .ply/.pos
+     columns and stay pinned in view when the cell itself had scrolled out
+     of frame -- box-shadow never participated in that. Left as box-shadow
+     regardless since it works fine and there's no reason to touch it. */
   table.scorecard-table td.pitcher-change { box-shadow: inset 0 1.5px 0 var(--ink); padding-top: 5px; }
   table.scorecard-table th.starter-span,
   table.scorecard-table td.starter-span { background: rgba(243, 236, 219, 0.07); }
@@ -1944,7 +1952,7 @@
     .cal-daynum { font-size: 7px; }
     .calendar-day.is-dh .cal-game-opp { font-size: 12px; margin-top: 1px; }
     /* The scorecard grid isn't built for a narrow screen and never will be
-       -- but the frozen Player column eating a fixed 118px of a phone's
+       -- but the frozen Player column eating a fixed 96px of a phone's
        width is the single biggest, cheapest thing to reclaim: swap the
        last-name button for a jersey-number one, its "Player" header for
        "#", and shrink the column down to match Pos's own width exactly
@@ -1960,12 +1968,6 @@
     }
     table.scorecard-table th.pos, table.scorecard-table td.pos { left: 34px; }
     table.scorecard-table td.pos { padding-left: 0; }
-    /* Without this, the base 640px floor (comfortably covered before, once
-       Player was 118px) exceeds a typical 9-inning game's new narrower
-       total (34+34+52*9 = 536px) -- table-layout: fixed would then
-       proportionally re-inflate every column, including the two just
-       narrowed above, right back out to fill that floor. */
-    table.scorecard-table { min-width: 0; }
     table.scorecard-table td.ply .player-name-btn { padding: 2px 3px; }
   }
 </style>
