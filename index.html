@@ -214,19 +214,15 @@
   }
   .score-bottom-bar[hidden], .score-bottom-bar:empty { display: none; }
 
-  /* Narrow-screen counterpart of .sidebar-atbat -- same shared markup
-     (renderPitchDetailHtml's .pitch-header/.pitch-table/.loc-section
-     classes), just an in-flow card above the grid instead of a fixed
-     column, since there's no room for a second fixed panel alongside
-     .score-bottom-bar on a phone-width screen. Always populated (see
-     updateAtBatTrackers) so it never disappears between at-bats -- only
-     its content changes, not its presence. */
+  /* Narrow screens don't get a live at-bat tracker at all -- there's no
+     room for it alongside .score-bottom-bar on a phone-width screen, and
+     the same info is one tap away via any plate appearance's diamond
+     glyph. #mobileAtBat is still populated by updateAtBatTrackers (kept
+     simple rather than special-cased there), just never shown. Wide
+     screens get .sidebar-atbat instead -- see its wide-breakpoint rule
+     below. */
   .mobile-atbat {
-    background: var(--paper);
-    border-radius: 6px;
-    padding: 14px;
-    margin-bottom: 12px;
-    box-shadow: 0 2px 0 rgba(0,0,0,0.25) inset, 0 4px 14px rgba(0,0,0,0.35);
+    display: none !important;
   }
 
   /* Reserves room at the bottom of the scorecard grid so the last rows
@@ -259,9 +255,6 @@
        wide screens get the sidebar instead of the fixed bar, so the grid
        no longer needs bottom padding to clear it. */
     .score-bottom-bar { display: none !important; }
-    /* .sidebar-atbat (in the now-visible .scorecard-sidebar below) takes
-       over the same job at this width. */
-    .mobile-atbat { display: none !important; }
     #mlbBody { padding-bottom: 0; }
     .scorecard-sidebar {
       display: flex;
@@ -2245,9 +2238,10 @@
     </div>
   </div>
   <div class="tab-panel" data-tab-panel="scorecard" id="scorecardPanel" hidden>
-    <!-- Narrow-screen-only always-visible at-bat tracker -- see .mobile-atbat.
-         Hidden at the wide breakpoint, where .sidebar-atbat (in
-         .scorecard-sidebar below) covers the same job instead. -->
+    <!-- Always hidden on narrow screens -- see .mobile-atbat. Kept in the
+         markup (rather than removed) since updateAtBatTrackers still
+         writes to it unconditionally; wide screens get .sidebar-atbat (in
+         .scorecard-sidebar below) instead. -->
     <div class="mobile-atbat" id="mobileAtBat"></div>
     <div class="scorecard-layout">
       <div id="mlbBody" class="scorecard-main">
@@ -6201,8 +6195,8 @@
   // kept separate so opening the popup for some other at-bat (e.g. a
   // completed one earlier in the game) never fights with what these are
   // tracking live, and vice versa. Shared between the wide sidebar and the
-  // narrow-screen card (only one of the two is ever visible at once -- see
-  // .mobile-atbat's wide-breakpoint override -- so there's no benefit to
+  // narrow-screen card (the latter is always hidden now -- see .mobile-atbat
+  // -- so at most one of the two is ever visible, and there's no benefit to
   // tracking their "new pitch" glow separately).
   let atBatTrackerPkey = null;
   let atBatTrackerLastRenderedPitchNum = 0;
