@@ -1521,6 +1521,9 @@
      with .pnb-name so the frozen Player column can shrink from last-name
      width down to jersey-number width. */
   .pnb-num { display: none; }
+  /* Same swap for the Player column's own header text -- "Player" becomes
+     "#" to match, only under the max-width: 520px breakpoint below. */
+  .th-short { display: none; }
 
   .footnote {
     font-size: 10.5px;
@@ -1911,12 +1914,22 @@
     /* The scorecard grid isn't built for a narrow screen and never will be
        -- but the frozen Player column eating a fixed 118px of a phone's
        width is the single biggest, cheapest thing to reclaim: swap the
-       last-name button for a jersey-number one and shrink the column (and
-       Pos's sticky offset, which has to match it) down to fit. */
-    .pnb-name { display: none; }
-    .pnb-num { display: inline; }
-    table.scorecard-table th.ply, table.scorecard-table td.ply { width: 56px; }
-    table.scorecard-table th.pos, table.scorecard-table td.pos { left: 56px; }
+       last-name button for a jersey-number one, its "Player" header for
+       "#", and shrink the column down to match Pos's own width exactly
+       (Pos's sticky offset moves with it) instead of a size in between
+       that just leaves the two looking mismatched as you scroll. */
+    .pnb-name, .th-full { display: none; }
+    .pnb-num, .th-short { display: inline; }
+    table.scorecard-table th.ply, table.scorecard-table td.ply { width: 34px; text-align: center; }
+    table.scorecard-table th.pos, table.scorecard-table td.pos { left: 34px; }
+    table.scorecard-table td.pos { padding-left: 0; }
+    /* Without this, the base 640px floor (comfortably covered before, once
+       Player was 118px) exceeds a typical 9-inning game's new narrower
+       total (34+34+52*9 = 536px) -- table-layout: fixed would then
+       proportionally re-inflate every column, including the two just
+       narrowed above, right back out to fill that floor. */
+    table.scorecard-table { min-width: 0; }
+    table.scorecard-table td.ply .player-name-btn { padding: 2px 3px; }
   }
 </style>
 </head>
@@ -3877,7 +3890,7 @@
   }
 
   function renderTeamTable(teamName, rows, numInnings, pitcherByInning, starterPitcherId, columnsPerInning, pitcherCardHtml, teamKey, liveBatterInfo, season) {
-    let head = `<tr><th class="ply">Player</th><th class="pos">Pos</th>`;
+    let head = `<tr><th class="ply"><span class="th-full">Player</span><span class="th-short">#</span></th><th class="pos">Pos</th>`;
     for (let i = 1; i <= numInnings; i++) {
       const cols = (columnsPerInning && columnsPerInning[i]) || 1;
       for (let k = 0; k < cols; k++) head += `<th${k > 0 ? ' class="inning-cont"' : ''}>${i}</th>`;
