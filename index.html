@@ -214,6 +214,21 @@
   }
   .score-bottom-bar[hidden], .score-bottom-bar:empty { display: none; }
 
+  /* Narrow-screen counterpart of .sidebar-atbat -- same shared markup
+     (renderPitchDetailHtml's .pitch-header/.pitch-table/.loc-section
+     classes), just an in-flow card above the grid instead of a fixed
+     column, since there's no room for a second fixed panel alongside
+     .score-bottom-bar on a phone-width screen. Always populated (see
+     updateAtBatTrackers) so it never disappears between at-bats -- only
+     its content changes, not its presence. */
+  .mobile-atbat {
+    background: var(--paper);
+    border-radius: 6px;
+    padding: 14px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.25) inset, 0 4px 14px rgba(0,0,0,0.35);
+  }
+
   /* Reserves room at the bottom of the scorecard grid so the last rows
      aren't hidden behind the fixed .score-bottom-bar sitting on top of
      them -- #mlbBody is the scorecard tab's own content container, so
@@ -244,6 +259,9 @@
        wide screens get the sidebar instead of the fixed bar, so the grid
        no longer needs bottom padding to clear it. */
     .score-bottom-bar { display: none !important; }
+    /* .sidebar-atbat (in the now-visible .scorecard-sidebar below) takes
+       over the same job at this width. */
+    .mobile-atbat { display: none !important; }
     #mlbBody { padding-bottom: 0; }
     .scorecard-sidebar {
       display: flex;
@@ -2227,6 +2245,10 @@
     </div>
   </div>
   <div class="tab-panel" data-tab-panel="scorecard" id="scorecardPanel" hidden>
+    <!-- Narrow-screen-only always-visible at-bat tracker -- see .mobile-atbat.
+         Hidden at the wide breakpoint, where .sidebar-atbat (in
+         .scorecard-sidebar below) covers the same job instead. -->
+    <div class="mobile-atbat" id="mobileAtBat"></div>
     <div class="scorecard-layout">
       <div id="mlbBody" class="scorecard-main">
         <div class="mlb-status-msg">Loading today's schedule&#8230;</div>
@@ -2308,6 +2330,7 @@
   const scoreBottomBar = document.getElementById('scoreBottomBar');
   const sidebarMonsterPanel = document.getElementById('sidebarMonsterPanel');
   const sidebarAtBatEl = document.getElementById('sidebarAtBat');
+  const mobileAtBatEl = document.getElementById('mobileAtBat');
   const standingsBody = document.getElementById('standingsBody');
   const standingsDateInput = document.getElementById('standingsDatePick');
   const standingsDateInputText = document.getElementById('standingsDatePickText');
@@ -5417,7 +5440,7 @@
     body.innerHTML = '<div class="mlb-status-msg">Fetching schedule for ' + dateStr + '&#8230;</div>';
     scoreBottomBar.innerHTML = '';
     sidebarMonsterPanel.innerHTML = '';
-    updateSidebarAtBat(null);
+    updateAtBatTrackers(null);
     clearInterval(pollTimer);
     try {
       const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}`);
@@ -5652,7 +5675,7 @@
       // stamps onto pitchStore for this exact liveBatterInfo cell (see
       // isLiveCell there) -- computed independently here, from the same
       // liveBatterInfo fields, rather than threaded back out of that render
-      // call, so the wide-screen sidebar (see updateSidebarAtBat below) can
+      // call, so the wide-screen sidebar (see updateAtBatTrackers below) can
       // look the live at-bat up in pitchStore right after body.innerHTML
       // populates it.
       const livePkey = liveBatterInfo
@@ -5828,7 +5851,7 @@
       // computed above from liveBatterInfo, and is only now safe to look up
       // in pitchStore since the renderTeamTable calls just above are what
       // populate it (see the isLiveCell branch in that cell-building loop).
-      updateSidebarAtBat(livePkey);
+      updateAtBatTrackers(livePkey);
 
       clearInterval(pollTimer);
       if (state === 'Live') pollTimer = setInterval(() => fetchAndRender(gamePk), 7000);
@@ -5847,7 +5870,7 @@
       body.innerHTML = apiErrorMsg('game data');
       scoreBottomBar.innerHTML = '';
       sidebarMonsterPanel.innerHTML = '';
-      updateSidebarAtBat(null);
+      updateAtBatTrackers(null);
     }
   }
 
@@ -6003,9 +6026,9 @@
   // nothing if not one single pitch in the at-bat has location data, rather
   // than showing an empty box -- UNLESS allowEmpty is set, which skips that
   // guard so the bare zone/plate can still render with no markers at all,
-  // for the sidebar's own "no at-bat in progress" placeholder (see
-  // sidebarAtBatPlaceholderHtml) where there's no real pitch data to ask
-  // for in the first place. newPitchNums is the set of pitch numbers that
+  // for the always-on trackers' own "no at-bat in progress" placeholder
+  // (see atBatTrackerPlaceholderHtml) where there's no real pitch data to
+  // ask for in the first place. newPitchNums is the set of pitch numbers that
   // just arrived since the last render of this same popup (see
   // showPitchPopup) -- empty on a fresh open, so nothing glows just from
   // clicking into an at-bat that already has a full pitch history.
@@ -6054,8 +6077,8 @@
   }
 
   // Builds the at-bat detail markup shared by the dismissible popup
-  // (#pitchModalBody) and the always-on wide-screen sidebar (#sidebarAtBat)
-  // -- see showPitchPopup and updateSidebarAtBat, the two callers, each of
+  // (#pitchModalBody) and the always-on trackers (#sidebarAtBat/#mobileAtBat)
+  // -- see showPitchPopup and updateAtBatTrackers, the two callers, each of
   // which tracks its own "what's already been rendered" state so a poll
   // refresh only glows the pitch(es) new to *that* consumer.
   function renderPitchDetailHtml(c, newPitchNums) {
@@ -6093,7 +6116,12 @@
         }).join('')}</div>`
       : '';
 
-    const locationHtml = pitches.length ? renderPitchLocation(pitches, c.batSide, c.pitchHand, c.isComplete, newPitchNums) : '';
+    // allowEmpty (true here unconditionally) is what keeps the zone itself
+    // from vanishing for a fresh at-bat whose first pitch hasn't landed in
+    // the feed yet (c exists, c.pitches is still []) -- the same bare-zone
+    // rendering the "no at-bat in progress" placeholder below uses, just
+    // reached from a real, in-progress at-bat instead of a null one.
+    const locationHtml = renderPitchLocation(pitches, c.batSide, c.pitchHand, c.isComplete, newPitchNums, true);
 
     // Zone plot before the pitch table (not after, as MLB's own gameday
     // usually lays it out) -- in the always-on sidebar this table keeps
@@ -6164,48 +6192,60 @@
     lastRenderedPitchNum = 0;
   }
 
-  // Wide-screen sidebar's own copy of the popup's "what's already showing"
-  // state (see currentOpenPkey/lastRenderedPitchNum above) -- kept separate
-  // so opening the popup for some other at-bat (e.g. a completed one earlier
-  // in the game) never fights with what the sidebar is tracking live, and
-  // vice versa.
-  let sidebarAtBatPkey = null;
-  let sidebarLastRenderedPitchNum = 0;
+  // The always-on trackers' own copy of the popup's "what's already
+  // showing" state (see currentOpenPkey/lastRenderedPitchNum above) --
+  // kept separate so opening the popup for some other at-bat (e.g. a
+  // completed one earlier in the game) never fights with what these are
+  // tracking live, and vice versa. Shared between the wide sidebar and the
+  // narrow-screen card (only one of the two is ever visible at once -- see
+  // .mobile-atbat's wide-breakpoint override -- so there's no benefit to
+  // tracking their "new pitch" glow separately).
+  let atBatTrackerPkey = null;
+  let atBatTrackerLastRenderedPitchNum = 0;
 
   // Bare zone/plate with no batter box, pitcher release marker, or pitch
-  // dots -- keeps the sidebar's shape/proportions the same whether or not
+  // dots -- keeps each tracker's shape/proportions the same whether or not
   // there's an at-bat to show, rather than collapsing to a line of text,
-  // so the panel doesn't visibly resize (and drag the fixed-position card's
-  // height around) every time play pauses between at-bats. allowEmpty is
-  // what lets renderPitchLocation draw the zone despite zero pitches.
-  function sidebarAtBatPlaceholderHtml() {
-    return `<div class="pitch-empty">No at-bat in progress.</div>${renderPitchLocation([], null, null, false, null, true)}`;
+  // so the panel doesn't visibly resize (and drag the fixed-position
+  // sidebar's height around) every time play pauses between at-bats.
+  // allowEmpty is what lets renderPitchLocation draw the zone despite zero
+  // pitches, and the batter/pitcher lines fall back to placeholder dashes
+  // the same way renderPitchDetailHtml does for a real at-bat with no name.
+  function atBatTrackerPlaceholderHtml() {
+    return `<div class="pitch-header">&#8212;</div><div class="pitch-subheader">vs &#8212;</div><div class="pitch-empty">No at-bat in progress.</div>${renderPitchLocation([], null, null, false, null, true)}`;
   }
 
   // Renders the live/current at-bat (see the livePkey computed in
-  // fetchAndRender) into the always-on #sidebarAtBat column. pkey is null
-  // whenever there's no at-bat actually in progress (game not started,
-  // between innings/at-bats, or Final) -- see the isLiveCell/liveBatterInfo
-  // gating in fetchAndRender for what counts as "in progress" -- in which
-  // case sidebarAtBatPlaceholderHtml() stands in with an empty zone.
-  function updateSidebarAtBat(pkey) {
+  // fetchAndRender) into both always-on trackers -- the wide-screen
+  // #sidebarAtBat column and the narrow-screen #mobileAtBat card, exactly
+  // one of which is visible at a given width. pkey is null whenever there's
+  // no at-bat actually in progress (game not started, between innings/
+  // at-bats, or Final) -- see the isLiveCell/liveBatterInfo gating in
+  // fetchAndRender for what counts as "in progress" -- in which case
+  // atBatTrackerPlaceholderHtml() stands in with an empty zone so the
+  // tracker itself never disappears, only its content changes.
+  function updateAtBatTrackers(pkey) {
     const c = pkey ? pitchStore[pkey] : null;
+    let html;
     if (!c) {
-      sidebarAtBatPkey = null;
-      sidebarLastRenderedPitchNum = 0;
-      sidebarAtBatEl.innerHTML = sidebarAtBatPlaceholderHtml();
-      return;
+      atBatTrackerPkey = null;
+      atBatTrackerLastRenderedPitchNum = 0;
+      html = atBatTrackerPlaceholderHtml();
+    } else {
+      const isRefresh = pkey === atBatTrackerPkey;
+      atBatTrackerPkey = pkey;
+      const pitches = c.pitches || [];
+      const newPitchNums = new Set();
+      if (isRefresh) {
+        pitches.forEach(p => { if ((p.num || 0) > atBatTrackerLastRenderedPitchNum) newPitchNums.add(p.num); });
+      }
+      atBatTrackerLastRenderedPitchNum = pitches.reduce((max, p) => Math.max(max, p.num || 0), 0);
+      html = renderPitchDetailHtml(c, newPitchNums);
     }
-    const isRefresh = pkey === sidebarAtBatPkey;
-    sidebarAtBatPkey = pkey;
-    const pitches = c.pitches || [];
-    const newPitchNums = new Set();
-    if (isRefresh) {
-      pitches.forEach(p => { if ((p.num || 0) > sidebarLastRenderedPitchNum) newPitchNums.add(p.num); });
-    }
-    sidebarLastRenderedPitchNum = pitches.reduce((max, p) => Math.max(max, p.num || 0), 0);
-    sidebarAtBatEl.innerHTML = renderPitchDetailHtml(c, newPitchNums);
-    wirePitchLocationSync(sidebarAtBatEl);
+    [sidebarAtBatEl, mobileAtBatEl].forEach(el => {
+      el.innerHTML = html;
+      wirePitchLocationSync(el);
+    });
   }
 
   const rosterOverlay = document.getElementById('rosterOverlay');
