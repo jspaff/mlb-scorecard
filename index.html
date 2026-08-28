@@ -789,17 +789,24 @@
     color: var(--ink);
   }
   .team-header-btns { display: flex; gap: 8px; flex-wrap: wrap; }
-  /* Wraps just the header + the scrollable table (not the pitcher card
-     below, which has its own flex-wrap layout and would otherwise dominate
-     the shrink-to-fit width if it were included) so that on a wide screen,
-     giving this a fit-content width makes it exactly as wide as the table's
-     own natural width (see table.scorecard-table's min-width comment) --
-     which in turn pushes the header's Full Roster/Spray Chart buttons via
-     justify-content: space-between to land right above the final inning's
-     right edge, instead of trailing off into empty space at the edge of a
-     wide viewport. */
+  /* Wraps the header, the scrollable table, and the pitcher card, so that on
+     a wide screen, giving this a fit-content width makes it exactly as wide
+     as the table's own natural width (see table.scorecard-table's min-width
+     comment) -- which in turn pushes the header's Full Roster/Spray Chart
+     buttons via justify-content: space-between, and the pitcher card's own
+     right edge, to land right above the final inning's right edge, instead
+     of trailing off into empty space at the edge of a wide viewport.
+     max-width: 100% is doing the real work on a viewport that's wide enough
+     to hit this breakpoint but still narrower than a many-extra-innings
+     table wants to be: every scorecard-table column has its min-width
+     pinned equal to its max-width (see the frozen-column comment below), so
+     the table's own min-content is just as wide as its max-content -- with
+     no narrower fallback for fit-content's own formula to shrink to, it
+     would otherwise force this wrap (and everything after it: the sheet,
+     #mlb-root, the whole page) wider than the viewport instead of leaving
+     that overflow to .table-scroll where it belongs. */
   @media (min-width: 700px) {
-    .team-scorecard-wrap { width: fit-content; }
+    .team-scorecard-wrap { width: fit-content; max-width: 100%; }
   }
 
   .spray-card {
@@ -4011,8 +4018,8 @@
         <div class="table-scroll">
           <table class="scorecard-table"><thead>${head}</thead><tbody>${bodyRows}</tbody></table>
         </div>
+        ${pitcherCardHtml || ''}
       </div>
-      ${pitcherCardHtml || ''}
     </div>`;
   }
 
