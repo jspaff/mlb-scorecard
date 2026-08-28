@@ -1780,13 +1780,16 @@
   /* Reuses the same inner markup/classes as #pitchModalBody (.pitch-header,
      .pitch-table, .loc-section, ...) -- see renderPitchDetailHtml -- just
      laid out in an always-visible panel section instead of a dismissible
-     overlay (no close button, no backdrop). Its own --paper background
-     (distinct from the monster-green section above it) marks it as a
-     separate zone within the one shared card, and its own scrollbar (see
-     .scorecard-sidebar above) is what lets the pitch table grow row by row
-     without the panel's overall height pushing anything above it around. */
+     overlay (no close button, no backdrop). Shares .scorecard-sidebar's own
+     monster-green-dim background (no background of its own -- a --paper
+     background here read as a second, off-theme green next to the
+     scoreboard's, not as one cohesive card) with just a hairline divider,
+     the same one .tab-bar uses against this same background, to mark where
+     the scoreboard ends. Its own scrollbar (see .scorecard-sidebar above)
+     is what lets the pitch table grow row by row without the panel's
+     overall height pushing anything above it around. */
   .sidebar-atbat:not(:empty) {
-    background: var(--paper);
+    border-top: 1px solid rgba(243, 236, 219, 0.15);
     padding: 14px;
     overflow-y: auto;
     /* Takes whatever vertical space is left in the fixed-height card below
