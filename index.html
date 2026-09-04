@@ -126,7 +126,9 @@
   select, input[type=date], input[type=text] {
     background: var(--paper);
     color: var(--ink);
-    border: 2px solid var(--ink);
+    /* The cream --ink color reads as a white edge against the dark paper
+       background -- see the matching overrides on .date-nav/select. */
+    border: 2px solid var(--paper-line);
     border-radius: 0;
     padding: 7px 10px;
     font-family: 'Oswald', sans-serif;
@@ -143,9 +145,6 @@
     -moz-appearance: none;
     appearance: none;
     text-transform: uppercase;
-    /* Overrides the shared cream (--ink) border above, which reads as a
-       stark white edge against the dark paper background. */
-    border-color: var(--paper-line);
     padding-right: 26px;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0L5 6L10 0Z' fill='%23f3ecdb'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
