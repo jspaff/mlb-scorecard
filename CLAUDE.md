@@ -16,6 +16,8 @@ There's nothing to install or build. Serve the directory locally (e.g. `python3 
 
 There's no automated way to verify a change — after editing, open the file in a browser and click through the affected tab/overlay to confirm it still works, including a live or in-progress game if the change touches polling or the scorecard grid. Bump `sw.js`'s `CACHE_NAME` on **any change to `index.html`, `manifest.json`, or the icons** (not just edits to `sw.js` itself) — the service worker serves the cached app shell immediately and only refreshes it in the background for the *next* load, so without a bump, an installed client can sit a full version behind indefinitely, with each reload only fetching the update that shows up on the load after it. Confirm via DevTools → Application → Service Workers that it updates/activates as expected.
 
+Whenever a Claude Code session edits `index.html` (or `sw.js`/`manifest.json`), attach the updated file(s) to the response (e.g. via a "send file" tool if available) rather than waiting to be asked — the user's workflow is downloading it straight into a local server setup to test.
+
 ## Structure
 
 The page is scoped under `#mlb-root` with a set of CSS custom properties (`--paper`, `--ink`, `--gold`, `--brick`, `--frame`) defining the vintage scorecard palette in `:root`. The `PALETTE` JS constant near the top of the script (`const PALETTE = { ink, gold, brick, ball, paper, gray }`) mirrors those same colors for the handful of SVG strings that can't reference a CSS variable directly — if you change the palette, update both places.
