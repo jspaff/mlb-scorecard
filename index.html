@@ -295,7 +295,6 @@
     align-items: center;
     gap: 10px;
     padding: 7px 0;
-    font-family: 'IBM Plex Mono', monospace;
   }
   .score-strip-teams {
     font-family: 'Oswald', sans-serif;
@@ -321,15 +320,16 @@
   .box-score-link {
     margin-left: auto;
     flex-shrink: 0;
-    background: var(--paper);
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 10.5px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
     color: var(--ink);
+    background: rgba(28, 58, 44, 0.05);
     border: 1px solid var(--paper-line);
-    border-radius: 6px;
-    padding: 7px 10px;
-    font-family: 'Oswald', sans-serif;
-    font-weight: 500;
-    letter-spacing: 0.02em;
-    font-size: 13px;
+    border-radius: 5px;
+    padding: 6px 12px;
     cursor: pointer;
     white-space: nowrap;
   }
@@ -502,7 +502,7 @@
   .monster-box-team {
     min-width: 34px;
     font-family: 'Overpass', sans-serif;
-    font-weight: 800;
+    font-weight: 700;
     font-size: 12px;
     letter-spacing: 0.05em;
     text-transform: uppercase;
@@ -763,7 +763,7 @@
     min-width: 0;
   }
   .daily-tile-score {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'Overpass', sans-serif;
     font-weight: 600;
     font-size: 13px;
     color: var(--ink-soft);
@@ -805,11 +805,7 @@
     color: var(--gold);
     margin-bottom: 2px;
   }
-  .hr-batter {
-    font-family: 'Special Elite', monospace;
-    font-size: 13px;
-    color: var(--ink);
-  }
+  .hr-batter { margin-bottom: 3px; }
   .hr-row.is-grand-slam .hr-batter { color: var(--gold); }
   .hr-pitcher {
     font-family: 'Inter', sans-serif;
@@ -824,7 +820,8 @@
     color: var(--ink-soft);
   }
   .hr-distance {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
     font-size: 12px;
     color: var(--ink-soft);
     white-space: nowrap;
@@ -1022,9 +1019,6 @@
     gap: 8px;
     padding: 4px 0;
     border-bottom: 1px dashed var(--paper-line);
-    font-family: 'Special Elite', monospace;
-    font-size: 12px;
-    color: var(--ink);
   }
   .roster-row:last-child { border-bottom: none; }
   .roster-order {
@@ -1034,10 +1028,13 @@
     color: var(--ink-soft);
     width: 14px;
   }
-  .roster-name { flex: 1; display: flex; align-items: center; gap: 6px; }
+  .roster-name { min-width: 0; }
   .roster-pos {
-    font-family: 'Special Elite', monospace;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
     font-size: 11px;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
     color: var(--ink-soft);
   }
   .roster-empty {
@@ -1048,7 +1045,8 @@
     padding: 4px 0;
   }
   .roster-jersey {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
     font-size: 10.5px;
     color: var(--ink-soft);
     width: 26px;
@@ -1105,16 +1103,17 @@
   }
   table.il-table tr:last-child td { border-bottom: none; }
   table.il-table td.il-num {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
     color: var(--ink-soft);
     font-size: 11px;
     white-space: nowrap;
   }
-  table.il-table td.il-name {
-    font-family: 'Special Elite', monospace;
-  }
   table.il-table td.il-pos {
-    font-family: 'Special Elite', monospace;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
     color: var(--ink-soft);
     font-size: 11px;
     white-space: nowrap;
@@ -1125,7 +1124,8 @@
     color: var(--ink-soft);
   }
   table.il-table td.il-date {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
     font-size: 11px;
     color: var(--ink-soft);
     white-space: nowrap;
@@ -1137,7 +1137,6 @@
     gap: 6px;
     padding: 4px 0;
     border-bottom: 1px dashed var(--paper-line);
-    font-family: 'Special Elite', monospace;
     font-size: 11.5px;
     color: var(--ink);
   }
@@ -1163,7 +1162,7 @@
     max-width: 320px;
     margin: 0 auto;
   }
-  .lb-rank { width: 24px; font-size: 15px; color: var(--ink-soft); }
+  .lb-rank { width: 24px; font-family: 'Overpass', sans-serif; font-weight: 700; color: var(--ink-soft); }
   @media (min-width: 700px) {
     .lb-header, .lb-grid { max-width: 660px; }
     .lb-grid { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(15, auto); }
@@ -1206,8 +1205,8 @@
   .lb-hr {
     position: relative;
     z-index: 1;
+    font-family: 'Overpass', sans-serif;
     font-weight: 700;
-    font-size: 17px;
   }
   .lb-hr-label { width: 40px; }
 
@@ -1267,7 +1266,8 @@
     position: absolute;
     top: 2px;
     left: 3px;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
     font-size: 8px;
     color: var(--ink-soft);
   }
@@ -1293,14 +1293,14 @@
   .calendar-day.is-dh .cal-game-opp { font-size: 17px; margin-top: 1px; }
   .standings-team {
     flex: 1;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
     font-size: 12px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .standings-row.standings-header-row .standings-team { font-family: 'Overpass', sans-serif; }
-  .standings-num { width: 38px; text-align: center; }
+  .standings-num { width: 38px; text-align: center; font-family: 'Overpass', sans-serif; font-weight: 700; }
   button.standings-team-btn {
     flex: 1;
     display: inline-block;
@@ -1340,10 +1340,6 @@
   }
   .bp-row:last-child { border-bottom: none; }
   .bp-name {
-    font-family: 'Special Elite', monospace;
-    font-weight: 500;
-    font-size: 12px;
-    color: var(--ink);
     display: flex;
     align-items: center;
     gap: 6px;
@@ -1367,7 +1363,7 @@
     align-items: center;
   }
   .bp-recent-value {
-    font-family: 'Special Elite', monospace;
+    font-family: 'Overpass', sans-serif;
     font-size: 12px;
     font-weight: 700;
     color: var(--ink);
@@ -1415,7 +1411,7 @@
   .pc-stats { display: flex; gap: 16px; flex-wrap: wrap; }
   .pc-stat { display: flex; flex-direction: column; align-items: center; min-width: 26px; }
   .pc-value {
-    font-family: 'Special Elite', monospace;
+    font-family: 'Overpass', sans-serif;
     font-size: 14px;
     font-weight: 700;
     color: var(--ink);
@@ -1516,14 +1512,13 @@
     text-align: center;
     padding: 3px 2px;
     border-bottom: 1px dashed var(--paper-line);
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
     font-size: 12px;
     color: var(--ink);
   }
   table.scorecard-table td.ply {
     text-align: left;
-    font-family: 'Special Elite', monospace;
-    font-weight: 500;
     font-size: 12px;
     white-space: nowrap;
     overflow: hidden;
@@ -1624,7 +1619,7 @@
     gap: 1px;
   }
   .adv-tag {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'Overpass', sans-serif;
     font-weight: 600;
     font-size: 7.5px;
     line-height: 1.2;
@@ -1649,7 +1644,7 @@
     position: absolute;
     top: -3px;
     left: -3px;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'Overpass', sans-serif;
     font-weight: 600;
     font-size: 7px;
     font-style: italic;
@@ -1676,7 +1671,7 @@
     opacity: 0.55;
     text-align: right;
     margin-top: 10px;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'Inter', sans-serif;
   }
 
   .cell-wrap.clickable { cursor: pointer; }
@@ -1717,7 +1712,8 @@
     gap: 8px;
     padding: 5px 6px;
     border-bottom: 1px solid var(--paper-line);
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
     font-size: 12px;
     color: var(--ink);
   }
@@ -1956,13 +1952,15 @@
     text-overflow: ellipsis;
   }
   .player-profile-bio {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
     font-size: 11.5px;
     color: var(--ink-soft);
     margin-top: 4px;
   }
   .player-profile-bt {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
     font-size: 11.5px;
     color: var(--ink-soft);
     margin-top: 2px;
@@ -1975,7 +1973,7 @@
   .player-spray-section { margin-top: 4px; }
   .player-spray-section .spray-card { max-width: 420px; margin: 0 auto; }
   .player-spray-section .spray-card > svg { max-width: 320px; }
-  table.pitch-table { width: 100%; border-collapse: collapse; font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+  table.pitch-table { width: 100%; border-collapse: collapse; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 12px; }
   table.pitch-table th {
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
@@ -2003,7 +2001,7 @@
   table.pitch-table tr.challenged td { border-bottom-style: dashed; }
   .abs-tag {
     display: inline-block;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'Overpass', sans-serif;
     font-weight: 700;
     font-size: 8.5px;
     letter-spacing: 0.04em;
@@ -2073,7 +2071,8 @@
   .pitch-empty { font-family: 'Inter', sans-serif; font-size: 12px; color: var(--ink-soft); padding: 6px 0; }
   .pitch-events { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
   .pitch-event-tag {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 600;
     font-size: 10.5px;
     font-style: italic;
     color: var(--ink-soft);
@@ -2745,7 +2744,7 @@
   function getPlayCode(play) {
     const event = (play.result && play.result.event) || '';
     const seq = getFielderSequence(play);
-    const seqStr = seq.join('-');
+    const seqStr = seq.join('·');
 
     const simple = {
       'Single':'1B','Double':'2B','Triple':'3B','Home Run':'HR',
@@ -2834,7 +2833,7 @@
       const labelX = 20 + (cx - 20) * outFactor;
       const labelY = 20 + (cy - 20) * outFactor;
       return `<rect x="${labelX - 6.5}" y="${labelY - 4.5}" width="13" height="9" rx="1.5" fill="${paper}" stroke="${gold}" stroke-width="0.8"/>`
-        + `<text x="${labelX}" y="${labelY + 2.8}" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="6.5" font-weight="700" fill="${gold}">${text}</text>`;
+        + `<text x="${labelX}" y="${labelY + 2.8}" text-anchor="middle" font-family="'Overpass', sans-serif" font-size="6.5" font-weight="700" fill="${gold}">${text}</text>`;
     }
     let svg = '<svg viewBox="0 0 40 40" width="52" height="52">';
     let labelSvg = '';
@@ -2868,8 +2867,7 @@
     if (scored) svg += `<polygon points="20,36 36,20 20,4 4,20" fill="${gold}" opacity="${isHR ? 0.92 : 0.5}"/>`;
     if (isK) svg += `<polygon points="20,36 36,20 20,4 4,20" fill="${brick}" opacity="0.82"/>`;
     if (code) {
-      let fontSize = code.length > 4 ? 9.5 : code.length > 2 ? 11 : 12.5;
-      if (isHR || isK) fontSize += 3;
+      let fontSize = isHR || isK ? 18 : code.length > 5 ? 10 : code.length > 2 ? 12 : 14;
       const textFill = isK ? '#fbf3e3' : (isHR ? '#fbf3e3' : (isOut ? brick : ink));
       const flipStyle = isK && calledLooking ? ' style="transform: scaleX(-1); transform-origin: 50% 50%; transform-box: fill-box;"' : '';
       svg += `<text x="20" y="24.5" text-anchor="middle" font-family="'Special Elite', monospace" font-size="${fontSize}" fill="${textFill}"${flipStyle}>${code}</text>`;
@@ -3328,8 +3326,8 @@
           .filter(a => a.out || a.startLabel !== a.endLabel)
           .sort((a, b) => a.startLabel.localeCompare(b.startLabel))
           .map(a => a.out
-            ? { label: `${a.startLabel}&#8594;X`, out: true }
-            : { label: `${a.startLabel}&#8594;${a.endLabel}`, scored: a.endLabel === 'H' });
+            ? { label: `${a.startLabel}>X`, out: true }
+            : { label: `${a.startLabel}>${a.endLabel}`, scored: a.endLabel === 'H' });
         if (tags.length) batterCell.otherAdvances = (batterCell.otherAdvances || []).concat(tags);
       }
     });
@@ -3685,7 +3683,7 @@
     if (!list || !list.length) return '<div class="roster-empty">No pitching data available</div>';
     return list.map(p => `
       <div class="bp-row">
-        <div class="bp-name">${p.name}${p.isStarter ? '<span class="bp-badge bp-badge-starter">STARTER</span>' : (p.usedToday ? '<span class="bp-badge">RELIEVER</span>' : '')}</div>
+        <div class="bp-name"><button type="button" class="player-name-btn" data-player-id="${p.id}">${p.name}</button>${p.isStarter ? '<span class="bp-badge bp-badge-starter">STARTER</span>' : (p.usedToday ? '<span class="bp-badge">RELIEVER</span>' : '')}</div>
         <div class="bp-recent">
           <span class="bp-recent-item"><span class="bp-recent-value">${p.usedToday ? (p.todayIp ?? '0.0') : '&#8212;'}</span><span class="bp-recent-label">IP</span></span>
           <span class="bp-recent-item"><span class="bp-recent-value">${p.usedToday ? (p.todayPc ?? 0) : '&#8212;'}</span><span class="bp-recent-label">P</span></span>
@@ -3869,10 +3867,10 @@
   function renderRosterContent(teamName, bullpenList, lineupRows, benchPlayers) {
     const lineupHtml = lineupRows.map((r, i) => {
       const starter = r.players[0];
-      return `<div class="roster-row"><span class="roster-order">${i + 1}</span><span class="roster-name">${starter.name}</span><span class="roster-pos">${starter.pos}</span></div>`;
+      return `<div class="roster-row"><span class="roster-order">${i + 1}</span><button type="button" class="player-name-btn roster-name" data-player-id="${starter.id}">${starter.name}</button><span class="roster-pos">${starter.pos}</span></div>`;
     }).join('');
     const benchHtml = benchPlayers.length
-      ? benchPlayers.map(p => `<div class="roster-row"><span class="roster-name">${p.name}${p.entered ? ' <span class="bp-badge">SUBSTITUTE</span>' : ''}</span><span class="roster-pos">${p.pos}</span></div>`).join('')
+      ? benchPlayers.map(p => `<div class="roster-row"><button type="button" class="player-name-btn roster-name" data-player-id="${p.id}">${p.name}</button>${p.entered ? ' <span class="bp-badge">SUBSTITUTE</span>' : ''}<span class="roster-pos">${p.pos}</span></div>`).join('')
       : '<div class="roster-empty">None</div>';
 
     return `
@@ -4419,10 +4417,10 @@
       svg += `<line x1="${t.x.toFixed(1)}" y1="${padT}" x2="${t.x.toFixed(1)}" y2="${height - padB}" stroke="${ink}" stroke-width="0.5" opacity="0.15"/>`;
       svg += `<text x="${t.x.toFixed(1)}" y="${height - 4}" font-family="Overpass, sans-serif" font-size="7" font-weight="700" letter-spacing="0.04em" fill="${ink}" opacity="0.6">${t.label}</text>`;
     });
-    svg += `<text x="${padL - 4}" y="${(padT + 6).toFixed(1)}" font-family="'IBM Plex Mono', monospace" font-size="8" fill="${ink}" opacity="0.6" text-anchor="end">${maxNet > 0 ? '+' + maxNet : maxNet}</text>`;
-    svg += `<text x="${padL - 4}" y="${(zeroY - 3).toFixed(1)}" font-family="'IBM Plex Mono', monospace" font-size="8" fill="${ink}" opacity="0.6" text-anchor="end">0</text>`;
+    svg += `<text x="${padL - 4}" y="${(padT + 6).toFixed(1)}" font-family="Overpass, sans-serif" font-weight="700" font-size="8" fill="${ink}" opacity="0.6" text-anchor="end">${maxNet > 0 ? '+' + maxNet : maxNet}</text>`;
+    svg += `<text x="${padL - 4}" y="${(zeroY - 3).toFixed(1)}" font-family="Overpass, sans-serif" font-weight="700" font-size="8" fill="${ink}" opacity="0.6" text-anchor="end">0</text>`;
     if (minNet < 0) {
-      svg += `<text x="${padL - 4}" y="${height - padB}" font-family="'IBM Plex Mono', monospace" font-size="8" fill="${ink}" opacity="0.6" text-anchor="end">${minNet}</text>`;
+      svg += `<text x="${padL - 4}" y="${height - padB}" font-family="Overpass, sans-serif" font-weight="700" font-size="8" fill="${ink}" opacity="0.6" text-anchor="end">${minNet}</text>`;
     }
     if (n > 1) {
       svg += `<polyline points="${linePts}" fill="none" stroke="${ink}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>`;
@@ -4645,6 +4643,7 @@
         const lastEvent = events[events.length - 1];
         const playId = lastEvent && lastEvent.playId;
         return {
+          batterId: p.matchup && p.matchup.batter && p.matchup.batter.id,
           batterName: (p.matchup && p.matchup.batter && p.matchup.batter.fullName) || '',
           pitcherName: (p.matchup && p.matchup.pitcher && p.matchup.pitcher.fullName) || '',
           battingAbbr: isTop ? awayAbbr : homeAbbr,
@@ -4680,7 +4679,7 @@
       <div class="hr-row${hr.isGrandSlam ? ' is-grand-slam' : ''}">
         <div class="hr-main">
           ${grandSlamLabel}
-          <div class="hr-batter">${hr.batterName} <span class="hr-team">${hr.battingAbbr}</span></div>
+          <button type="button" class="player-name-btn hr-batter" data-player-id="${hr.batterId || ''}">${hr.batterName} <span class="hr-team">${hr.battingAbbr}</span></button>
           <div class="hr-pitcher">vs ${hr.pitcherName} <span class="hr-team">${hr.pitchingAbbr}</span></div>
           ${watchHtml}
         </div>
@@ -4692,7 +4691,7 @@
     return `
       <div class="hr-row">
         <div class="hr-main">
-          <div class="hr-batter">${k.name} <span class="hr-team">${k.teamAbbr}</span></div>
+          <button type="button" class="player-name-btn hr-batter" data-player-id="${k.id}">${k.name} <span class="hr-team">${k.teamAbbr}</span></button>
         </div>
         <div class="hr-distance">${k.count} K</div>
       </div>`;
@@ -4959,7 +4958,7 @@
     return `
       <div class="roster-row">
         <span class="roster-jersey">${p.jersey ? '#' + p.jersey : ''}</span>
-        <span class="roster-name">${p.name}</span>
+        <button type="button" class="player-name-btn roster-name" data-player-id="${p.id}">${p.name}</button>
         ${opts.badges ? rosterStatusBadge(p) : ''}
         <span class="roster-pos">${p.posAbbr}</span>
       </div>`;
@@ -5009,7 +5008,7 @@
       return `
         <tr>
           <td class="il-num">${p.jersey ? '#' + p.jersey : ''}</td>
-          <td class="il-name">${p.name}</td>
+          <td class="il-name"><button type="button" class="player-name-btn" data-player-id="${p.id}">${p.name}</button></td>
           <td class="il-pos">${p.posAbbr}</td>
           <td class="il-injury">${detail || 'Details unavailable'}</td>
           <td class="il-date">${dateLabel}</td>
@@ -5725,7 +5724,7 @@
         return Object.values(sideBoxscore.players || {})
           .filter(p => p.person && p.position && p.position.abbreviation !== 'P'
             && (!p.battingOrder || parseInt(p.battingOrder) % 100 !== 0))
-          .map(p => ({ name: p.person.fullName, pos: p.position.abbreviation, entered: !!p.battingOrder }))
+          .map(p => ({ id: p.person.id, name: p.person.fullName, pos: p.position.abbreviation, entered: !!p.battingOrder }))
           // entered substitutes float to the top, same as relievers who've
           // entered sort above the rest of the bullpen in buildBullpenList
           .sort((a, b) => (b.entered ? 1 : 0) - (a.entered ? 1 : 0));
@@ -6002,10 +6001,10 @@
     }
     if (spec.hollow) {
       svg += `<circle cx="${px}" cy="${py}" r="7.5" fill="${PALETTE.paper}" stroke="${spec.hue}" stroke-width="1.8"/>`;
-      svg += `<text x="${px}" y="${py + 3}" text-anchor="middle" font-size="8.5" font-weight="700" font-family="IBM Plex Mono, monospace" fill="${spec.hue}">${p.num || ''}</text>`;
+      svg += `<text x="${px}" y="${py + 3}" text-anchor="middle" font-size="8.5" font-weight="700" font-family="Overpass, sans-serif" fill="${spec.hue}">${p.num || ''}</text>`;
     } else {
       svg += `<circle cx="${px}" cy="${py}" r="7.5" fill="${spec.hue}" stroke="${PALETTE.paper}" stroke-width="1.2"/>`;
-      svg += `<text x="${px}" y="${py + 3}" text-anchor="middle" font-size="8.5" font-weight="700" font-family="IBM Plex Mono, monospace" fill="${PALETTE.paper}">${p.num || ''}</text>`;
+      svg += `<text x="${px}" y="${py + 3}" text-anchor="middle" font-size="8.5" font-weight="700" font-family="Overpass, sans-serif" fill="${PALETTE.paper}">${p.num || ''}</text>`;
     }
     svg += '</g>';
     return svg;
