@@ -2501,19 +2501,30 @@
   // API's own combined total for that year -- dropped here since the UI
   // recomputes that total itself from the real per-team splits, and
   // keeping it would double-count both the year total and the subrows.
+  // Fetches both hitting and pitching groups in one call rather than
+  // branching on position first -- the profile can render before the
+  // position-carrying person record (getPlayerDetails) has resolved, and
+  // this avoids sequencing the two fetches just to pick a group.
   const playerCareerStatsCache = {};
   async function getPlayerCareerStats(personId) {
     if (playerCareerStatsCache[personId] !== undefined) return playerCareerStatsCache[personId];
-    try {
-      const res = await fetch(`https://statsapi.mlb.com/api/v1/people/${personId}/stats?stats=yearByYear&group=hitting`);
-      const data = await res.json();
-      const splits = ((data.stats && data.stats[0] && data.stats[0].splits) || []).filter(s => s.team);
+    const extractGroup = (statsArr, groupName) => {
+      const entry = statsArr.find(s => s.group && s.group.displayName === groupName);
+      const splits = ((entry && entry.splits) || []).filter(s => s.team);
       splits.sort((a, b) => Number(a.season) - Number(b.season));
-      playerCareerStatsCache[personId] = splits;
       return splits;
+    };
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/people/${personId}/stats?stats=yearByYear&group=hitting,pitching`);
+      const data = await res.json();
+      const statsArr = data.stats || [];
+      const result = { hitting: extractGroup(statsArr, 'hitting'), pitching: extractGroup(statsArr, 'pitching') };
+      playerCareerStatsCache[personId] = result;
+      return result;
     } catch (e) {
-      playerCareerStatsCache[personId] = [];
-      return [];
+      const result = { hitting: [], pitching: [] };
+      playerCareerStatsCache[personId] = result;
+      return result;
     }
   }
   // Career-spanning, so cached by player id alone (no season) -- a player's
@@ -6548,6 +6559,90 @@
       </table></div>`;
   }
 
+  function isPitcher(person) {
+    const pos = person && person.primaryPosition;
+    return !!(pos && (pos.type === 'Pitcher' || pos.abbreviation === 'P'));
+  }
+
+  // "13.2" (13 innings, 2 outs) <-> 41 outs -- the API's inningsPitched
+  // string uses the two out-digits as a base-3 fraction, not decimal
+  // tenths, so it has to be converted to a plain out count before summing
+  // across stints or seasons.
+  function ipToOuts(ip) {
+    if (ip == null) return 0;
+    const [whole, frac] = String(ip).split('.');
+    return (parseInt(whole, 10) || 0) * 3 + (parseInt(frac, 10) || 0);
+  }
+  function formatIP(outs) {
+    return `${Math.floor(outs / 3)}.${outs % 3}`;
+  }
+  function formatERA(earnedRuns, outs) {
+    if (!outs) return '&#8212;';
+    return (earnedRuns * 27 / outs).toFixed(2);
+  }
+  function formatWHIP(baseOnBalls, hits, outs) {
+    if (!outs) return '&#8212;';
+    return ((baseOnBalls + hits) * 3 / outs).toFixed(2);
+  }
+  function formatKBB(strikeOuts, baseOnBalls, battersFaced) {
+    if (!battersFaced) return '&#8212;';
+    return `${(((strikeOuts - baseOnBalls) / battersFaced) * 100).toFixed(1)}%`;
+  }
+
+  // Mirrors collapseCareerByYear, but for pitching: sums innings as outs
+  // (see ipToOuts) and battersFaced so ERA/WHIP/K%-BB% can be recomputed
+  // for the combined season rather than averaging already-rounded rates.
+  function collapsePitchingCareerByYear(splits) {
+    const bySeason = new Map();
+    splits.forEach(s => {
+      const stat = s.stat || {};
+      let agg = bySeason.get(s.season);
+      if (!agg) {
+        agg = { season: s.season, teams: [], gamesPitched: 0, outs: 0, earnedRuns: 0, hits: 0, baseOnBalls: 0, strikeOuts: 0, battersFaced: 0 };
+        bySeason.set(s.season, agg);
+      }
+      const teamName = s.team && teamNickname(s.team);
+      if (teamName && !agg.teams.includes(teamName)) agg.teams.push(teamName);
+      agg.gamesPitched += stat.gamesPitched ?? stat.gamesPlayed ?? 0;
+      agg.outs += ipToOuts(stat.inningsPitched);
+      agg.earnedRuns += stat.earnedRuns || 0;
+      agg.hits += stat.hits || 0;
+      agg.baseOnBalls += stat.baseOnBalls || 0;
+      agg.strikeOuts += stat.strikeOuts || 0;
+      agg.battersFaced += stat.battersFaced || 0;
+    });
+    return Array.from(bySeason.values()).sort((a, b) => Number(a.season) - Number(b.season));
+  }
+
+  function renderPitchingCareerTable(splits) {
+    const stintsBySeason = new Map();
+    splits.forEach(s => {
+      if (!stintsBySeason.has(s.season)) stintsBySeason.set(s.season, []);
+      stintsBySeason.get(s.season).push(s);
+    });
+    const rows = collapsePitchingCareerByYear(splits).map(y => {
+      const team = y.teams.length > 1 ? 'Multiple' : (y.teams[0] || '&#8212;');
+      const era = formatERA(y.earnedRuns, y.outs);
+      const whip = formatWHIP(y.baseOnBalls, y.hits, y.outs);
+      const kbb = formatKBB(y.strikeOuts, y.baseOnBalls, y.battersFaced);
+      const yearRow = `<tr class="career-year-row"><td>${y.season}</td><td>${team}</td><td>${y.gamesPitched}</td><td>${formatIP(y.outs)}</td><td>${era}</td><td>${whip}</td><td>${kbb}</td><td>${y.strikeOuts}</td><td>${y.baseOnBalls}</td></tr>`;
+      const stints = stintsBySeason.get(y.season) || [];
+      const subRows = stints.length > 1
+        ? stints.map(s => {
+            const stat = s.stat || {};
+            const teamName = (s.team && teamNickname(s.team)) || '&#8212;';
+            const kbbSub = formatKBB(stat.strikeOuts, stat.baseOnBalls, stat.battersFaced);
+            return `<tr class="career-team-subrow"><td></td><td>${teamName}</td><td>${stat.gamesPitched ?? stat.gamesPlayed ?? '&#8212;'}</td><td>${stat.inningsPitched ?? '&#8212;'}</td><td>${stat.era ?? '&#8212;'}</td><td>${stat.whip ?? '&#8212;'}</td><td>${kbbSub}</td><td>${stat.strikeOuts ?? '&#8212;'}</td><td>${stat.baseOnBalls ?? '&#8212;'}</td></tr>`;
+          }).join('')
+        : '';
+      return yearRow + subRows;
+    });
+    return `<div class="table-scroll"><table class="pitch-table career-table">
+        <thead><tr><th>Year</th><th>Team</th><th>G</th><th>IP</th><th>ERA</th><th>WHIP</th><th>K%-BB%</th><th>SO</th><th>BB</th></tr></thead>
+        <tbody>${rows.join('')}</tbody>
+      </table></div>`;
+  }
+
   function renderPlayerProfile(person, careerSplits, awardTags) {
     const teamId = person.currentTeam && person.currentTeam.id;
     const watermarkHtml = teamId ? `<img class="player-profile-watermark" src="${capLogoUrl(teamId)}" alt="" aria-hidden="true">` : '';
@@ -6555,10 +6650,12 @@
     const bio = playerBioLine(person);
     const bt = playerBatsThrowsLine(person);
     const awardsHtml = renderAwardTags(awardTags);
-    const careerHtml = careerSplits === null
+    const pitcher = isPitcher(person);
+    const yearSplits = careerSplits === null ? null : (pitcher ? careerSplits.pitching : careerSplits.hitting);
+    const careerHtml = yearSplits === null
       ? '<div class="mlb-status-msg">Loading career stats&#8230;</div>'
-      : careerSplits.length
-        ? renderCareerTable(careerSplits)
+      : yearSplits.length
+        ? (pitcher ? renderPitchingCareerTable(yearSplits) : renderCareerTable(yearSplits))
         : '<div class="pitch-empty">Career stats not available.</div>';
     const sprayHtml = playerSprayState.personId === Number(person.id) ? renderPlayerSprayWidget(playerSprayState) : '';
     return `<div class="sheet player-profile-sheet">
