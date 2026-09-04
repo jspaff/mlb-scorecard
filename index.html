@@ -848,13 +848,17 @@
     padding-bottom: 4px;
     border-radius: 0;
     flex: 0 0 118px;
-    /* Explicit --paper fill rather than relying on .is-live/.is-final's own
-       translucent tint (a Preview tile has neither, and would otherwise sit
-       transparent against .tab-header's lighter --frame background here --
-       unlike the Daily tab's tiles, which get this same dark backdrop for
-       free from the .sheet card wrapping them there). Matters more now that
-       the tile is the only tap target on mobile (see the breakpoint below),
-       not just a state color. */
+  }
+  /* Explicit --paper fill for a Preview tile specifically (:not(...) rather
+     than just a lower-priority default, so it can't out-cascade
+     .is-live/.is-final's own lighter-green tint below, whatever order the
+     rules end up in) -- a Preview tile has neither state class nor
+     background of its own, and would otherwise sit transparent against
+     .tab-header's lighter --frame background here, unlike the Daily tab's
+     tiles, which get this same dark backdrop for free from the .sheet card
+     wrapping them there. Matters more now that the tile is the only tap
+     target on mobile (see the breakpoint below), not just a state color. */
+  .game-strip .daily-tile:not(.is-live):not(.is-final) {
     background: var(--paper);
   }
   /* Below 699px there's no room for a scrollable row of tiles, so the strip
@@ -5686,7 +5690,13 @@
   }
 
   async function loadSchedule(dateStr, preferredGamePk) {
-    gameStrip.innerHTML = '<div class="mlb-status-msg">Loading games&#8230;</div>';
+    // No "Loading..." placeholder swapped into gameStrip here (unlike body
+    // below) -- .mlb-status-msg's own padding is much taller than a tile,
+    // and since .date-nav stretches to match .game-strip's height (see
+    // .date-nav's own comment), swapping to it and back made the whole
+    // controls bar visibly grow then shrink on every date change. The
+    // previous date's tile(s) just stay put until renderGameStrip below
+    // replaces them, same as loadDailySummary's isPoll pattern.
     body.innerHTML = '<div class="mlb-status-msg">Fetching schedule for ' + dateStr + '&#8230;</div>';
     scoreBottomBar.innerHTML = '';
     sidebarMonsterPanel.innerHTML = '';
@@ -5710,6 +5720,7 @@
       renderGameStrip(dateStr, games);
       loadGame(chosen);
     } catch (e) {
+      gameStrip.innerHTML = '';
       body.innerHTML = apiErrorMsg('schedule');
     }
   }
