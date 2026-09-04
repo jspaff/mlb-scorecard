@@ -849,19 +849,17 @@
     border-radius: 0;
     flex: 0 0 118px;
   }
-  /* A little arrow next to the strip, mobile-only (see the max-width: 699px
-     breakpoint below) -- expands .game-strip into a full-width grid that
-     drops down over the scorecard so every game on the date is visible at
-     once, since the horizontal strip alone can't show them all on a narrow
-     screen. Hidden by default; the wide/desktop strip already has room to
-     scroll through every tile inline. */
+  /* A pull-tab under the strip, mobile-only (see the max-width: 699px
+     breakpoint below) -- expands .game-strip in place into a full-width
+     grid, so the whole controls bar reads as one panel growing taller
+     (date still up top) rather than a popup landing over the scorecard.
+     Hidden by default; the wide/desktop strip already has room to scroll
+     through every tile inline. */
   .game-strip-toggle {
     display: none;
     background: var(--paper);
     color: var(--ink);
     border: 2px solid var(--paper-line);
-    border-left: none;
-    width: 28px;
     cursor: pointer;
     font-size: 11px;
     line-height: 1;
@@ -869,24 +867,24 @@
   .game-strip-toggle:hover { background: rgba(28, 58, 44, 0.1); }
   .game-strip-toggle[aria-expanded="true"] { transform: scaleY(-1); }
   @media (max-width: 699px) {
-    .game-strip-toggle { display: inline-flex; align-items: center; justify-content: center; }
-    .mlb-controls[data-tab-controls="scorecard"] { position: relative; }
+    /* flex-basis: 100% (with .mlb-controls' own flex-wrap) is what forces
+       these onto their own line -- the toggle always wraps below the
+       date-nav/strip row, and once .game-strip itself goes full-width too
+       (below) it wraps between them instead of staying inline. */
+    .game-strip-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 100%;
+      height: 16px;
+    }
     .game-strip.is-expanded {
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: 100%;
-      z-index: 40;
+      flex: 1 1 100%;
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
       gap: 8px;
-      max-height: 70vh;
+      max-height: 50vh;
       overflow-y: auto;
-      background: var(--paper);
-      border: 2px solid var(--paper-line);
-      border-top: none;
-      padding: 10px;
-      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
     }
     .game-strip.is-expanded .daily-tile { flex: none; }
   }
