@@ -1302,6 +1302,7 @@
   }
   .standings-num { width: 38px; text-align: center; font-family: 'Overpass', sans-serif; font-weight: 700; }
   button.standings-team-btn {
+    position: relative;
     flex: 1;
     display: inline-block;
     max-width: 100%;
@@ -1317,10 +1318,11 @@
     color: var(--ink);
     background: rgba(243, 236, 219, 0.08);
     border: 1px solid var(--paper-line);
-    border-radius: 3px;
+    border-radius: 0;
     padding: 3px 8px;
     cursor: pointer;
-    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.35);
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
   }
   button.standings-team-btn:hover,
   button.standings-team-btn:focus-visible {
@@ -1328,6 +1330,7 @@
     border-color: var(--gold);
     color: var(--paper);
     outline: none;
+    box-shadow: 0 3px 4px rgba(0, 0, 0, 0.45);
   }
   .bp-row {
     display: flex;
@@ -1678,6 +1681,7 @@
   .cell-wrap.clickable:hover svg { filter: brightness(1.12); }
 
   .player-name-btn {
+    position: relative;
     display: inline-block;
     max-width: 100%;
     overflow: hidden;
@@ -1707,6 +1711,26 @@
     outline: none;
     box-shadow: 0 3px 4px rgba(0, 0, 0, 0.45);
   }
+  /* Corner pegs the plate hangs on -- just the two top corners, no middle
+     peg, so it reads as a plate slotted onto a scoreboard peg rail. */
+  .player-name-btn::before,
+  .player-name-btn::after,
+  button.standings-team-btn::before,
+  button.standings-team-btn::after {
+    content: '';
+    position: absolute;
+    top: 1px;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.6), rgba(0, 0, 0, 0.55) 75%);
+    box-shadow: 0 0.5px 0.5px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+  }
+  .player-name-btn::before,
+  button.standings-team-btn::before { left: 2px; }
+  .player-name-btn::after,
+  button.standings-team-btn::after { right: 2px; }
 
   .player-stat-line {
     display: flex;
