@@ -848,35 +848,32 @@
     padding-bottom: 4px;
     border-radius: 0;
     flex: 0 0 118px;
+    /* Explicit --paper fill rather than relying on .is-live/.is-final's own
+       translucent tint (a Preview tile has neither, and would otherwise sit
+       transparent against .tab-header's lighter --frame background here --
+       unlike the Daily tab's tiles, which get this same dark backdrop for
+       free from the .sheet card wrapping them there). Matters more now that
+       the tile is the only tap target on mobile (see the breakpoint below),
+       not just a state color. */
+    background: var(--paper);
   }
   /* Below 699px there's no room for a scrollable row of tiles, so the strip
      shows just the current game (every other .daily-tile hidden -- see
-     .is-current, set by renderGameStrip) and .game-strip-more-btn appears
-     to its right to open #gameStripOverlay: a modal grid of every game on
-     the date, styled exactly like the Daily tab's own (plain, un-shortened
-     .daily-tile via .daily-games-grid) since it's a separate full-screen
-     view rather than a compact inline control. Picking a game there closes
-     the modal and shows that scorecard. Desktop keeps the plain
-     horizontally-scrolled strip and never shows the button. */
-  .game-strip-more-btn {
-    display: none;
-    background: var(--paper);
-    color: var(--ink);
-    border: 2px solid var(--paper-line);
-    padding: 0 12px;
-    cursor: pointer;
-    font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 10px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-  }
-  .game-strip-more-btn:hover { background: rgba(28, 58, 44, 0.1); }
+     .is-current, set by renderGameStrip), right-aligned against the
+     date-nav, and the tile itself is the tap target that opens
+     #gameStripOverlay -- a modal grid of every game on the date, styled
+     exactly like the Daily tab's own (plain, un-shortened, rounded
+     .daily-tile via .daily-games-grid, just square-cornered -- see
+     #gameStripOverlayBody below) since it's a separate full-screen view
+     rather than a compact inline control. Picking a game there closes the
+     modal and shows that scorecard. Desktop keeps the plain
+     horizontally-scrolled strip. */
   @media (max-width: 699px) {
-    .game-strip-more-btn { display: inline-flex; align-items: center; justify-content: center; }
+    .game-strip { justify-content: flex-end; }
     .game-strip .daily-tile { display: none; }
     .game-strip .daily-tile.is-current { display: flex; }
   }
+  #gameStripOverlayBody .daily-tile { border-radius: 0; }
 
   .hr-list { display: flex; flex-direction: column; }
   .hr-row {
@@ -2345,7 +2342,6 @@
         <button type="button" class="date-nav-btn" id="dateNext" aria-label="Next day">&#8250;</button>
       </div>
       <div class="game-strip" id="gameStrip"></div>
-      <button type="button" class="game-strip-more-btn" id="gameStripMoreBtn" aria-haspopup="dialog">Games</button>
       <button type="button" class="box-score-link" id="gameSummaryTopBtn" hidden>Game Summary</button>
     </div>
     <div class="mlb-controls" data-tab-controls="standings" hidden>
@@ -2475,7 +2471,6 @@
   const dateInput = document.getElementById('datePick');
   const dateInputText = document.getElementById('datePickText');
   const gameStrip = document.getElementById('gameStrip');
-  const gameStripMoreBtn = document.getElementById('gameStripMoreBtn');
   const gameStripOverlay = document.getElementById('gameStripOverlay');
   const gameStripOverlayBody = document.getElementById('gameStripOverlayBody');
   const gameStripOverlayClose = document.getElementById('gameStripOverlayClose');
@@ -6139,20 +6134,28 @@
     renderGameStrip(dateInput.value, scheduleGames);
     loadGame(gamePk);
   }
+  // Below 699px (see .game-strip's CSS) the strip shows only the current
+  // game -- clicking that one tile can't "select" it (it's already
+  // current), so treat that specific tap as opening the all-games modal
+  // instead, rather than keeping a separate "Games" button around just for
+  // that. Desktop still shows every tile, where a click always picks one.
+  function handleGameStripTileActivate(tile) {
+    if (!tile) return;
+    const gamePk = tile.dataset.gamePk;
+    if (gamePk === String(currentGamePk) && window.matchMedia('(max-width: 699px)').matches) {
+      showGameStripModal(dateInput.value, scheduleGames);
+      return;
+    }
+    selectGame(gamePk);
+  }
   gameStrip.addEventListener('click', (e) => {
-    const tile = e.target.closest('.daily-tile');
-    if (tile) selectGame(tile.dataset.gamePk);
+    handleGameStripTileActivate(e.target.closest('.daily-tile'));
   });
   gameStrip.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
     const tile = e.target.closest('.daily-tile');
-    if (tile) { e.preventDefault(); selectGame(tile.dataset.gamePk); }
-  });
-  // Mobile-only (see .game-strip-more-btn's CSS) -- the strip shows just the
-  // current game below 699px, this opens the full-grid modal (styled like
-  // the Daily tab) to pick a different one.
-  gameStripMoreBtn.addEventListener('click', () => {
-    showGameStripModal(dateInput.value, scheduleGames);
+    if (tile) e.preventDefault();
+    handleGameStripTileActivate(tile);
   });
   gameStripOverlayBody.addEventListener('click', (e) => {
     const tile = e.target.closest('.daily-tile');
