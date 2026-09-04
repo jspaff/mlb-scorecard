@@ -863,42 +863,31 @@
     color: var(--ink);
   }
   .team-header-btns { display: flex; gap: 8px; flex-wrap: wrap; }
-  /* Wraps the header, the scrollable table, and the pitcher card, so that on
-     a wide screen, giving this a fit-content width makes it exactly as wide
-     as the table's own natural width -- which in turn pushes the header's
-     Full Roster/Spray Chart buttons via justify-content: space-between, and
-     the pitcher card's own right edge, to land right above the final
-     inning's right edge, instead
-     of trailing off into empty space at the edge of a wide viewport.
-     max-width: 100% is doing the real work on a viewport that's wide enough
-     to hit this breakpoint but still narrower than a many-extra-innings
-     table wants to be: every scorecard-table column has its min-width
-     pinned equal to its max-width (see the frozen-column comment below), so
-     the table's own min-content is just as wide as its max-content -- with
-     no narrower fallback for fit-content's own formula to shrink to, it
-     would otherwise force this wrap (and everything after it: the sheet,
-     #mlb-root, the whole page) wider than the viewport instead of leaving
-     that overflow to .table-scroll where it belongs. */
+  /* Wraps the header, the scrollable table, and the pitcher card. Stretched
+     to fill .scorecard-main's own width (not just fit the table's natural
+     width) so the .sheet paper background it sits in is never wider than
+     this wrap -- that gap used to show up as bare paper background to the
+     right of the grid at widths between the 700px breakpoint below and the
+     1100px one where .scorecard-sidebar appears (see that breakpoint
+     further up), since .scorecard-sidebar's own width only reserves space
+     from .scorecard-main once it's actually shown. Stretching unconditionally
+     keeps .scorecard-main's content always exactly as wide as the column it
+     sits in, sidebar or no sidebar. table.scorecard-table stretches to match
+     (see the "No width: 100%" comment by its base rule for why it normally
+     stays auto-width) so the innings actually reach the wrap's own right
+     edge instead of leaving it wider than the table's own content -- that
+     would fill the wrap but leave the header buttons/pitcher card sitting
+     past the last inning's real right edge instead of landing on it.
+     max-width: 100% on the wrap still matters below 1100px: every
+     scorecard-table column has its min-width pinned equal to its max-width
+     (see the frozen-column comment below), so the table's own min-content is
+     just as wide as its max-content -- with nothing narrower for the wrap to
+     shrink to on a many-extra-innings table, max-width: 100% is what leaves
+     that overflow to .table-scroll instead of forcing the wrap (and
+     everything after it: the sheet, #mlb-root, the whole page) wider than
+     the viewport. */
   @media (min-width: 700px) {
-    .team-scorecard-wrap { width: fit-content; max-width: 100%; }
-  }
-  /* Once .scorecard-sidebar (see the wide breakpoint further up) is there to
-     fill the rest of the viewport, fit-content's whole reason for existing
-     -- avoiding trailing empty space "at the edge of a wide viewport" per
-     the comment above -- no longer applies at this width: the sidebar is
-     that edge now. Overrides back to a full-width wrap AND table (see the
-     "No width: 100%" comment by table.scorecard-table below for why the
-     table itself normally stays auto-width) so the innings actually
-     stretch to reach it, rather than leaving the wrap wider than the
-     table's own content -- that would fill the wrap but still leave the
-     header buttons/pitcher card sitting past the last inning's real right
-     edge instead of landing on it. Must come after the 700px rule above
-     (same specificity on .team-scorecard-wrap, so source order decides) to
-     win at widths where both queries match -- table.scorecard-table's own
-     base rule never sets width at all (see its own comment), so there's no
-     ordering issue for that override regardless of where it sits. */
-  @media (min-width: 1100px) {
-    .team-scorecard-wrap { width: 100%; }
+    .team-scorecard-wrap { width: 100%; max-width: 100%; }
     table.scorecard-table { width: 100%; }
     /* table-layout: fixed's extra-width redistribution turns out NOT to
        respect max-width on individual cells (tested: Player/Pos visibly
