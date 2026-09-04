@@ -1084,13 +1084,16 @@
     text-transform: uppercase;
     color: var(--ink-soft);
   }
-  /* Scoped to the roster modal rather than changed on the shared rules
-     above -- .roster-name/.roster-pos are also used by the Roster tab's
-     own rows (see renderRosterRow), which aren't part of this uniformity
-     pass. Growing the name and fixing the position to a column only
-     inside the modal is what lines every row's position up underneath
-     the one above it. */
-  #rosterOverlay .roster-name { flex: 1 1 auto; }
+  /* Wraps the name button in the roster modal's rows -- this cell (not
+     the button itself) is what grows to fill the row, so the plate stays
+     sized to its own text instead of stretching into a wide button with
+     empty background, while the fixed-width position column after it
+     still lines up the same across every row. */
+  .roster-name-col { flex: 1 1 auto; min-width: 0; }
+  /* Scoped to the roster modal rather than the shared .roster-pos rule
+     above -- that class is also used by the Roster tab's own rows (see
+     renderRosterRow), which this pass doesn't touch. Pitching rows in
+     the modal drop this column entirely (see bullpenRowsHtml). */
   #rosterOverlay .roster-pos { flex: none; width: 28px; text-align: right; }
   .roster-empty {
     font-family: 'Inter', sans-serif;
@@ -1397,24 +1400,19 @@
     outline: none;
     box-shadow: 0 3px 4px rgba(0, 0, 0, 0.45);
   }
-  /* .roster-row already aligns the leading order/checkbox column, name,
-     and position for the Starting Lineup and Bench rows -- .bp-row adds
-     onto that same row for Pitching so all three sections' rows line up
-     on those three columns, then wraps its own availability grid onto a
-     second line if the row's too narrow to hold both. */
-  .bp-row {
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 6px 10px;
-  }
+  /* .roster-row already aligns the leading order/checkbox column and name
+     for the Starting Lineup and Bench rows -- .bp-row adds the
+     availability grid on the end of that same row for Pitching (no
+     position column; see bullpenRowsHtml). Deliberately no flex-wrap:
+     the grid has to stay on the row's one line, not spill onto a second. */
+  .bp-row { gap: 6px 10px; }
   /* Fixed equal-width tracks (not content-sized) so IP/P/Y/2D line up
      the same across every pitcher's row regardless of digit count. */
   .bp-recent {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    width: 136px;
+    width: 116px;
     flex: none;
-    margin-left: auto;
   }
   .bp-recent-item {
     display: flex;
@@ -3791,8 +3789,7 @@
       return `
       <div class="roster-row bp-row">
         <span class="roster-order">${orderCell}</span>
-        <button type="button" class="player-name-btn roster-name" data-player-id="${p.id}">${p.name}</button>
-        <span class="roster-pos">P</span>
+        <span class="roster-name-col"><button type="button" class="player-name-btn roster-name" data-player-id="${p.id}">${p.name}</button></span>
         <div class="bp-recent">
           <span class="bp-recent-item"><span class="bp-recent-value">${p.usedToday ? (p.todayIp ?? '0.0') : '&#8212;'}</span><span class="bp-recent-label">IP</span></span>
           <span class="bp-recent-item"><span class="bp-recent-value">${p.usedToday ? (p.todayPc ?? 0) : '&#8212;'}</span><span class="bp-recent-label">P</span></span>
@@ -3972,10 +3969,10 @@
   function renderRosterContent(teamName, bullpenList, lineupRows, benchPlayers) {
     const lineupHtml = lineupRows.map((r, i) => {
       const starter = r.players[0];
-      return `<div class="roster-row"><span class="roster-order">${i + 1}</span><button type="button" class="player-name-btn roster-name" data-player-id="${starter.id}">${starter.name}</button><span class="roster-pos">${starter.pos}</span></div>`;
+      return `<div class="roster-row"><span class="roster-order">${i + 1}</span><span class="roster-name-col"><button type="button" class="player-name-btn roster-name" data-player-id="${starter.id}">${starter.name}</button></span><span class="roster-pos">${starter.pos}</span></div>`;
     }).join('');
     const benchHtml = benchPlayers.length
-      ? benchPlayers.map(p => `<div class="roster-row"><span class="roster-order"><span class="roster-check${p.entered ? ' is-checked' : ''}"></span></span><button type="button" class="player-name-btn roster-name" data-player-id="${p.id}">${p.name}</button><span class="roster-pos">${p.pos}</span></div>`).join('')
+      ? benchPlayers.map(p => `<div class="roster-row"><span class="roster-order"><span class="roster-check${p.entered ? ' is-checked' : ''}"></span></span><span class="roster-name-col"><button type="button" class="player-name-btn roster-name" data-player-id="${p.id}">${p.name}</button></span><span class="roster-pos">${p.pos}</span></div>`).join('')
       : '<div class="roster-empty">None</div>';
 
     return `
