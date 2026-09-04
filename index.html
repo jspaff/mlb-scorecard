@@ -1043,21 +1043,38 @@
   /* Stacked by default (narrow modal); once #rosterOverlay's .pitch-modal
      is wide enough (see its own max-width override below) position
      players and pitchers split into their own columns instead of one long
-     scroll. */
-  .roster-columns { display: flex; flex-direction: column; }
-  .roster-col { min-width: 0; }
+     scroll. Named lineup-* rather than reusing the Roster tab's own
+     .roster-columns/.roster-column (below) -- same-sounding but a
+     different layout, so sharing the name would fight it. */
+  .lineup-columns { display: flex; flex-direction: column; }
+  .lineup-col { min-width: 0; }
   @media (min-width: 640px) {
     #rosterOverlay .pitch-modal { max-width: 640px; }
-    .roster-columns { flex-direction: row; gap: 28px; align-items: flex-start; }
-    .roster-col { flex: 1 1 0; }
+    .lineup-columns { flex-direction: row; gap: 28px; align-items: flex-start; }
+    .lineup-col { flex: 1 1 0; }
   }
+  /* The leading column of every row in the roster modal (batting order
+     number, a checkbox toggled once a bench player/reliever enters the
+     game, or "P" for the starting pitcher) -- centered so all three read
+     the same regardless of which of those three it's showing. */
   .roster-order {
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
     font-size: 10.5px;
     color: var(--ink-soft);
     width: 14px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
+  .roster-check {
+    width: 9px;
+    height: 9px;
+    border: 1.5px solid var(--ink-soft);
+    flex-shrink: 0;
+  }
+  .roster-check.is-checked { background: var(--gold); border-color: var(--gold); }
   .roster-name { min-width: 0; }
   .roster-pos {
     font-family: 'Overpass', sans-serif;
@@ -1067,6 +1084,14 @@
     text-transform: uppercase;
     color: var(--ink-soft);
   }
+  /* Scoped to the roster modal rather than changed on the shared rules
+     above -- .roster-name/.roster-pos are also used by the Roster tab's
+     own rows (see renderRosterRow), which aren't part of this uniformity
+     pass. Growing the name and fixing the position to a column only
+     inside the modal is what lines every row's position up underneath
+     the one above it. */
+  #rosterOverlay .roster-name { flex: 1 1 auto; }
+  #rosterOverlay .roster-pos { flex: none; width: 28px; text-align: right; }
   .roster-empty {
     font-family: 'Inter', sans-serif;
     font-size: 12px;
@@ -1372,34 +1397,25 @@
     outline: none;
     box-shadow: 0 3px 4px rgba(0, 0, 0, 0.45);
   }
+  /* .roster-row already aligns the leading order/checkbox column, name,
+     and position for the Starting Lineup and Bench rows -- .bp-row adds
+     onto that same row for Pitching so all three sections' rows line up
+     on those three columns, then wraps its own availability grid onto a
+     second line if the row's too narrow to hold both. */
   .bp-row {
-    display: flex;
-    align-items: center;
     justify-content: space-between;
-    gap: 10px;
-    padding: 5px 0;
-    border-bottom: 1px dashed var(--paper-line);
     flex-wrap: wrap;
+    gap: 6px 10px;
   }
-  .bp-row:last-child { border-bottom: none; }
-  .bp-name {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+  /* Fixed equal-width tracks (not content-sized) so IP/P/Y/2D line up
+     the same across every pitcher's row regardless of digit count. */
+  .bp-recent {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    width: 136px;
+    flex: none;
+    margin-left: auto;
   }
-  .bp-badge {
-    font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 8px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--paper);
-    background: var(--ink);
-    padding: 2px 5px;
-    border-radius: 3px;
-  }
-  .bp-badge.bp-badge-starter { background: var(--gold); color: #fff8ea; }
-  .bp-recent { display: flex; gap: 10px; }
   .bp-recent-item {
     display: flex;
     flex-direction: column;
@@ -3766,16 +3782,25 @@
 
   function bullpenRowsHtml(list) {
     if (!list || !list.length) return '<div class="roster-empty">No pitching data available</div>';
-    return list.map(p => `
-      <div class="bp-row">
-        <div class="bp-name"><button type="button" class="player-name-btn" data-player-id="${p.id}">${p.name}</button>${p.isStarter ? '<span class="bp-badge bp-badge-starter">STARTER</span>' : (p.usedToday ? '<span class="bp-badge">RELIEVER</span>' : '')}</div>
+    return list.map(p => {
+      // Same leading column as the lineup (order number) and bench (a
+      // checkbox) rows: the starter just gets "P", everyone else gets a
+      // checkbox checked once they've actually appeared in the game --
+      // replaces the STARTER/RELIEVER tags this used to carry.
+      const orderCell = p.isStarter ? 'P' : `<span class="roster-check${p.usedToday ? ' is-checked' : ''}"></span>`;
+      return `
+      <div class="roster-row bp-row">
+        <span class="roster-order">${orderCell}</span>
+        <button type="button" class="player-name-btn roster-name" data-player-id="${p.id}">${p.name}</button>
+        <span class="roster-pos">P</span>
         <div class="bp-recent">
           <span class="bp-recent-item"><span class="bp-recent-value">${p.usedToday ? (p.todayIp ?? '0.0') : '&#8212;'}</span><span class="bp-recent-label">IP</span></span>
           <span class="bp-recent-item"><span class="bp-recent-value">${p.usedToday ? (p.todayPc ?? 0) : '&#8212;'}</span><span class="bp-recent-label">P</span></span>
           <span class="bp-recent-item"><span class="bp-recent-value">${p.yPitches ?? '&#8212;'}</span><span class="bp-recent-label">Y</span></span>
           <span class="bp-recent-item"><span class="bp-recent-value">${p.twoPitches ?? '&#8212;'}</span><span class="bp-recent-label">2D</span></span>
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   }
 
   // The standings API's division objects only carry {id, link} - no name -
@@ -3950,20 +3975,19 @@
       return `<div class="roster-row"><span class="roster-order">${i + 1}</span><button type="button" class="player-name-btn roster-name" data-player-id="${starter.id}">${starter.name}</button><span class="roster-pos">${starter.pos}</span></div>`;
     }).join('');
     const benchHtml = benchPlayers.length
-      ? benchPlayers.map(p => `<div class="roster-row"><button type="button" class="player-name-btn roster-name" data-player-id="${p.id}">${p.name}</button>${p.entered ? ' <span class="bp-badge">SUBSTITUTE</span>' : ''}<span class="roster-pos">${p.pos}</span></div>`).join('')
+      ? benchPlayers.map(p => `<div class="roster-row"><span class="roster-order"><span class="roster-check${p.entered ? ' is-checked' : ''}"></span></span><button type="button" class="player-name-btn roster-name" data-player-id="${p.id}">${p.name}</button><span class="roster-pos">${p.pos}</span></div>`).join('')
       : '<div class="roster-empty">None</div>';
 
     return `
       <div class="pitch-header">${teamName}</div>
-      <div class="pitch-subheader">Lineup</div>
-      <div class="roster-columns">
-        <div class="roster-col">
+      <div class="lineup-columns">
+        <div class="lineup-col">
           <div class="roster-section-title">Starting Lineup</div>
           ${lineupHtml}
           <div class="roster-section-title">Bench</div>
           ${benchHtml}
         </div>
-        <div class="roster-col">
+        <div class="lineup-col">
           <div class="roster-section-title">Pitching</div>
           ${bullpenRowsHtml(bullpenList)}
         </div>
