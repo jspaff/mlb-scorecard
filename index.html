@@ -194,6 +194,34 @@
     border: 0;
     max-width: none;
   }
+  /* Scorecard tab only -- its .date-nav now sits next to the (taller)
+     game-strip and stretches to match it (align-items: stretch on
+     .date-nav, per the comment up top), leaving spare height the plain
+     one-line pill wastes. Stack a small month over a big day number
+     instead, like a tear-off calendar page. */
+  .date-display-text-cal {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 1px;
+    padding: 2px 14px;
+  }
+  .date-display-text-cal .cal-month {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    color: var(--gold);
+  }
+  .date-display-text-cal .cal-day {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    line-height: 1;
+    color: var(--ink);
+  }
 
   .mlb-status-msg {
     font-family: 'IBM Plex Mono', monospace;
@@ -821,9 +849,46 @@
     border-radius: 0;
     flex: 0 0 118px;
   }
-  .game-strip .daily-tile.is-selected {
-    outline: 2px solid var(--brick);
-    outline-offset: -2px;
+  /* A little arrow next to the strip, mobile-only (see the max-width: 699px
+     breakpoint below) -- expands .game-strip into a full-width grid that
+     drops down over the scorecard so every game on the date is visible at
+     once, since the horizontal strip alone can't show them all on a narrow
+     screen. Hidden by default; the wide/desktop strip already has room to
+     scroll through every tile inline. */
+  .game-strip-toggle {
+    display: none;
+    background: var(--paper);
+    color: var(--ink);
+    border: 2px solid var(--paper-line);
+    border-left: none;
+    width: 28px;
+    cursor: pointer;
+    font-size: 11px;
+    line-height: 1;
+  }
+  .game-strip-toggle:hover { background: rgba(28, 58, 44, 0.1); }
+  .game-strip-toggle[aria-expanded="true"] { transform: scaleY(-1); }
+  @media (max-width: 699px) {
+    .game-strip-toggle { display: inline-flex; align-items: center; justify-content: center; }
+    .mlb-controls[data-tab-controls="scorecard"] { position: relative; }
+    .game-strip.is-expanded {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 100%;
+      z-index: 40;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      gap: 8px;
+      max-height: 70vh;
+      overflow-y: auto;
+      background: var(--paper);
+      border: 2px solid var(--paper-line);
+      border-top: none;
+      padding: 10px;
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+    }
+    .game-strip.is-expanded .daily-tile { flex: none; }
   }
 
   .hr-list { display: flex; flex-direction: column; }
@@ -2288,11 +2353,12 @@
         <button type="button" class="date-nav-btn" id="datePrev" aria-label="Previous day">&#8249;</button>
         <div class="date-display">
           <input type="date" class="date-display-input" id="datePick" />
-          <span class="date-display-text" id="datePickText"></span>
+          <span class="date-display-text date-display-text-cal" id="datePickText"></span>
         </div>
         <button type="button" class="date-nav-btn" id="dateNext" aria-label="Next day">&#8250;</button>
       </div>
       <div class="game-strip" id="gameStrip"></div>
+      <button type="button" class="game-strip-toggle" id="gameStripToggle" aria-label="Show all games" aria-expanded="false" aria-controls="gameStrip">&#9662;</button>
       <button type="button" class="box-score-link" id="gameSummaryTopBtn" hidden>Game Summary</button>
     </div>
     <div class="mlb-controls" data-tab-controls="standings" hidden>
@@ -2416,6 +2482,7 @@
   const dateInput = document.getElementById('datePick');
   const dateInputText = document.getElementById('datePickText');
   const gameStrip = document.getElementById('gameStrip');
+  const gameStripToggle = document.getElementById('gameStripToggle');
   let currentGamePk = null;
   let scheduleGames = [];
   const body = document.getElementById('mlbBody');
@@ -2437,9 +2504,22 @@
   function formatShortDate(dateStr) {
     return new Date(dateStr + 'T00:00:00Z').toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' });
   }
+  // The Scorecard tab's .datePickText carries .date-display-text-cal (see
+  // its CSS) and renders as a small month over a big day number instead of
+  // the other tabs' plain one-line pill.
+  function renderDateText(textEl, dateStr) {
+    if (!textEl.classList.contains('date-display-text-cal')) {
+      textEl.textContent = formatShortDate(dateStr);
+      return;
+    }
+    const d = new Date(dateStr + 'T00:00:00Z');
+    const month = d.toLocaleDateString(undefined, { month: 'short', timeZone: 'UTC' });
+    const day = d.toLocaleDateString(undefined, { day: 'numeric', timeZone: 'UTC' });
+    textEl.innerHTML = `<span class="cal-month">${month}</span><span class="cal-day">${day}</span>`;
+  }
   function setDateInputValue(input, textEl, value) {
     input.value = value;
-    textEl.textContent = formatShortDate(value);
+    renderDateText(textEl, value);
   }
   let pollTimer = null;
   // The currently loaded game, in the same shape renderGameSummaryGame()
@@ -4709,7 +4789,7 @@
     return `<div class="daily-tile-row"><span class="daily-tile-left">${logo}${nameBlock}</span>${scoreHtml}</div>`;
   }
 
-  function renderDailyGameTile(dateStr, game, extraClass) {
+  function renderDailyGameTile(dateStr, game) {
     let rowsHtml, stateLabel, tileClass, watermarkHtml = '';
     // Once play has actually started (i.e. not still pre-game Warmup), MLB
     // flips detailedState away from 'In Progress' for all sorts of things
@@ -4742,7 +4822,7 @@
       tileClass = 'is-preview';
     }
     return `
-      <div class="daily-tile ${tileClass}${extraClass ? ' ' + extraClass : ''}" data-date="${dateStr}" data-game-pk="${game.gamePk}" tabindex="0" role="button">
+      <div class="daily-tile ${tileClass}" data-date="${dateStr}" data-game-pk="${game.gamePk}" tabindex="0" role="button">
         ${watermarkHtml}
         ${rowsHtml}
         <div class="daily-tile-state">${stateLabel}</div>
@@ -5556,7 +5636,7 @@
   // Mirrors the Daily tab's tiles (same renderDailyGameTile) so a game's
   // state/score reads the same way in both places, just laid out as a
   // horizontal strip next to the date picker instead of a grid.
-  function renderGameStrip(dateStr, games, chosenGamePk) {
+  function renderGameStrip(dateStr, games) {
     gameStrip.innerHTML = games.map(g => renderDailyGameTile(dateStr, {
       gamePk: g.gamePk,
       awayName: teamNickname(g.teams.away.team),
@@ -5570,7 +5650,7 @@
       gameDate: g.gameDate,
       inningState: (g.linescore || {}).inningState,
       inningOrdinal: (g.linescore || {}).currentInningOrdinal
-    }, String(g.gamePk) === String(chosenGamePk) ? 'is-selected' : '')).join('');
+    })).join('');
   }
 
   async function loadSchedule(dateStr, preferredGamePk) {
@@ -5595,7 +5675,7 @@
       const liveGame = games.find(g => g.status.abstractGameState === 'Live');
       const chosen = preferred ? preferred.gamePk : (liveGame ? liveGame.gamePk : games[0].gamePk);
       currentGamePk = chosen;
-      renderGameStrip(dateStr, games, chosen);
+      renderGameStrip(dateStr, games);
       loadGame(chosen);
     } catch (e) {
       body.innerHTML = apiErrorMsg('schedule');
@@ -6028,7 +6108,7 @@
   }
 
   dateInput.addEventListener('change', () => {
-    dateInputText.textContent = formatShortDate(dateInput.value);
+    renderDateText(dateInputText, dateInput.value);
     loadSchedule(dateInput.value);
   });
   document.getElementById('datePrev').addEventListener('click', () => {
@@ -6039,13 +6119,16 @@
     setDateInputValue(dateInput, dateInputText, addDays(dateInput.value, 1));
     loadSchedule(dateInput.value);
   });
+  function collapseGameStrip() {
+    gameStrip.classList.remove('is-expanded');
+    gameStripToggle.setAttribute('aria-expanded', 'false');
+  }
   function handleGameStripActivate(tile) {
     if (!tile) return;
     const gamePk = tile.dataset.gamePk;
+    collapseGameStrip();
     if (!gamePk || gamePk === String(currentGamePk)) return;
     currentGamePk = gamePk;
-    gameStrip.querySelectorAll('.daily-tile.is-selected').forEach(t => t.classList.remove('is-selected'));
-    tile.classList.add('is-selected');
     loadGame(gamePk);
   }
   gameStrip.addEventListener('click', (e) => {
@@ -6056,6 +6139,19 @@
     const tile = e.target.closest('.daily-tile');
     if (tile) e.preventDefault();
     handleGameStripActivate(tile);
+  });
+  // Mobile-only affordance (see .game-strip-toggle's CSS) -- the strip is
+  // one horizontally-scrolled row by default, same as desktop; this expands
+  // it into a full grid dropped down over the scorecard so every game on
+  // the date is visible without scrolling sideways one at a time.
+  gameStripToggle.addEventListener('click', () => {
+    const expanded = gameStrip.classList.toggle('is-expanded');
+    gameStripToggle.setAttribute('aria-expanded', String(expanded));
+  });
+  document.addEventListener('click', (e) => {
+    if (!gameStrip.classList.contains('is-expanded')) return;
+    if (e.target.closest('#gameStrip') || e.target.closest('#gameStripToggle')) return;
+    collapseGameStrip();
   });
 
   standingsDateInput.addEventListener('change', () => {
@@ -6974,7 +7070,7 @@
     if (e.target === teamChartOverlay) hideTeamChartModal();
   });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { hidePitchPopup(); hideRosterModal(); hideSprayModal(); hidePlayerModal(); hideGameSummaryModal(); hideTeamChartModal(); playerSearchResults.hidden = true; }
+    if (e.key === 'Escape') { hidePitchPopup(); hideRosterModal(); hideSprayModal(); hidePlayerModal(); hideGameSummaryModal(); hideTeamChartModal(); playerSearchResults.hidden = true; collapseGameStrip(); }
   });
 
   // Backgrounding the tab (or the installed PWA) gets setTimeout/setInterval
