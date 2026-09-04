@@ -100,8 +100,8 @@
     display: flex;
     align-items: stretch;
     background: var(--paper);
-    border: 1px solid var(--paper-line);
-    border-radius: 6px;
+    border: 2px solid var(--ink);
+    border-radius: 0;
     overflow: hidden;
   }
   .date-nav-btn {
@@ -124,8 +124,8 @@
   select, input[type=date], input[type=text] {
     background: var(--paper);
     color: var(--ink);
-    border: 1px solid var(--paper-line);
-    border-radius: 6px;
+    border: 2px solid var(--ink);
+    border-radius: 0;
     padding: 7px 10px;
     font-family: 'Oswald', sans-serif;
     font-weight: 500;
@@ -187,7 +187,8 @@
 
   .sheet {
     background: var(--paper);
-    border-radius: 6px;
+    border: 2px solid var(--ink);
+    border-radius: 0;
     padding: 18px 18px 12px;
     box-shadow: 0 2px 0 rgba(0,0,0,0.25) inset, 0 4px 14px rgba(0,0,0,0.35);
   }
@@ -932,8 +933,8 @@
     font-size: 10.5px;
     background: var(--paper);
     color: var(--ink);
-    border: 1px solid var(--paper-line);
-    border-radius: 4px;
+    border: 2px solid var(--ink);
+    border-radius: 0;
     padding: 2px 5px;
     max-width: 150px;
   }
@@ -1770,7 +1771,8 @@
   .pitch-modal {
     position: relative;
     background: var(--paper);
-    border-radius: 8px;
+    border: 2px solid var(--ink);
+    border-radius: 0;
     max-width: 360px;
     width: 100%;
     max-height: 80vh;
@@ -1786,15 +1788,16 @@
      --paper (not a monster-green shade) matches every other card in the
      app -- .sheet, .pitch-modal, .sidebar-atbat below -- for consistency
      rather than a one-off green treatment just for this panel. overflow:
-     hidden clips #sidebarMonsterPanel's flush top corners and
-     .sidebar-atbat's flush bottom corners to the outer card's own
-     border-radius; the internal scroll for content taller than the
+     hidden clips #sidebarMonsterPanel's flush top edge and
+     .sidebar-atbat's flush bottom edge to the outer card's own square
+     border; the internal scroll for content taller than the
      viewport (see max-height above) lives on .sidebar-atbat alone, not
      this outer card, precisely so the monster scoreboard at the top never
      scrolls out of view. */
   .scorecard-sidebar {
     background: var(--paper);
-    border-radius: 8px;
+    border: 2px solid var(--ink);
+    border-radius: 0;
     box-shadow: 0 2px 0 rgba(0,0,0,0.25) inset, 0 4px 14px rgba(0,0,0,0.35);
     overflow: hidden;
   }
@@ -1896,8 +1899,8 @@
     max-height: 320px;
     overflow-y: auto;
     background: var(--paper);
-    border: 1px solid var(--paper-line);
-    border-radius: 6px;
+    border: 2px solid var(--ink);
+    border-radius: 0;
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
     z-index: 30;
   }
