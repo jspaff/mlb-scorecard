@@ -24,7 +24,9 @@ The page is scoped under `#mlb-root` with a set of CSS custom properties (`--pap
 
 ### Tabs
 
-Six tabs — Daily, Scorecard, Standings, Schedule, Roster, Players — are plain markup (`data-tab-panel` / `data-tab-controls` attributes) driven by a small hand-rolled router near the bottom of the script (the `Tabs` IIFE: `register`/`switchTo`/`init`). Each tab is registered with an optional `init` (runs once, on first activation) and `onShow` (runs every time the tab becomes active). The active tab is also mirrored into the URL hash. Adding a new tab means a `register()` call plus a button + panel in the HTML — there's no routing framework to wire up.
+Six tabs — Scorecard, Highlights, Standings, Schedule, Roster, Players — are plain markup (`data-tab-panel` / `data-tab-controls` attributes) driven by a small hand-rolled router near the bottom of the script (the `Tabs` IIFE: `register`/`switchTo`/`init`). Each tab is registered with an optional `init` (runs once, on first activation) and `onShow` (runs every time the tab becomes active). The active tab is also mirrored into the URL hash, and `Tabs.init('scorecard')` makes Scorecard the default on load. Adding a new tab means a `register()` call plus a button + panel in the HTML — there's no routing framework to wire up.
+
+The Highlights tab is `daily` internally (`data-tab="daily"`, `dailyBody`, `dailyPollTimer`, etc.) — it used to be called "Daily" and show a grid of the day's games before that moved to the Scorecard tab's own game strip (see below), leaving Highlights with just its Home Runs/Strikeouts views. The user-facing rename wasn't pushed through the internal identifiers; match that if you touch this code.
 
 ### Overlays / modals
 

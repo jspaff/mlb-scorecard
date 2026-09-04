@@ -222,6 +222,31 @@
     line-height: 1;
     color: var(--ink);
   }
+  /* Scorecard tab only -- stacks the date on top and both arrows together
+     underneath in one row, instead of an arrow flanking each side of the
+     date (the .date-nav default, still used by Daily/Standings). Frees up
+     the width those two side arrows took for the game-strip next to it. */
+  .date-nav-stacked { flex-direction: column; }
+  .date-nav-stacked .date-display {
+    flex: 1;
+    width: 100%;
+  }
+  .date-nav-stacked .date-display-text {
+    border-left: none;
+    border-right: none;
+  }
+  .date-nav-arrows {
+    display: flex;
+    border-top: 1px solid var(--paper-line);
+  }
+  .date-nav-stacked .date-nav-btn {
+    flex: 1;
+    width: auto;
+    padding: 3px 0;
+  }
+  .date-nav-stacked .date-nav-btn:first-child {
+    border-right: 1px solid var(--paper-line);
+  }
 
   .mlb-status-msg {
     font-family: 'IBM Plex Mono', monospace;
@@ -845,7 +870,7 @@
     overflow-x: auto;
     flex: 1;
     min-width: 0;
-    padding: 4px 0;
+    padding: 4px;
     background: var(--paper);
   }
   .game-strip .daily-tile {
@@ -2350,14 +2375,28 @@
 <div id="mlb-root">
   <div class="tab-header">
     <div class="tab-bar">
-      <button type="button" class="tab-btn active" data-tab="daily">Daily</button>
-      <button type="button" class="tab-btn" data-tab="scorecard">Scorecard</button>
+      <button type="button" class="tab-btn active" data-tab="scorecard">Scorecard</button>
+      <button type="button" class="tab-btn" data-tab="daily">Highlights</button>
       <button type="button" class="tab-btn" data-tab="standings">Standings</button>
       <button type="button" class="tab-btn" data-tab="schedule">Schedule</button>
       <button type="button" class="tab-btn" data-tab="roster">Roster</button>
       <button type="button" class="tab-btn" data-tab="players">Players</button>
     </div>
-    <div class="mlb-controls" data-tab-controls="daily">
+    <div class="mlb-controls" data-tab-controls="scorecard">
+      <div class="date-nav date-nav-stacked">
+        <div class="date-display">
+          <input type="date" class="date-display-input" id="datePick" />
+          <span class="date-display-text date-display-text-cal" id="datePickText"></span>
+        </div>
+        <div class="date-nav-arrows">
+          <button type="button" class="date-nav-btn" id="datePrev" aria-label="Previous day">&#8249;</button>
+          <button type="button" class="date-nav-btn" id="dateNext" aria-label="Next day">&#8250;</button>
+        </div>
+      </div>
+      <div class="game-strip" id="gameStrip"></div>
+      <button type="button" class="box-score-link" id="gameSummaryTopBtn" hidden>Game Summary</button>
+    </div>
+    <div class="mlb-controls" data-tab-controls="daily" hidden>
       <div class="date-nav">
         <button type="button" class="date-nav-btn" id="dailyDatePrev" aria-label="Previous day">&#8249;</button>
         <div class="date-display">
@@ -2367,22 +2406,9 @@
         <button type="button" class="date-nav-btn" id="dailyDateNext" aria-label="Next day">&#8250;</button>
       </div>
       <div class="view-toggle" id="dailyViewToggle">
-        <button type="button" class="view-toggle-btn active" data-view="games">Games</button>
-        <button type="button" class="view-toggle-btn" data-view="homeruns">Home Runs</button>
+        <button type="button" class="view-toggle-btn active" data-view="homeruns">Home Runs</button>
         <button type="button" class="view-toggle-btn" data-view="strikeouts">Strikeouts</button>
       </div>
-    </div>
-    <div class="mlb-controls" data-tab-controls="scorecard" hidden>
-      <div class="date-nav">
-        <button type="button" class="date-nav-btn" id="datePrev" aria-label="Previous day">&#8249;</button>
-        <div class="date-display">
-          <input type="date" class="date-display-input" id="datePick" />
-          <span class="date-display-text date-display-text-cal" id="datePickText"></span>
-        </div>
-        <button type="button" class="date-nav-btn" id="dateNext" aria-label="Next day">&#8250;</button>
-      </div>
-      <div class="game-strip" id="gameStrip"></div>
-      <button type="button" class="box-score-link" id="gameSummaryTopBtn" hidden>Game Summary</button>
     </div>
     <div class="mlb-controls" data-tab-controls="standings" hidden>
       <div class="date-nav">
@@ -2417,12 +2443,7 @@
       </div>
     </div>
   </div>
-  <div class="tab-panel" data-tab-panel="daily" id="dailyPanel">
-    <div id="dailyBody">
-      <div class="mlb-status-msg">Loading today's games&#8230;</div>
-    </div>
-  </div>
-  <div class="tab-panel" data-tab-panel="scorecard" id="scorecardPanel" hidden>
+  <div class="tab-panel" data-tab-panel="scorecard" id="scorecardPanel">
     <!-- Always hidden on narrow screens -- see .mobile-atbat. Kept in the
          markup (rather than removed) since updateAtBatTrackers still
          writes to it unconditionally; wide screens get .sidebar-atbat (in
@@ -2439,6 +2460,11 @@
         <div id="sidebarMonsterPanel"></div>
         <div id="sidebarAtBat" class="sidebar-atbat"></div>
       </div>
+    </div>
+  </div>
+  <div class="tab-panel" data-tab-panel="daily" id="dailyPanel" hidden>
+    <div id="dailyBody">
+      <div class="mlb-status-msg">Loading today's highlights&#8230;</div>
     </div>
   </div>
   <div class="tab-panel" data-tab-panel="standings" id="standingsPanel" hidden>
@@ -4937,8 +4963,8 @@
       </div>`;
   }
 
-  let dailyView = 'games';
-  let dailyStatsData = { tilesHtml: '', homeRuns: [], strikeoutLeaders: [] };
+  let dailyView = 'homeruns';
+  let dailyStatsData = { homeRuns: [], strikeoutLeaders: [] };
 
   function renderDailyView() {
     const section = document.getElementById('dailyViewSection');
@@ -4948,36 +4974,15 @@
       section.innerHTML = leaders.length
         ? `<div class="hr-list">${leaders.map(renderStrikeoutRow).join('')}</div>`
         : '<div class="roster-empty">No strikeouts on this date.</div>';
-    } else if (dailyView === 'homeruns') {
+    } else {
       const homeRuns = dailyStatsData.homeRuns;
       section.innerHTML = homeRuns.length
         ? `<div class="hr-list">${homeRuns.map(renderHomeRunRow).join('')}</div>`
         : '<div class="roster-empty">No home runs on this date.</div>';
-    } else {
-      section.innerHTML = `<div class="daily-games-grid">${dailyStatsData.tilesHtml}</div>`;
     }
   }
 
   let dailyRequestId = 0;
-  let dailyGamesByPk = {};
-
-  function scheduleGameToNeutral(g) {
-    return {
-      gamePk: g.gamePk,
-      gameNumber: g.gameNumber,
-      awayName: teamNickname(g.teams.away.team),
-      homeName: teamNickname(g.teams.home.team),
-      awayAbbr: teamAbbr(g.teams.away.team),
-      homeAbbr: teamAbbr(g.teams.home.team),
-      awayScore: g.teams.away.score,
-      homeScore: g.teams.home.score,
-      state: g.status.abstractGameState,
-      detailedState: g.status.detailedState,
-      gameDate: g.gameDate,
-      venueId: g.venue && g.venue.id,
-      venueName: g.venue && g.venue.name
-    };
-  }
 
   // isPoll distinguishes a silent background refresh from a real navigation
   // (tab open, date change, prev/next click): a poll reuses the page that's
@@ -4987,7 +4992,7 @@
     const requestId = ++dailyRequestId;
     clearTimeout(dailyPollTimer);
     dailyPollTimer = null;
-    if (!isPoll) dailyBody.innerHTML = '<div class="mlb-status-msg">Loading today&#8217;s games&#8230;</div>';
+    if (!isPoll) dailyBody.innerHTML = '<div class="mlb-status-msg">Loading today&#8217;s highlights&#8230;</div>';
     try {
       const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}&hydrate=linescore`);
       const data = await res.json();
@@ -4996,31 +5001,8 @@
         if (!isPoll) dailyBody.innerHTML = '<div class="mlb-status-msg">No MLB games scheduled on this date.</div>';
         return;
       }
-      dailyGamesByPk = {};
-      games.forEach(g => { dailyGamesByPk[g.gamePk] = g; });
-      const linescore = g => g.linescore || {};
-      const tiles = games.map(g => renderDailyGameTile(dateStr, {
-        gamePk: g.gamePk,
-        awayName: teamNickname(g.teams.away.team),
-        homeName: teamNickname(g.teams.home.team),
-        awayId: g.teams.away.team && g.teams.away.team.id,
-        homeId: g.teams.home.team && g.teams.home.team.id,
-        awayScore: g.teams.away.score,
-        homeScore: g.teams.home.score,
-        state: g.status.abstractGameState,
-        detailedState: g.status.detailedState,
-        gameDate: g.gameDate,
-        inningState: linescore(g).inningState,
-        inningOrdinal: linescore(g).currentInningOrdinal
-      })).join('');
-      dailyStatsData = { tilesHtml: tiles, homeRuns: [], strikeoutLeaders: [] };
       if (!isPoll) {
-        dailyBody.innerHTML = '<div class="sheet"><div id="dailyViewSection"></div></div>';
-      }
-      if (dailyView === 'games') {
-        renderDailyView();
-      } else if (!isPoll) {
-        document.getElementById('dailyViewSection').innerHTML = '<div class="mlb-status-msg">Loading game stats&#8230;</div>';
+        dailyBody.innerHTML = '<div class="sheet"><div id="dailyViewSection"><div class="mlb-status-msg">Loading game stats&#8230;</div></div></div>';
       }
 
       const startedGames = games.filter(g => g.status.abstractGameState === 'Live' || g.status.abstractGameState === 'Final');
@@ -5036,7 +5018,7 @@
         else strikeoutTotals[k.id] = { ...k };
       }));
       const strikeoutLeaders = Object.values(strikeoutTotals).sort((a, b) => b.count - a.count).slice(0, 10);
-      dailyStatsData = { tilesHtml: tiles, homeRuns, strikeoutLeaders };
+      dailyStatsData = { homeRuns, strikeoutLeaders };
       renderDailyView();
 
       // Keep polling as long as anything on this date could still change --
@@ -5058,7 +5040,7 @@
       }
     } catch (e) {
       if (!isPoll) {
-        dailyBody.innerHTML = apiErrorMsg("today's games");
+        dailyBody.innerHTML = apiErrorMsg("today's highlights");
         return;
       }
       // A transient failure mid-poll (a network blip, e.g. right as the
@@ -5092,24 +5074,6 @@
     dailyView = btn.dataset.view;
     document.querySelectorAll('#dailyViewToggle .view-toggle-btn').forEach(b => b.classList.toggle('active', b === btn));
     renderDailyView();
-  });
-  // Matches the Schedule tab: every tile opens the game summary modal
-  // regardless of state, with "View Full Scorecard" inside it as the one
-  // path to the Scorecard tab, rather than Live/Preview tiles jumping
-  // straight there and only Final tiles showing the modal.
-  function handleDailyTileActivate(tile) {
-    if (!tile) return;
-    const g = dailyGamesByPk[tile.dataset.gamePk];
-    if (g) openGameSummaryModal(tile.dataset.date, [scheduleGameToNeutral(g)]);
-  }
-  dailyBody.addEventListener('click', (e) => {
-    handleDailyTileActivate(e.target.closest('.daily-tile'));
-  });
-  dailyBody.addEventListener('keydown', (e) => {
-    if (e.key !== 'Enter' && e.key !== ' ') return;
-    const tile = e.target.closest('.daily-tile');
-    if (tile) e.preventDefault();
-    handleDailyTileActivate(tile);
   });
 
   const ROSTER_TAB_TEAM_KEY = 'mlb-roster-tab-team';
@@ -7030,6 +6994,7 @@
   }
   window.addEventListener('resize', syncSidebarOffsets);
 
+  Tabs.register('scorecard', { onShow: syncSidebarOffsets });
   Tabs.register('daily', {
     init: () => {
       findLastStartedDate().then(dateStr => {
@@ -7038,7 +7003,6 @@
       });
     }
   });
-  Tabs.register('scorecard', { onShow: syncSidebarOffsets });
   Tabs.register('standings', { init: () => loadStandings(standingsDateInput.value) });
   Tabs.register('schedule', { init: () => { populateTeamSelect(scheduleTeamSelect, SCHEDULE_TEAM_KEY); loadTeamSchedule(scheduleTeamSelect.value); } });
   Tabs.register('roster', { init: () => { populateTeamSelect(rosterTabTeamSelect, ROSTER_TAB_TEAM_KEY); loadRosterTab(rosterTabTeamSelect.value); } });
@@ -7173,7 +7137,7 @@
   window.addEventListener('pageshow', catchUpAfterResume);
   window.addEventListener('focus', catchUpAfterResume);
 
-  Tabs.init('daily');
+  Tabs.init('scorecard');
   loadSchedule(dateInput.value);
 
   // Registers the app-shell service worker for PWA installability. Guarded
