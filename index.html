@@ -100,7 +100,9 @@
     display: flex;
     align-items: stretch;
     background: var(--paper);
-    border: 2px solid var(--ink);
+    /* Same cream --ink color reads as a white edge against the dark paper
+       background -- see the matching override on select above. */
+    border: 2px solid var(--paper-line);
     border-radius: 0;
     overflow: hidden;
   }
