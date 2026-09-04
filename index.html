@@ -133,6 +133,8 @@
     font-size: 13px;
     max-width: 260px;
   }
+  select { text-transform: uppercase; }
+  select option { background: var(--paper); color: var(--ink); text-transform: uppercase; }
   select:focus, input:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
   /* input[type=date]'s own text is rendered by the browser in whatever
      locale format it picks (MM/DD/YYYY, DD/MM/YYYY, ...) with no way to
@@ -1856,6 +1858,11 @@
     color: var(--ink);
     margin-bottom: 2px;
     padding-right: 18px;
+  }
+  /* Standings tab headers (Divisional/Wild Card Standings, Home Run Leaders)
+     get extra letter-spacing beyond the shared .pitch-header default. */
+  #standingsPanel .pitch-header {
+    letter-spacing: 0.12em;
   }
   .pitch-subheader {
     font-family: 'Inter', sans-serif;
