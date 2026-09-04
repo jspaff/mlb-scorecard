@@ -1028,7 +1028,7 @@
     color: var(--ink-soft);
     width: 14px;
   }
-  .roster-name { flex: 1; }
+  .roster-name { min-width: 0; }
   .roster-pos {
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
@@ -2744,7 +2744,7 @@
   function getPlayCode(play) {
     const event = (play.result && play.result.event) || '';
     const seq = getFielderSequence(play);
-    const seqStr = seq.join('-');
+    const seqStr = seq.join('·');
 
     const simple = {
       'Single':'1B','Double':'2B','Triple':'3B','Home Run':'HR',
@@ -2833,7 +2833,7 @@
       const labelX = 20 + (cx - 20) * outFactor;
       const labelY = 20 + (cy - 20) * outFactor;
       return `<rect x="${labelX - 6.5}" y="${labelY - 4.5}" width="13" height="9" rx="1.5" fill="${paper}" stroke="${gold}" stroke-width="0.8"/>`
-        + `<text x="${labelX}" y="${labelY + 2.8}" text-anchor="middle" font-family="'Special Elite', monospace" font-size="6.5" fill="${gold}">${text}</text>`;
+        + `<text x="${labelX}" y="${labelY + 2.8}" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="6.5" font-weight="700" fill="${gold}">${text}</text>`;
     }
     let svg = '<svg viewBox="0 0 40 40" width="52" height="52">';
     let labelSvg = '';
@@ -2867,7 +2867,7 @@
     if (scored) svg += `<polygon points="20,36 36,20 20,4 4,20" fill="${gold}" opacity="${isHR ? 0.92 : 0.5}"/>`;
     if (isK) svg += `<polygon points="20,36 36,20 20,4 4,20" fill="${brick}" opacity="0.82"/>`;
     if (code) {
-      let fontSize = code.length > 4 ? 9.5 : code.length > 2 ? 11 : 12.5;
+      let fontSize = code.length > 4 ? 10.5 : code.length > 2 ? 12 : 13.5;
       if (isHR || isK) fontSize += 3;
       const textFill = isK ? '#fbf3e3' : (isHR ? '#fbf3e3' : (isOut ? brick : ink));
       const flipStyle = isK && calledLooking ? ' style="transform: scaleX(-1); transform-origin: 50% 50%; transform-box: fill-box;"' : '';
@@ -3327,8 +3327,8 @@
           .filter(a => a.out || a.startLabel !== a.endLabel)
           .sort((a, b) => a.startLabel.localeCompare(b.startLabel))
           .map(a => a.out
-            ? { label: `${a.startLabel}&#8594;X`, out: true }
-            : { label: `${a.startLabel}&#8594;${a.endLabel}`, scored: a.endLabel === 'H' });
+            ? { label: `${a.startLabel}>X`, out: true }
+            : { label: `${a.startLabel}>${a.endLabel}`, scored: a.endLabel === 'H' });
         if (tags.length) batterCell.otherAdvances = (batterCell.otherAdvances || []).concat(tags);
       }
     });
