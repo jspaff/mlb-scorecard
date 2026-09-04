@@ -667,11 +667,10 @@
   .potg-headshot {
     width: 40px;
     height: 50px;
-    border-radius: 4px;
+    border-radius: 0;
     object-fit: cover;
     background: var(--paper-line);
-    border: 1px solid var(--gold);
-    box-shadow: 0 1px 0 var(--paper-line);
+    border: 1px solid var(--paper-line);
   }
   .potg-player-name { max-width: 100%; }
   .potg-stat-line {
@@ -1041,13 +1040,41 @@
     border-bottom: 1px dashed var(--paper-line);
   }
   .roster-row:last-child { border-bottom: none; }
+  /* Stacked by default (narrow modal); once #rosterOverlay's .pitch-modal
+     is wide enough (see its own max-width override below) position
+     players and pitchers split into their own columns instead of one long
+     scroll. Named lineup-* rather than reusing the Roster tab's own
+     .roster-columns/.roster-column (below) -- same-sounding but a
+     different layout, so sharing the name would fight it. */
+  .lineup-columns { display: flex; flex-direction: column; }
+  .lineup-col { min-width: 0; }
+  @media (min-width: 640px) {
+    #rosterOverlay .pitch-modal { max-width: 640px; }
+    .lineup-columns { flex-direction: row; gap: 28px; align-items: flex-start; }
+    .lineup-col { flex: 1 1 0; }
+  }
+  /* The leading column of every row in the roster modal (batting order
+     number, a checkbox toggled once a bench player/reliever enters the
+     game, or "P" for the starting pitcher) -- centered so all three read
+     the same regardless of which of those three it's showing. */
   .roster-order {
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
     font-size: 10.5px;
     color: var(--ink-soft);
     width: 14px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
+  .roster-check {
+    width: 9px;
+    height: 9px;
+    border: 1.5px solid var(--ink-soft);
+    flex-shrink: 0;
+  }
+  .roster-check.is-checked { background: var(--gold); border-color: var(--gold); }
   .roster-name { min-width: 0; }
   .roster-pos {
     font-family: 'Overpass', sans-serif;
@@ -1057,6 +1084,17 @@
     text-transform: uppercase;
     color: var(--ink-soft);
   }
+  /* Wraps the name button in the roster modal's rows -- this cell (not
+     the button itself) is what grows to fill the row, so the plate stays
+     sized to its own text instead of stretching into a wide button with
+     empty background, while the fixed-width position column after it
+     still lines up the same across every row. */
+  .roster-name-col { flex: 1 1 auto; min-width: 0; }
+  /* Scoped to the roster modal rather than the shared .roster-pos rule
+     above -- that class is also used by the Roster tab's own rows (see
+     renderRosterRow), which this pass doesn't touch. Pitching rows in
+     the modal drop this column entirely (see bullpenRowsHtml). */
+  #rosterOverlay .roster-pos { flex: none; width: 28px; text-align: right; }
   .roster-empty {
     font-family: 'Inter', sans-serif;
     font-size: 12px;
@@ -1191,10 +1229,10 @@
   .lb-row { padding: 6px 0; position: relative; }
   .lb-row-content { display: flex; align-items: center; gap: 6px; flex: 1 1 auto; min-width: 0; position: relative; z-index: 1; }
   .lb-headshot {
-    width: 36px;
+    width: 40px;
     height: 50px;
     flex: none;
-    border-radius: 4px;
+    border-radius: 0;
     object-fit: cover;
     background: var(--paper-line);
     border: 1px solid var(--paper-line);
@@ -1362,34 +1400,20 @@
     outline: none;
     box-shadow: 0 3px 4px rgba(0, 0, 0, 0.45);
   }
-  .bp-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    padding: 5px 0;
-    border-bottom: 1px dashed var(--paper-line);
-    flex-wrap: wrap;
+  /* .roster-row already aligns the leading order/checkbox column and name
+     for the Starting Lineup and Bench rows -- .bp-row adds the
+     availability grid on the end of that same row for Pitching (no
+     position column; see bullpenRowsHtml). Deliberately no flex-wrap:
+     the grid has to stay on the row's one line, not spill onto a second. */
+  .bp-row { gap: 6px 10px; }
+  /* Fixed equal-width tracks (not content-sized) so IP/P/Y/2D line up
+     the same across every pitcher's row regardless of digit count. */
+  .bp-recent {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    width: 116px;
+    flex: none;
   }
-  .bp-row:last-child { border-bottom: none; }
-  .bp-name {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .bp-badge {
-    font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 8px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--paper);
-    background: var(--ink);
-    padding: 2px 5px;
-    border-radius: 3px;
-  }
-  .bp-badge.bp-badge-starter { background: var(--gold); color: #fff8ea; }
-  .bp-recent { display: flex; gap: 10px; }
   .bp-recent-item {
     display: flex;
     flex-direction: column;
@@ -1900,11 +1924,10 @@
   .player-headshot {
     width: 46px;
     height: 57.5px;
-    border-radius: 5px;
+    border-radius: 0;
     object-fit: cover;
     background: var(--paper-line);
-    border: 1px solid var(--gold);
-    box-shadow: 0 2px 0 var(--paper-line);
+    border: 1px solid var(--paper-line);
     flex-shrink: 0;
   }
   .player-award-tags {
@@ -1995,11 +2018,10 @@
   .player-profile-photo {
     width: 80px;
     height: 100px;
-    border-radius: 6px;
+    border-radius: 0;
     object-fit: cover;
     background: var(--paper-line);
-    border: 2px solid var(--gold);
-    box-shadow: 0 3px 0 var(--paper-line);
+    border: 1.5px solid var(--paper-line);
     flex-shrink: 0;
   }
   .player-profile-name {
@@ -2501,19 +2523,30 @@
   // API's own combined total for that year -- dropped here since the UI
   // recomputes that total itself from the real per-team splits, and
   // keeping it would double-count both the year total and the subrows.
+  // Fetches both hitting and pitching groups in one call rather than
+  // branching on position first -- the profile can render before the
+  // position-carrying person record (getPlayerDetails) has resolved, and
+  // this avoids sequencing the two fetches just to pick a group.
   const playerCareerStatsCache = {};
   async function getPlayerCareerStats(personId) {
     if (playerCareerStatsCache[personId] !== undefined) return playerCareerStatsCache[personId];
-    try {
-      const res = await fetch(`https://statsapi.mlb.com/api/v1/people/${personId}/stats?stats=yearByYear&group=hitting`);
-      const data = await res.json();
-      const splits = ((data.stats && data.stats[0] && data.stats[0].splits) || []).filter(s => s.team);
+    const extractGroup = (statsArr, groupName) => {
+      const entry = statsArr.find(s => s.group && s.group.displayName === groupName);
+      const splits = ((entry && entry.splits) || []).filter(s => s.team);
       splits.sort((a, b) => Number(a.season) - Number(b.season));
-      playerCareerStatsCache[personId] = splits;
       return splits;
+    };
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/people/${personId}/stats?stats=yearByYear&group=hitting,pitching`);
+      const data = await res.json();
+      const statsArr = data.stats || [];
+      const result = { hitting: extractGroup(statsArr, 'hitting'), pitching: extractGroup(statsArr, 'pitching') };
+      playerCareerStatsCache[personId] = result;
+      return result;
     } catch (e) {
-      playerCareerStatsCache[personId] = [];
-      return [];
+      const result = { hitting: [], pitching: [] };
+      playerCareerStatsCache[personId] = result;
+      return result;
     }
   }
   // Career-spanning, so cached by player id alone (no season) -- a player's
@@ -3747,16 +3780,24 @@
 
   function bullpenRowsHtml(list) {
     if (!list || !list.length) return '<div class="roster-empty">No pitching data available</div>';
-    return list.map(p => `
-      <div class="bp-row">
-        <div class="bp-name"><button type="button" class="player-name-btn" data-player-id="${p.id}">${p.name}</button>${p.isStarter ? '<span class="bp-badge bp-badge-starter">STARTER</span>' : (p.usedToday ? '<span class="bp-badge">RELIEVER</span>' : '')}</div>
+    return list.map(p => {
+      // Same leading column as the lineup (order number) and bench (a
+      // checkbox) rows: the starter just gets "P", everyone else gets a
+      // checkbox checked once they've actually appeared in the game --
+      // replaces the STARTER/RELIEVER tags this used to carry.
+      const orderCell = p.isStarter ? 'P' : `<span class="roster-check${p.usedToday ? ' is-checked' : ''}"></span>`;
+      return `
+      <div class="roster-row bp-row">
+        <span class="roster-order">${orderCell}</span>
+        <span class="roster-name-col"><button type="button" class="player-name-btn roster-name" data-player-id="${p.id}">${p.name}</button></span>
         <div class="bp-recent">
           <span class="bp-recent-item"><span class="bp-recent-value">${p.usedToday ? (p.todayIp ?? '0.0') : '&#8212;'}</span><span class="bp-recent-label">IP</span></span>
           <span class="bp-recent-item"><span class="bp-recent-value">${p.usedToday ? (p.todayPc ?? 0) : '&#8212;'}</span><span class="bp-recent-label">P</span></span>
           <span class="bp-recent-item"><span class="bp-recent-value">${p.yPitches ?? '&#8212;'}</span><span class="bp-recent-label">Y</span></span>
           <span class="bp-recent-item"><span class="bp-recent-value">${p.twoPitches ?? '&#8212;'}</span><span class="bp-recent-label">2D</span></span>
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   }
 
   // The standings API's division objects only carry {id, link} - no name -
@@ -3928,21 +3969,26 @@
   function renderRosterContent(teamName, bullpenList, lineupRows, benchPlayers) {
     const lineupHtml = lineupRows.map((r, i) => {
       const starter = r.players[0];
-      return `<div class="roster-row"><span class="roster-order">${i + 1}</span><button type="button" class="player-name-btn roster-name" data-player-id="${starter.id}">${starter.name}</button><span class="roster-pos">${starter.pos}</span></div>`;
+      return `<div class="roster-row"><span class="roster-order">${i + 1}</span><span class="roster-name-col"><button type="button" class="player-name-btn roster-name" data-player-id="${starter.id}">${starter.name}</button></span><span class="roster-pos">${starter.pos}</span></div>`;
     }).join('');
     const benchHtml = benchPlayers.length
-      ? benchPlayers.map(p => `<div class="roster-row"><button type="button" class="player-name-btn roster-name" data-player-id="${p.id}">${p.name}</button>${p.entered ? ' <span class="bp-badge">SUBSTITUTE</span>' : ''}<span class="roster-pos">${p.pos}</span></div>`).join('')
+      ? benchPlayers.map(p => `<div class="roster-row"><span class="roster-order"><span class="roster-check${p.entered ? ' is-checked' : ''}"></span></span><span class="roster-name-col"><button type="button" class="player-name-btn roster-name" data-player-id="${p.id}">${p.name}</button></span><span class="roster-pos">${p.pos}</span></div>`).join('')
       : '<div class="roster-empty">None</div>';
 
     return `
       <div class="pitch-header">${teamName}</div>
-      <div class="pitch-subheader">Full Roster</div>
-      <div class="roster-section-title">Starting Lineup</div>
-      ${lineupHtml}
-      <div class="roster-section-title">Bench</div>
-      ${benchHtml}
-      <div class="roster-section-title">Pitching</div>
-      ${bullpenRowsHtml(bullpenList)}
+      <div class="lineup-columns">
+        <div class="lineup-col">
+          <div class="roster-section-title">Starting Lineup</div>
+          ${lineupHtml}
+          <div class="roster-section-title">Bench</div>
+          ${benchHtml}
+        </div>
+        <div class="lineup-col">
+          <div class="roster-section-title">Pitching</div>
+          ${bullpenRowsHtml(bullpenList)}
+        </div>
+      </div>
     `;
   }
 
@@ -4298,7 +4344,7 @@
         <div class="team-header">
           <div class="team-name">${teamName}</div>
           <div class="team-header-btns">
-            <button class="roster-btn" data-team="${teamName}">Full Roster</button>
+            <button class="roster-btn" data-team="${teamName}">Lineup</button>
             <button class="spray-btn" data-team="${teamName}">Spray Chart</button>
           </div>
         </div>
@@ -5752,10 +5798,20 @@
       // switch can race past this call (see the requestId guard below).
       const season = gameData.game.season;
       const officialDate = gameData.datetime.officialDate;
+      // away/home.starterPitcherId come from the play-by-play (see
+      // buildTeamRows) and stay null until that side's starter has actually
+      // thrown a completed at-bat -- which for a preview game, or the very
+      // first batter of a game in progress, hasn't happened yet. Falling
+      // back to the scheduled probable pitcher keeps the bullpen list's "P"
+      // marker (see bullpenRowsHtml) from silently disappearing during that
+      // window instead of just being missing until the game gets going.
+      const probable = gameData.probablePitchers || {};
+      const homeStarterId = away.starterPitcherId || (probable.home && probable.home.id);
+      const awayStarterId = home.starterPitcherId || (probable.away && probable.away.id);
       const [venue, homeBullpen, awayBullpen] = await Promise.all([
         venuePromise,
-        buildBullpenList(liveData.boxscore.teams.home, away.starterPitcherId, season, officialDate, allPlays, 'top'),
-        buildBullpenList(liveData.boxscore.teams.away, home.starterPitcherId, season, officialDate, allPlays, 'bottom')
+        buildBullpenList(liveData.boxscore.teams.home, homeStarterId, season, officialDate, allPlays, 'top'),
+        buildBullpenList(liveData.boxscore.teams.away, awayStarterId, season, officialDate, allPlays, 'bottom')
       ]);
 
       // Everything above this point is local computation from this call's
@@ -5781,17 +5837,29 @@
       // Bench section (rather than only showing up as a substitute line
       // under the original starter in the scorecard grid) and flagged with
       // `entered` so the roster modal can tag them instead of dropping them.
-      function getBenchPlayers(sideBoxscore) {
+      function getBenchPlayers(sideBoxscore, teamName) {
         return Object.values(sideBoxscore.players || {})
           .filter(p => p.person && p.position && p.position.abbreviation !== 'P'
             && (!p.battingOrder || parseInt(p.battingOrder) % 100 !== 0))
-          .map(p => ({ id: p.person.id, name: p.person.fullName, pos: p.position.abbreviation, entered: !!p.battingOrder }))
+          .map(p => {
+            // Bench players who never entered the game have no batting row
+            // in renderTeamTable to populate playerStore for them, so the
+            // roster modal's name button would silently do nothing without
+            // this -- see showPlayerModal's playerStore lookup.
+            playerStore[p.person.id] = { id: p.person.id, name: p.person.fullName, pos: p.position.abbreviation, team: teamName, season, todayStats: (p.stats && p.stats.batting) || {} };
+            return { id: p.person.id, name: p.person.fullName, pos: p.position.abbreviation, entered: !!p.battingOrder };
+          })
           // entered substitutes float to the top, same as relievers who've
           // entered sort above the rest of the bullpen in buildBullpenList
           .sort((a, b) => (b.entered ? 1 : 0) - (a.entered ? 1 : 0));
       }
-      rosterStore[awayName] = renderRosterContent(awayName, awayBullpen, awayRows, getBenchPlayers(liveData.boxscore.teams.away));
-      rosterStore[homeName] = renderRosterContent(homeName, homeBullpen, homeRows, getBenchPlayers(liveData.boxscore.teams.home));
+      // buildBullpenList's own results don't touch playerStore either --
+      // pitchers who only pitched (never batted) have no batting row in
+      // renderTeamTable to populate it, same gap as the bench players above.
+      awayBullpen.forEach(p => { playerStore[p.id] = { id: p.id, name: p.name, pos: 'P', team: awayName, season, todayStats: {} }; });
+      homeBullpen.forEach(p => { playerStore[p.id] = { id: p.id, name: p.name, pos: 'P', team: homeName, season, todayStats: {} }; });
+      rosterStore[awayName] = renderRosterContent(awayName, awayBullpen, awayRows, getBenchPlayers(liveData.boxscore.teams.away, awayName));
+      rosterStore[homeName] = renderRosterContent(homeName, homeBullpen, homeRows, getBenchPlayers(liveData.boxscore.teams.home, homeName));
       sprayStore[awayName] = renderSprayChart(away.battedBalls, awayName);
       sprayStore[homeName] = renderSprayChart(home.battedBalls, homeName);
 
@@ -6548,6 +6616,90 @@
       </table></div>`;
   }
 
+  function isPitcher(person) {
+    const pos = person && person.primaryPosition;
+    return !!(pos && (pos.type === 'Pitcher' || pos.abbreviation === 'P'));
+  }
+
+  // "13.2" (13 innings, 2 outs) <-> 41 outs -- the API's inningsPitched
+  // string uses the two out-digits as a base-3 fraction, not decimal
+  // tenths, so it has to be converted to a plain out count before summing
+  // across stints or seasons.
+  function ipToOuts(ip) {
+    if (ip == null) return 0;
+    const [whole, frac] = String(ip).split('.');
+    return (parseInt(whole, 10) || 0) * 3 + (parseInt(frac, 10) || 0);
+  }
+  function formatIP(outs) {
+    return `${Math.floor(outs / 3)}.${outs % 3}`;
+  }
+  function formatERA(earnedRuns, outs) {
+    if (!outs) return '&#8212;';
+    return (earnedRuns * 27 / outs).toFixed(2);
+  }
+  function formatWHIP(baseOnBalls, hits, outs) {
+    if (!outs) return '&#8212;';
+    return ((baseOnBalls + hits) * 3 / outs).toFixed(2);
+  }
+  function formatKBB(strikeOuts, baseOnBalls, battersFaced) {
+    if (!battersFaced) return '&#8212;';
+    return `${(((strikeOuts - baseOnBalls) / battersFaced) * 100).toFixed(1)}%`;
+  }
+
+  // Mirrors collapseCareerByYear, but for pitching: sums innings as outs
+  // (see ipToOuts) and battersFaced so ERA/WHIP/K%-BB% can be recomputed
+  // for the combined season rather than averaging already-rounded rates.
+  function collapsePitchingCareerByYear(splits) {
+    const bySeason = new Map();
+    splits.forEach(s => {
+      const stat = s.stat || {};
+      let agg = bySeason.get(s.season);
+      if (!agg) {
+        agg = { season: s.season, teams: [], gamesPitched: 0, outs: 0, earnedRuns: 0, hits: 0, baseOnBalls: 0, strikeOuts: 0, battersFaced: 0 };
+        bySeason.set(s.season, agg);
+      }
+      const teamName = s.team && teamNickname(s.team);
+      if (teamName && !agg.teams.includes(teamName)) agg.teams.push(teamName);
+      agg.gamesPitched += stat.gamesPitched ?? stat.gamesPlayed ?? 0;
+      agg.outs += ipToOuts(stat.inningsPitched);
+      agg.earnedRuns += stat.earnedRuns || 0;
+      agg.hits += stat.hits || 0;
+      agg.baseOnBalls += stat.baseOnBalls || 0;
+      agg.strikeOuts += stat.strikeOuts || 0;
+      agg.battersFaced += stat.battersFaced || 0;
+    });
+    return Array.from(bySeason.values()).sort((a, b) => Number(a.season) - Number(b.season));
+  }
+
+  function renderPitchingCareerTable(splits) {
+    const stintsBySeason = new Map();
+    splits.forEach(s => {
+      if (!stintsBySeason.has(s.season)) stintsBySeason.set(s.season, []);
+      stintsBySeason.get(s.season).push(s);
+    });
+    const rows = collapsePitchingCareerByYear(splits).map(y => {
+      const team = y.teams.length > 1 ? 'Multiple' : (y.teams[0] || '&#8212;');
+      const era = formatERA(y.earnedRuns, y.outs);
+      const whip = formatWHIP(y.baseOnBalls, y.hits, y.outs);
+      const kbb = formatKBB(y.strikeOuts, y.baseOnBalls, y.battersFaced);
+      const yearRow = `<tr class="career-year-row"><td>${y.season}</td><td>${team}</td><td>${y.gamesPitched}</td><td>${formatIP(y.outs)}</td><td>${era}</td><td>${whip}</td><td>${kbb}</td><td>${y.strikeOuts}</td><td>${y.baseOnBalls}</td></tr>`;
+      const stints = stintsBySeason.get(y.season) || [];
+      const subRows = stints.length > 1
+        ? stints.map(s => {
+            const stat = s.stat || {};
+            const teamName = (s.team && teamNickname(s.team)) || '&#8212;';
+            const kbbSub = formatKBB(stat.strikeOuts, stat.baseOnBalls, stat.battersFaced);
+            return `<tr class="career-team-subrow"><td></td><td>${teamName}</td><td>${stat.gamesPitched ?? stat.gamesPlayed ?? '&#8212;'}</td><td>${stat.inningsPitched ?? '&#8212;'}</td><td>${stat.era ?? '&#8212;'}</td><td>${stat.whip ?? '&#8212;'}</td><td>${kbbSub}</td><td>${stat.strikeOuts ?? '&#8212;'}</td><td>${stat.baseOnBalls ?? '&#8212;'}</td></tr>`;
+          }).join('')
+        : '';
+      return yearRow + subRows;
+    });
+    return `<div class="table-scroll"><table class="pitch-table career-table">
+        <thead><tr><th>Year</th><th>Team</th><th>G</th><th>IP</th><th>ERA</th><th>WHIP</th><th>K%-BB%</th><th>SO</th><th>BB</th></tr></thead>
+        <tbody>${rows.join('')}</tbody>
+      </table></div>`;
+  }
+
   function renderPlayerProfile(person, careerSplits, awardTags) {
     const teamId = person.currentTeam && person.currentTeam.id;
     const watermarkHtml = teamId ? `<img class="player-profile-watermark" src="${capLogoUrl(teamId)}" alt="" aria-hidden="true">` : '';
@@ -6555,12 +6707,14 @@
     const bio = playerBioLine(person);
     const bt = playerBatsThrowsLine(person);
     const awardsHtml = renderAwardTags(awardTags);
-    const careerHtml = careerSplits === null
+    const pitcher = isPitcher(person);
+    const yearSplits = careerSplits === null ? null : (pitcher ? careerSplits.pitching : careerSplits.hitting);
+    const careerHtml = yearSplits === null
       ? '<div class="mlb-status-msg">Loading career stats&#8230;</div>'
-      : careerSplits.length
-        ? renderCareerTable(careerSplits)
+      : yearSplits.length
+        ? (pitcher ? renderPitchingCareerTable(yearSplits) : renderCareerTable(yearSplits))
         : '<div class="pitch-empty">Career stats not available.</div>';
-    const sprayHtml = playerSprayState.personId === Number(person.id) ? renderPlayerSprayWidget(playerSprayState) : '';
+    const sprayHtml = !pitcher && playerSprayState.personId === Number(person.id) ? renderPlayerSprayWidget(playerSprayState) : '';
     return `<div class="sheet player-profile-sheet">
       ${watermarkHtml}
       <div class="player-profile-head">
@@ -6612,7 +6766,11 @@
     playerSprayToken++; // abandon any spray fetch still in flight for whatever was open before
     const currentSeason = new Date().getFullYear();
     playerSprayState = { personId: person.id, season: currentSeason, balls: null, loading: true };
-    loadPlayerSpray(person.id, currentSeason);
+    // Position isn't always known yet here (jumpToPlayerProfile passes only
+    // an id/name, filled in below by getPlayerDetails) -- when it is known
+    // up front (e.g. a search result), skip the fetch entirely rather than
+    // firing it and having renderPlayerProfile just discard the result.
+    if (!isPitcher(person)) loadPlayerSpray(person.id, currentSeason);
     playersBody.innerHTML = renderPlayerProfile(person, null, []);
     const [fullPerson, careerSplits, awards] = await Promise.all([
       getPlayerDetails(person.id),
