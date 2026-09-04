@@ -6657,7 +6657,7 @@
       : yearSplits.length
         ? (pitcher ? renderPitchingCareerTable(yearSplits) : renderCareerTable(yearSplits))
         : '<div class="pitch-empty">Career stats not available.</div>';
-    const sprayHtml = playerSprayState.personId === Number(person.id) ? renderPlayerSprayWidget(playerSprayState) : '';
+    const sprayHtml = !pitcher && playerSprayState.personId === Number(person.id) ? renderPlayerSprayWidget(playerSprayState) : '';
     return `<div class="sheet player-profile-sheet">
       ${watermarkHtml}
       <div class="player-profile-head">
@@ -6709,7 +6709,11 @@
     playerSprayToken++; // abandon any spray fetch still in flight for whatever was open before
     const currentSeason = new Date().getFullYear();
     playerSprayState = { personId: person.id, season: currentSeason, balls: null, loading: true };
-    loadPlayerSpray(person.id, currentSeason);
+    // Position isn't always known yet here (jumpToPlayerProfile passes only
+    // an id/name, filled in below by getPlayerDetails) -- when it is known
+    // up front (e.g. a search result), skip the fetch entirely rather than
+    // firing it and having renderPlayerProfile just discard the result.
+    if (!isPitcher(person)) loadPlayerSpray(person.id, currentSeason);
     playersBody.innerHTML = renderPlayerProfile(person, null, []);
     const [fullPerson, careerSplits, awards] = await Promise.all([
       getPlayerDetails(person.id),
