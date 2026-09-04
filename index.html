@@ -1669,10 +1669,8 @@
     right: -3px;
     bottom: -6px;
     display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    max-width: 52px;
+    flex-direction: column;
+    align-items: stretch;
     gap: 1px;
   }
   .adv-tag {
@@ -1683,14 +1681,14 @@
     color: var(--paper);
     background: rgba(228, 217, 191, 0.85);
     padding: 0.5px 3px;
-    border-radius: 2px;
+    text-align: center;
     white-space: nowrap;
   }
   .adv-tag.scored {
     color: #fff8ea;
     background: var(--gold);
     font-weight: 700;
-    box-shadow: 0 0 0 1px rgba(179,121,26,0.5), 0 1px 2px rgba(0,0,0,0.25);
+    box-shadow: 0 0 0 0.5px rgba(179,121,26,0.5), 0 1px 2px rgba(0,0,0,0.25);
   }
   .adv-tag.out {
     color: #fbf3e3;
@@ -2931,7 +2929,7 @@
       const outFactor = 1.55;
       const labelX = 20 + (cx - 20) * outFactor;
       const labelY = 20 + (cy - 20) * outFactor;
-      return `<rect x="${labelX - 6.5}" y="${labelY - 4.5}" width="13" height="9" rx="1.5" fill="${paper}" stroke="${gold}" stroke-width="0.8"/>`
+      return `<rect x="${labelX - 6.5}" y="${labelY - 4.5}" width="13" height="9" fill="${paper}" stroke="${gold}" stroke-width="0.8"/>`
         + `<text x="${labelX}" y="${labelY + 2.8}" text-anchor="middle" font-family="'Overpass', sans-serif" font-size="6.5" font-weight="700" fill="${gold}">${text}</text>`;
     }
     let svg = '<svg viewBox="0 0 40 40" width="52" height="52">';
