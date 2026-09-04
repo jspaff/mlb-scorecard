@@ -100,7 +100,9 @@
     display: flex;
     align-items: stretch;
     background: var(--paper);
-    border: 2px solid var(--ink);
+    /* Same cream --ink color reads as a white edge against the dark paper
+       background -- see the matching override on select above. */
+    border: 2px solid var(--paper-line);
     border-radius: 0;
     overflow: hidden;
   }
@@ -124,7 +126,9 @@
   select, input[type=date], input[type=text] {
     background: var(--paper);
     color: var(--ink);
-    border: 2px solid var(--ink);
+    /* The cream --ink color reads as a white edge against the dark paper
+       background -- see the matching overrides on .date-nav/select. */
+    border: 2px solid var(--paper-line);
     border-radius: 0;
     padding: 7px 10px;
     font-family: 'Oswald', sans-serif;
@@ -133,6 +137,20 @@
     font-size: 13px;
     max-width: 260px;
   }
+  /* Chrome/Safari still draw their own light bezel around a <select> unless
+     the native appearance is fully switched off -- border/background alone
+     isn't enough to stop it showing through as a thin white edge. */
+  select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    text-transform: uppercase;
+    padding-right: 26px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0L5 6L10 0Z' fill='%23f3ecdb'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+  }
+  select option { background: var(--paper); color: var(--ink); text-transform: uppercase; }
   select:focus, input:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
   /* input[type=date]'s own text is rendered by the browser in whatever
      locale format it picks (MM/DD/YYYY, DD/MM/YYYY, ...) with no way to
@@ -158,6 +176,7 @@
     font-weight: 500;
     letter-spacing: 0.02em;
     font-size: 13px;
+    text-transform: uppercase;
     white-space: nowrap;
   }
   .date-display-input:focus + .date-display-text {
@@ -1856,6 +1875,11 @@
     color: var(--ink);
     margin-bottom: 2px;
     padding-right: 18px;
+  }
+  /* Standings tab headers (Divisional/Wild Card Standings, Home Run Leaders)
+     get extra letter-spacing beyond the shared .pitch-header default. */
+  #standingsPanel .pitch-header {
+    letter-spacing: 0.12em;
   }
   .pitch-subheader {
     font-family: 'Inter', sans-serif;
