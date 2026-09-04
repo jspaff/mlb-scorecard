@@ -834,13 +834,18 @@
 
   /* Scorecard tab's game picker -- a horizontal strip of the same tiles the
      Daily tab uses, just shorter (less top/bottom padding) and square-cornered
-     so it reads as a compact control bar rather than a grid of cards. */
+     so it reads as a compact control bar rather than a grid of cards. The
+     dark background lives here on the strip itself, standing in for the
+     Daily tab's own dark .sheet card behind its tile grid -- individual
+     tiles stay background-less except for their own .is-live/.is-final
+     tint (see .daily-tile.is-live/.is-final above), same as on that tab. */
   .game-strip {
     display: flex;
     gap: 8px;
     overflow-x: auto;
     flex: 1;
     min-width: 0;
+    background: var(--paper);
   }
   .game-strip .daily-tile {
     height: auto;
@@ -848,16 +853,6 @@
     padding-bottom: 4px;
     border-radius: 0;
     flex: 0 0 118px;
-  }
-  /* Same background logic as the Daily tab's own tiles: only .is-live/
-     .is-final tint themselves (see .daily-tile.is-live/.is-final above), so
-     a Preview tile is background-less there too -- it just reads fine
-     sitting on the Daily tab's own dark .sheet card. The strip has no such
-     card behind it (it's a control bar, not a grid), so a Preview tile
-     would otherwise go transparent against .tab-header's lighter --frame;
-     give it the same --paper fill explicitly instead. */
-  .game-strip .daily-tile:not(.is-live):not(.is-final) {
-    background: var(--paper);
   }
   /* Below 699px there's no room for a scrollable row of tiles, so the strip
      shows just the current game (every other .daily-tile hidden -- see
