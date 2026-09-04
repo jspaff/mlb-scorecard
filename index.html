@@ -804,6 +804,28 @@
     color: var(--ink-soft);
   }
 
+  /* Scorecard tab's game picker -- a horizontal strip of the same tiles the
+     Daily tab uses, just shorter (less top/bottom padding) and square-cornered
+     so it reads as a compact control bar rather than a grid of cards. */
+  .game-strip {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    flex: 1;
+    min-width: 0;
+  }
+  .game-strip .daily-tile {
+    height: auto;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    border-radius: 0;
+    flex: 0 0 118px;
+  }
+  .game-strip .daily-tile.is-selected {
+    outline: 2px solid var(--brick);
+    outline-offset: -2px;
+  }
+
   .hr-list { display: flex; flex-direction: column; }
   .hr-row {
     display: flex;
@@ -2270,8 +2292,8 @@
         </div>
         <button type="button" class="date-nav-btn" id="dateNext" aria-label="Next day">&#8250;</button>
       </div>
-      <select id="gamePick"><option>Loading games&#8230;</option></select>
-      <button type="button" class="box-score-link" id="gameSummaryTopBtn">Game Summary</button>
+      <div class="game-strip" id="gameStrip"></div>
+      <button type="button" class="box-score-link" id="gameSummaryTopBtn" hidden>Game Summary</button>
     </div>
     <div class="mlb-controls" data-tab-controls="standings" hidden>
       <div class="date-nav">
@@ -2393,7 +2415,9 @@
 (function() {
   const dateInput = document.getElementById('datePick');
   const dateInputText = document.getElementById('datePickText');
-  const gameSelect = document.getElementById('gamePick');
+  const gameStrip = document.getElementById('gameStrip');
+  let currentGamePk = null;
+  let scheduleGames = [];
   const body = document.getElementById('mlbBody');
   const scoreBottomBar = document.getElementById('scoreBottomBar');
   const sidebarMonsterPanel = document.getElementById('sidebarMonsterPanel');
@@ -4685,7 +4709,7 @@
     return `<div class="daily-tile-row"><span class="daily-tile-left">${logo}${nameBlock}</span>${scoreHtml}</div>`;
   }
 
-  function renderDailyGameTile(dateStr, game) {
+  function renderDailyGameTile(dateStr, game, extraClass) {
     let rowsHtml, stateLabel, tileClass, watermarkHtml = '';
     // Once play has actually started (i.e. not still pre-game Warmup), MLB
     // flips detailedState away from 'In Progress' for all sorts of things
@@ -4718,7 +4742,7 @@
       tileClass = 'is-preview';
     }
     return `
-      <div class="daily-tile ${tileClass}" data-date="${dateStr}" data-game-pk="${game.gamePk}" tabindex="0" role="button">
+      <div class="daily-tile ${tileClass}${extraClass ? ' ' + extraClass : ''}" data-date="${dateStr}" data-game-pk="${game.gamePk}" tabindex="0" role="button">
         ${watermarkHtml}
         ${rowsHtml}
         <div class="daily-tile-state">${stateLabel}</div>
@@ -5529,36 +5553,49 @@
     if (e.target === gameSummaryOverlay) hideGameSummaryModal();
   });
 
+  // Mirrors the Daily tab's tiles (same renderDailyGameTile) so a game's
+  // state/score reads the same way in both places, just laid out as a
+  // horizontal strip next to the date picker instead of a grid.
+  function renderGameStrip(dateStr, games, chosenGamePk) {
+    gameStrip.innerHTML = games.map(g => renderDailyGameTile(dateStr, {
+      gamePk: g.gamePk,
+      awayName: teamNickname(g.teams.away.team),
+      homeName: teamNickname(g.teams.home.team),
+      awayId: g.teams.away.team && g.teams.away.team.id,
+      homeId: g.teams.home.team && g.teams.home.team.id,
+      awayScore: g.teams.away.score,
+      homeScore: g.teams.home.score,
+      state: g.status.abstractGameState,
+      detailedState: g.status.detailedState,
+      gameDate: g.gameDate,
+      inningState: (g.linescore || {}).inningState,
+      inningOrdinal: (g.linescore || {}).currentInningOrdinal
+    }, String(g.gamePk) === String(chosenGamePk) ? 'is-selected' : '')).join('');
+  }
+
   async function loadSchedule(dateStr, preferredGamePk) {
-    gameSelect.innerHTML = '<option>Loading games&#8230;</option>';
+    gameStrip.innerHTML = '<div class="mlb-status-msg">Loading games&#8230;</div>';
     body.innerHTML = '<div class="mlb-status-msg">Fetching schedule for ' + dateStr + '&#8230;</div>';
     scoreBottomBar.innerHTML = '';
     sidebarMonsterPanel.innerHTML = '';
     updateAtBatTrackers(null);
     clearInterval(pollTimer);
     try {
-      const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}`);
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}&hydrate=linescore`);
       const data = await res.json();
       const games = (data.dates && data.dates[0] && data.dates[0].games) || [];
       if (!games.length) {
-        gameSelect.innerHTML = '<option>No games</option>';
+        gameStrip.innerHTML = '';
         body.innerHTML = '<div class="mlb-status-msg">No MLB games scheduled on this date.</div>';
         return;
       }
-      // Just "NYY @ BOS" -- state/time is redundant with the Daily tab's own
-      // game tiles, and once a game's picked, the Scorecard tab's controls
-      // bar and monster-panel already show its state/score in more detail
-      // than a dropdown option ever could.
-      gameSelect.innerHTML = games.map(g => {
-        const away = teamAbbr(g.teams.away.team);
-        const home = teamAbbr(g.teams.home.team);
-        return `<option value="${g.gamePk}">${away} @ ${home}</option>`;
-      }).join('');
+      scheduleGames = games;
 
       const preferred = preferredGamePk && games.find(g => String(g.gamePk) === String(preferredGamePk));
       const liveGame = games.find(g => g.status.abstractGameState === 'Live');
       const chosen = preferred ? preferred.gamePk : (liveGame ? liveGame.gamePk : games[0].gamePk);
-      gameSelect.value = chosen;
+      currentGamePk = chosen;
+      renderGameStrip(dateStr, games, chosen);
       loadGame(chosen);
     } catch (e) {
       body.innerHTML = apiErrorMsg('schedule');
@@ -6002,7 +6039,24 @@
     setDateInputValue(dateInput, dateInputText, addDays(dateInput.value, 1));
     loadSchedule(dateInput.value);
   });
-  gameSelect.addEventListener('change', () => loadGame(gameSelect.value));
+  function handleGameStripActivate(tile) {
+    if (!tile) return;
+    const gamePk = tile.dataset.gamePk;
+    if (!gamePk || gamePk === String(currentGamePk)) return;
+    currentGamePk = gamePk;
+    gameStrip.querySelectorAll('.daily-tile.is-selected').forEach(t => t.classList.remove('is-selected'));
+    tile.classList.add('is-selected');
+    loadGame(gamePk);
+  }
+  gameStrip.addEventListener('click', (e) => {
+    handleGameStripActivate(e.target.closest('.daily-tile'));
+  });
+  gameStrip.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const tile = e.target.closest('.daily-tile');
+    if (tile) e.preventDefault();
+    handleGameStripActivate(tile);
+  });
 
   standingsDateInput.addEventListener('change', () => {
     standingsDateInputText.textContent = formatShortDate(standingsDateInput.value);
@@ -6946,9 +7000,9 @@
     const now = Date.now();
     if (now - lastResumeCatchUp < 1000) return;
     lastResumeCatchUp = now;
-    if (pollTimer && gameSelect.value) {
+    if (pollTimer && currentGamePk) {
       clearInterval(pollTimer);
-      fetchAndRender(gameSelect.value);
+      fetchAndRender(currentGamePk);
     }
     if (dailyPollTimer) {
       clearTimeout(dailyPollTimer);
