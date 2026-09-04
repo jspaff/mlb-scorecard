@@ -1040,6 +1040,17 @@
     border-bottom: 1px dashed var(--paper-line);
   }
   .roster-row:last-child { border-bottom: none; }
+  /* Stacked by default (narrow modal); once #rosterOverlay's .pitch-modal
+     is wide enough (see its own max-width override below) position
+     players and pitchers split into their own columns instead of one long
+     scroll. */
+  .roster-columns { display: flex; flex-direction: column; }
+  .roster-col { min-width: 0; }
+  @media (min-width: 640px) {
+    #rosterOverlay .pitch-modal { max-width: 640px; }
+    .roster-columns { flex-direction: row; gap: 28px; align-items: flex-start; }
+    .roster-col { flex: 1 1 0; }
+  }
   .roster-order {
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
@@ -3944,13 +3955,19 @@
 
     return `
       <div class="pitch-header">${teamName}</div>
-      <div class="pitch-subheader">Full Roster</div>
-      <div class="roster-section-title">Starting Lineup</div>
-      ${lineupHtml}
-      <div class="roster-section-title">Bench</div>
-      ${benchHtml}
-      <div class="roster-section-title">Pitching</div>
-      ${bullpenRowsHtml(bullpenList)}
+      <div class="pitch-subheader">Lineup</div>
+      <div class="roster-columns">
+        <div class="roster-col">
+          <div class="roster-section-title">Starting Lineup</div>
+          ${lineupHtml}
+          <div class="roster-section-title">Bench</div>
+          ${benchHtml}
+        </div>
+        <div class="roster-col">
+          <div class="roster-section-title">Pitching</div>
+          ${bullpenRowsHtml(bullpenList)}
+        </div>
+      </div>
     `;
   }
 
@@ -4306,7 +4323,7 @@
         <div class="team-header">
           <div class="team-name">${teamName}</div>
           <div class="team-header-btns">
-            <button class="roster-btn" data-team="${teamName}">Full Roster</button>
+            <button class="roster-btn" data-team="${teamName}">Lineup</button>
             <button class="spray-btn" data-team="${teamName}">Spray Chart</button>
           </div>
         </div>
@@ -5789,17 +5806,29 @@
       // Bench section (rather than only showing up as a substitute line
       // under the original starter in the scorecard grid) and flagged with
       // `entered` so the roster modal can tag them instead of dropping them.
-      function getBenchPlayers(sideBoxscore) {
+      function getBenchPlayers(sideBoxscore, teamName) {
         return Object.values(sideBoxscore.players || {})
           .filter(p => p.person && p.position && p.position.abbreviation !== 'P'
             && (!p.battingOrder || parseInt(p.battingOrder) % 100 !== 0))
-          .map(p => ({ id: p.person.id, name: p.person.fullName, pos: p.position.abbreviation, entered: !!p.battingOrder }))
+          .map(p => {
+            // Bench players who never entered the game have no batting row
+            // in renderTeamTable to populate playerStore for them, so the
+            // roster modal's name button would silently do nothing without
+            // this -- see showPlayerModal's playerStore lookup.
+            playerStore[p.person.id] = { id: p.person.id, name: p.person.fullName, pos: p.position.abbreviation, team: teamName, season, todayStats: (p.stats && p.stats.batting) || {} };
+            return { id: p.person.id, name: p.person.fullName, pos: p.position.abbreviation, entered: !!p.battingOrder };
+          })
           // entered substitutes float to the top, same as relievers who've
           // entered sort above the rest of the bullpen in buildBullpenList
           .sort((a, b) => (b.entered ? 1 : 0) - (a.entered ? 1 : 0));
       }
-      rosterStore[awayName] = renderRosterContent(awayName, awayBullpen, awayRows, getBenchPlayers(liveData.boxscore.teams.away));
-      rosterStore[homeName] = renderRosterContent(homeName, homeBullpen, homeRows, getBenchPlayers(liveData.boxscore.teams.home));
+      // buildBullpenList's own results don't touch playerStore either --
+      // pitchers who only pitched (never batted) have no batting row in
+      // renderTeamTable to populate it, same gap as the bench players above.
+      awayBullpen.forEach(p => { playerStore[p.id] = { id: p.id, name: p.name, pos: 'P', team: awayName, season, todayStats: {} }; });
+      homeBullpen.forEach(p => { playerStore[p.id] = { id: p.id, name: p.name, pos: 'P', team: homeName, season, todayStats: {} }; });
+      rosterStore[awayName] = renderRosterContent(awayName, awayBullpen, awayRows, getBenchPlayers(liveData.boxscore.teams.away, awayName));
+      rosterStore[homeName] = renderRosterContent(homeName, homeBullpen, homeRows, getBenchPlayers(liveData.boxscore.teams.home, homeName));
       sprayStore[awayName] = renderSprayChart(away.battedBalls, awayName);
       sprayStore[homeName] = renderSprayChart(home.battedBalls, homeName);
 
