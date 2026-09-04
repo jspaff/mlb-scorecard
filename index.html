@@ -845,6 +845,7 @@
     overflow-x: auto;
     flex: 1;
     min-width: 0;
+    padding: 4px 0;
     background: var(--paper);
   }
   .game-strip .daily-tile {
@@ -897,12 +898,13 @@
   /* Locks the controls bar's height across a date change instead of letting
      it collapse while .game-strip sits empty during the fetch (loadSchedule
      clears it up front) and then jump back open once the tile(s) render --
-     matches a normal tile's own height at each breakpoint (mobile's
-     two-row grid vs desktop's three-line stack -- see .game-strip
-     .daily-tile.is-current above). */
-  .game-strip { min-height: 80px; }
+     matches a normal tile's own height (plus .game-strip's own padding,
+     included here since #mlb-root * is box-sizing: border-box) at each
+     breakpoint (mobile's two-row grid vs desktop's three-line stack -- see
+     .game-strip .daily-tile.is-current above). */
+  .game-strip { min-height: 88px; }
   @media (max-width: 699px) {
-    .game-strip { min-height: 62px; }
+    .game-strip { min-height: 70px; }
   }
   /* Sized for the Daily tab's full 108px-tall tile -- shrink it in the
      strip's much shorter, narrower tiles so it doesn't spill past the
