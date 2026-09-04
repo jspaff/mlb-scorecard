@@ -100,8 +100,8 @@
     display: flex;
     align-items: stretch;
     background: var(--paper);
-    border: 1px solid var(--paper-line);
-    border-radius: 6px;
+    border: 2px solid var(--ink);
+    border-radius: 0;
     overflow: hidden;
   }
   .date-nav-btn {
@@ -124,8 +124,8 @@
   select, input[type=date], input[type=text] {
     background: var(--paper);
     color: var(--ink);
-    border: 1px solid var(--paper-line);
-    border-radius: 6px;
+    border: 2px solid var(--ink);
+    border-radius: 0;
     padding: 7px 10px;
     font-family: 'Oswald', sans-serif;
     font-weight: 500;
@@ -187,7 +187,8 @@
 
   .sheet {
     background: var(--paper);
-    border-radius: 6px;
+    border: 2px solid var(--ink);
+    border-radius: 0;
     padding: 18px 18px 12px;
     box-shadow: 0 2px 0 rgba(0,0,0,0.25) inset, 0 4px 14px rgba(0,0,0,0.35);
   }
@@ -932,8 +933,8 @@
     font-size: 10.5px;
     background: var(--paper);
     color: var(--ink);
-    border: 1px solid var(--paper-line);
-    border-radius: 4px;
+    border: 2px solid var(--ink);
+    border-radius: 0;
     padding: 2px 5px;
     max-width: 150px;
   }
@@ -972,7 +973,7 @@
   .view-toggle-btn + .view-toggle-btn { border-left: 1px solid var(--paper-line); }
   .view-toggle-btn:hover { color: var(--ink); background: rgba(28, 58, 44, 0.1); }
   .view-toggle-btn.active { color: var(--ink); background: rgba(217, 169, 26, 0.15); }
-  .wc-cutoff-line { border-top: 2px dashed var(--gold); margin: 2px 0 0; }
+  .wc-cutoff-line { border-top: 2px solid var(--ink); margin: 2px 0 0; }
 
   .roster-btn, .spray-btn {
     font-family: 'Overpass', sans-serif;
@@ -1152,7 +1153,6 @@
   }
   .standings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 32px; }
   .standings-grid-single { grid-template-columns: 1fr; max-width: 320px; margin: 0 auto; }
-  .lb-header { max-width: 320px; margin: 0 auto; }
   .lb-grid {
     display: grid;
     grid-auto-flow: column;
@@ -1164,12 +1164,10 @@
   }
   .lb-rank { width: 24px; font-family: 'Overpass', sans-serif; font-weight: 700; color: var(--ink-soft); }
   @media (min-width: 700px) {
-    .lb-header, .lb-grid { max-width: 660px; }
-    .lb-grid { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(15, auto); }
+    .lb-grid { max-width: 660px; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(15, auto); }
   }
   @media (min-width: 1050px) {
-    .lb-header, .lb-grid { max-width: 1000px; }
-    .lb-grid { grid-template-columns: 1fr 1fr 1fr; grid-template-rows: repeat(10, auto); }
+    .lb-grid { max-width: 1000px; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: repeat(10, auto); }
   }
   .lb-row { padding: 6px 0; position: relative; }
   .lb-row-content { display: flex; align-items: center; gap: 6px; flex: 1 1 auto; min-width: 0; position: relative; z-index: 1; }
@@ -1190,6 +1188,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 3px;
   }
   .lb-hr-watermark {
     position: absolute;
@@ -1202,14 +1201,26 @@
     opacity: 0.16;
     pointer-events: none;
   }
+  /* Recessed-slot look lifted straight from .monster-box-cell (the Monster
+     scoreboard's own inning/RHE digits) -- same inset box-shadow and dark
+     backing, so the HR count reads as an interchangeable plate slotted into
+     the board rather than plain table text. */
   .lb-hr {
     position: relative;
     z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 17px;
+    height: 24px;
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
+    font-size: 14px;
+    color: var(--ink);
+    border-radius: 2px;
+    background: rgba(0, 0, 0, 0.22);
+    box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.5), inset 0 -1px 1px rgba(255, 255, 255, 0.05);
   }
-  .lb-hr-label { width: 40px; }
-
   .schedule-month-block { margin-bottom: 18px; }
   .schedule-month-block:last-child { margin-bottom: 0; }
   .schedule-month-title {
@@ -1302,6 +1313,7 @@
   }
   .standings-num { width: 38px; text-align: center; font-family: 'Overpass', sans-serif; font-weight: 700; }
   button.standings-team-btn {
+    position: relative;
     flex: 1;
     display: inline-block;
     max-width: 100%;
@@ -1317,10 +1329,11 @@
     color: var(--ink);
     background: rgba(243, 236, 219, 0.08);
     border: 1px solid var(--paper-line);
-    border-radius: 3px;
+    border-radius: 0;
     padding: 3px 8px;
     cursor: pointer;
-    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.35);
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
   }
   button.standings-team-btn:hover,
   button.standings-team-btn:focus-visible {
@@ -1328,6 +1341,7 @@
     border-color: var(--gold);
     color: var(--paper);
     outline: none;
+    box-shadow: 0 3px 4px rgba(0, 0, 0, 0.45);
   }
   .bp-row {
     display: flex;
@@ -1678,6 +1692,7 @@
   .cell-wrap.clickable:hover svg { filter: brightness(1.12); }
 
   .player-name-btn {
+    position: relative;
     display: inline-block;
     max-width: 100%;
     overflow: hidden;
@@ -1692,11 +1707,12 @@
     color: var(--ink);
     background: rgba(243, 236, 219, 0.08);
     border: 1px solid var(--paper-line);
-    border-radius: 3px;
+    border-radius: 0;
     padding: 2px 7px;
     cursor: pointer;
     text-decoration: none;
-    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.35);
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
   }
   .player-name-btn:hover,
   .player-name-btn:focus-visible {
@@ -1704,7 +1720,28 @@
     border-color: var(--gold);
     color: var(--paper);
     outline: none;
+    box-shadow: 0 3px 4px rgba(0, 0, 0, 0.45);
   }
+  /* Corner pegs the plate hangs on -- just the two top corners, no middle
+     peg, so it reads as a plate slotted onto a scoreboard peg rail. */
+  .player-name-btn::before,
+  .player-name-btn::after,
+  button.standings-team-btn::before,
+  button.standings-team-btn::after {
+    content: '';
+    position: absolute;
+    top: 1px;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.6), rgba(0, 0, 0, 0.55) 75%);
+    box-shadow: 0 0.5px 0.5px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+  }
+  .player-name-btn::before,
+  button.standings-team-btn::before { left: 2px; }
+  .player-name-btn::after,
+  button.standings-team-btn::after { right: 2px; }
 
   .player-stat-line {
     display: flex;
@@ -1744,7 +1781,8 @@
   .pitch-modal {
     position: relative;
     background: var(--paper);
-    border-radius: 8px;
+    border: 2px solid var(--ink);
+    border-radius: 0;
     max-width: 360px;
     width: 100%;
     max-height: 80vh;
@@ -1760,15 +1798,16 @@
      --paper (not a monster-green shade) matches every other card in the
      app -- .sheet, .pitch-modal, .sidebar-atbat below -- for consistency
      rather than a one-off green treatment just for this panel. overflow:
-     hidden clips #sidebarMonsterPanel's flush top corners and
-     .sidebar-atbat's flush bottom corners to the outer card's own
-     border-radius; the internal scroll for content taller than the
+     hidden clips #sidebarMonsterPanel's flush top edge and
+     .sidebar-atbat's flush bottom edge to the outer card's own square
+     border; the internal scroll for content taller than the
      viewport (see max-height above) lives on .sidebar-atbat alone, not
      this outer card, precisely so the monster scoreboard at the top never
      scrolls out of view. */
   .scorecard-sidebar {
     background: var(--paper);
-    border-radius: 8px;
+    border: 2px solid var(--ink);
+    border-radius: 0;
     box-shadow: 0 2px 0 rgba(0,0,0,0.25) inset, 0 4px 14px rgba(0,0,0,0.35);
     overflow: hidden;
   }
@@ -1811,6 +1850,9 @@
     font-family: 'Oswald', sans-serif;
     font-weight: 600;
     font-size: 15px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-align: center;
     color: var(--ink);
     margin-bottom: 2px;
     padding-right: 18px;
@@ -1870,8 +1912,8 @@
     max-height: 320px;
     overflow-y: auto;
     background: var(--paper);
-    border: 1px solid var(--paper-line);
-    border-radius: 6px;
+    border: 2px solid var(--ink);
+    border-radius: 0;
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
     z-index: 30;
   }
@@ -3740,10 +3782,10 @@
     </div>`;
   }
 
-  function renderStandingsContent(records, date) {
+  function renderStandingsContent(records) {
     const divisions = sortedDivisionsWithTeams(records);
     if (!divisions.length) {
-      return `<div class="pitch-header">Standings</div><div class="pitch-empty">Standings not available for this date.</div>`;
+      return `<div class="pitch-header">Divisional Standings</div><div class="pitch-empty">Standings not available for this date.</div>`;
     }
 
     function renderDivision(div) {
@@ -3760,13 +3802,13 @@
       <div class="standings-col">${alDivisions(divisions).map(renderDivision).join('')}</div>
       <div class="standings-col">${nlDivisions(divisions).map(renderDivision).join('')}</div>
     </div>`;
-    return `<div class="pitch-header">Standings</div><div class="pitch-subheader">As of ${date}</div>${grid}`;
+    return `<div class="pitch-header">Divisional Standings</div>${grid}`;
   }
 
-  function renderWildcardContent(records, date) {
+  function renderWildcardContent(records) {
     const divisions = sortedDivisionsWithTeams(records);
     if (!divisions.length) {
-      return `<div class="pitch-header">Standings</div><div class="pitch-empty">Standings not available for this date.</div>`;
+      return `<div class="pitch-header">Wild Card Standings</div><div class="pitch-empty">Standings not available for this date.</div>`;
     }
 
     function renderLeague(leagueDivisions, label) {
@@ -3800,10 +3842,10 @@
       <div class="standings-col">${renderLeague(alDivisions(divisions), 'AL')}</div>
       <div class="standings-col">${renderLeague(nlDivisions(divisions), 'NL')}</div>
     </div>`;
-    return `<div class="pitch-header">Standings</div><div class="pitch-subheader">Wild Card &#8226; As of ${date}</div>${grid}`;
+    return `<div class="pitch-header">Wild Card Standings</div>${grid}`;
   }
 
-  function renderHrLeaderboard(leaders, season, date) {
+  function renderHrLeaderboard(leaders, season) {
     if (!leaders.length) {
       return `<div class="pitch-header">Home Run Leaders</div><div class="pitch-empty">Home run leaders not available for this date.</div>`;
     }
@@ -3820,16 +3862,11 @@
           <span class="standings-num lb-rank">${l.rank}</span>
           <img class="lb-headshot" src="${headshot}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
           <button type="button" class="standings-team lb-name-btn player-name-btn" data-player-id="${id}">${name} <span class="hr-team">${teamAbbr(l.team)}</span></button>
-          <span class="lb-hr-cell"><span class="lb-hr">${l.value}</span></span>
+          <span class="lb-hr-cell">${String(l.value ?? 0).padStart(2, '0').split('').map(d => `<span class="lb-hr">${d}</span>`).join('')}</span>
         </div>
       </div>`;
     }).join('');
-    return `<div class="pitch-header">Home Run Leaders</div><div class="pitch-subheader">${season} Season &#8226; As of ${date}</div>
-      <div class="standings-row standings-header-row lb-header">
-        <span class="standings-num lb-rank">#</span>
-        <span class="standings-team">Player</span>
-        <span class="standings-num lb-hr-label">HR</span>
-      </div>
+    return `<div class="pitch-header">Home Run Leaders</div>
       <div class="lb-grid">${rows}</div>`;
   }
 
@@ -5471,13 +5508,13 @@
       const season = dateStr.slice(0, 4);
       if (standingsView === 'homeruns') {
         const leaders = await getHrLeaders(season, dateStr);
-        standingsBody.innerHTML = `<div class="sheet">${renderHrLeaderboard(leaders, season, dateStr)}</div>`;
+        standingsBody.innerHTML = `<div class="sheet">${renderHrLeaderboard(leaders, season)}</div>`;
         return;
       }
       const records = await getStandings(season, dateStr);
       const content = standingsView === 'wildcard'
-        ? renderWildcardContent(records, dateStr)
-        : renderStandingsContent(records, dateStr);
+        ? renderWildcardContent(records)
+        : renderStandingsContent(records);
       standingsBody.innerHTML = `<div class="sheet">${content}</div>`;
     } catch (e) {
       standingsBody.innerHTML = apiErrorMsg('standings');
