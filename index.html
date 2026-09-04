@@ -859,19 +859,42 @@
   }
   /* Below 699px there's no room for a scrollable row of tiles, so the strip
      shows just the current game (every other .daily-tile hidden -- see
-     .is-current, set by renderGameStrip), right-aligned against the
-     date-nav, and the tile itself is the tap target that opens
-     #gameStripOverlay -- a modal grid of every game on the date, styled
-     exactly like the Daily tab's own (plain, un-shortened, rounded
+     .is-current, set by renderGameStrip), stretched to fill the rest of the
+     bar next to the date-nav, and the tile itself is the tap target that
+     opens #gameStripOverlay -- a modal grid of every game on the date,
+     styled exactly like the Daily tab's own (plain, un-shortened, rounded
      .daily-tile via .daily-games-grid, just square-cornered -- see
      #gameStripOverlayBody below) since it's a separate full-screen view
      rather than a compact inline control. Picking a game there closes the
      modal and shows that scorecard. Desktop keeps the plain
      horizontally-scrolled strip. */
   @media (max-width: 699px) {
-    .game-strip { justify-content: flex-end; }
     .game-strip .daily-tile { display: none; }
-    .game-strip .daily-tile.is-current { display: flex; }
+    /* The stretched width frees up enough side room to move the state
+       label (score/inning, FINAL, first-pitch time) from its own centered
+       line below both team rows to a column to their right instead -- one
+       less line means a shorter tile, which (via .date-nav's own
+       align-items: stretch) shrinks the whole controls bar to match. The
+       two .daily-tile-row team lines and .daily-tile-state are grid
+       siblings in source order (see renderDailyGameTile) -- placed here by
+       row/column rather than needing an extra wrapper element around the
+       two team rows. */
+    .game-strip .daily-tile.is-current {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      column-gap: 8px;
+      flex: 1 1 auto;
+    }
+    .game-strip .daily-tile.is-current .daily-tile-row:nth-of-type(1) { grid-column: 1; grid-row: 1; }
+    .game-strip .daily-tile.is-current .daily-tile-row:nth-of-type(2) { grid-column: 1; grid-row: 2; }
+    .game-strip .daily-tile.is-current .daily-tile-state {
+      grid-column: 2;
+      grid-row: 1 / span 2;
+      margin-top: 0;
+      text-align: right;
+      font-size: 10px;
+    }
   }
   #gameStripOverlayBody .daily-tile { border-radius: 0; }
 
