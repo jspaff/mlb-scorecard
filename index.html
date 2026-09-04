@@ -759,9 +759,6 @@
     overflow: hidden;
   }
   .daily-tile:hover, .daily-tile:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
-  /* renderGameStripSkeleton's placeholder -- not a real game, so no
-     hover/focus affordance and no click. */
-  .daily-tile.is-loading { opacity: 0.5; cursor: default; pointer-events: none; }
   .daily-tile.is-live {
     border-width: 2px;
     border-color: var(--gold);
@@ -801,10 +798,7 @@
     gap: 6px;
     min-width: 0;
   }
-  /* display: inline-block matters for renderGameStripSkeleton's placeholder
-     span (no width/height on a plain inline element otherwise) -- a no-op
-     for the real img this class is normally on. */
-  .daily-tile-logo { display: inline-block; width: 24px; height: 24px; flex-shrink: 0; }
+  .daily-tile-logo { width: 24px; height: 24px; flex-shrink: 0; }
   .daily-tile-team {
     font-family: 'Oswald', sans-serif;
     font-weight: 600;
@@ -855,15 +849,13 @@
     border-radius: 0;
     flex: 0 0 118px;
   }
-  /* Explicit --paper fill for a Preview tile specifically (:not(...) rather
-     than just a lower-priority default, so it can't out-cascade
-     .is-live/.is-final's own lighter-green tint below, whatever order the
-     rules end up in) -- a Preview tile has neither state class nor
-     background of its own, and would otherwise sit transparent against
-     .tab-header's lighter --frame background here, unlike the Daily tab's
-     tiles, which get this same dark backdrop for free from the .sheet card
-     wrapping them there. Matters more now that the tile is the only tap
-     target on mobile (see the breakpoint below), not just a state color. */
+  /* Same background logic as the Daily tab's own tiles: only .is-live/
+     .is-final tint themselves (see .daily-tile.is-live/.is-final above), so
+     a Preview tile is background-less there too -- it just reads fine
+     sitting on the Daily tab's own dark .sheet card. The strip has no such
+     card behind it (it's a control bar, not a grid), so a Preview tile
+     would otherwise go transparent against .tab-header's lighter --frame;
+     give it the same --paper fill explicitly instead. */
   .game-strip .daily-tile:not(.is-live):not(.is-final) {
     background: var(--paper);
   }
@@ -907,6 +899,24 @@
     }
   }
   #gameStripOverlayBody .daily-tile { border-radius: 0; }
+  /* Locks the controls bar's height across a date change instead of letting
+     it collapse while .game-strip sits empty during the fetch (loadSchedule
+     clears it up front) and then jump back open once the tile(s) render --
+     matches a normal tile's own height at each breakpoint (mobile's
+     two-row grid vs desktop's three-line stack -- see .game-strip
+     .daily-tile.is-current above). */
+  .game-strip { min-height: 80px; }
+  @media (max-width: 699px) {
+    .game-strip { min-height: 62px; }
+  }
+  /* Sized for the Daily tab's full 108px-tall tile -- shrink it in the
+     strip's much shorter, narrower tiles so it doesn't spill past the
+     clipped edge (or over the score text). */
+  .game-strip .daily-tile-watermark {
+    width: 40px;
+    height: 40px;
+    right: -6px;
+  }
 
   .hr-list { display: flex; flex-direction: column; }
   .hr-row {
@@ -5695,26 +5705,8 @@
     closeOverlay(gameStripOverlay);
   }
 
-  // A blank .daily-tile-shaped placeholder rather than .mlb-status-msg's
-  // text (unlike body below) -- .mlb-status-msg's own padding is much
-  // taller than a tile, and since .date-nav stretches to match
-  // .game-strip's height (see .date-nav's own comment), swapping to that
-  // and back made the whole controls bar visibly grow then shrink on every
-  // date change. Reusing .daily-tile's own markup shape (two empty
-  // .daily-tile-row/.daily-tile-state, same as a real tile) instead sizes
-  // itself the same way a real tile does -- mobile's grid layout and
-  // desktop's stacked one alike -- with no height guess to keep in sync.
-  function renderGameStripSkeleton() {
-    const row = `<div class="daily-tile-row"><span class="daily-tile-left"><span class="daily-tile-logo"></span><span class="daily-tile-team">&nbsp;</span></span></div>`;
-    return `<div class="daily-tile is-current is-loading" aria-hidden="true">
-      ${row}
-      ${row}
-      <div class="daily-tile-state">&nbsp;</div>
-    </div>`;
-  }
-
   async function loadSchedule(dateStr, preferredGamePk) {
-    gameStrip.innerHTML = renderGameStripSkeleton();
+    gameStrip.innerHTML = '';
     body.innerHTML = '<div class="mlb-status-msg">Fetching schedule for ' + dateStr + '&#8230;</div>';
     scoreBottomBar.innerHTML = '';
     sidebarMonsterPanel.innerHTML = '';
@@ -5725,7 +5717,6 @@
       const data = await res.json();
       const games = (data.dates && data.dates[0] && data.dates[0].games) || [];
       if (!games.length) {
-        gameStrip.innerHTML = '';
         body.innerHTML = '<div class="mlb-status-msg">No MLB games scheduled on this date.</div>';
         return;
       }
@@ -5738,7 +5729,6 @@
       renderGameStrip(dateStr, games);
       loadGame(chosen);
     } catch (e) {
-      gameStrip.innerHTML = '';
       body.innerHTML = apiErrorMsg('schedule');
     }
   }
