@@ -5798,10 +5798,20 @@
       // switch can race past this call (see the requestId guard below).
       const season = gameData.game.season;
       const officialDate = gameData.datetime.officialDate;
+      // away/home.starterPitcherId come from the play-by-play (see
+      // buildTeamRows) and stay null until that side's starter has actually
+      // thrown a completed at-bat -- which for a preview game, or the very
+      // first batter of a game in progress, hasn't happened yet. Falling
+      // back to the scheduled probable pitcher keeps the bullpen list's "P"
+      // marker (see bullpenRowsHtml) from silently disappearing during that
+      // window instead of just being missing until the game gets going.
+      const probable = gameData.probablePitchers || {};
+      const homeStarterId = away.starterPitcherId || (probable.home && probable.home.id);
+      const awayStarterId = home.starterPitcherId || (probable.away && probable.away.id);
       const [venue, homeBullpen, awayBullpen] = await Promise.all([
         venuePromise,
-        buildBullpenList(liveData.boxscore.teams.home, away.starterPitcherId, season, officialDate, allPlays, 'top'),
-        buildBullpenList(liveData.boxscore.teams.away, home.starterPitcherId, season, officialDate, allPlays, 'bottom')
+        buildBullpenList(liveData.boxscore.teams.home, homeStarterId, season, officialDate, allPlays, 'top'),
+        buildBullpenList(liveData.boxscore.teams.away, awayStarterId, season, officialDate, allPlays, 'bottom')
       ]);
 
       // Everything above this point is local computation from this call's
