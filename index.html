@@ -2181,10 +2181,24 @@
   #mobileAtBat .pitch-subheader {
     text-align: center;
     margin-bottom: 6px;
-    /* Matches .pitch-header's own padding-right (reserved for the popup's
-       close button) so both lines center against the same box -- without
-       it the subheader centers 9px right of the header above it. */
-    padding-right: 18px;
+  }
+  /* True-center the batter/pitcher lines instead of reserving asymmetric
+     space for the popup's close button (.pitch-header's own padding-right,
+     which is what every other .pitch-header still uses): clear that
+     padding here and inset both lines symmetrically via max-width+auto
+     margins instead, so a name long enough to reach the close button's
+     corner wraps -- at the space between first and last name, same as any
+     text wrap -- onto a second centered line rather than running under it. */
+  #pitchModalBody .pitch-header,
+  #sidebarAtBat .pitch-header,
+  #mobileAtBat .pitch-header,
+  #pitchModalBody .pitch-subheader,
+  #sidebarAtBat .pitch-subheader,
+  #mobileAtBat .pitch-subheader {
+    padding-right: 0;
+    max-width: calc(100% - 40px);
+    margin-left: auto;
+    margin-right: auto;
   }
   .player-modal-head {
     display: flex;
@@ -6507,7 +6521,7 @@
     });
 
     return `<div class="loc-section">
-      <div class="loc-plot-wrap"><svg viewBox="0 0 200 275" width="200" height="275">${svg}</svg></div>
+      <div class="loc-plot-wrap"><svg viewBox="0 0 200 275" width="230" height="316">${svg}</svg></div>
     </div>`;
   }
 
