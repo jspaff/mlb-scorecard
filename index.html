@@ -813,17 +813,21 @@
   /* Marks whichever tile's scorecard is currently open below -- deliberately
      not another border color, since gold and ink are already spoken for by
      .is-live/.is-final above and a third competing outline color would just
-     add to the noise those two already carry. A plain bar under the tile
-     reads as "selected" without being mistaken for either game state, and
-     layers fine underneath them since it only touches the bottom edge. */
+     add to the noise those two already carry. A plain bar along the bottom
+     reads as "selected" without being mistaken for either game state --
+     sized to extend past the padding edge (a positioned child's own
+     containing block) through .is-live's 2px border and out to its outer
+     edge, so the bar actually replaces that stretch of gold border instead
+     of sitting inset above it. */
   .daily-tile.is-current::before {
     content: '';
     position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 3px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    height: 4px;
     background: var(--ink);
+    border-radius: 0 0 6px 6px;
     z-index: 1;
   }
   @keyframes daily-tile-glow {
@@ -6256,6 +6260,15 @@
     if (!gamePk || gamePk === String(currentGamePk)) return;
     currentGamePk = gamePk;
     renderGameStrip(dateInput.value, scheduleGames);
+    // Blank the old game's scorecard immediately on click rather than
+    // leaving it on screen until the new one's fetch resolves -- a fast
+    // load just flashes blank for a moment, but a slow one makes it clear
+    // right away that something new is loading instead of leaving the
+    // previous game's grid sitting there looking current.
+    body.innerHTML = '';
+    scoreBottomBar.innerHTML = '';
+    sidebarMonsterPanel.innerHTML = '';
+    updateAtBatTrackers(null);
     loadGame(gamePk);
   }
   // Below 699px (see .game-strip's CSS) the strip shows only the current
