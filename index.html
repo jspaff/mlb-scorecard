@@ -696,6 +696,10 @@
     text-decoration: none;
   }
   .pog-watch:hover, .pog-watch:focus-visible { text-decoration: underline; }
+  /* At-bat popup/trackers' own Watch link -- sits last, below the play
+     description, so it's centered rather than left-aligned like .pog-watch's
+     other (left-aligned block) context. */
+  .atbat-watch { display: block; text-align: center; margin-top: 10px; }
   .potg-section {
     margin-top: 14px;
     margin-bottom: 16px;
@@ -2177,6 +2181,10 @@
   #mobileAtBat .pitch-subheader {
     text-align: center;
     margin-bottom: 6px;
+    /* Matches .pitch-header's own padding-right (reserved for the popup's
+       close button) so both lines center against the same box -- without
+       it the subheader centers 9px right of the header above it. */
+    padding-right: 18px;
   }
   .player-modal-head {
     display: flex;
@@ -6482,7 +6490,7 @@
       svg += `<line x1="${gx}" y1="${zoneTop}" x2="${gx}" y2="${zoneBot}" stroke="${PALETTE.ink}" stroke-width="0.6" opacity="0.35"/>`;
       svg += `<line x1="${zoneLeft}" y1="${gy}" x2="${zoneRight}" y2="${gy}" stroke="${PALETTE.ink}" stroke-width="0.6" opacity="0.35"/>`;
     }
-    const plateY = groundY - 2, plateW = 17;
+    const plateY = groundY - 8, plateW = 17;
     svg += `<path d="M ${cx - plateW},${plateY} L ${cx + plateW},${plateY} L ${cx + plateW},${plateY + 10} L ${cx},${plateY + 19} L ${cx - plateW},${plateY + 10} Z" fill="${PALETTE.paper}" stroke="${PALETTE.ink}" stroke-width="1" opacity="0.85"/>`;
 
     if (batSide === 'L' || batSide === 'R') {
@@ -6564,12 +6572,12 @@
     return `
       <div class="pitch-header">${c.batterName || 'Batter'}</div>
       <div class="pitch-subheader">vs ${c.pitcherFullName || 'pitcher'}</div>
-      ${c.videoUrl ? `<a class="pog-watch" href="${c.videoUrl}" target="_blank" rel="noopener noreferrer">Watch &#9654;</a>` : ''}
       ${locationHtml}
       ${rows}
       ${reviewsHtml}
       ${eventsHtml}
       ${c.playDesc ? `<div class="pitch-final-desc">${c.playDesc}</div>` : ''}
+      ${c.videoUrl ? `<a class="pog-watch atbat-watch" href="${c.videoUrl}" target="_blank" rel="noopener noreferrer">Watch &#9654;</a>` : ''}
     `;
   }
 
