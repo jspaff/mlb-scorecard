@@ -699,7 +699,7 @@
   /* At-bat popup/trackers' own Watch link -- sits right below the batter/
      pitcher lines, left-aligned like them, at .pog-watch's own original
      size (no overrides needed here). */
-  .atbat-watch { display: block; margin-bottom: 10px; }
+  .atbat-watch { display: block; margin-bottom: 4px; }
   .potg-section {
     margin-top: 14px;
     margin-bottom: 16px;
@@ -2381,7 +2381,7 @@
   }
   .pitch-event-tag.challenge-tag { border-style: dashed; }
   .pitch-event-tag.challenge-tag .abs-tag { margin-left: 0; margin-right: 5px; }
-  .loc-section { margin-top: 2px; }
+  .loc-section { margin-top: 0; }
   .loc-plot-wrap { display: flex; justify-content: center; }
   .loc-plot-wrap svg { display: block; }
   .loc-dot {
@@ -6501,7 +6501,10 @@
     // zoneLeft/zoneRight directly rather than a separately-tuned width --
     // they now always line up exactly regardless of scale.
     const plateY = groundY + 6, plateW = zoneRight - cx, plateDepth = plateW * 10 / 17, plateTip = plateW * 19 / 17;
-    svg += `<path d="M ${zoneLeft},${plateY} L ${zoneRight},${plateY} L ${zoneRight},${plateY + plateDepth} L ${cx},${plateY + plateTip} L ${zoneLeft},${plateY + plateDepth} Z" fill="${PALETTE.paper}" stroke="${PALETTE.ink}" stroke-width="1" opacity="0.85"/>`;
+    // Same fill/stroke-weight as the zone rect above -- one consistent
+    // shading and line weight for both, rather than the plate's own
+    // separately-tuned look.
+    svg += `<path d="M ${zoneLeft},${plateY} L ${zoneRight},${plateY} L ${zoneRight},${plateY + plateDepth} L ${cx},${plateY + plateTip} L ${zoneLeft},${plateY + plateDepth} Z" fill="rgba(243,236,219,0.05)" stroke="${PALETTE.ink}" stroke-width="1.4"/>`;
 
     if (batSide === 'L' || batSide === 'R') {
       svg += battersBoxMarker(zoneLeft, zoneRight, zoneTop, zoneBot, batSide);
@@ -6517,7 +6520,7 @@
     });
 
     return `<div class="loc-section">
-      <div class="loc-plot-wrap"><svg viewBox="0 0 200 290" width="265" height="384">${svg}</svg></div>
+      <div class="loc-plot-wrap"><svg viewBox="0 0 200 290" width="225" height="326">${svg}</svg></div>
     </div>`;
   }
 
