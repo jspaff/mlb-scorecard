@@ -783,7 +783,26 @@
     position: relative;
     overflow: hidden;
   }
-  .daily-tile:hover, .daily-tile:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+  /* Hover/press feedback lives in its own overlay rather than as an outline
+     or a background change -- .is-live/.is-final each set their own
+     explicit background below, so an overlay is the only way to layer a
+     wash on top of either without one hiding the other. A gold outline
+     used to cover hover/focus here, but it read as more of the same thing
+     as .is-live's animated gold glow right when you'd want to tell them
+     apart (hovering a live tile). */
+  .daily-tile::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--ink);
+    opacity: 0;
+    z-index: 0;
+    pointer-events: none;
+    transition: opacity 0.12s ease;
+  }
+  .daily-tile:hover::after, .daily-tile:focus-visible::after { opacity: 0.06; }
+  .daily-tile:active::after { opacity: 0.16; transition-duration: 0.05s; }
+  .daily-tile:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
   .daily-tile.is-live {
     border-width: 2px;
     border-color: var(--gold);
@@ -791,6 +810,22 @@
     animation: daily-tile-glow 1.6s ease-in-out infinite;
   }
   .daily-tile.is-final { border-color: var(--ink); border-width: 1.5px; background: rgba(84, 121, 109, 0.32); }
+  /* Marks whichever tile's scorecard is currently open below -- deliberately
+     not another border color, since gold and ink are already spoken for by
+     .is-live/.is-final above and a third competing outline color would just
+     add to the noise those two already carry. A plain bar under the tile
+     reads as "selected" without being mistaken for either game state, and
+     layers fine underneath them since it only touches the bottom edge. */
+  .daily-tile.is-current::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 3px;
+    background: var(--ink);
+    z-index: 1;
+  }
   @keyframes daily-tile-glow {
     0%, 100% { border-color: var(--gold); box-shadow: 0 0 0 0 rgba(217, 169, 26, 0); }
     50% { border-color: #f0c94a; box-shadow: 0 0 9px 1px rgba(217, 169, 26, 0.55); }
