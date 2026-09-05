@@ -864,26 +864,29 @@
      Daily tab's own dark .sheet card behind its tile grid -- individual
      tiles stay background-less except for their own .is-live/.is-final
      tint (see .daily-tile.is-live/.is-final above), same as on that tab. */
-  .game-strip {
-    display: flex;
-    gap: 8px;
-    overflow-x: auto;
+  /* Wraps the actual scrolling element (.game-strip) rather than putting the
+     fade pseudo-elements on that element itself -- position: absolute
+     descendants are supposed to stay pinned to their containing block
+     regardless of that same element's own scroll offset, but that's exactly
+     the case some engines get wrong for a scroll container's own generated
+     content, which is what made the fade drift along with the tiles instead
+     of staying put at the edges. A separate, non-scrolling wrapper sidesteps
+     the question entirely: .game-strip-wrap never scrolls, so anything
+     absolutely positioned against it can't drift regardless. */
+  .game-strip-wrap {
+    position: relative;
     flex: 1;
     min-width: 0;
-    padding: 4px;
-    background: var(--paper);
-    position: relative;
+    display: flex;
   }
   /* Tiles scrolling past either edge already sink into the strip's own dark
      background underneath the overflow clip -- these two pseudo-elements
      lean into that instead of fighting it, fading the last sliver of tile
      into the same color right at the edge rather than letting it end in a
-     hard vertical cut. Absolutely positioned against .game-strip itself
-     (not its scrolling content), so they stay pinned to the edges as the
-     tiles scroll underneath rather than scrolling away with them. Each only
-     shows once there's actually more strip to reveal in that direction --
-     see the has-scroll-left/-right classes, toggled by updateGameStripFade. */
-  .game-strip::before, .game-strip::after {
+     hard vertical cut. Each only shows once there's actually more strip to
+     reveal in that direction -- see the has-scroll-left/-right classes,
+     toggled on this wrapper by updateGameStripFade. */
+  .game-strip-wrap::before, .game-strip-wrap::after {
     content: '';
     position: absolute;
     top: 0;
@@ -894,16 +897,24 @@
     opacity: 0;
     transition: opacity 0.15s ease;
   }
-  .game-strip::before {
+  .game-strip-wrap::before {
     left: 0;
     background: linear-gradient(to right, var(--paper), transparent);
   }
-  .game-strip::after {
+  .game-strip-wrap::after {
     right: 0;
     background: linear-gradient(to left, var(--paper), transparent);
   }
-  .game-strip.has-scroll-left::before { opacity: 1; }
-  .game-strip.has-scroll-right::after { opacity: 1; }
+  .game-strip-wrap.has-scroll-left::before { opacity: 1; }
+  .game-strip-wrap.has-scroll-right::after { opacity: 1; }
+  .game-strip {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    width: 100%;
+    padding: 4px;
+    background: var(--paper);
+  }
   .game-strip .daily-tile {
     height: auto;
     padding-top: 4px;
@@ -2450,7 +2461,9 @@
           <button type="button" class="date-nav-btn" id="dateNext" aria-label="Next day">&#8250;</button>
         </div>
       </div>
-      <div class="game-strip" id="gameStrip"></div>
+      <div class="game-strip-wrap">
+        <div class="game-strip" id="gameStrip"></div>
+      </div>
       <button type="button" class="box-score-link" id="gameSummaryTopBtn" hidden>Game Summary</button>
     </div>
     <div class="mlb-controls" data-tab-controls="daily" hidden>
@@ -2594,6 +2607,10 @@
   const dateInput = document.getElementById('datePick');
   const dateInputText = document.getElementById('datePickText');
   const gameStrip = document.getElementById('gameStrip');
+  // The non-scrolling wrapper the edge fade (see .game-strip-wrap in the
+  // CSS) is pinned against -- kept as its own reference rather than
+  // gameStrip.parentElement so a later markup change can't silently break it.
+  const gameStripWrap = gameStrip.parentElement;
   const gameStripOverlay = document.getElementById('gameStripOverlay');
   const gameStripOverlayBody = document.getElementById('gameStripOverlayBody');
   const gameStripOverlayClose = document.getElementById('gameStripOverlayClose');
@@ -5722,8 +5739,8 @@
   // would be more confusing than the hard edge it's meant to soften.
   function updateGameStripFade() {
     const maxScroll = gameStrip.scrollWidth - gameStrip.clientWidth;
-    gameStrip.classList.toggle('has-scroll-left', gameStrip.scrollLeft > 1);
-    gameStrip.classList.toggle('has-scroll-right', gameStrip.scrollLeft < maxScroll - 1);
+    gameStripWrap.classList.toggle('has-scroll-left', gameStrip.scrollLeft > 1);
+    gameStripWrap.classList.toggle('has-scroll-right', gameStrip.scrollLeft < maxScroll - 1);
   }
 
   function showGameStripModal(dateStr, games) {
