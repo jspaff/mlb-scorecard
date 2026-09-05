@@ -696,27 +696,10 @@
     text-decoration: none;
   }
   .pog-watch:hover, .pog-watch:focus-visible { text-decoration: underline; }
-  /* At-bat popup/trackers' own Watch link -- pinned to the top-left corner
-     (mirroring .pitch-close's top-right placement) so it never pushes the
-     centered batter name down; its containing block is #pitchModalBody's
-     own #pitchOverlay .pitch-modal (position: relative) or, for the
-     always-on trackers, .sidebar-atbat itself (see its own position:
-     relative above). */
-  .atbat-watch {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    margin: 0;
-    /* Same box model as .pitch-close -- padding, line-height, and now
-       font-size too. Matching padding alone still left them off-center
-       against each other: .pog-watch's own 10px text sits in a shorter line
-       box than the close button's 14px "X", so equal padding put their
-       vertical centers 2px apart. Sizing the text up to match is what
-       actually aligns them, rather than fudging the offset to compensate. */
-    padding: 4px;
-    line-height: 1;
-    font-size: 14px;
-  }
+  /* At-bat popup/trackers' own Watch link -- sits right below the batter/
+     pitcher lines, left-aligned like them, at .pog-watch's own original
+     size (no overrides needed here). */
+  .atbat-watch { display: block; margin-bottom: 10px; }
   .potg-section {
     margin-top: 14px;
     margin-bottom: 16px;
@@ -2150,9 +2133,6 @@
     border-top: 1px solid rgba(243, 236, 219, 0.15);
     padding: 14px;
     overflow-y: auto;
-    /* Containing block for .atbat-watch's absolute positioning, same as
-       #pitchModalBody -- see .pitch-modal's own position: relative. */
-    position: relative;
     /* Takes whatever vertical space is left in the fixed-height card below
        the monster scoreboard (min-height: 0 is what lets a flex child
        actually shrink and scroll instead of overflowing its parent). */
@@ -2193,41 +2173,21 @@
     color: var(--ink-soft);
     margin-bottom: 12px;
   }
-  /* The at-bat popup/trackers' "vs {pitcher}" line only -- other
-     .pitch-subheader uses (season labels, date labels, etc.) stay
-     left-aligned, matching their own .pitch-header above them. */
-  #pitchModalBody .pitch-subheader,
-  #sidebarAtBat .pitch-subheader,
-  #mobileAtBat .pitch-subheader {
-    text-align: center;
-    margin-bottom: 6px;
-    font-size: 14px;
-  }
-  /* Batter name sized up beyond the shared .pitch-header default too --
-     this popup/tracker is the one place a name is the headline, not a
-     secondary label next to a team/date. */
+  /* The at-bat popup/trackers' batter/pitcher lines -- left-aligned (like
+     every other .pitch-header/.pitch-subheader) and sized up a bit, since
+     this popup/tracker is the one place a name is the headline rather than
+     a secondary label next to a team/date. */
   #pitchModalBody .pitch-header,
   #sidebarAtBat .pitch-header,
   #mobileAtBat .pitch-header {
     font-size: 19px;
+    text-align: left;
   }
-  /* True-center the batter/pitcher lines instead of reserving asymmetric
-     space for the popup's close button (.pitch-header's own padding-right,
-     which is what every other .pitch-header still uses): clear that
-     padding here and inset both lines symmetrically via max-width+auto
-     margins instead, so a name long enough to reach the close button's
-     corner wraps -- at the space between first and last name, same as any
-     text wrap -- onto a second centered line rather than running under it. */
-  #pitchModalBody .pitch-header,
-  #sidebarAtBat .pitch-header,
-  #mobileAtBat .pitch-header,
   #pitchModalBody .pitch-subheader,
   #sidebarAtBat .pitch-subheader,
   #mobileAtBat .pitch-subheader {
-    padding-right: 0;
-    max-width: calc(100% - 40px);
-    margin-left: auto;
-    margin-right: auto;
+    margin-bottom: 6px;
+    font-size: 14px;
   }
   .player-modal-head {
     display: flex;
@@ -6620,9 +6580,9 @@
     // below further down, rather than shoving the zone itself down the
     // page on every new pitch.
     return `
-      ${c.videoUrl ? `<a class="pog-watch atbat-watch" href="${c.videoUrl}" target="_blank" rel="noopener noreferrer">Watch &#9654;</a>` : ''}
       <div class="pitch-header">${c.batterName || 'Batter'}</div>
       <div class="pitch-subheader">vs ${c.pitcherFullName || 'pitcher'}</div>
+      ${c.videoUrl ? `<a class="pog-watch atbat-watch" href="${c.videoUrl}" target="_blank" rel="noopener noreferrer">Watch &#9654;</a>` : ''}
       ${locationHtml}
       ${rows}
       ${reviewsHtml}
