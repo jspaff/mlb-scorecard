@@ -781,7 +781,6 @@
     padding: 10px 12px;
     cursor: pointer;
     position: relative;
-    overflow: hidden;
   }
   /* Hover/press feedback lives in its own overlay rather than as an outline
      or a background change -- .is-live/.is-final each set their own
@@ -789,12 +788,16 @@
      wash on top of either without one hiding the other. A gold outline
      used to cover hover/focus here, but it read as more of the same thing
      as .is-live's animated gold glow right when you'd want to tell them
-     apart (hovering a live tile). */
+     apart (hovering a live tile). border-radius: inherit keeps its corners
+     matching the tile's own now that nothing here clips to them (see the
+     .daily-tile.is-current::before comment below for why overflow: hidden
+     was dropped). */
   .daily-tile::after {
     content: '';
     position: absolute;
     inset: 0;
     background: var(--ink);
+    border-radius: inherit;
     opacity: 0;
     z-index: 0;
     pointer-events: none;
@@ -811,36 +814,31 @@
   }
   .daily-tile.is-final { border-color: var(--ink); border-width: 1.5px; background: rgba(84, 121, 109, 0.32); }
   /* Marks whichever tile's scorecard is currently open below -- deliberately
-     not another border color's own hue, just a thicker ink bottom edge
-     replacing whatever's already there (gold for live, ink already for
-     final, the plain muted grey otherwise). A pseudo-element bar was tried
-     first, sized to spill past the padding edge into the border, but
-     .daily-tile's own overflow: hidden (needed to clip the watermark)
-     clips any child back at the padding edge regardless -- so a child
-     positioned to cover the border was never going to actually show
-     through it. Overriding the real border-bottom side instead sidesteps
-     that entirely, and the browser blends it into the corners on its own.
-     .is-live's glow animation below is written to leave border-bottom-color
-     alone for exactly this reason, so this override isn't fought every
-     frame -- the box-shadow half of that glow still pulses around all four
-     sides, bottom included. */
-  .daily-tile.is-current {
-    border-bottom-color: var(--ink);
-    border-bottom-width: 4px;
+     not another border color, since gold and ink are already spoken for by
+     .is-live/.is-final above. Tried as a border-bottom-color override first,
+     but a differently-colored bottom border next to gold/ink sides always
+     renders with a diagonal 45-degree blend at each bottom corner (how
+     browsers draw a border corner whenever the two meeting sides differ) --
+     not the crisp corner-to-corner line wanted here. A real bar spanning
+     the full width, corner to corner, needs to sit outside the padding
+     edge (a positioned child's own containing block) to actually cover the
+     border underneath it, which is why .daily-tile no longer clips its own
+     overflow -- it was only doing that to keep the hover wash above
+     rounded to match, now handled directly via that pseudo-element's own
+     border-radius: inherit instead. */
+  .daily-tile.is-current::before {
+    content: '';
+    position: absolute;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    height: 4px;
+    background: var(--ink);
+    z-index: 1;
   }
   @keyframes daily-tile-glow {
-    0%, 100% {
-      border-top-color: var(--gold);
-      border-left-color: var(--gold);
-      border-right-color: var(--gold);
-      box-shadow: 0 0 0 0 rgba(217, 169, 26, 0);
-    }
-    50% {
-      border-top-color: #f0c94a;
-      border-left-color: #f0c94a;
-      border-right-color: #f0c94a;
-      box-shadow: 0 0 9px 1px rgba(217, 169, 26, 0.55);
-    }
+    0%, 100% { border-color: var(--gold); box-shadow: 0 0 0 0 rgba(217, 169, 26, 0); }
+    50% { border-color: #f0c94a; box-shadow: 0 0 9px 1px rgba(217, 169, 26, 0.55); }
   }
   @media (prefers-reduced-motion: reduce) {
     .daily-tile.is-live { animation: none; }
