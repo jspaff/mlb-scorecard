@@ -704,7 +704,12 @@
      relative above). */
   .atbat-watch {
     position: absolute;
-    top: 10px;
+    /* +2px vs. .pitch-close's own top: 10px -- same padding and line-height
+       aren't enough on their own since this text is a smaller font-size
+       (10px vs. the close button's 14px); with equal padding, the smaller
+       text's vertical center sits 2px above the button's, so the extra
+       nudge re-centers them on the same line despite that difference. */
+    top: 12px;
     left: 10px;
     margin: 0;
     /* Same box model as .pitch-close (padding + line-height: 1) so the two
