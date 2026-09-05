@@ -6521,9 +6521,13 @@
     }
     // Real, to-scale distance below the zone -- home plate sits at the
     // ground, and the zone bottom is defined at knee height, a genuine
-    // ~1.5ft (at this scale) above it.
-    const plateY = groundY + 6, plateW = 17;
-    svg += `<path d="M ${cx - plateW},${plateY} L ${cx + plateW},${plateY} L ${cx + plateW},${plateY + 10} L ${cx},${plateY + 19} L ${cx - plateW},${plateY + 10} Z" fill="${PALETTE.paper}" stroke="${PALETTE.ink}" stroke-width="1" opacity="0.85"/>`;
+    // ~1.5ft (at this scale) above it. halfPlate is the same 17in
+    // half-width used for the zone above (the strike zone's width is
+    // defined as the width of the plate), so the plate's own edges use
+    // zoneLeft/zoneRight directly rather than a separately-tuned width --
+    // they now always line up exactly regardless of scale.
+    const plateY = groundY + 6, plateW = zoneRight - cx, plateDepth = plateW * 10 / 17, plateTip = plateW * 19 / 17;
+    svg += `<path d="M ${zoneLeft},${plateY} L ${zoneRight},${plateY} L ${zoneRight},${plateY + plateDepth} L ${cx},${plateY + plateTip} L ${zoneLeft},${plateY + plateDepth} Z" fill="${PALETTE.paper}" stroke="${PALETTE.ink}" stroke-width="1" opacity="0.85"/>`;
 
     if (batSide === 'L' || batSide === 'R') {
       svg += battersBoxMarker(zoneLeft, zoneRight, zoneTop, zoneBot, batSide);
@@ -6539,7 +6543,7 @@
     });
 
     return `<div class="loc-section">
-      <div class="loc-plot-wrap"><svg viewBox="0 0 200 275" width="265" height="364">${svg}</svg></div>
+      <div class="loc-plot-wrap"><svg viewBox="0 0 200 290" width="265" height="384">${svg}</svg></div>
     </div>`;
   }
 
