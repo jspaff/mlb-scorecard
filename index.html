@@ -781,9 +781,31 @@
     padding: 10px 12px;
     cursor: pointer;
     position: relative;
-    overflow: hidden;
   }
-  .daily-tile:hover, .daily-tile:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+  /* Hover/press feedback lives in its own overlay rather than as an outline
+     or a background change -- .is-live/.is-final each set their own
+     explicit background below, so an overlay is the only way to layer a
+     wash on top of either without one hiding the other. A gold outline
+     used to cover hover/focus here, but it read as more of the same thing
+     as .is-live's animated gold glow right when you'd want to tell them
+     apart (hovering a live tile). border-radius: inherit keeps its corners
+     matching the tile's own now that nothing here clips to them (see the
+     .daily-tile.is-current::before comment below for why overflow: hidden
+     was dropped). */
+  .daily-tile::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--ink);
+    border-radius: inherit;
+    opacity: 0;
+    z-index: 0;
+    pointer-events: none;
+    transition: opacity 0.12s ease;
+  }
+  .daily-tile:hover::after, .daily-tile:focus-visible::after { opacity: 0.06; }
+  .daily-tile:active::after { opacity: 0.16; transition-duration: 0.05s; }
+  .daily-tile:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
   .daily-tile.is-live {
     border-width: 2px;
     border-color: var(--gold);
@@ -791,6 +813,29 @@
     animation: daily-tile-glow 1.6s ease-in-out infinite;
   }
   .daily-tile.is-final { border-color: var(--ink); border-width: 1.5px; background: rgba(84, 121, 109, 0.32); }
+  /* Marks whichever tile's scorecard is currently open below -- deliberately
+     not another border color, since gold and ink are already spoken for by
+     .is-live/.is-final above. Tried as a border-bottom-color override first,
+     but a differently-colored bottom border next to gold/ink sides always
+     renders with a diagonal 45-degree blend at each bottom corner (how
+     browsers draw a border corner whenever the two meeting sides differ) --
+     not the crisp corner-to-corner line wanted here. A real bar spanning
+     the full width, corner to corner, needs to sit outside the padding
+     edge (a positioned child's own containing block) to actually cover the
+     border underneath it, which is why .daily-tile no longer clips its own
+     overflow -- it was only doing that to keep the hover wash above
+     rounded to match, now handled directly via that pseudo-element's own
+     border-radius: inherit instead. */
+  .daily-tile.is-current::before {
+    content: '';
+    position: absolute;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    height: 4px;
+    background: var(--ink);
+    z-index: 1;
+  }
   @keyframes daily-tile-glow {
     0%, 100% { border-color: var(--gold); box-shadow: 0 0 0 0 rgba(217, 169, 26, 0); }
     50% { border-color: #f0c94a; box-shadow: 0 0 9px 1px rgba(217, 169, 26, 0.55); }
@@ -800,7 +845,7 @@
   }
   .daily-tile-watermark {
     position: absolute;
-    right: -12px;
+    right: 8px;
     top: 50%;
     transform: translateY(-50%);
     width: 92px;
@@ -864,12 +909,54 @@
      Daily tab's own dark .sheet card behind its tile grid -- individual
      tiles stay background-less except for their own .is-live/.is-final
      tint (see .daily-tile.is-live/.is-final above), same as on that tab. */
+  /* Wraps the actual scrolling element (.game-strip) rather than putting the
+     fade pseudo-elements on that element itself -- position: absolute
+     descendants are supposed to stay pinned to their containing block
+     regardless of that same element's own scroll offset, but that's exactly
+     the case some engines get wrong for a scroll container's own generated
+     content, which is what made the fade drift along with the tiles instead
+     of staying put at the edges. A separate, non-scrolling wrapper sidesteps
+     the question entirely: .game-strip-wrap never scrolls, so anything
+     absolutely positioned against it can't drift regardless. */
+  .game-strip-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    display: flex;
+  }
+  /* Tiles scrolling past either edge already sink into the strip's own dark
+     background underneath the overflow clip -- these two pseudo-elements
+     lean into that instead of fighting it, fading the last sliver of tile
+     into the same color right at the edge rather than letting it end in a
+     hard vertical cut. Each only shows once there's actually more strip to
+     reveal in that direction -- see the has-scroll-left/-right classes,
+     toggled on this wrapper by updateGameStripFade. */
+  .game-strip-wrap::before, .game-strip-wrap::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 28px;
+    pointer-events: none;
+    z-index: 2;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  .game-strip-wrap::before {
+    left: 0;
+    background: linear-gradient(to right, var(--paper), transparent);
+  }
+  .game-strip-wrap::after {
+    right: 0;
+    background: linear-gradient(to left, var(--paper), transparent);
+  }
+  .game-strip-wrap.has-scroll-left::before { opacity: 1; }
+  .game-strip-wrap.has-scroll-right::after { opacity: 1; }
   .game-strip {
     display: flex;
     gap: 8px;
     overflow-x: auto;
-    flex: 1;
-    min-width: 0;
+    width: 100%;
     padding: 4px;
     background: var(--paper);
   }
@@ -935,9 +1022,9 @@
      strip's much shorter, narrower tiles so it doesn't spill past the
      clipped edge (or over the score text). */
   .game-strip .daily-tile-watermark {
-    width: 40px;
-    height: 40px;
-    right: -6px;
+    width: 64px;
+    height: 64px;
+    right: 6px;
   }
 
   .hr-list { display: flex; flex-direction: column; }
@@ -1054,6 +1141,13 @@
        buildTeamRows' cls string. */
     table.scorecard-table th:not(.ply):not(.pos) { width: auto; }
     table.scorecard-table td.cell { width: auto; }
+    /* Wider date tile with less side padding and a bigger day number, so
+       the number fills more of the tile instead of sitting in a sea of
+       padding -- narrow phones (below this breakpoint) keep the tighter,
+       smaller original since there's no width to spare there. */
+    .date-display-text-cal { min-width: 76px; padding: 2px 10px; }
+    .date-display-text-cal .cal-month { font-size: 10px; }
+    .date-display-text-cal .cal-day { font-size: 30px; }
   }
 
   .spray-card {
@@ -1744,8 +1838,38 @@
     border-radius: 0;
     padding: 2px 4px;
   }
-  table.scorecard-table td.ply .sub-note { display: block; padding: 1px 8px; }
+  table.scorecard-table td.ply .sub-note { padding: 1px 8px; }
   table.scorecard-table td.ply .sub-note .player-name-btn { display: inline-block; width: auto; }
+  /* Every entry in both stacks gets the same explicit height, centering its
+     own content within it via line-height -- this (not the gap on
+     .ply-stack/.pos-stack above) is what actually keeps Player and Pos in
+     row-for-row sync when substitutions come in: a <button> and a bare line
+     of text don't naturally render at the same height (a button's own
+     padding/border/line-height don't reliably match a plain text line's),
+     so without pinning both to one shared height here, Pos's plain-text
+     entries and Player's button entries drift apart the more of them stack
+     up. line-height, not display: flex, does the vertical centering here --
+     .player-name-btn (and the one nested inside .sub-note) truncates long
+     names with text-overflow: ellipsis, which stops working the moment the
+     element becomes a flex container. Applies at every width -- the
+     max-width: 520px breakpoint below swaps in its own narrower/shorter
+     values (and can use flex there, since the truncated .pnb-name span is
+     hidden in favor of a never-truncated jersey number at that width). */
+  table.scorecard-table td.ply .ply-stack > .player-name-btn {
+    height: 17px;
+    line-height: 13px;
+  }
+  table.scorecard-table td.ply .sub-note {
+    height: 17px;
+    line-height: 17px;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  table.scorecard-table td.pos .pos-stack > span {
+    height: 17px;
+    line-height: 17px;
+    display: block;
+  }
   /* Frozen alongside Player (see th.pos) rather than scrolling off with the
      innings -- Pos is the last frozen column now, so the hairline that used
      to mark td.ply's right edge moves here, as an inset box-shadow rather
@@ -2341,22 +2465,11 @@
        and, critically, the same value in both columns so a starter and its
        substitute(s) land at the same height in Player as in Pos. */
     .ply-stack, .pos-stack { gap: 2px; }
-    /* Every entry in both stacks gets the same explicit height, centering
-       its own content within it -- this (not the gap above) is what
-       actually keeps Player and Pos in row-for-row sync: a <button> and a
-       bare line of text don't naturally render at the same height (a
-       button's own padding/border/line-height don't reliably match a plain
-       text line's), so without pinning both to one shared height here,
-       Pos's plain-text entries and Player's button entries drift apart the
-       more of them stack up, however tight the gap between them is. */
-    table.scorecard-table td.ply .ply-stack > .player-name-btn,
-    table.scorecard-table td.ply .sub-note,
-    table.scorecard-table td.pos .pos-stack > span {
-      height: 17px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+    /* The shared fixed-height rule lives with the other table.ply/pos rules
+       above (it applies at every width) -- text-align: center on td.ply
+       above is what centers the Player column's own content horizontally
+       here, since the column has shrunk down to jersey-number width and no
+       longer wants the wide column's left alignment. */
     /* The starter's own button, not the .sub-note wrapper around a
        substitute's -- box-sizing: border-box (already set above) means its
        padding/border count toward that same 17px instead of adding to it. */
@@ -2393,7 +2506,9 @@
           <button type="button" class="date-nav-btn" id="dateNext" aria-label="Next day">&#8250;</button>
         </div>
       </div>
-      <div class="game-strip" id="gameStrip"></div>
+      <div class="game-strip-wrap">
+        <div class="game-strip" id="gameStrip"></div>
+      </div>
       <button type="button" class="box-score-link" id="gameSummaryTopBtn" hidden>Game Summary</button>
     </div>
     <div class="mlb-controls" data-tab-controls="daily" hidden>
@@ -2537,6 +2652,10 @@
   const dateInput = document.getElementById('datePick');
   const dateInputText = document.getElementById('datePickText');
   const gameStrip = document.getElementById('gameStrip');
+  // The non-scrolling wrapper the edge fade (see .game-strip-wrap in the
+  // CSS) is pinned against -- kept as its own reference rather than
+  // gameStrip.parentElement so a later markup change can't silently break it.
+  const gameStripWrap = gameStrip.parentElement;
   const gameStripOverlay = document.getElementById('gameStripOverlay');
   const gameStripOverlayBody = document.getElementById('gameStripOverlayBody');
   const gameStripOverlayClose = document.getElementById('gameStripOverlayClose');
@@ -5655,6 +5774,18 @@
   function renderGameStrip(dateStr, games) {
     gameStrip.innerHTML = games.map(g => renderDailyGameTile(dateStr, scheduleGameToTileGame(g),
       String(g.gamePk) === String(currentGamePk) ? 'is-current' : '')).join('');
+    updateGameStripFade();
+  }
+
+  // Toggles the edge fade (see .game-strip::before/::after) on and off
+  // depending on whether there's actually more strip to reveal in that
+  // direction -- a fade implying scrollable content that isn't there (a
+  // short list, or the mobile single-tile layout with no overflow at all)
+  // would be more confusing than the hard edge it's meant to soften.
+  function updateGameStripFade() {
+    const maxScroll = gameStrip.scrollWidth - gameStrip.clientWidth;
+    gameStripWrap.classList.toggle('has-scroll-left', gameStrip.scrollLeft > 1);
+    gameStripWrap.classList.toggle('has-scroll-right', gameStrip.scrollLeft < maxScroll - 1);
   }
 
   function showGameStripModal(dateStr, games) {
@@ -6135,6 +6266,15 @@
     if (!gamePk || gamePk === String(currentGamePk)) return;
     currentGamePk = gamePk;
     renderGameStrip(dateInput.value, scheduleGames);
+    // Blank the old game's scorecard immediately on click rather than
+    // leaving it on screen until the new one's fetch resolves -- a fast
+    // load just flashes blank for a moment, but a slow one makes it clear
+    // right away that something new is loading instead of leaving the
+    // previous game's grid sitting there looking current.
+    body.innerHTML = '';
+    scoreBottomBar.innerHTML = '';
+    sidebarMonsterPanel.innerHTML = '';
+    updateAtBatTrackers(null);
     loadGame(gamePk);
   }
   // Below 699px (see .game-strip's CSS) the strip shows only the current
@@ -6151,6 +6291,8 @@
     }
     selectGame(gamePk);
   }
+  gameStrip.addEventListener('scroll', updateGameStripFade, { passive: true });
+  window.addEventListener('resize', updateGameStripFade);
   gameStrip.addEventListener('click', (e) => {
     handleGameStripTileActivate(e.target.closest('.daily-tile'));
   });
