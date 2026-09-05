@@ -704,19 +704,18 @@
      relative above). */
   .atbat-watch {
     position: absolute;
-    /* +2px vs. .pitch-close's own top: 10px -- same padding and line-height
-       aren't enough on their own since this text is a smaller font-size
-       (10px vs. the close button's 14px); with equal padding, the smaller
-       text's vertical center sits 2px above the button's, so the extra
-       nudge re-centers them on the same line despite that difference. */
-    top: 12px;
+    top: 10px;
     left: 10px;
     margin: 0;
-    /* Same box model as .pitch-close (padding + line-height: 1) so the two
-       corners' contents sit on the same baseline instead of the close
-       button's own padding pushing its "X" lower than this text. */
+    /* Same box model as .pitch-close -- padding, line-height, and now
+       font-size too. Matching padding alone still left them off-center
+       against each other: .pog-watch's own 10px text sits in a shorter line
+       box than the close button's 14px "X", so equal padding put their
+       vertical centers 2px apart. Sizing the text up to match is what
+       actually aligns them, rather than fudging the offset to compensate. */
     padding: 4px;
     line-height: 1;
+    font-size: 14px;
   }
   .potg-section {
     margin-top: 14px;
