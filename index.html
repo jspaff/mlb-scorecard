@@ -702,7 +702,17 @@
      own #pitchOverlay .pitch-modal (position: relative) or, for the
      always-on trackers, .sidebar-atbat itself (see its own position:
      relative above). */
-  .atbat-watch { position: absolute; top: 10px; left: 10px; margin: 0; }
+  .atbat-watch {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    margin: 0;
+    /* Same box model as .pitch-close (padding + line-height: 1) so the two
+       corners' contents sit on the same baseline instead of the close
+       button's own padding pushing its "X" lower than this text. */
+    padding: 4px;
+    line-height: 1;
+  }
   .potg-section {
     margin-top: 14px;
     margin-bottom: 16px;
