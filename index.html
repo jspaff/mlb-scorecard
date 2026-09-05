@@ -935,9 +935,9 @@
      strip's much shorter, narrower tiles so it doesn't spill past the
      clipped edge (or over the score text). */
   .game-strip .daily-tile-watermark {
-    width: 40px;
-    height: 40px;
-    right: -6px;
+    width: 64px;
+    height: 64px;
+    right: -10px;
   }
 
   .hr-list { display: flex; flex-direction: column; }
@@ -1054,6 +1054,13 @@
        buildTeamRows' cls string. */
     table.scorecard-table th:not(.ply):not(.pos) { width: auto; }
     table.scorecard-table td.cell { width: auto; }
+    /* Wider date tile with less side padding and a bigger day number, so
+       the number fills more of the tile instead of sitting in a sea of
+       padding -- narrow phones (below this breakpoint) keep the tighter,
+       smaller original since there's no width to spare there. */
+    .date-display-text-cal { min-width: 76px; padding: 2px 10px; }
+    .date-display-text-cal .cal-month { font-size: 10px; }
+    .date-display-text-cal .cal-day { font-size: 30px; }
   }
 
   .spray-card {
@@ -1744,8 +1751,38 @@
     border-radius: 0;
     padding: 2px 4px;
   }
-  table.scorecard-table td.ply .sub-note { display: block; padding: 1px 8px; }
+  table.scorecard-table td.ply .sub-note { padding: 1px 8px; }
   table.scorecard-table td.ply .sub-note .player-name-btn { display: inline-block; width: auto; }
+  /* Every entry in both stacks gets the same explicit height, centering its
+     own content within it via line-height -- this (not the gap on
+     .ply-stack/.pos-stack above) is what actually keeps Player and Pos in
+     row-for-row sync when substitutions come in: a <button> and a bare line
+     of text don't naturally render at the same height (a button's own
+     padding/border/line-height don't reliably match a plain text line's),
+     so without pinning both to one shared height here, Pos's plain-text
+     entries and Player's button entries drift apart the more of them stack
+     up. line-height, not display: flex, does the vertical centering here --
+     .player-name-btn (and the one nested inside .sub-note) truncates long
+     names with text-overflow: ellipsis, which stops working the moment the
+     element becomes a flex container. Applies at every width -- the
+     max-width: 520px breakpoint below swaps in its own narrower/shorter
+     values (and can use flex there, since the truncated .pnb-name span is
+     hidden in favor of a never-truncated jersey number at that width). */
+  table.scorecard-table td.ply .ply-stack > .player-name-btn {
+    height: 17px;
+    line-height: 13px;
+  }
+  table.scorecard-table td.ply .sub-note {
+    height: 17px;
+    line-height: 17px;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  table.scorecard-table td.pos .pos-stack > span {
+    height: 17px;
+    line-height: 17px;
+    display: block;
+  }
   /* Frozen alongside Player (see th.pos) rather than scrolling off with the
      innings -- Pos is the last frozen column now, so the hairline that used
      to mark td.ply's right edge moves here, as an inset box-shadow rather
@@ -2341,22 +2378,11 @@
        and, critically, the same value in both columns so a starter and its
        substitute(s) land at the same height in Player as in Pos. */
     .ply-stack, .pos-stack { gap: 2px; }
-    /* Every entry in both stacks gets the same explicit height, centering
-       its own content within it -- this (not the gap above) is what
-       actually keeps Player and Pos in row-for-row sync: a <button> and a
-       bare line of text don't naturally render at the same height (a
-       button's own padding/border/line-height don't reliably match a plain
-       text line's), so without pinning both to one shared height here,
-       Pos's plain-text entries and Player's button entries drift apart the
-       more of them stack up, however tight the gap between them is. */
-    table.scorecard-table td.ply .ply-stack > .player-name-btn,
-    table.scorecard-table td.ply .sub-note,
-    table.scorecard-table td.pos .pos-stack > span {
-      height: 17px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+    /* The shared fixed-height rule lives with the other table.ply/pos rules
+       above (it applies at every width) -- text-align: center on td.ply
+       above is what centers the Player column's own content horizontally
+       here, since the column has shrunk down to jersey-number width and no
+       longer wants the wide column's left alignment. */
     /* The starter's own button, not the .sub-note wrapper around a
        substitute's -- box-sizing: border-box (already set above) means its
        padding/border count toward that same 17px instead of adding to it. */
