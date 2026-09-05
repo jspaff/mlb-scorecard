@@ -872,7 +872,38 @@
     min-width: 0;
     padding: 4px;
     background: var(--paper);
+    position: relative;
   }
+  /* Tiles scrolling past either edge already sink into the strip's own dark
+     background underneath the overflow clip -- these two pseudo-elements
+     lean into that instead of fighting it, fading the last sliver of tile
+     into the same color right at the edge rather than letting it end in a
+     hard vertical cut. Absolutely positioned against .game-strip itself
+     (not its scrolling content), so they stay pinned to the edges as the
+     tiles scroll underneath rather than scrolling away with them. Each only
+     shows once there's actually more strip to reveal in that direction --
+     see the has-scroll-left/-right classes, toggled by updateGameStripFade. */
+  .game-strip::before, .game-strip::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 28px;
+    pointer-events: none;
+    z-index: 2;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  .game-strip::before {
+    left: 0;
+    background: linear-gradient(to right, var(--paper), transparent);
+  }
+  .game-strip::after {
+    right: 0;
+    background: linear-gradient(to left, var(--paper), transparent);
+  }
+  .game-strip.has-scroll-left::before { opacity: 1; }
+  .game-strip.has-scroll-right::after { opacity: 1; }
   .game-strip .daily-tile {
     height: auto;
     padding-top: 4px;
@@ -5681,6 +5712,18 @@
   function renderGameStrip(dateStr, games) {
     gameStrip.innerHTML = games.map(g => renderDailyGameTile(dateStr, scheduleGameToTileGame(g),
       String(g.gamePk) === String(currentGamePk) ? 'is-current' : '')).join('');
+    updateGameStripFade();
+  }
+
+  // Toggles the edge fade (see .game-strip::before/::after) on and off
+  // depending on whether there's actually more strip to reveal in that
+  // direction -- a fade implying scrollable content that isn't there (a
+  // short list, or the mobile single-tile layout with no overflow at all)
+  // would be more confusing than the hard edge it's meant to soften.
+  function updateGameStripFade() {
+    const maxScroll = gameStrip.scrollWidth - gameStrip.clientWidth;
+    gameStrip.classList.toggle('has-scroll-left', gameStrip.scrollLeft > 1);
+    gameStrip.classList.toggle('has-scroll-right', gameStrip.scrollLeft < maxScroll - 1);
   }
 
   function showGameStripModal(dateStr, games) {
@@ -6177,6 +6220,8 @@
     }
     selectGame(gamePk);
   }
+  gameStrip.addEventListener('scroll', updateGameStripFade, { passive: true });
+  window.addEventListener('resize', updateGameStripFade);
   gameStrip.addEventListener('click', (e) => {
     handleGameStripTileActivate(e.target.closest('.daily-tile'));
   });
