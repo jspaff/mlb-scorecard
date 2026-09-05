@@ -696,10 +696,10 @@
     text-decoration: none;
   }
   .pog-watch:hover, .pog-watch:focus-visible { text-decoration: underline; }
-  /* At-bat popup/trackers' own Watch link -- sits last, below the play
-     description, so it's centered rather than left-aligned like .pog-watch's
-     other (left-aligned block) context. */
-  .atbat-watch { display: block; text-align: center; margin-top: 10px; }
+  /* At-bat popup/trackers' own Watch link -- sits first, top-left of the
+     card (above the centered batter/pitcher lines), rather than inline with
+     .pog-watch's other (bottom-of-card) context. */
+  .atbat-watch { display: block; text-align: left; margin-top: 0; margin-bottom: 8px; }
   .potg-section {
     margin-top: 14px;
     margin-bottom: 16px;
@@ -2181,6 +2181,15 @@
   #mobileAtBat .pitch-subheader {
     text-align: center;
     margin-bottom: 6px;
+    font-size: 14px;
+  }
+  /* Batter name sized up beyond the shared .pitch-header default too --
+     this popup/tracker is the one place a name is the headline, not a
+     secondary label next to a team/date. */
+  #pitchModalBody .pitch-header,
+  #sidebarAtBat .pitch-header,
+  #mobileAtBat .pitch-header {
+    font-size: 19px;
   }
   /* True-center the batter/pitcher lines instead of reserving asymmetric
      space for the popup's close button (.pitch-header's own padding-right,
@@ -6504,7 +6513,10 @@
       svg += `<line x1="${gx}" y1="${zoneTop}" x2="${gx}" y2="${zoneBot}" stroke="${PALETTE.ink}" stroke-width="0.6" opacity="0.35"/>`;
       svg += `<line x1="${zoneLeft}" y1="${gy}" x2="${zoneRight}" y2="${gy}" stroke="${PALETTE.ink}" stroke-width="0.6" opacity="0.35"/>`;
     }
-    const plateY = groundY - 8, plateW = 17;
+    // Pinned a fixed gap below zoneBot (not groundY) -- the real ~1.5ft
+    // physical gap between knee height and the ground reads as much wider
+    // than it needs to in this compact, stylized diagram.
+    const plateY = zoneBot + 12, plateW = 17;
     svg += `<path d="M ${cx - plateW},${plateY} L ${cx + plateW},${plateY} L ${cx + plateW},${plateY + 10} L ${cx},${plateY + 19} L ${cx - plateW},${plateY + 10} Z" fill="${PALETTE.paper}" stroke="${PALETTE.ink}" stroke-width="1" opacity="0.85"/>`;
 
     if (batSide === 'L' || batSide === 'R') {
@@ -6584,6 +6596,7 @@
     // below further down, rather than shoving the zone itself down the
     // page on every new pitch.
     return `
+      ${c.videoUrl ? `<a class="pog-watch atbat-watch" href="${c.videoUrl}" target="_blank" rel="noopener noreferrer">Watch &#9654;</a>` : ''}
       <div class="pitch-header">${c.batterName || 'Batter'}</div>
       <div class="pitch-subheader">vs ${c.pitcherFullName || 'pitcher'}</div>
       ${locationHtml}
@@ -6591,7 +6604,6 @@
       ${reviewsHtml}
       ${eventsHtml}
       ${c.playDesc ? `<div class="pitch-final-desc">${c.playDesc}</div>` : ''}
-      ${c.videoUrl ? `<a class="pog-watch atbat-watch" href="${c.videoUrl}" target="_blank" rel="noopener noreferrer">Watch &#9654;</a>` : ''}
     `;
   }
 
