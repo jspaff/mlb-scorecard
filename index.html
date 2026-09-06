@@ -1984,14 +1984,12 @@
        corner-peg pseudo-elements (2px in, 3px wide -- see .player-name-btn::
        before/after) so the text never runs under them at this width. */
     padding: 1px 7px;
-    /* .player-name-btn's own background is rgba(243,236,219,0.08) -- at
-       that alpha it doesn't read as near-white, it reads as whatever's
-       behind it tinted faintly cream, which for every other nameplate is
-       the dark paper backdrop. This is that same rgba flattened onto
-       var(--paper) (#3b4336) and baked into an opaque color, so the plate
-       still reads as the same dark green shade but fully covers the
-       diamond behind it instead of blending with it. */
-    background: #4a5143;
+    /* Matches the Player column's own name plates (table.scorecard-table
+       td.ply .player-name-btn below), which override the base translucent
+       rgba(243,236,219,0.08) background to this same flat var(--paper-line)
+       -- not .player-name-btn's own default, which reads differently once
+       opaque (see the last two attempts at this rule). */
+    background: var(--paper-line);
   }
   .sub-note { font-size: 10px; color: var(--ink-soft); opacity: 0.85; font-style: italic; }
   /* Jersey-number fallback for the scorecard grid's Player buttons -- shown
