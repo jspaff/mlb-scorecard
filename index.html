@@ -2045,25 +2045,28 @@
     box-shadow: 0 3px 4px rgba(0, 0, 0, 0.45);
   }
   /* Corner pegs the plate hangs on -- just the two top corners, no middle
-     peg, so it reads as a plate slotted onto a scoreboard peg rail. */
+     peg, so it reads as a plate slotted onto a scoreboard peg rail. Flat
+     fill (no gradient/bevel) in --paper -- a gradient highlight read as
+     too literal a piece of hardware; the flat dot plus the drop shadow
+     alone still registers as a small raised mark. */
   .player-name-btn::before,
   .player-name-btn::after,
   button.standings-team-btn::before,
   button.standings-team-btn::after {
     content: '';
     position: absolute;
-    top: 1px;
-    width: 3px;
-    height: 3px;
+    top: 1.5px;
+    width: 2px;
+    height: 2px;
     border-radius: 50%;
-    background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.6), rgba(0, 0, 0, 0.55) 75%);
+    background: var(--paper);
     box-shadow: 0 0.5px 0.5px rgba(0, 0, 0, 0.5);
     pointer-events: none;
   }
   .player-name-btn::before,
-  button.standings-team-btn::before { left: 2px; }
+  button.standings-team-btn::before { left: 2.5px; }
   .player-name-btn::after,
-  button.standings-team-btn::after { right: 2px; }
+  button.standings-team-btn::after { right: 2.5px; }
 
   .player-stat-line {
     display: flex;
