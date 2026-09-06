@@ -2731,6 +2731,12 @@
   // whatever's pending with one clearTimeout at the top, with no risk of a
   // stale date's cycle silently surviving a race with a newer one.
   let dailyPollTimer = null;
+  // Keeps the Scorecard tab's own game strip (see .game-strip) current while
+  // today's date is loaded -- separate from pollTimer, which only refetches
+  // whichever single game is currently selected, not the schedule row every
+  // other game's tile is drawn from. See pollGameStrip.
+  let gameStripPollTimer = null;
+  let gameStripRequestId = 0;
   let pitchStore = {};
   // team name lookup (id -> locationName) for whichever game is currently
   // loaded, used to name the challenging team in the pitch popup's ABS
@@ -5815,6 +5821,61 @@
     updateGameStripFade();
   }
 
+  // Refetches the schedule and re-renders the strip in place -- separate
+  // from loadSchedule, which also resets the selected game and loads its
+  // full feed; a strip refresh must never touch either of those. pollTimer
+  // (see fetchAndRender) only ever re-fetches whichever single game is
+  // currently selected, so without this every *other* tile in the strip --
+  // and the selected game's own tile, since that's schedule data too, not
+  // the live feed -- stays frozen at whatever it was when the date was
+  // first loaded.
+  async function pollGameStrip(dateStr) {
+    const requestId = ++gameStripRequestId;
+    clearTimeout(gameStripPollTimer);
+    gameStripPollTimer = null;
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}&hydrate=linescore`);
+      const data = await res.json();
+      const games = (data.dates && data.dates[0] && data.dates[0].games) || [];
+      // Stale if a newer poll tick or a real navigation (date change,
+      // prev/next, a fresh loadSchedule) has started since this went out.
+      if (requestId !== gameStripRequestId || dateStr !== dateInput.value) return;
+      if (games.length) {
+        scheduleGames = games;
+        // renderGameStrip rebuilds the strip's innerHTML from scratch, which
+        // would otherwise silently snap a manually-scrolled strip back to
+        // its start on every poll tick.
+        const scrollLeft = gameStrip.scrollLeft;
+        renderGameStrip(dateStr, games);
+        gameStrip.scrollLeft = scrollLeft;
+      }
+      scheduleGameStripPoll(dateStr, games);
+    } catch (e) {
+      // A transient failure must not silently kill the poll chain -- like
+      // dailyPollTimer, this only keeps going if something here re-arms
+      // gameStripPollTimer (see catchUpAfterResume). Retry once on the live
+      // cadence; the next success re-derives the real interval below.
+      if (requestId === gameStripRequestId && dateStr === dateInput.value) {
+        gameStripPollTimer = setTimeout(() => pollGameStrip(dateStr), 15000);
+      }
+    }
+  }
+
+  // Same "keep checking until nothing on this date can still change" logic
+  // as loadDailySummary's own poll (see the comment there for why Preview
+  // games still get a gentle check-in). Restricted to today's date: a past
+  // date's strip is done changing and a future one hasn't started, so
+  // today is the only case where sitting on the tab should ever show it
+  // drift stale.
+  function scheduleGameStripPoll(dateStr, games) {
+    if (dateStr !== todayStr()) return;
+    const stillLive = games.some(g => g.status.abstractGameState === 'Live');
+    const stillUpcoming = games.some(g => g.status.abstractGameState === 'Preview');
+    if (stillLive || stillUpcoming) {
+      gameStripPollTimer = setTimeout(() => pollGameStrip(dateStr), stillLive ? 15000 : 60000);
+    }
+  }
+
   // Toggles the edge fade (see .game-strip::before/::after) on and off
   // depending on whether there's actually more strip to reveal in that
   // direction -- a fade implying scrollable content that isn't there (a
@@ -5842,6 +5903,9 @@
     sidebarMonsterPanel.innerHTML = '';
     updateAtBatTrackers(null);
     clearInterval(pollTimer);
+    gameStripRequestId++;
+    clearTimeout(gameStripPollTimer);
+    gameStripPollTimer = null;
     try {
       const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}&hydrate=linescore`);
       const data = await res.json();
@@ -5857,6 +5921,7 @@
       const chosen = preferred ? preferred.gamePk : (liveGame ? liveGame.gamePk : games[0].gamePk);
       currentGamePk = chosen;
       renderGameStrip(dateStr, games);
+      scheduleGameStripPoll(dateStr, games);
       loadGame(chosen);
     } catch (e) {
       body.innerHTML = apiErrorMsg('schedule');
@@ -7322,6 +7387,11 @@
       clearTimeout(dailyPollTimer);
       dailyPollTimer = null;
       loadDailySummary(dailyDateInput.value, true);
+    }
+    if (gameStripPollTimer) {
+      clearTimeout(gameStripPollTimer);
+      gameStripPollTimer = null;
+      pollGameStrip(dateInput.value);
     }
   }
   document.addEventListener('visibilitychange', () => {
