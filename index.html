@@ -1965,20 +1965,22 @@
     background: var(--brick);
     font-weight: 700;
   }
-  .pitch-tag {
+  /* Experimental: styled as a clickable plate, same as .player-name-btn
+     (see below) -- the compound selector (rather than .pitch-tag alone)
+     out-specificities .player-name-btn's own rules so these values win
+     regardless of cascade order. Width matches the diamond SVG's own 52px
+     (see diamondSVG), which is itself sized to the inning column, so this
+     spans the same width without needing to know the column width directly. */
+  .pitch-tag.player-name-btn {
     position: absolute;
     top: -3px;
-    left: -3px;
-    font-family: 'Overpass', sans-serif;
-    font-weight: 600;
+    left: 0;
+    width: 52px;
+    box-sizing: border-box;
     font-size: 7px;
-    font-style: italic;
-    color: var(--paper);
-    background: rgba(228, 217, 191, 0.92);
-    padding: 0 2px;
-    border-radius: 2px;
-    white-space: nowrap;
-    border-top: 1px solid var(--paper);
+    letter-spacing: 0.01em;
+    text-align: center;
+    padding: 1px 2px;
   }
   .sub-note { font-size: 10px; color: var(--ink-soft); opacity: 0.85; font-style: italic; }
   /* Jersey-number fallback for the scorecard grid's Player buttons -- shown
@@ -4598,7 +4600,7 @@
             }
             inner += svg + advHtml;
           }
-          if (c && c.pitcherChanged && c.pitcherName) inner += `<div class="pitch-tag" title="${c.pitcherName} enters to pitch">${c.pitcherName}</div>`;
+          if (c && c.pitcherChanged && c.pitcherName) inner += `<button type="button" class="pitch-tag player-name-btn" data-player-id="${c.pitcherId}" title="${c.pitcherFullName || c.pitcherName} enters to pitch">${c.pitcherName}</button>`;
           const isLiveCell = !c && liveBatterInfo && liveBatterInfo.team === teamKey
             && liveBatterInfo.rowSlot === r.slot && liveBatterInfo.inning === i && liveBatterInfo.slotIndex === k;
           if (isLiveCell) {
