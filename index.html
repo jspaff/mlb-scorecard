@@ -1984,7 +1984,11 @@
        corner-peg pseudo-elements (2px in, 3px wide -- see .player-name-btn::
        before/after) so the text never runs under them at this width. */
     padding: 1px 7px;
-    background: var(--paper);
+    /* Same cream tag color the old .pitch-tag div used, just without the
+       alpha channel -- that 0.92 was only there to let a hint of what's
+       behind bleed through, which an opaque plate doesn't need. */
+    background: rgb(228, 217, 191);
+    color: var(--paper);
   }
   .sub-note { font-size: 10px; color: var(--ink-soft); opacity: 0.85; font-style: italic; }
   /* Jersey-number fallback for the scorecard grid's Player buttons -- shown
