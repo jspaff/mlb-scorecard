@@ -1311,6 +1311,10 @@
     flex-shrink: 0;
   }
   .roster-check.is-checked { background: var(--gold); border-color: var(--gold); }
+  /* Batting order number in the Starting Lineup, and "P" marking the
+     starting pitcher in the Pitching column -- everything else in
+     .roster-order (bench/reliever checkboxes) stays the muted default. */
+  .roster-order-gold { color: var(--gold); }
   .roster-name { min-width: 0; }
   .roster-pos {
     font-family: 'Overpass', sans-serif;
@@ -2766,11 +2770,11 @@
   }
   let standingsView = 'division';
   const playerSeasonCache = {};
-  async function getPlayerSeasonStats(personId, season) {
-    const key = `${personId}-${season}`;
+  async function getPlayerSeasonStats(personId, season, group = 'hitting') {
+    const key = `${personId}-${season}-${group}`;
     if (playerSeasonCache[key] !== undefined) return playerSeasonCache[key];
     try {
-      const res = await fetch(`https://statsapi.mlb.com/api/v1/people/${personId}/stats?stats=season&group=hitting&season=${season}`);
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/people/${personId}/stats?stats=season&group=${group}&season=${season}`);
       const data = await res.json();
       const stat = (data.stats && data.stats[0] && data.stats[0].splits && data.stats[0].splits[0] && data.stats[0].splits[0].stat) || null;
       playerSeasonCache[key] = stat;
@@ -4074,7 +4078,7 @@
       const orderCell = p.isStarter ? 'P' : `<span class="roster-check${p.usedToday ? ' is-checked' : ''}"></span>`;
       return `
       <div class="roster-row bp-row">
-        <span class="roster-order">${orderCell}</span>
+        <span class="roster-order${p.isStarter ? ' roster-order-gold' : ''}">${orderCell}</span>
         <span class="roster-name-col"><button type="button" class="player-name-btn roster-name" data-player-id="${p.id}">${p.name}</button></span>
         <div class="bp-recent">
           <span class="bp-recent-item"><span class="bp-recent-value">${p.usedToday ? (p.todayIp ?? '0.0') : '&#8212;'}</span><span class="bp-recent-label">IP</span></span>
@@ -4222,17 +4226,29 @@
   }
 
   function renderPlayerModalContent(info, seasonStat, awardTags) {
+    const pitcher = info.pos === 'P';
     const s = info.todayStats || {};
-    const todayHtml = `
-      <div class="player-stat-line"><span class="psl-label">Today</span><span>${s.hits ?? 0}-${s.atBats ?? 0}, ${s.rbi ?? 0} RBI, ${s.baseOnBalls ?? 0} BB, ${s.homeRuns ?? 0} HR</span></div>`;
+    const todayHtml = pitcher
+      ? `<div class="player-stat-line"><span class="psl-label">Today</span><span>${s.inningsPitched ?? '0.0'} IP, ${s.hits ?? 0} H, ${s.earnedRuns ?? 0} ER, ${s.baseOnBalls ?? 0} BB, ${s.strikeOuts ?? 0} K</span></div>`
+      : `<div class="player-stat-line"><span class="psl-label">Today</span><span>${s.hits ?? 0}-${s.atBats ?? 0}, ${s.rbi ?? 0} RBI, ${s.baseOnBalls ?? 0} BB, ${s.homeRuns ?? 0} HR</span></div>`;
+    // Same set of columns as the Career table's pitching view (see
+    // renderPitchingCareerTable) minus Year/Team, just for this one season.
     const seasonHtml = seasonStat
-      ? `<div class="player-stat-line"><span class="psl-label">G</span><span>${seasonStat.gamesPlayed ?? '&#8212;'}</span></div>
-         <div class="player-stat-line"><span class="psl-label">AVG</span><span>${seasonStat.avg ?? '&#8212;'}</span></div>
-         <div class="player-stat-line"><span class="psl-label">OBP</span><span>${seasonStat.obp ?? '&#8212;'}</span></div>
-         <div class="player-stat-line"><span class="psl-label">SLG</span><span>${seasonStat.slg ?? '&#8212;'}</span></div>
-         <div class="player-stat-line"><span class="psl-label">HR</span><span>${seasonStat.homeRuns ?? '&#8212;'}</span></div>
-         <div class="player-stat-line"><span class="psl-label">RBI</span><span>${seasonStat.rbi ?? '&#8212;'}</span></div>
-         <div class="player-stat-line"><span class="psl-label">SB</span><span>${formatStolenBases(seasonStat.stolenBases, seasonStat.caughtStealing)}</span></div>`
+      ? (pitcher
+        ? `<div class="player-stat-line"><span class="psl-label">G</span><span>${seasonStat.gamesPitched ?? '&#8212;'}</span></div>
+           <div class="player-stat-line"><span class="psl-label">IP</span><span>${seasonStat.inningsPitched ?? '&#8212;'}</span></div>
+           <div class="player-stat-line"><span class="psl-label">ERA</span><span>${seasonStat.era ?? '&#8212;'}</span></div>
+           <div class="player-stat-line"><span class="psl-label">WHIP</span><span>${seasonStat.whip ?? '&#8212;'}</span></div>
+           <div class="player-stat-line"><span class="psl-label">K%-BB%</span><span>${formatKBB(seasonStat.strikeOuts, seasonStat.baseOnBalls, seasonStat.battersFaced)}</span></div>
+           <div class="player-stat-line"><span class="psl-label">SO</span><span>${seasonStat.strikeOuts ?? '&#8212;'}</span></div>
+           <div class="player-stat-line"><span class="psl-label">BB</span><span>${seasonStat.baseOnBalls ?? '&#8212;'}</span></div>`
+        : `<div class="player-stat-line"><span class="psl-label">G</span><span>${seasonStat.gamesPlayed ?? '&#8212;'}</span></div>
+           <div class="player-stat-line"><span class="psl-label">AVG</span><span>${seasonStat.avg ?? '&#8212;'}</span></div>
+           <div class="player-stat-line"><span class="psl-label">OBP</span><span>${seasonStat.obp ?? '&#8212;'}</span></div>
+           <div class="player-stat-line"><span class="psl-label">SLG</span><span>${seasonStat.slg ?? '&#8212;'}</span></div>
+           <div class="player-stat-line"><span class="psl-label">HR</span><span>${seasonStat.homeRuns ?? '&#8212;'}</span></div>
+           <div class="player-stat-line"><span class="psl-label">RBI</span><span>${seasonStat.rbi ?? '&#8212;'}</span></div>
+           <div class="player-stat-line"><span class="psl-label">SB</span><span>${formatStolenBases(seasonStat.stolenBases, seasonStat.caughtStealing)}</span></div>`)
       : `<div class="pitch-empty">Season stats not available.</div>`;
     const awardsHtml = renderAwardTags(awardTags);
     return `
@@ -4255,7 +4271,7 @@
   function renderRosterContent(teamName, bullpenList, lineupRows, benchPlayers) {
     const lineupHtml = lineupRows.map((r, i) => {
       const starter = r.players[0];
-      return `<div class="roster-row"><span class="roster-order">${i + 1}</span><span class="roster-name-col"><button type="button" class="player-name-btn roster-name" data-player-id="${starter.id}">${starter.name}</button></span><span class="roster-pos">${starter.pos}</span></div>`;
+      return `<div class="roster-row"><span class="roster-order roster-order-gold">${i + 1}</span><span class="roster-name-col"><button type="button" class="player-name-btn roster-name" data-player-id="${starter.id}">${starter.name}</button></span><span class="roster-pos">${starter.pos}</span></div>`;
     }).join('');
     const benchHtml = benchPlayers.length
       ? benchPlayers.map(p => `<div class="roster-row"><span class="roster-order"><span class="roster-check${p.entered ? ' is-checked' : ''}"></span></span><span class="roster-name-col"><button type="button" class="player-name-btn roster-name" data-player-id="${p.id}">${p.name}</button></span><span class="roster-pos">${p.pos}</span></div>`).join('')
@@ -7178,7 +7194,7 @@
     playerModalBody.innerHTML = renderPlayerModalContent(info, null) + '<div class="pitch-empty">Loading season stats&#8230;</div>';
     playerOverlay.classList.add('open');
     const [seasonStat, awards] = await Promise.all([
-      getPlayerSeasonStats(playerId, info.season),
+      getPlayerSeasonStats(playerId, info.season, info.pos === 'P' ? 'pitching' : 'hitting'),
       getPlayerAwards(playerId)
     ]);
     if (!playerOverlay.classList.contains('open')) return;
