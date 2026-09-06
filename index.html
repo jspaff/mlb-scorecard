@@ -1311,6 +1311,10 @@
     flex-shrink: 0;
   }
   .roster-check.is-checked { background: var(--gold); border-color: var(--gold); }
+  /* Batting order number in the Starting Lineup, and "P" marking the
+     starting pitcher in the Pitching column -- everything else in
+     .roster-order (bench/reliever checkboxes) stays the muted default. */
+  .roster-order-gold { color: var(--gold); }
   .roster-name { min-width: 0; }
   .roster-pos {
     font-family: 'Overpass', sans-serif;
@@ -1961,20 +1965,31 @@
     background: var(--brick);
     font-weight: 700;
   }
-  .pitch-tag {
+  /* Experimental: styled as a clickable plate, same as .player-name-btn
+     (see below) -- the compound selector (rather than .pitch-tag alone)
+     out-specificities .player-name-btn's own rules so these values win
+     regardless of cascade order. Width matches the diamond SVG's own 52px
+     (see diamondSVG), which is itself sized to the inning column, so this
+     spans the same width without needing to know the column width directly. */
+  .pitch-tag.player-name-btn {
     position: absolute;
     top: -3px;
-    left: -3px;
-    font-family: 'Overpass', sans-serif;
-    font-weight: 600;
+    left: 0;
+    width: 52px;
+    box-sizing: border-box;
     font-size: 7px;
-    font-style: italic;
-    color: var(--paper);
-    background: rgba(228, 217, 191, 0.92);
-    padding: 0 2px;
-    border-radius: 2px;
-    white-space: nowrap;
-    border-top: 1px solid var(--paper);
+    letter-spacing: 0.01em;
+    text-align: center;
+    /* 7px side padding (same as .player-name-btn's own default) clears the
+       corner-peg pseudo-elements (2px in, 3px wide -- see .player-name-btn::
+       before/after) so the text never runs under them at this width. */
+    padding: 1px 7px;
+    /* Matches the Player column's own name plates (table.scorecard-table
+       td.ply .player-name-btn below), which override the base translucent
+       rgba(243,236,219,0.08) background to this same flat var(--paper-line)
+       -- not .player-name-btn's own default, which reads differently once
+       opaque (see the last two attempts at this rule). */
+    background: var(--paper-line);
   }
   .sub-note { font-size: 10px; color: var(--ink-soft); opacity: 0.85; font-style: italic; }
   /* Jersey-number fallback for the scorecard grid's Player buttons -- shown
@@ -2030,25 +2045,28 @@
     box-shadow: 0 3px 4px rgba(0, 0, 0, 0.45);
   }
   /* Corner pegs the plate hangs on -- just the two top corners, no middle
-     peg, so it reads as a plate slotted onto a scoreboard peg rail. */
+     peg, so it reads as a plate slotted onto a scoreboard peg rail. Flat
+     fill (no gradient/bevel) in --paper -- a gradient highlight read as
+     too literal a piece of hardware; the flat dot plus the drop shadow
+     alone still registers as a small raised mark. */
   .player-name-btn::before,
   .player-name-btn::after,
   button.standings-team-btn::before,
   button.standings-team-btn::after {
     content: '';
     position: absolute;
-    top: 1px;
-    width: 3px;
-    height: 3px;
+    top: 1.5px;
+    width: 2px;
+    height: 2px;
     border-radius: 50%;
-    background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.6), rgba(0, 0, 0, 0.55) 75%);
+    background: var(--paper);
     box-shadow: 0 0.5px 0.5px rgba(0, 0, 0, 0.5);
     pointer-events: none;
   }
   .player-name-btn::before,
-  button.standings-team-btn::before { left: 2px; }
+  button.standings-team-btn::before { left: 2.5px; }
   .player-name-btn::after,
-  button.standings-team-btn::after { right: 2px; }
+  button.standings-team-btn::after { right: 2.5px; }
 
   .player-stat-line {
     display: flex;
@@ -2713,6 +2731,12 @@
   // whatever's pending with one clearTimeout at the top, with no risk of a
   // stale date's cycle silently surviving a race with a newer one.
   let dailyPollTimer = null;
+  // Keeps the Scorecard tab's own game strip (see .game-strip) current while
+  // today's date is loaded -- separate from pollTimer, which only refetches
+  // whichever single game is currently selected, not the schedule row every
+  // other game's tile is drawn from. See pollGameStrip.
+  let gameStripPollTimer = null;
+  let gameStripRequestId = 0;
   let pitchStore = {};
   // team name lookup (id -> locationName) for whichever game is currently
   // loaded, used to name the challenging team in the pitch popup's ABS
@@ -2766,11 +2790,11 @@
   }
   let standingsView = 'division';
   const playerSeasonCache = {};
-  async function getPlayerSeasonStats(personId, season) {
-    const key = `${personId}-${season}`;
+  async function getPlayerSeasonStats(personId, season, group = 'hitting') {
+    const key = `${personId}-${season}-${group}`;
     if (playerSeasonCache[key] !== undefined) return playerSeasonCache[key];
     try {
-      const res = await fetch(`https://statsapi.mlb.com/api/v1/people/${personId}/stats?stats=season&group=hitting&season=${season}`);
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/people/${personId}/stats?stats=season&group=${group}&season=${season}`);
       const data = await res.json();
       const stat = (data.stats && data.stats[0] && data.stats[0].splits && data.stats[0].splits[0] && data.stats[0].splits[0].stat) || null;
       playerSeasonCache[key] = stat;
@@ -4074,7 +4098,7 @@
       const orderCell = p.isStarter ? 'P' : `<span class="roster-check${p.usedToday ? ' is-checked' : ''}"></span>`;
       return `
       <div class="roster-row bp-row">
-        <span class="roster-order">${orderCell}</span>
+        <span class="roster-order${p.isStarter ? ' roster-order-gold' : ''}">${orderCell}</span>
         <span class="roster-name-col"><button type="button" class="player-name-btn roster-name" data-player-id="${p.id}">${p.name}</button></span>
         <div class="bp-recent">
           <span class="bp-recent-item"><span class="bp-recent-value">${p.usedToday ? (p.todayIp ?? '0.0') : '&#8212;'}</span><span class="bp-recent-label">IP</span></span>
@@ -4222,17 +4246,29 @@
   }
 
   function renderPlayerModalContent(info, seasonStat, awardTags) {
+    const pitcher = info.pos === 'P';
     const s = info.todayStats || {};
-    const todayHtml = `
-      <div class="player-stat-line"><span class="psl-label">Today</span><span>${s.hits ?? 0}-${s.atBats ?? 0}, ${s.rbi ?? 0} RBI, ${s.baseOnBalls ?? 0} BB, ${s.homeRuns ?? 0} HR</span></div>`;
+    const todayHtml = pitcher
+      ? `<div class="player-stat-line"><span class="psl-label">Today</span><span>${s.inningsPitched ?? '0.0'} IP, ${s.hits ?? 0} H, ${s.earnedRuns ?? 0} ER, ${s.baseOnBalls ?? 0} BB, ${s.strikeOuts ?? 0} K</span></div>`
+      : `<div class="player-stat-line"><span class="psl-label">Today</span><span>${s.hits ?? 0}-${s.atBats ?? 0}, ${s.rbi ?? 0} RBI, ${s.baseOnBalls ?? 0} BB, ${s.homeRuns ?? 0} HR</span></div>`;
+    // Same set of columns as the Career table's pitching view (see
+    // renderPitchingCareerTable) minus Year/Team, just for this one season.
     const seasonHtml = seasonStat
-      ? `<div class="player-stat-line"><span class="psl-label">G</span><span>${seasonStat.gamesPlayed ?? '&#8212;'}</span></div>
-         <div class="player-stat-line"><span class="psl-label">AVG</span><span>${seasonStat.avg ?? '&#8212;'}</span></div>
-         <div class="player-stat-line"><span class="psl-label">OBP</span><span>${seasonStat.obp ?? '&#8212;'}</span></div>
-         <div class="player-stat-line"><span class="psl-label">SLG</span><span>${seasonStat.slg ?? '&#8212;'}</span></div>
-         <div class="player-stat-line"><span class="psl-label">HR</span><span>${seasonStat.homeRuns ?? '&#8212;'}</span></div>
-         <div class="player-stat-line"><span class="psl-label">RBI</span><span>${seasonStat.rbi ?? '&#8212;'}</span></div>
-         <div class="player-stat-line"><span class="psl-label">SB</span><span>${formatStolenBases(seasonStat.stolenBases, seasonStat.caughtStealing)}</span></div>`
+      ? (pitcher
+        ? `<div class="player-stat-line"><span class="psl-label">G</span><span>${seasonStat.gamesPitched ?? '&#8212;'}</span></div>
+           <div class="player-stat-line"><span class="psl-label">IP</span><span>${seasonStat.inningsPitched ?? '&#8212;'}</span></div>
+           <div class="player-stat-line"><span class="psl-label">ERA</span><span>${seasonStat.era ?? '&#8212;'}</span></div>
+           <div class="player-stat-line"><span class="psl-label">WHIP</span><span>${seasonStat.whip ?? '&#8212;'}</span></div>
+           <div class="player-stat-line"><span class="psl-label">K%-BB%</span><span>${formatKBB(seasonStat.strikeOuts, seasonStat.baseOnBalls, seasonStat.battersFaced)}</span></div>
+           <div class="player-stat-line"><span class="psl-label">SO</span><span>${seasonStat.strikeOuts ?? '&#8212;'}</span></div>
+           <div class="player-stat-line"><span class="psl-label">BB</span><span>${seasonStat.baseOnBalls ?? '&#8212;'}</span></div>`
+        : `<div class="player-stat-line"><span class="psl-label">G</span><span>${seasonStat.gamesPlayed ?? '&#8212;'}</span></div>
+           <div class="player-stat-line"><span class="psl-label">AVG</span><span>${seasonStat.avg ?? '&#8212;'}</span></div>
+           <div class="player-stat-line"><span class="psl-label">OBP</span><span>${seasonStat.obp ?? '&#8212;'}</span></div>
+           <div class="player-stat-line"><span class="psl-label">SLG</span><span>${seasonStat.slg ?? '&#8212;'}</span></div>
+           <div class="player-stat-line"><span class="psl-label">HR</span><span>${seasonStat.homeRuns ?? '&#8212;'}</span></div>
+           <div class="player-stat-line"><span class="psl-label">RBI</span><span>${seasonStat.rbi ?? '&#8212;'}</span></div>
+           <div class="player-stat-line"><span class="psl-label">SB</span><span>${formatStolenBases(seasonStat.stolenBases, seasonStat.caughtStealing)}</span></div>`)
       : `<div class="pitch-empty">Season stats not available.</div>`;
     const awardsHtml = renderAwardTags(awardTags);
     return `
@@ -4255,7 +4291,7 @@
   function renderRosterContent(teamName, bullpenList, lineupRows, benchPlayers) {
     const lineupHtml = lineupRows.map((r, i) => {
       const starter = r.players[0];
-      return `<div class="roster-row"><span class="roster-order">${i + 1}</span><span class="roster-name-col"><button type="button" class="player-name-btn roster-name" data-player-id="${starter.id}">${starter.name}</button></span><span class="roster-pos">${starter.pos}</span></div>`;
+      return `<div class="roster-row"><span class="roster-order roster-order-gold">${i + 1}</span><span class="roster-name-col"><button type="button" class="player-name-btn roster-name" data-player-id="${starter.id}">${starter.name}</button></span><span class="roster-pos">${starter.pos}</span></div>`;
     }).join('');
     const benchHtml = benchPlayers.length
       ? benchPlayers.map(p => `<div class="roster-row"><span class="roster-order"><span class="roster-check${p.entered ? ' is-checked' : ''}"></span></span><span class="roster-name-col"><button type="button" class="player-name-btn roster-name" data-player-id="${p.id}">${p.name}</button></span><span class="roster-pos">${p.pos}</span></div>`).join('')
@@ -4582,7 +4618,7 @@
             }
             inner += svg + advHtml;
           }
-          if (c && c.pitcherChanged && c.pitcherName) inner += `<div class="pitch-tag" title="${c.pitcherName} enters to pitch">${c.pitcherName}</div>`;
+          if (c && c.pitcherChanged && c.pitcherName) inner += `<button type="button" class="pitch-tag player-name-btn" data-player-id="${c.pitcherId}" title="${c.pitcherFullName || c.pitcherName} enters to pitch">${c.pitcherName}</button>`;
           const isLiveCell = !c && liveBatterInfo && liveBatterInfo.team === teamKey
             && liveBatterInfo.rowSlot === r.slot && liveBatterInfo.inning === i && liveBatterInfo.slotIndex === k;
           if (isLiveCell) {
@@ -5785,6 +5821,61 @@
     updateGameStripFade();
   }
 
+  // Refetches the schedule and re-renders the strip in place -- separate
+  // from loadSchedule, which also resets the selected game and loads its
+  // full feed; a strip refresh must never touch either of those. pollTimer
+  // (see fetchAndRender) only ever re-fetches whichever single game is
+  // currently selected, so without this every *other* tile in the strip --
+  // and the selected game's own tile, since that's schedule data too, not
+  // the live feed -- stays frozen at whatever it was when the date was
+  // first loaded.
+  async function pollGameStrip(dateStr) {
+    const requestId = ++gameStripRequestId;
+    clearTimeout(gameStripPollTimer);
+    gameStripPollTimer = null;
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}&hydrate=linescore`);
+      const data = await res.json();
+      const games = (data.dates && data.dates[0] && data.dates[0].games) || [];
+      // Stale if a newer poll tick or a real navigation (date change,
+      // prev/next, a fresh loadSchedule) has started since this went out.
+      if (requestId !== gameStripRequestId || dateStr !== dateInput.value) return;
+      if (games.length) {
+        scheduleGames = games;
+        // renderGameStrip rebuilds the strip's innerHTML from scratch, which
+        // would otherwise silently snap a manually-scrolled strip back to
+        // its start on every poll tick.
+        const scrollLeft = gameStrip.scrollLeft;
+        renderGameStrip(dateStr, games);
+        gameStrip.scrollLeft = scrollLeft;
+      }
+      scheduleGameStripPoll(dateStr, games);
+    } catch (e) {
+      // A transient failure must not silently kill the poll chain -- like
+      // dailyPollTimer, this only keeps going if something here re-arms
+      // gameStripPollTimer (see catchUpAfterResume). Retry once on the live
+      // cadence; the next success re-derives the real interval below.
+      if (requestId === gameStripRequestId && dateStr === dateInput.value) {
+        gameStripPollTimer = setTimeout(() => pollGameStrip(dateStr), 15000);
+      }
+    }
+  }
+
+  // Same "keep checking until nothing on this date can still change" logic
+  // as loadDailySummary's own poll (see the comment there for why Preview
+  // games still get a gentle check-in). Restricted to today's date: a past
+  // date's strip is done changing and a future one hasn't started, so
+  // today is the only case where sitting on the tab should ever show it
+  // drift stale.
+  function scheduleGameStripPoll(dateStr, games) {
+    if (dateStr !== todayStr()) return;
+    const stillLive = games.some(g => g.status.abstractGameState === 'Live');
+    const stillUpcoming = games.some(g => g.status.abstractGameState === 'Preview');
+    if (stillLive || stillUpcoming) {
+      gameStripPollTimer = setTimeout(() => pollGameStrip(dateStr), stillLive ? 15000 : 60000);
+    }
+  }
+
   // Toggles the edge fade (see .game-strip::before/::after) on and off
   // depending on whether there's actually more strip to reveal in that
   // direction -- a fade implying scrollable content that isn't there (a
@@ -5812,6 +5903,9 @@
     sidebarMonsterPanel.innerHTML = '';
     updateAtBatTrackers(null);
     clearInterval(pollTimer);
+    gameStripRequestId++;
+    clearTimeout(gameStripPollTimer);
+    gameStripPollTimer = null;
     try {
       const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}&hydrate=linescore`);
       const data = await res.json();
@@ -5827,6 +5921,7 @@
       const chosen = preferred ? preferred.gamePk : (liveGame ? liveGame.gamePk : games[0].gamePk);
       currentGamePk = chosen;
       renderGameStrip(dateStr, games);
+      scheduleGameStripPoll(dateStr, games);
       loadGame(chosen);
     } catch (e) {
       body.innerHTML = apiErrorMsg('schedule');
@@ -7178,7 +7273,7 @@
     playerModalBody.innerHTML = renderPlayerModalContent(info, null) + '<div class="pitch-empty">Loading season stats&#8230;</div>';
     playerOverlay.classList.add('open');
     const [seasonStat, awards] = await Promise.all([
-      getPlayerSeasonStats(playerId, info.season),
+      getPlayerSeasonStats(playerId, info.season, info.pos === 'P' ? 'pitching' : 'hitting'),
       getPlayerAwards(playerId)
     ]);
     if (!playerOverlay.classList.contains('open')) return;
@@ -7192,7 +7287,10 @@
     const boxScoreLink = e.target.closest('.box-score-link');
     if (boxScoreLink) showCurrentGameSummary();
     const target = e.target.closest('[data-pkey]');
-    if (target) showPitchPopup(target.getAttribute('data-pkey'));
+    // The pitch-tag plate sits inside the same cell-wrap the pitch popup
+    // is wired to (see data-pkey), so without this guard a click on the
+    // plate would also open the popup for the diamond behind it.
+    if (target && !e.target.closest('.player-name-btn')) showPitchPopup(target.getAttribute('data-pkey'));
     const rosterBtn = e.target.closest('.roster-btn');
     if (rosterBtn) showRosterModal(rosterBtn.getAttribute('data-team'));
     const sprayBtn = e.target.closest('.spray-btn');
@@ -7289,6 +7387,11 @@
       clearTimeout(dailyPollTimer);
       dailyPollTimer = null;
       loadDailySummary(dailyDateInput.value, true);
+    }
+    if (gameStripPollTimer) {
+      clearTimeout(gameStripPollTimer);
+      gameStripPollTimer = null;
+      pollGameStrip(dateInput.value);
     }
   }
   document.addEventListener('visibilitychange', () => {
