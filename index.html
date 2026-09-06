@@ -1980,7 +1980,11 @@
     font-size: 7px;
     letter-spacing: 0.01em;
     text-align: center;
-    padding: 1px 2px;
+    /* 7px side padding (same as .player-name-btn's own default) clears the
+       corner-peg pseudo-elements (2px in, 3px wide -- see .player-name-btn::
+       before/after) so the text never runs under them at this width. */
+    padding: 1px 7px;
+    background: var(--paper);
   }
   .sub-note { font-size: 10px; color: var(--ink-soft); opacity: 0.85; font-style: italic; }
   /* Jersey-number fallback for the scorecard grid's Player buttons -- shown
@@ -7210,7 +7214,10 @@
     const boxScoreLink = e.target.closest('.box-score-link');
     if (boxScoreLink) showCurrentGameSummary();
     const target = e.target.closest('[data-pkey]');
-    if (target) showPitchPopup(target.getAttribute('data-pkey'));
+    // The pitch-tag plate sits inside the same cell-wrap the pitch popup
+    // is wired to (see data-pkey), so without this guard a click on the
+    // plate would also open the popup for the diamond behind it.
+    if (target && !e.target.closest('.player-name-btn')) showPitchPopup(target.getAttribute('data-pkey'));
     const rosterBtn = e.target.closest('.roster-btn');
     if (rosterBtn) showRosterModal(rosterBtn.getAttribute('data-team'));
     const sprayBtn = e.target.closest('.spray-btn');
