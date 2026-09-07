@@ -1848,6 +1848,16 @@
     border-radius: 0;
     padding: 2px 4px;
   }
+  /* Without this, the rule above (higher specificity than .player-name-btn:
+     hover's own, since it stacks three classes against that rule's two)
+     wins on background even while hovered, leaving only the hover rule's
+     border-color/color to show through -- a gold outline on an otherwise
+     unchanged plate instead of the solid gold fill every other nameplate
+     in the app gets on hover. */
+  table.scorecard-table td.ply .player-name-btn:hover,
+  table.scorecard-table td.ply .player-name-btn:focus-visible {
+    background: var(--gold);
+  }
   table.scorecard-table td.ply .sub-note { padding: 1px 8px; }
   table.scorecard-table td.ply .sub-note .player-name-btn { display: inline-block; width: auto; }
   /* Every entry in both stacks gets the same explicit height, centering its
@@ -2112,7 +2122,7 @@
   table.pitch-table.recent-games-table th:not(:first-child) { letter-spacing: normal; }
   table.pitch-table.recent-games-table tr.hl td:first-child { color: var(--gold); }
   /* Batter rows: H-AB stays centered like every other stat column above,
-     but the trailing Notable column is a variable-length comma list
+     but the trailing Notes column is a variable-length comma list
      (see notableBattingEvents) -- centering that reads worse than just
      letting it run left like ordinary text. */
   table.pitch-table.recent-games-table.batter th:last-child,
@@ -4317,7 +4327,7 @@
   // recentGames is undefined while that fetch is still in flight.
   function renderRecentGamesTable(pitcher, todayStats, recentGames) {
     if (recentGames === undefined) return '<div class="pitch-empty">Loading recent games&#8230;</div>';
-    const headers = pitcher ? ['Date', 'IP', 'H', 'ER', 'BB', 'K'] : ['Date', 'H-AB', 'Notable'];
+    const headers = pitcher ? ['Date', 'IP', 'H', 'ER', 'BB', 'K'] : ['Date', 'H-AB', 'Notes'];
     // A rigid AB/H/RBI/BB/HR column set reads as mostly zeroes most
     // games -- listing only whichever of BB/RBI/2B/3B/HR actually
     // happened keeps a quiet game's row quiet instead of padded with 0s.
@@ -4341,7 +4351,7 @@
       </table></div>`;
   }
 
-  function renderPlayerModalContent(info, seasonStat, awardTags, recentGames) {
+  function renderPlayerModalContent(info, seasonStat, awardTags, recentGames, displayPos) {
     const pitcher = info.pos === 'P';
     const recentGamesHtml = renderRecentGamesTable(pitcher, info.todayStats || {}, recentGames);
     // Same set of columns as the Career table's pitching view (see
@@ -4379,7 +4389,7 @@
         <img class="player-headshot" src="${headshotUrl(info.id)}" alt="" loading="lazy" onerror="this.style.display='none'">
         <div>
           <div class="pitch-header">${info.name}</div>
-          <div class="pitch-subheader">${info.pos} &#183; ${info.team}</div>
+          <div class="pitch-subheader">${displayPos || info.pos} &#183; ${info.team}</div>
         </div>
       </div>
       ${awardsHtml}
@@ -7377,13 +7387,20 @@
     if (!info) return;
     playerModalBody.innerHTML = renderPlayerModalContent(info, null) + '<div class="pitch-empty">Loading season stats&#8230;</div>';
     playerOverlay.classList.add('open');
-    const [seasonStat, awards, recentGames] = await Promise.all([
+    const [seasonStat, awards, recentGames, details] = await Promise.all([
       getPlayerSeasonStats(playerId, info.season, info.pos === 'P' ? 'pitching' : 'hitting'),
       getPlayerAwards(playerId),
-      getRecentGameStats(info)
+      getRecentGameStats(info),
+      getPlayerDetails(playerId)
     ]);
     if (!playerOverlay.classList.contains('open')) return;
-    playerModalBody.innerHTML = renderPlayerModalContent(info, seasonStat, summarizeAwardTags(awards), recentGames);
+    // info.pos is whatever position this playerStore entry happened to be
+    // built from (a batting-order slot, a boxscore position, a bullpen
+    // pitcher) -- fine for deciding pitcher-vs-batter stat sections above,
+    // but the modal header itself should show the player's general
+    // position rather than just the one they played in this one game.
+    const generalPos = (details && details.primaryPosition && details.primaryPosition.abbreviation) || info.pos;
+    playerModalBody.innerHTML = renderPlayerModalContent(info, seasonStat, summarizeAwardTags(awards), recentGames, generalPos);
   }
   function hidePlayerModal() {
     closeOverlay(playerOverlay);
