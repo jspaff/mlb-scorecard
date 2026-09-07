@@ -2087,6 +2087,13 @@
     text-transform: uppercase;
     color: var(--ink-soft);
   }
+  /* Season stats in the player modal, as one row with stat names as
+     column headers -- reuses table.pitch-table's look but centers every
+     cell instead of that class's default left-align, and drops the
+     per-row divider (see career-table) since there's only ever one row. */
+  table.season-stat-table th,
+  table.season-stat-table td { text-align: center; }
+  table.season-stat-table tbody tr:last-child td { border-bottom: none; }
 
   .pitch-overlay {
     display: none;
@@ -2218,6 +2225,7 @@
   .player-modal-head .pitch-header,
   .player-modal-head .pitch-subheader {
     margin-bottom: 0;
+    text-align: left;
   }
   .player-headshot {
     width: 46px;
@@ -4256,20 +4264,30 @@
     // renderPitchingCareerTable) minus Year/Team, just for this one season.
     const seasonHtml = seasonStat
       ? (pitcher
-        ? `<div class="player-stat-line"><span class="psl-label">G</span><span>${seasonStat.gamesPitched ?? '&#8212;'}</span></div>
-           <div class="player-stat-line"><span class="psl-label">IP</span><span>${seasonStat.inningsPitched ?? '&#8212;'}</span></div>
-           <div class="player-stat-line"><span class="psl-label">ERA</span><span>${seasonStat.era ?? '&#8212;'}</span></div>
-           <div class="player-stat-line"><span class="psl-label">WHIP</span><span>${seasonStat.whip ?? '&#8212;'}</span></div>
-           <div class="player-stat-line"><span class="psl-label">K%-BB%</span><span>${formatKBB(seasonStat.strikeOuts, seasonStat.baseOnBalls, seasonStat.battersFaced)}</span></div>
-           <div class="player-stat-line"><span class="psl-label">SO</span><span>${seasonStat.strikeOuts ?? '&#8212;'}</span></div>
-           <div class="player-stat-line"><span class="psl-label">BB</span><span>${seasonStat.baseOnBalls ?? '&#8212;'}</span></div>`
-        : `<div class="player-stat-line"><span class="psl-label">G</span><span>${seasonStat.gamesPlayed ?? '&#8212;'}</span></div>
-           <div class="player-stat-line"><span class="psl-label">AVG</span><span>${seasonStat.avg ?? '&#8212;'}</span></div>
-           <div class="player-stat-line"><span class="psl-label">OBP</span><span>${seasonStat.obp ?? '&#8212;'}</span></div>
-           <div class="player-stat-line"><span class="psl-label">SLG</span><span>${seasonStat.slg ?? '&#8212;'}</span></div>
-           <div class="player-stat-line"><span class="psl-label">HR</span><span>${seasonStat.homeRuns ?? '&#8212;'}</span></div>
-           <div class="player-stat-line"><span class="psl-label">RBI</span><span>${seasonStat.rbi ?? '&#8212;'}</span></div>
-           <div class="player-stat-line"><span class="psl-label">SB</span><span>${formatStolenBases(seasonStat.stolenBases, seasonStat.caughtStealing)}</span></div>`)
+        ? `<div class="table-scroll"><table class="pitch-table season-stat-table">
+             <thead><tr><th>G</th><th>IP</th><th>ERA</th><th>WHIP</th><th>K%-BB%</th><th>SO</th><th>BB</th></tr></thead>
+             <tbody><tr>
+               <td>${seasonStat.gamesPitched ?? '&#8212;'}</td>
+               <td>${seasonStat.inningsPitched ?? '&#8212;'}</td>
+               <td>${seasonStat.era ?? '&#8212;'}</td>
+               <td>${seasonStat.whip ?? '&#8212;'}</td>
+               <td>${formatKBB(seasonStat.strikeOuts, seasonStat.baseOnBalls, seasonStat.battersFaced)}</td>
+               <td>${seasonStat.strikeOuts ?? '&#8212;'}</td>
+               <td>${seasonStat.baseOnBalls ?? '&#8212;'}</td>
+             </tr></tbody>
+           </table></div>`
+        : `<div class="table-scroll"><table class="pitch-table season-stat-table">
+             <thead><tr><th>G</th><th>AVG</th><th>OBP</th><th>SLG</th><th>HR</th><th>RBI</th><th>SB</th></tr></thead>
+             <tbody><tr>
+               <td>${seasonStat.gamesPlayed ?? '&#8212;'}</td>
+               <td>${seasonStat.avg ?? '&#8212;'}</td>
+               <td>${seasonStat.obp ?? '&#8212;'}</td>
+               <td>${seasonStat.slg ?? '&#8212;'}</td>
+               <td>${seasonStat.homeRuns ?? '&#8212;'}</td>
+               <td>${seasonStat.rbi ?? '&#8212;'}</td>
+               <td>${formatStolenBases(seasonStat.stolenBases, seasonStat.caughtStealing)}</td>
+             </tr></tbody>
+           </table></div>`)
       : `<div class="pitch-empty">Season stats not available.</div>`;
     const awardsHtml = renderAwardTags(awardTags);
     return `
