@@ -2090,10 +2090,24 @@
   /* Season stats in the player modal, as one row with stat names as
      column headers -- reuses table.pitch-table's look but centers every
      cell instead of that class's default left-align, and drops the
-     per-row divider (see career-table) since there's only ever one row. */
+     per-row divider (see career-table) since there's only ever one row.
+     table.pitch-table th carries letter-spacing for its normal left-
+     aligned headers; centered, that trailing tracking space (added after
+     the last character same as every other) reads as the text sitting
+     off-center, so it's zeroed here to keep header and value stacked on
+     the same centerline. */
   table.season-stat-table th,
   table.season-stat-table td { text-align: center; }
+  table.season-stat-table th { letter-spacing: normal; }
   table.season-stat-table tbody tr:last-child td { border-bottom: none; }
+  /* Last 10 Games table: same centering/letter-spacing fix as
+     .season-stat-table, but the leading Date column stays left-aligned
+     (like every other table's leading label column) since only the stat
+     columns after it benefit from being centered. */
+  table.recent-games-table th:not(:first-child),
+  table.recent-games-table td:not(:first-child) { text-align: center; }
+  table.recent-games-table th:not(:first-child) { letter-spacing: normal; }
+  table.recent-games-table tr.hl td:first-child { color: var(--gold); }
 
   .pitch-overlay {
     display: none;
@@ -2776,6 +2790,10 @@
   // spots (SVG strings) that can't reference a CSS custom property directly.
   const PALETTE = { ink: '#f3ecdb', gold: '#d9a91a', brick: '#e0604a', ball: '#4f7a5f', paper: '#3b4336', gray: '#8a8478' };
   const gameLogCache = {};
+  // Separate cache/fetcher (rather than a `group` param on gameLogCache) so
+  // a two-way player's pitching and hitting logs -- keyed the same way,
+  // personId alone -- can't collide and overwrite each other.
+  const hitterGameLogCache = {};
   const standingsCache = {};
   const hrLeadersCache = {};
   const venueCache = {};
@@ -3059,10 +3077,38 @@
       return [];
     }
   }
+  async function getHitterGameLog(personId, season) {
+    if (hitterGameLogCache[personId] !== undefined) return hitterGameLogCache[personId];
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/people/${personId}/stats?stats=gameLog&group=hitting&season=${season}`);
+      const data = await res.json();
+      const splits = (data.stats && data.stats[0] && data.stats[0].splits) || [];
+      hitterGameLogCache[personId] = splits;
+      return splits;
+    } catch (e) {
+      hitterGameLogCache[personId] = [];
+      return [];
+    }
+  }
   function pitchesOnDate(splits, dateStr) {
     const entry = splits.find(s => s.date === dateStr);
     if (!entry || !entry.stat) return null;
     return entry.stat.numberOfPitches ?? entry.stat.pitchesThrown ?? null;
+  }
+  // The player modal's Last 10 Games list: the 9 games before `beforeDate`
+  // (its own "Today" row, built from the live boxscore rather than the
+  // game log, covers the most recent one -- see renderRecentGamesTable),
+  // most recent first.
+  async function getRecentGameStats(info) {
+    const splits = info.pos === 'P'
+      ? await getPitcherGameLog(info.id, info.season)
+      : await getHitterGameLog(info.id, info.season);
+    const beforeDate = info.gameDate || todayStr();
+    return splits
+      .filter(s => s.date && s.date < beforeDate)
+      .sort((a, b) => b.date < a.date ? -1 : 1)
+      .slice(0, 9)
+      .map(s => ({ date: s.date, stat: s.stat || {} }));
   }
   function addDays(dateStr, delta) {
     const d = new Date(dateStr + 'T00:00:00Z');
@@ -4254,12 +4300,29 @@
       <div class="lb-grid">${rows}</div>`;
   }
 
-  function renderPlayerModalContent(info, seasonStat, awardTags) {
+  // The player modal's Last 10 Games section: row 1 is always "Today",
+  // built from the live boxscore (info.todayStats) rather than the game
+  // log -- for a game still in progress the log hasn't caught up yet, and
+  // for one just finished it may not have either -- so recentGames (see
+  // getRecentGameStats) only ever needs to cover the 9 games before it.
+  // recentGames is undefined while that fetch is still in flight.
+  function renderRecentGamesTable(pitcher, todayStats, recentGames) {
+    if (recentGames === undefined) return '<div class="pitch-empty">Loading recent games&#8230;</div>';
+    const headers = pitcher ? ['Date', 'IP', 'H', 'ER', 'BB', 'K'] : ['Date', 'AB', 'H', 'RBI', 'BB', 'HR'];
+    const cells = s => pitcher
+      ? [s.inningsPitched ?? '0.0', s.hits ?? 0, s.earnedRuns ?? 0, s.baseOnBalls ?? 0, s.strikeOuts ?? 0]
+      : [s.atBats ?? 0, s.hits ?? 0, s.rbi ?? 0, s.baseOnBalls ?? 0, s.homeRuns ?? 0];
+    const games = [{ label: 'Today', stat: todayStats, hl: true }, ...recentGames.map(g => ({ label: formatShortDate(g.date), stat: g.stat }))];
+    const rows = games.map(g => `<tr${g.hl ? ' class="hl"' : ''}><td>${g.label}</td>${cells(g.stat).map(v => `<td>${v}</td>`).join('')}</tr>`).join('');
+    return `<div class="table-scroll"><table class="pitch-table recent-games-table">
+        <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>`;
+  }
+
+  function renderPlayerModalContent(info, seasonStat, awardTags, recentGames) {
     const pitcher = info.pos === 'P';
-    const s = info.todayStats || {};
-    const todayHtml = pitcher
-      ? `<div class="player-stat-line"><span class="psl-label">Today</span><span>${s.inningsPitched ?? '0.0'} IP, ${s.hits ?? 0} H, ${s.earnedRuns ?? 0} ER, ${s.baseOnBalls ?? 0} BB, ${s.strikeOuts ?? 0} K</span></div>`
-      : `<div class="player-stat-line"><span class="psl-label">Today</span><span>${s.hits ?? 0}-${s.atBats ?? 0}, ${s.rbi ?? 0} RBI, ${s.baseOnBalls ?? 0} BB, ${s.homeRuns ?? 0} HR</span></div>`;
+    const recentGamesHtml = renderRecentGamesTable(pitcher, info.todayStats || {}, recentGames);
     // Same set of columns as the Career table's pitching view (see
     // renderPitchingCareerTable) minus Year/Team, just for this one season.
     const seasonHtml = seasonStat
@@ -4301,8 +4364,8 @@
       ${awardsHtml}
       <div class="roster-section-title">${info.season} Season</div>
       ${seasonHtml}
-      <div class="roster-section-title">This Game</div>
-      ${todayHtml}
+      <div class="roster-section-title">Last 10 Games</div>
+      ${recentGamesHtml}
       <button type="button" class="modal-cta" data-player-id="${info.id}">View Full Profile &#8594;</button>
     `;
   }
@@ -4590,7 +4653,7 @@
     }));
   }
 
-  function renderTeamTable(teamName, rows, numInnings, pitcherByInning, starterPitcherId, columnsPerInning, pitcherCardHtml, teamKey, liveBatterInfo, season) {
+  function renderTeamTable(teamName, rows, numInnings, pitcherByInning, starterPitcherId, columnsPerInning, pitcherCardHtml, teamKey, liveBatterInfo, season, gameDate) {
     let head = `<tr><th class="ply"><span class="th-full">Player</span><span class="th-short">#</span></th><th class="pos">Pos</th>`;
     for (let i = 1; i <= numInnings; i++) {
       const cols = (columnsPerInning && columnsPerInning[i]) || 1;
@@ -4609,7 +4672,7 @@
       // entries is explicit and independent of what's inside them.
       const nameHtml = `<div class="ply-stack">` + r.players.map((p, i) => {
         if (!p.id) return '';
-        playerStore[p.id] = { id: p.id, name: p.name, pos: p.pos, team: teamName, season, todayStats: p.stats };
+        playerStore[p.id] = { id: p.id, name: p.name, pos: p.pos, team: teamName, season, gameDate, todayStats: p.stats };
         // Both spans always render; a narrow-mobile media query swaps which
         // one is visible so the Player column can shrink to jersey-number
         // width there instead of a whole last name -- see .pnb-num/.pnb-name.
@@ -5684,7 +5747,8 @@
       });
 
       const boxscore = feedData.liveData && feedData.liveData.boxscore;
-      const season = (feedData.gameData && feedData.gameData.datetime && feedData.gameData.datetime.officialDate || '').slice(0, 4);
+      const officialDate = (feedData.gameData && feedData.gameData.datetime && feedData.gameData.datetime.officialDate) || '';
+      const season = officialDate.slice(0, 4);
       const leaders = Object.values(totals).sort((a, b) => b.wpa - a.wpa).slice(0, 3).map(p => {
         const boxPlayer = findBoxscorePlayer(boxscore, p.id);
         const stats = boxPlayer && boxPlayer.stats;
@@ -5702,6 +5766,7 @@
           pos: (boxPlayer && boxPlayer.position && boxPlayer.position.abbreviation) || '',
           team: teamNickname(team),
           season,
+          gameDate: officialDate,
           todayStats: (stats && (stats.batting || stats.pitching)) || {}
         };
         return { id: p.id, name: p.name, lastName: p.lastName, statLine: renderStatLineParts(statParts) };
@@ -6226,7 +6291,7 @@
             // in renderTeamTable to populate playerStore for them, so the
             // roster modal's name button would silently do nothing without
             // this -- see showPlayerModal's playerStore lookup.
-            playerStore[p.person.id] = { id: p.person.id, name: p.person.fullName, pos: p.position.abbreviation, team: teamName, season, todayStats: (p.stats && p.stats.batting) || {} };
+            playerStore[p.person.id] = { id: p.person.id, name: p.person.fullName, pos: p.position.abbreviation, team: teamName, season, gameDate: officialDate, todayStats: (p.stats && p.stats.batting) || {} };
             return { id: p.person.id, name: p.person.fullName, pos: p.position.abbreviation, entered: !!p.battingOrder };
           })
           // entered substitutes float to the top, same as relievers who've
@@ -6236,8 +6301,8 @@
       // buildBullpenList's own results don't touch playerStore either --
       // pitchers who only pitched (never batted) have no batting row in
       // renderTeamTable to populate it, same gap as the bench players above.
-      awayBullpen.forEach(p => { playerStore[p.id] = { id: p.id, name: p.name, pos: 'P', team: awayName, season, todayStats: p.todayStats || {} }; });
-      homeBullpen.forEach(p => { playerStore[p.id] = { id: p.id, name: p.name, pos: 'P', team: homeName, season, todayStats: p.todayStats || {} }; });
+      awayBullpen.forEach(p => { playerStore[p.id] = { id: p.id, name: p.name, pos: 'P', team: awayName, season, gameDate: officialDate, todayStats: p.todayStats || {} }; });
+      homeBullpen.forEach(p => { playerStore[p.id] = { id: p.id, name: p.name, pos: 'P', team: homeName, season, gameDate: officialDate, todayStats: p.todayStats || {} }; });
       rosterStore[awayName] = renderRosterContent(awayName, awayBullpen, awayRows, getBenchPlayers(liveData.boxscore.teams.away, awayName));
       rosterStore[homeName] = renderRosterContent(homeName, homeBullpen, homeRows, getBenchPlayers(liveData.boxscore.teams.home, homeName));
       sprayStore[awayName] = renderSprayChart(away.battedBalls, awayName);
@@ -6335,8 +6400,8 @@
 
       body.innerHTML = `
         <div class="sheet">
-          ${renderTeamTable(awayName, awayRows.length ? awayRows : placeholderLineupRows(), numInnings, away.pitcherByInning, away.starterPitcherId, columnsPerInning, homePitcherCard, 'away', liveBatterInfo, season)}
-          ${renderTeamTable(homeName, homeRows.length ? homeRows : placeholderLineupRows(), numInnings, home.pitcherByInning, home.starterPitcherId, columnsPerInning, awayPitcherCard, 'home', liveBatterInfo, season)}
+          ${renderTeamTable(awayName, awayRows.length ? awayRows : placeholderLineupRows(), numInnings, away.pitcherByInning, away.starterPitcherId, columnsPerInning, homePitcherCard, 'away', liveBatterInfo, season, officialDate)}
+          ${renderTeamTable(homeName, homeRows.length ? homeRows : placeholderLineupRows(), numInnings, home.pitcherByInning, home.starterPitcherId, columnsPerInning, awayPitcherCard, 'home', liveBatterInfo, season, officialDate)}
         </div>
         <div class="footnote">Source: MLB Stats API &#183; updated ${new Date().toLocaleTimeString()}</div>
       `;
@@ -7291,12 +7356,13 @@
     if (!info) return;
     playerModalBody.innerHTML = renderPlayerModalContent(info, null) + '<div class="pitch-empty">Loading season stats&#8230;</div>';
     playerOverlay.classList.add('open');
-    const [seasonStat, awards] = await Promise.all([
+    const [seasonStat, awards, recentGames] = await Promise.all([
       getPlayerSeasonStats(playerId, info.season, info.pos === 'P' ? 'pitching' : 'hitting'),
-      getPlayerAwards(playerId)
+      getPlayerAwards(playerId),
+      getRecentGameStats(info)
     ]);
     if (!playerOverlay.classList.contains('open')) return;
-    playerModalBody.innerHTML = renderPlayerModalContent(info, seasonStat, summarizeAwardTags(awards));
+    playerModalBody.innerHTML = renderPlayerModalContent(info, seasonStat, summarizeAwardTags(awards), recentGames);
   }
   function hidePlayerModal() {
     closeOverlay(playerOverlay);
