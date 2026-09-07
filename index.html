@@ -6503,6 +6503,19 @@
   }
   gameStrip.addEventListener('scroll', updateGameStripFade, { passive: true });
   window.addEventListener('resize', updateGameStripFade);
+  // A plain vertical mouse wheel over the strip pans it horizontally
+  // instead of falling through to the page -- only once it actually has
+  // overflow to pan (below the 699px breakpoint it shows just the current
+  // tile with nothing to scroll, see .game-strip's CSS), and only for
+  // wheel input dominated by its vertical component, so a trackpad's own
+  // horizontal swipe (already deltaX) still scrolls it natively without
+  // this doubling it up.
+  gameStrip.addEventListener('wheel', (e) => {
+    if (gameStrip.scrollWidth <= gameStrip.clientWidth) return;
+    if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+    e.preventDefault();
+    gameStrip.scrollLeft += e.deltaY;
+  }, { passive: false });
   gameStrip.addEventListener('click', (e) => {
     handleGameStripTileActivate(e.target.closest('.daily-tile'));
   });
