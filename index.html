@@ -2095,19 +2095,28 @@
      aligned headers; centered, that trailing tracking space (added after
      the last character same as every other) reads as the text sitting
      off-center, so it's zeroed here to keep header and value stacked on
-     the same centerline. */
-  table.season-stat-table th,
-  table.season-stat-table td { text-align: center; }
-  table.season-stat-table th { letter-spacing: normal; }
-  table.season-stat-table tbody tr:last-child td { border-bottom: none; }
+     the same centerline. Selectors match both classes on the one element
+     (table.pitch-table.season-stat-table, not just .season-stat-table)
+     so this beats table.pitch-table th on specificity rather than having
+     to out-race it by appearing later in the file. */
+  table.pitch-table.season-stat-table th,
+  table.pitch-table.season-stat-table td { text-align: center; }
+  table.pitch-table.season-stat-table th { letter-spacing: normal; }
+  table.pitch-table.season-stat-table tbody tr:last-child td { border-bottom: none; }
   /* Last 10 Games table: same centering/letter-spacing fix as
      .season-stat-table, but the leading Date column stays left-aligned
      (like every other table's leading label column) since only the stat
      columns after it benefit from being centered. */
-  table.recent-games-table th:not(:first-child),
-  table.recent-games-table td:not(:first-child) { text-align: center; }
-  table.recent-games-table th:not(:first-child) { letter-spacing: normal; }
-  table.recent-games-table tr.hl td:first-child { color: var(--gold); }
+  table.pitch-table.recent-games-table th:not(:first-child),
+  table.pitch-table.recent-games-table td:not(:first-child) { text-align: center; }
+  table.pitch-table.recent-games-table th:not(:first-child) { letter-spacing: normal; }
+  table.pitch-table.recent-games-table tr.hl td:first-child { color: var(--gold); }
+  /* Batter rows: H-AB stays centered like every other stat column above,
+     but the trailing Notable column is a variable-length comma list
+     (see notableBattingEvents) -- centering that reads worse than just
+     letting it run left like ordinary text. */
+  table.pitch-table.recent-games-table.batter th:last-child,
+  table.pitch-table.recent-games-table.batter td:last-child { text-align: left; }
 
   .pitch-overlay {
     display: none;
@@ -4308,13 +4317,25 @@
   // recentGames is undefined while that fetch is still in flight.
   function renderRecentGamesTable(pitcher, todayStats, recentGames) {
     if (recentGames === undefined) return '<div class="pitch-empty">Loading recent games&#8230;</div>';
-    const headers = pitcher ? ['Date', 'IP', 'H', 'ER', 'BB', 'K'] : ['Date', 'AB', 'H', 'RBI', 'BB', 'HR'];
+    const headers = pitcher ? ['Date', 'IP', 'H', 'ER', 'BB', 'K'] : ['Date', 'H-AB', 'Notable'];
+    // A rigid AB/H/RBI/BB/HR column set reads as mostly zeroes most
+    // games -- listing only whichever of BB/RBI/2B/3B/HR actually
+    // happened keeps a quiet game's row quiet instead of padded with 0s.
+    const notableBattingEvents = s => {
+      const parts = [];
+      if (s.baseOnBalls) parts.push(`${s.baseOnBalls} BB`);
+      if (s.rbi) parts.push(`${s.rbi} RBI`);
+      if (s.doubles) parts.push(`${s.doubles} 2B`);
+      if (s.triples) parts.push(`${s.triples} 3B`);
+      if (s.homeRuns) parts.push(`${s.homeRuns} HR`);
+      return parts.join(', ') || '&#8212;';
+    };
     const cells = s => pitcher
       ? [s.inningsPitched ?? '0.0', s.hits ?? 0, s.earnedRuns ?? 0, s.baseOnBalls ?? 0, s.strikeOuts ?? 0]
-      : [s.atBats ?? 0, s.hits ?? 0, s.rbi ?? 0, s.baseOnBalls ?? 0, s.homeRuns ?? 0];
+      : [`${s.hits ?? 0}-${s.atBats ?? 0}`, notableBattingEvents(s)];
     const games = [{ label: 'Today', stat: todayStats, hl: true }, ...recentGames.map(g => ({ label: formatShortDate(g.date), stat: g.stat }))];
     const rows = games.map(g => `<tr${g.hl ? ' class="hl"' : ''}><td>${g.label}</td>${cells(g.stat).map(v => `<td>${v}</td>`).join('')}</tr>`).join('');
-    return `<div class="table-scroll"><table class="pitch-table recent-games-table">
+    return `<div class="table-scroll"><table class="pitch-table recent-games-table${pitcher ? '' : ' batter'}">
         <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
         <tbody>${rows}</tbody>
       </table></div>`;
