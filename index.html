@@ -4074,7 +4074,8 @@
         yPitches: pitchesOnDate(splits, yDate),
         twoPitches: pitchesOnDate(splits, twoDate),
         todayIp: todayPitching.inningsPitched,
-        todayPc: todayPitching.numberOfPitches ?? todayPitching.pitchesThrown
+        todayPc: todayPitching.numberOfPitches ?? todayPitching.pitchesThrown,
+        todayStats: todayPitching
       };
     }));
 
@@ -6217,8 +6218,8 @@
       // buildBullpenList's own results don't touch playerStore either --
       // pitchers who only pitched (never batted) have no batting row in
       // renderTeamTable to populate it, same gap as the bench players above.
-      awayBullpen.forEach(p => { playerStore[p.id] = { id: p.id, name: p.name, pos: 'P', team: awayName, season, todayStats: {} }; });
-      homeBullpen.forEach(p => { playerStore[p.id] = { id: p.id, name: p.name, pos: 'P', team: homeName, season, todayStats: {} }; });
+      awayBullpen.forEach(p => { playerStore[p.id] = { id: p.id, name: p.name, pos: 'P', team: awayName, season, todayStats: p.todayStats || {} }; });
+      homeBullpen.forEach(p => { playerStore[p.id] = { id: p.id, name: p.name, pos: 'P', team: homeName, season, todayStats: p.todayStats || {} }; });
       rosterStore[awayName] = renderRosterContent(awayName, awayBullpen, awayRows, getBenchPlayers(liveData.boxscore.teams.away, awayName));
       rosterStore[homeName] = renderRosterContent(homeName, homeBullpen, homeRows, getBenchPlayers(liveData.boxscore.teams.home, homeName));
       sprayStore[awayName] = renderSprayChart(away.battedBalls, awayName);
