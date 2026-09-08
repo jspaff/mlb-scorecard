@@ -7125,6 +7125,31 @@
     return value < 1 ? fixed.slice(1) : fixed;
   }
 
+  // Basic wOBA -- fixed generic linear weights (not the year-specific,
+  // park-adjusted constants FanGraphs publishes), and BB here includes IBB
+  // since intentional walks aren't broken out in the stats this pulls. A
+  // rough sabermetric read, not a FanGraphs-exact value. Works on both the
+  // collapsed per-season aggregate and a raw API stat object -- both use
+  // these same field names.
+  const WOBA_WEIGHTS = { bb: 0.69, hbp: 0.72, single: 0.89, double: 1.27, triple: 1.62, hr: 2.10 };
+  function computeWOBA(stat) {
+    const atBats = stat.atBats || 0;
+    const baseOnBalls = stat.baseOnBalls || 0;
+    const hitByPitch = stat.hitByPitch || 0;
+    const sacFlies = stat.sacFlies || 0;
+    const denominator = atBats + baseOnBalls + sacFlies + hitByPitch;
+    if (!denominator) return '&#8212;';
+    const doubles = stat.doubles || 0;
+    const triples = stat.triples || 0;
+    const homeRuns = stat.homeRuns || 0;
+    const singles = (stat.hits || 0) - doubles - triples - homeRuns;
+    const numerator = WOBA_WEIGHTS.bb * baseOnBalls + WOBA_WEIGHTS.hbp * hitByPitch + WOBA_WEIGHTS.single * singles +
+      WOBA_WEIGHTS.double * doubles + WOBA_WEIGHTS.triple * triples + WOBA_WEIGHTS.hr * homeRuns;
+    const value = numerator / denominator;
+    const fixed = value.toFixed(3);
+    return value < 1 ? fixed.slice(1) : fixed;
+  }
+
   // Stolen bases as "made/attempted" (e.g. "20/24") instead of separate
   // SB/CS columns -- reads the attempt rate at a glance the way a broadcast
   // graphic would. null/undefined sb means the stat wasn't in the payload at
@@ -7146,20 +7171,21 @@
       const avg = formatRate(y.hits, y.atBats);
       const obp = formatRate(y.hits + y.baseOnBalls + y.hitByPitch, y.atBats + y.baseOnBalls + y.hitByPitch + y.sacFlies);
       const slg = formatRate(y.totalBases, y.atBats);
+      const woba = computeWOBA(y);
       const sb = formatStolenBases(y.stolenBases, y.caughtStealing);
-      const yearRow = `<tr class="career-year-row"><td>${y.season}</td><td>${team}</td><td>${y.gamesPlayed}</td><td>${avg}</td><td>${obp}</td><td>${slg}</td><td>${y.doubles}</td><td>${y.triples}</td><td>${y.homeRuns}</td><td>${sb}</td></tr>`;
+      const yearRow = `<tr class="career-year-row"><td>${y.season}</td><td>${team}</td><td>${y.gamesPlayed}</td><td>${avg}</td><td>${obp}</td><td>${slg}</td><td>${woba}</td><td>${y.doubles}</td><td>${y.triples}</td><td>${y.homeRuns}</td><td>${sb}</td></tr>`;
       const stints = stintsBySeason.get(y.season) || [];
       const subRows = stints.length > 1
         ? stints.map(s => {
             const stat = s.stat || {};
             const teamName = (s.team && teamNickname(s.team)) || '&#8212;';
-            return `<tr class="career-team-subrow"><td></td><td>${teamName}</td><td>${stat.gamesPlayed ?? '&#8212;'}</td><td>${stat.avg ?? '&#8212;'}</td><td>${stat.obp ?? '&#8212;'}</td><td>${stat.slg ?? '&#8212;'}</td><td>${stat.doubles ?? '&#8212;'}</td><td>${stat.triples ?? '&#8212;'}</td><td>${stat.homeRuns ?? '&#8212;'}</td><td>${formatStolenBases(stat.stolenBases, stat.caughtStealing)}</td></tr>`;
+            return `<tr class="career-team-subrow"><td></td><td>${teamName}</td><td>${stat.gamesPlayed ?? '&#8212;'}</td><td>${stat.avg ?? '&#8212;'}</td><td>${stat.obp ?? '&#8212;'}</td><td>${stat.slg ?? '&#8212;'}</td><td>${computeWOBA(stat)}</td><td>${stat.doubles ?? '&#8212;'}</td><td>${stat.triples ?? '&#8212;'}</td><td>${stat.homeRuns ?? '&#8212;'}</td><td>${formatStolenBases(stat.stolenBases, stat.caughtStealing)}</td></tr>`;
           }).join('')
         : '';
       return yearRow + subRows;
     });
     return `<div class="table-scroll"><table class="pitch-table career-table">
-        <thead><tr><th>Year</th><th>Team</th><th>G</th><th>AVG</th><th>OBP</th><th>SLG</th><th>2B</th><th>3B</th><th>HR</th><th>SB</th></tr></thead>
+        <thead><tr><th>Year</th><th>Team</th><th>G</th><th>AVG</th><th>OBP</th><th>SLG</th><th>wOBA</th><th>2B</th><th>3B</th><th>HR</th><th>SB</th></tr></thead>
         <tbody>${rows.join('')}</tbody>
       </table></div>`;
   }
