@@ -2791,6 +2791,12 @@
   // awards data that hasn't changed.
   let lastProfilePerson = null;
   let lastProfileCareerSplits = null;
+  // Season -> league-average wOBA (or null if that season's fetch failed),
+  // for the currently displayed profile's wOBA+ column. Reset in
+  // showPlayerProfile, filled in by loadCareerLeagueWoba once its fetches
+  // resolve -- kept separate from lastProfileCareerSplits since it depends
+  // on a second round of requests (one per season) that resolve later.
+  let lastProfileLeagueWoba = {};
   let lastProfileAwardTags = [];
   // Mirrors the --ink/--gold/--brick/--paper CSS variables (plus the ball
   // green that only exists as a literal on .pitch-result-ball), for the few
@@ -4339,7 +4345,7 @@
       </table></div>`;
   }
 
-  function renderPlayerModalContent(info, seasonStat, awardTags, recentGames, displayPos) {
+  function renderPlayerModalContent(info, seasonStat, awardTags, recentGames, displayPos, leagueWoba) {
     const pitcher = info.pos === 'P';
     const recentGamesHtml = renderRecentGamesTable(pitcher, info.todayStats || {}, recentGames);
     // Same set of columns as the Career table's pitching view (see
@@ -4359,12 +4365,13 @@
              </tr></tbody>
            </table></div>`
         : `<div class="table-scroll"><table class="pitch-table season-stat-table">
-             <thead><tr><th>G</th><th>AVG</th><th>OBP</th><th>SLG</th><th>HR</th><th>RBI</th><th>SB</th></tr></thead>
+             <thead><tr><th>G</th><th>AVG</th><th>OBP</th><th>SLG</th><th>wOBA+</th><th>HR</th><th>RBI</th><th>SB</th></tr></thead>
              <tbody><tr>
                <td>${seasonStat.gamesPlayed ?? '&#8212;'}</td>
                <td>${seasonStat.avg ?? '&#8212;'}</td>
                <td>${seasonStat.obp ?? '&#8212;'}</td>
                <td>${seasonStat.slg ?? '&#8212;'}</td>
+               <td>${computeWOBAPlus(seasonStat, leagueWoba)}</td>
                <td>${seasonStat.homeRuns ?? '&#8212;'}</td>
                <td>${seasonStat.rbi ?? '&#8212;'}</td>
                <td>${formatStolenBases(seasonStat.stolenBases, seasonStat.caughtStealing)}</td>
@@ -7096,7 +7103,7 @@
       const stat = s.stat || {};
       let agg = bySeason.get(s.season);
       if (!agg) {
-        agg = { season: s.season, teams: [], gamesPlayed: 0, atBats: 0, hits: 0, doubles: 0, triples: 0, homeRuns: 0, baseOnBalls: 0, hitByPitch: 0, sacFlies: 0, totalBases: 0, stolenBases: 0, caughtStealing: 0 };
+        agg = { season: s.season, teams: [], gamesPlayed: 0, atBats: 0, hits: 0, doubles: 0, triples: 0, homeRuns: 0, baseOnBalls: 0, hitByPitch: 0, sacFlies: 0, totalBases: 0, stolenBases: 0, caughtStealing: 0, plateAppearances: 0 };
         bySeason.set(s.season, agg);
       }
       const teamName = s.team && teamNickname(s.team);
@@ -7113,6 +7120,7 @@
       agg.totalBases += stat.totalBases || 0;
       agg.stolenBases += stat.stolenBases || 0;
       agg.caughtStealing += stat.caughtStealing || 0;
+      agg.plateAppearances += stat.plateAppearances || 0;
     });
     return Array.from(bySeason.values()).sort((a, b) => Number(a.season) - Number(b.season));
   }
@@ -7125,6 +7133,85 @@
     return value < 1 ? fixed.slice(1) : fixed;
   }
 
+  // Basic wOBA, per FanGraphs' own recommended simplified formula:
+  // (.7*(BB+HBP) + .9*1B + 1.25*2B + 1.6*3B + 2*HR) / PA -- fixed generic
+  // weights, not the year-specific, park-adjusted constants FanGraphs uses
+  // for its own site figures, and BB here includes IBB since intentional
+  // walks aren't broken out in the stats this pulls. Works on both the
+  // collapsed per-season aggregate and a raw API stat object -- both use
+  // these same field names.
+  const WOBA_WEIGHTS = { bbHbp: 0.7, single: 0.9, double: 1.25, triple: 1.6, hr: 2 };
+  // Numeric wOBA, or null if PA is 0 -- kept separate from computeWOBAPlus
+  // so getLeagueWOBA can reuse it on a season's summed totals too.
+  function rawWOBA(stat) {
+    const plateAppearances = stat.plateAppearances || 0;
+    if (!plateAppearances) return null;
+    const baseOnBalls = stat.baseOnBalls || 0;
+    const hitByPitch = stat.hitByPitch || 0;
+    const doubles = stat.doubles || 0;
+    const triples = stat.triples || 0;
+    const homeRuns = stat.homeRuns || 0;
+    const singles = (stat.hits || 0) - doubles - triples - homeRuns;
+    const numerator = WOBA_WEIGHTS.bbHbp * (baseOnBalls + hitByPitch) + WOBA_WEIGHTS.single * singles +
+      WOBA_WEIGHTS.double * doubles + WOBA_WEIGHTS.triple * triples + WOBA_WEIGHTS.hr * homeRuns;
+    return numerator / plateAppearances;
+  }
+  // Same ".xxx" formatting as formatRate/AVG, for displaying a raw wOBA
+  // value directly (the career table's footnote) rather than dividing it
+  // into a +stat.
+  function formatWobaValue(value) {
+    if (value == null) return '&#8212;';
+    const fixed = value.toFixed(3);
+    return value < 1 ? fixed.slice(1) : fixed;
+  }
+  // wOBA+ = this stat line's wOBA over the league-wide wOBA for that same
+  // season, times 100 -- same "100 = league average" scale as OPS+/ERA+.
+  // leagueWoba is the season total this stat line's season maps to (see
+  // getLeagueWOBA); missing it (fetch still in flight, or failed) reads as
+  // "not yet known" rather than a false 0/misleading number.
+  function computeWOBAPlus(stat, leagueWoba) {
+    if (!leagueWoba) return '&#8212;';
+    const value = rawWOBA(stat);
+    if (value == null) return '&#8212;';
+    return String(Math.round((value / leagueWoba) * 100));
+  }
+  // League-wide wOBA for a season, used as wOBA+'s denominator. The API has
+  // no single "league totals" stat endpoint, so this sums every team's
+  // season hitting totals instead -- fetched once per season and shared
+  // across every profile opened (rawWOBA works the same on these summed
+  // totals as on a single stat line, since it's a plain ratio of the same
+  // fields). Mirrors fetchGameStats' isFinal split: a past season's totals
+  // never change once the season is over, so those are cached indefinitely,
+  // but the current season's keep shifting game to game, so a transient
+  // failure there isn't cached -- the next call just retries.
+  const leagueWobaCache = {};
+  async function getLeagueWOBA(season) {
+    const isPastSeason = Number(season) < new Date().getFullYear();
+    if (isPastSeason && leagueWobaCache[season] !== undefined) return leagueWobaCache[season];
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/teams/stats?stats=season&group=hitting&season=${season}&sportId=1`);
+      const data = await res.json();
+      const splits = (data.stats && data.stats[0] && data.stats[0].splits) || [];
+      const totals = { plateAppearances: 0, baseOnBalls: 0, hitByPitch: 0, hits: 0, doubles: 0, triples: 0, homeRuns: 0 };
+      splits.forEach(s => {
+        const stat = s.stat || {};
+        totals.plateAppearances += stat.plateAppearances || 0;
+        totals.baseOnBalls += stat.baseOnBalls || 0;
+        totals.hitByPitch += stat.hitByPitch || 0;
+        totals.hits += stat.hits || 0;
+        totals.doubles += stat.doubles || 0;
+        totals.triples += stat.triples || 0;
+        totals.homeRuns += stat.homeRuns || 0;
+      });
+      const woba = rawWOBA(totals);
+      if (isPastSeason) leagueWobaCache[season] = woba;
+      return woba;
+    } catch (e) {
+      if (isPastSeason) leagueWobaCache[season] = null;
+      return null;
+    }
+  }
+
   // Stolen bases as "made/attempted" (e.g. "20/24") instead of separate
   // SB/CS columns -- reads the attempt rate at a glance the way a broadcast
   // graphic would. null/undefined sb means the stat wasn't in the payload at
@@ -7135,33 +7222,46 @@
     return `${sb}/${sb + (cs || 0)}`;
   }
 
-  function renderCareerTable(splits) {
+  // leagueWobaBySeason: season -> league wOBA for wOBA+ (see getLeagueWOBA);
+  // {} while that second round of fetches is still in flight, in which case
+  // wOBA+ just reads as "&#8212;" until loadCareerLeagueWoba re-renders.
+  function renderCareerTable(splits, leagueWobaBySeason) {
     const stintsBySeason = new Map();
     splits.forEach(s => {
       if (!stintsBySeason.has(s.season)) stintsBySeason.set(s.season, []);
       stintsBySeason.get(s.season).push(s);
     });
-    const rows = collapseCareerByYear(splits).map(y => {
+    const years = collapseCareerByYear(splits);
+    const rows = years.map(y => {
       const team = y.teams.length > 1 ? 'Multiple' : (y.teams[0] || '&#8212;');
       const avg = formatRate(y.hits, y.atBats);
       const obp = formatRate(y.hits + y.baseOnBalls + y.hitByPitch, y.atBats + y.baseOnBalls + y.hitByPitch + y.sacFlies);
       const slg = formatRate(y.totalBases, y.atBats);
+      const leagueWoba = leagueWobaBySeason[y.season];
+      const wobaPlus = computeWOBAPlus(y, leagueWoba);
       const sb = formatStolenBases(y.stolenBases, y.caughtStealing);
-      const yearRow = `<tr class="career-year-row"><td>${y.season}</td><td>${team}</td><td>${y.gamesPlayed}</td><td>${avg}</td><td>${obp}</td><td>${slg}</td><td>${y.doubles}</td><td>${y.triples}</td><td>${y.homeRuns}</td><td>${sb}</td></tr>`;
+      const yearRow = `<tr class="career-year-row"><td>${y.season}</td><td>${team}</td><td>${y.gamesPlayed}</td><td>${avg}</td><td>${obp}</td><td>${slg}</td><td>${wobaPlus}</td><td>${y.doubles}</td><td>${y.triples}</td><td>${y.homeRuns}</td><td>${sb}</td></tr>`;
       const stints = stintsBySeason.get(y.season) || [];
       const subRows = stints.length > 1
         ? stints.map(s => {
             const stat = s.stat || {};
             const teamName = (s.team && teamNickname(s.team)) || '&#8212;';
-            return `<tr class="career-team-subrow"><td></td><td>${teamName}</td><td>${stat.gamesPlayed ?? '&#8212;'}</td><td>${stat.avg ?? '&#8212;'}</td><td>${stat.obp ?? '&#8212;'}</td><td>${stat.slg ?? '&#8212;'}</td><td>${stat.doubles ?? '&#8212;'}</td><td>${stat.triples ?? '&#8212;'}</td><td>${stat.homeRuns ?? '&#8212;'}</td><td>${formatStolenBases(stat.stolenBases, stat.caughtStealing)}</td></tr>`;
+            return `<tr class="career-team-subrow"><td></td><td>${teamName}</td><td>${stat.gamesPlayed ?? '&#8212;'}</td><td>${stat.avg ?? '&#8212;'}</td><td>${stat.obp ?? '&#8212;'}</td><td>${stat.slg ?? '&#8212;'}</td><td>${computeWOBAPlus(stat, leagueWoba)}</td><td>${stat.doubles ?? '&#8212;'}</td><td>${stat.triples ?? '&#8212;'}</td><td>${stat.homeRuns ?? '&#8212;'}</td><td>${formatStolenBases(stat.stolenBases, stat.caughtStealing)}</td></tr>`;
           }).join('')
         : '';
       return yearRow + subRows;
     });
+    // League wOBA (wOBA+'s denominator) spelled out per season, so the
+    // number wOBA+ is dividing by is visible and checkable, not just baked
+    // into a ratio.
+    const leagueWobaNote = years
+      .map(y => `${y.season} ${formatWobaValue(leagueWobaBySeason[y.season])}`)
+      .join(' &#183; ');
     return `<div class="table-scroll"><table class="pitch-table career-table">
-        <thead><tr><th>Year</th><th>Team</th><th>G</th><th>AVG</th><th>OBP</th><th>SLG</th><th>2B</th><th>3B</th><th>HR</th><th>SB</th></tr></thead>
+        <thead><tr><th>Year</th><th>Team</th><th>G</th><th>AVG</th><th>OBP</th><th>SLG</th><th>wOBA+</th><th>2B</th><th>3B</th><th>HR</th><th>SB</th></tr></thead>
         <tbody>${rows.join('')}</tbody>
-      </table></div>`;
+      </table></div>
+      <div class="pitch-empty">League wOBA: ${leagueWobaNote}</div>`;
   }
 
   function isPitcher(person) {
@@ -7248,7 +7348,7 @@
       </table></div>`;
   }
 
-  function renderPlayerProfile(person, careerSplits, awardTags) {
+  function renderPlayerProfile(person, careerSplits, awardTags, leagueWobaBySeason) {
     const teamId = person.currentTeam && person.currentTeam.id;
     const watermarkHtml = teamId ? `<img class="player-profile-watermark" src="${capLogoUrl(teamId)}" alt="" aria-hidden="true">` : '';
     const meta = playerMetaLine(person);
@@ -7260,7 +7360,7 @@
     const careerHtml = yearSplits === null
       ? '<div class="mlb-status-msg">Loading career stats&#8230;</div>'
       : yearSplits.length
-        ? (pitcher ? renderPitchingCareerTable(yearSplits) : renderCareerTable(yearSplits))
+        ? (pitcher ? renderPitchingCareerTable(yearSplits) : renderCareerTable(yearSplits, leagueWobaBySeason || {}))
         : '<div class="pitch-empty">Career stats not available.</div>';
     const sprayHtml = !pitcher && playerSprayState.personId === Number(person.id) ? renderPlayerSprayWidget(playerSprayState) : '';
     return `<div class="sheet player-profile-sheet">
@@ -7286,7 +7386,7 @@
   // resolves, since that doesn't touch person/career/awards.
   function rerenderPlayerProfile() {
     if (!lastProfilePerson) return;
-    playersBody.innerHTML = renderPlayerProfile(lastProfilePerson, lastProfileCareerSplits, lastProfileAwardTags);
+    playersBody.innerHTML = renderPlayerProfile(lastProfilePerson, lastProfileCareerSplits, lastProfileAwardTags, lastProfileLeagueWoba);
   }
 
   async function loadPlayerSpray(personId, season) {
@@ -7298,6 +7398,23 @@
     playerSprayState.season = season;
     playerSprayState.balls = balls;
     playerSprayState.loading = false;
+    rerenderPlayerProfile();
+  }
+
+  // Fires once career stats are in hand (showPlayerProfile knows the
+  // hitting seasons only then) -- one getLeagueWOBA call per distinct
+  // season, shared/cached across every profile via that function's own
+  // cache. Guarded by playerProfileRequestId rather than a token of its
+  // own since it's already downstream of the same fetch showPlayerProfile
+  // guards with that id.
+  async function loadCareerLeagueWoba(hittingSplits, requestId) {
+    const seasons = Array.from(new Set((hittingSplits || []).map(s => s.season)));
+    if (!seasons.length) return;
+    const values = await Promise.all(seasons.map(getLeagueWOBA));
+    if (requestId !== playerProfileRequestId) return;
+    const bySeason = {};
+    seasons.forEach((season, i) => { bySeason[season] = values[i]; });
+    lastProfileLeagueWoba = bySeason;
     rerenderPlayerProfile();
   }
 
@@ -7319,6 +7436,7 @@
     // up front (e.g. a search result), skip the fetch entirely rather than
     // firing it and having renderPlayerProfile just discard the result.
     if (!isPitcher(person)) loadPlayerSpray(person.id, currentSeason);
+    lastProfileLeagueWoba = {};
     playersBody.innerHTML = renderPlayerProfile(person, null, []);
     const [fullPerson, careerSplits, awards] = await Promise.all([
       getPlayerDetails(person.id),
@@ -7330,6 +7448,7 @@
     lastProfileCareerSplits = careerSplits;
     lastProfileAwardTags = summarizeAwardTags(awards);
     rerenderPlayerProfile();
+    if (careerSplits.hitting.length) loadCareerLeagueWoba(careerSplits.hitting, requestId);
   }
 
   // Mirrors jumpToScorecardGame: leave the modal, switch tabs, load the
@@ -7392,11 +7511,13 @@
     if (!info) return;
     playerModalBody.innerHTML = renderPlayerModalContent(info, null) + '<div class="pitch-empty">Loading season stats&#8230;</div>';
     playerOverlay.classList.add('open');
-    const [seasonStat, awards, recentGames, details] = await Promise.all([
-      getPlayerSeasonStats(playerId, info.season, info.pos === 'P' ? 'pitching' : 'hitting'),
+    const pitcher = info.pos === 'P';
+    const [seasonStat, awards, recentGames, details, leagueWoba] = await Promise.all([
+      getPlayerSeasonStats(playerId, info.season, pitcher ? 'pitching' : 'hitting'),
       getPlayerAwards(playerId),
       getRecentGameStats(info),
-      getPlayerDetails(playerId)
+      getPlayerDetails(playerId),
+      pitcher ? Promise.resolve(null) : getLeagueWOBA(info.season)
     ]);
     if (!playerOverlay.classList.contains('open')) return;
     // info.pos is whatever position this playerStore entry happened to be
@@ -7405,7 +7526,7 @@
     // but the modal header itself should show the player's general
     // position rather than just the one they played in this one game.
     const generalPos = (details && details.primaryPosition && details.primaryPosition.abbreviation) || info.pos;
-    playerModalBody.innerHTML = renderPlayerModalContent(info, seasonStat, summarizeAwardTags(awards), recentGames, generalPos);
+    playerModalBody.innerHTML = renderPlayerModalContent(info, seasonStat, summarizeAwardTags(awards), recentGames, generalPos, leagueWoba);
   }
   function hidePlayerModal() {
     closeOverlay(playerOverlay);
