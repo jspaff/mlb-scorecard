@@ -7156,14 +7156,6 @@
       WOBA_WEIGHTS.double * doubles + WOBA_WEIGHTS.triple * triples + WOBA_WEIGHTS.hr * homeRuns;
     return numerator / plateAppearances;
   }
-  // Same ".xxx" formatting as formatRate/AVG, for displaying a raw wOBA
-  // value directly (the career table's footnote) rather than dividing it
-  // into a +stat.
-  function formatWobaValue(value) {
-    if (value == null) return '&#8212;';
-    const fixed = value.toFixed(3);
-    return value < 1 ? fixed.slice(1) : fixed;
-  }
   // wOBA+ = this stat line's wOBA over the league-wide wOBA for that same
   // season, times 100 -- same "100 = league average" scale as OPS+/ERA+.
   // leagueWoba is the season total this stat line's season maps to (see
@@ -7251,17 +7243,10 @@
         : '';
       return yearRow + subRows;
     });
-    // League wOBA (wOBA+'s denominator) spelled out per season, so the
-    // number wOBA+ is dividing by is visible and checkable, not just baked
-    // into a ratio.
-    const leagueWobaNote = years
-      .map(y => `${y.season} ${formatWobaValue(leagueWobaBySeason[y.season])}`)
-      .join(' &#183; ');
     return `<div class="table-scroll"><table class="pitch-table career-table">
         <thead><tr><th>Year</th><th>Team</th><th>G</th><th>AVG</th><th>OBP</th><th>SLG</th><th>wOBA+</th><th>2B</th><th>3B</th><th>HR</th><th>SB</th></tr></thead>
         <tbody>${rows.join('')}</tbody>
-      </table></div>
-      <div class="pitch-empty">League wOBA: ${leagueWobaNote}</div>`;
+      </table></div>`;
   }
 
   function isPitcher(person) {
