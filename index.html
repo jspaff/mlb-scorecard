@@ -1281,8 +1281,6 @@
   table.player-list-table td:nth-child(2) {
     white-space: nowrap;
   }
-  tr.player-list-row { cursor: pointer; }
-  tr.player-list-row:hover { background: rgba(217, 169, 26, 0.12); }
   .roster-row {
     display: flex;
     align-items: center;
@@ -7149,25 +7147,20 @@
   });
 
   // Delegated for the list's own re-renders (sorting redraws the whole
-  // table) -- a header click re-sorts in place, a row click opens that
-  // player's full profile using the name already on hand rather than
-  // routing through playerStore (which this list never populates).
+  // table) -- a header click re-sorts in place. Row navigation goes through
+  // each row's own nameplate button (renderPlayerNameplate) and the shared
+  // document-level .player-name-btn handler instead of a row-level
+  // listener here.
   playersBody.addEventListener('click', (e) => {
     const th = e.target.closest('.player-list-table th[data-sort-key]');
-    if (th) {
-      const key = th.getAttribute('data-sort-key');
-      const current = playerListSort[playerListState.type];
-      const columns = playerListState.type === 'pitching' ? PITCHER_LIST_COLUMNS : BATTER_LIST_COLUMNS;
-      const column = columns.find(c => c.key === key);
-      current.dir = current.key === key ? (current.dir === 'asc' ? 'desc' : 'asc') : column.dir;
-      current.key = key;
-      showPlayerList();
-      return;
-    }
-    const row = e.target.closest('.player-list-row');
-    if (row) {
-      showPlayerProfile({ id: row.getAttribute('data-player-id'), fullName: row.getAttribute('data-player-name') });
-    }
+    if (!th) return;
+    const key = th.getAttribute('data-sort-key');
+    const current = playerListSort[playerListState.type];
+    const columns = playerListState.type === 'pitching' ? PITCHER_LIST_COLUMNS : BATTER_LIST_COLUMNS;
+    const column = columns.find(c => c.key === key);
+    current.dir = current.key === key ? (current.dir === 'asc' ? 'desc' : 'asc') : column.dir;
+    current.key = key;
+    showPlayerList();
   });
 
   // A traded player's season comes back as one split per team stint --
@@ -7460,6 +7453,7 @@
           id: s.player.id,
           name: s.player.fullName || '',
           team: (s.team && teamNickname(s.team)) || '&#8212;',
+          season,
           stat: s.stat || {}
         }));
       seasonPlayerStatsCache[key] = rows;
@@ -7476,8 +7470,20 @@
   // string, so both a click-to-sort and the table body share one source of
   // truth per column. ctx carries the one piece of per-render context a
   // column's own row data can't supply: the season's league wOBA.
+  // Same nameplate button used everywhere else a player name is clickable
+  // (roster rows, HR leaders, box scores) -- potg-player-name routes the
+  // shared document-level .player-name-btn handler straight to the full
+  // profile (jumpToPlayerProfile) instead of the quick-look modal, which
+  // makes sense once we're already on the Players tab. jumpToPlayerProfile
+  // reads the name back out of playerStore, so a row has to populate that
+  // the same way the HR leaderboard does before it can be clicked.
+  function renderPlayerNameplate(row) {
+    playerStore[row.id] = { id: row.id, name: row.name, pos: '', team: row.team, season: row.season, todayStats: {} };
+    return `<button type="button" class="player-name-btn potg-player-name" data-player-id="${row.id}">${row.name}</button>`;
+  }
+
   const BATTER_LIST_COLUMNS = [
-    { key: 'name', label: 'Player', dir: 'asc', get: r => r.name, render: r => r.name },
+    { key: 'name', label: 'Player', dir: 'asc', get: r => r.name, render: renderPlayerNameplate },
     { key: 'team', label: 'Team', dir: 'asc', get: r => r.team, render: r => r.team },
     { key: 'g', label: 'G', dir: 'desc', get: r => r.stat.gamesPlayed ?? null, render: r => r.stat.gamesPlayed ?? '&#8212;' },
     { key: 'avg', label: 'AVG', dir: 'desc', get: r => r.stat.avg != null ? Number(r.stat.avg) : null, render: r => r.stat.avg ?? '&#8212;' },
@@ -7491,7 +7497,7 @@
     { key: 'sb', label: 'SB', dir: 'desc', get: r => r.stat.stolenBases ?? null, render: r => formatStolenBases(r.stat.stolenBases, r.stat.caughtStealing) }
   ];
   const PITCHER_LIST_COLUMNS = [
-    { key: 'name', label: 'Player', dir: 'asc', get: r => r.name, render: r => r.name },
+    { key: 'name', label: 'Player', dir: 'asc', get: r => r.name, render: renderPlayerNameplate },
     { key: 'team', label: 'Team', dir: 'asc', get: r => r.team, render: r => r.team },
     { key: 'g', label: 'G', dir: 'desc', get: r => r.stat.gamesPitched ?? r.stat.gamesPlayed ?? null, render: r => r.stat.gamesPitched ?? r.stat.gamesPlayed ?? '&#8212;' },
     { key: 'ip', label: 'IP', dir: 'desc', get: r => ipToOuts(r.stat.inningsPitched), render: r => r.stat.inningsPitched ?? '&#8212;' },
@@ -7525,7 +7531,7 @@
     }).join('');
     const bodyHtml = sorted.map(row => {
       const cells = columns.map(c => `<td>${c.render(row, ctx)}</td>`).join('');
-      return `<tr class="player-list-row" data-player-id="${row.id}" data-player-name="${row.name}">${cells}</tr>`;
+      return `<tr>${cells}</tr>`;
     }).join('');
     return `<div class="table-scroll"><table class="pitch-table player-list-table">
         <thead><tr>${headHtml}</tr></thead>
@@ -7542,7 +7548,7 @@
       : rows.length
         ? renderPlayerListTable(type, rows, sortKey, sortDir, { leagueWoba })
         : '<div class="pitch-empty">No qualified players found.</div>';
-    return `<div class="player-list">${bodyHtml}</div>`;
+    return `<div class="sheet">${bodyHtml}</div>`;
   }
 
   function renderPlayerListInto(rows, leagueWoba) {
