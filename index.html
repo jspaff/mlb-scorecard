@@ -1268,6 +1268,21 @@
   table.career-table tr.career-team-subrow td:nth-child(2) {
     padding-left: 16px;
   }
+  table.player-list-table th[data-sort-key] {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+  table.player-list-table th[data-sort-key]:hover,
+  table.player-list-table th.sorted {
+    color: var(--gold);
+  }
+  table.player-list-table td:nth-child(1),
+  table.player-list-table td:nth-child(2) {
+    white-space: nowrap;
+  }
+  tr.player-list-row { cursor: pointer; }
+  tr.player-list-row:hover { background: rgba(217, 169, 26, 0.12); }
   .roster-row {
     display: flex;
     align-items: center;
@@ -2607,6 +2622,10 @@
         <input type="text" id="playerSearchInput" placeholder="Search players&#8230;" autocomplete="off">
         <div id="playerSearchResults" class="player-search-results" hidden></div>
       </div>
+      <div class="view-toggle" id="playerListViewToggle">
+        <button type="button" class="view-toggle-btn active" data-view="batting">Batters</button>
+        <button type="button" class="view-toggle-btn" data-view="pitching">Pitchers</button>
+      </div>
     </div>
   </div>
   <div class="tab-panel" data-tab-panel="scorecard" id="scorecardPanel">
@@ -2798,6 +2817,28 @@
   // on a second round of requests (one per season) that resolve later.
   let lastProfileLeagueWoba = {};
   let lastProfileAwardTags = [];
+  // Players tab's browsable list (Batters/Pitchers toggle, sortable current-
+  // season stats) -- separate from the search/profile state above since the
+  // list and a profile are just two different things playersBody can show.
+  // type is whichever toggle is active; sort state is kept per type so
+  // switching tabs back and forth doesn't lose a custom sort.
+  let playerListState = { type: 'batting' };
+  let playerListSort = {
+    batting: { key: 'wobaPlus', dir: 'desc' },
+    pitching: { key: 'era', dir: 'asc' }
+  };
+  // Bumped on every list fetch so a slow, now-superseded request (a rapid
+  // Batters/Pitchers toggle) can't overwrite state a newer one already
+  // wrote -- same guard pattern as playerProfileRequestId.
+  let playerListRequestId = 0;
+  // Qualified rows + that type's league wOBA (batting only), once loaded --
+  // rows stays null until the first successful load for that type, so a
+  // sort-header click or a toggle back to an already-loaded type can
+  // re-render instantly from here instead of re-showing the loading state.
+  let playerListCache = {
+    batting: { rows: null, leagueWoba: null },
+    pitching: { rows: null, leagueWoba: null }
+  };
   // Mirrors the --ink/--gold/--brick/--paper CSS variables (plus the ball
   // green that only exists as a literal on .pitch-result-ball), for the few
   // spots (SVG strings) that can't reference a CSS custom property directly.
@@ -7093,6 +7134,42 @@
     showPlayerProfile(person);
   });
 
+  // Switching Batters/Pitchers always re-shows the list (even re-clicking
+  // the already-active one) -- since the toggle lives in the persistent
+  // controls row rather than inside playersBody, this doubles as the "back
+  // to the list" affordance from a profile opened off a list row or a
+  // search result.
+  const playerListViewToggle = document.getElementById('playerListViewToggle');
+  playerListViewToggle.addEventListener('click', (e) => {
+    const btn = e.target.closest('.view-toggle-btn');
+    if (!btn) return;
+    playerListViewToggle.querySelectorAll('.view-toggle-btn').forEach(b => b.classList.toggle('active', b === btn));
+    playerListState.type = btn.dataset.view;
+    showPlayerList();
+  });
+
+  // Delegated for the list's own re-renders (sorting redraws the whole
+  // table) -- a header click re-sorts in place, a row click opens that
+  // player's full profile using the name already on hand rather than
+  // routing through playerStore (which this list never populates).
+  playersBody.addEventListener('click', (e) => {
+    const th = e.target.closest('.player-list-table th[data-sort-key]');
+    if (th) {
+      const key = th.getAttribute('data-sort-key');
+      const current = playerListSort[playerListState.type];
+      const columns = playerListState.type === 'pitching' ? PITCHER_LIST_COLUMNS : BATTER_LIST_COLUMNS;
+      const column = columns.find(c => c.key === key);
+      current.dir = current.key === key ? (current.dir === 'asc' ? 'desc' : 'asc') : column.dir;
+      current.key = key;
+      showPlayerList();
+      return;
+    }
+    const row = e.target.closest('.player-list-row');
+    if (row) {
+      showPlayerProfile({ id: row.getAttribute('data-player-id'), fullName: row.getAttribute('data-player-name') });
+    }
+  });
+
   // A traded player's season comes back as one split per team stint --
   // this sums the underlying counting stats per season and recomputes the
   // rate stats from them, rather than averaging the already-rounded
@@ -7160,31 +7237,45 @@
   // season, times 100 -- same "100 = league average" scale as OPS+/ERA+.
   // leagueWoba is the season total this stat line's season maps to (see
   // getLeagueWOBA); missing it (fetch still in flight, or failed) reads as
-  // "not yet known" rather than a false 0/misleading number.
-  function computeWOBAPlus(stat, leagueWoba) {
-    if (!leagueWoba) return '&#8212;';
+  // "not yet known" rather than a false 0/misleading number. Split into a
+  // numeric version too so the Players tab's sortable list can sort by the
+  // real value instead of parsing computeWOBAPlus's rounded string back
+  // apart.
+  function wobaPlusValue(stat, leagueWoba) {
+    if (!leagueWoba) return null;
     const value = rawWOBA(stat);
-    if (value == null) return '&#8212;';
-    return String(Math.round((value / leagueWoba) * 100));
+    return value == null ? null : (value / leagueWoba) * 100;
   }
-  // League-wide wOBA for a season, used as wOBA+'s denominator. The API has
-  // no single "league totals" stat endpoint, so this sums every team's
-  // season hitting totals instead -- fetched once per season and shared
-  // across every profile opened (rawWOBA works the same on these summed
-  // totals as on a single stat line, since it's a plain ratio of the same
-  // fields). Mirrors fetchGameStats' isFinal split: a past season's totals
-  // never change once the season is over, so those are cached indefinitely,
-  // but the current season's keep shifting game to game, so a transient
+  function computeWOBAPlus(stat, leagueWoba) {
+    const value = wobaPlusValue(stat, leagueWoba);
+    if (value == null) return '&#8212;';
+    return String(Math.round(value));
+  }
+  // League-wide wOBA for a season (wOBA+'s denominator), plus how many
+  // games each team has played so far -- the latter is what the Players
+  // tab's list view uses to prorate the standard batting-title/ERA-title
+  // qualifier (3.1 PA / 1 IP per team game) for an in-progress season. The
+  // API has no single "league totals" stat endpoint, so this sums every
+  // team's season hitting totals instead -- fetched once per season and
+  // shared across every profile opened (rawWOBA works the same on these
+  // summed totals as on a single stat line, since it's a plain ratio of the
+  // same fields), with teamGamesPlayed read off the same response (every
+  // team's played the same game count give or take a rainout, so the max
+  // across all 30 is a fine stand-in for "the season's" game count).
+  // Mirrors fetchGameStats' isFinal split: a past season's totals never
+  // change once the season is over, so those are cached indefinitely, but
+  // the current season's keep shifting game to game, so a transient
   // failure there isn't cached -- the next call just retries.
-  const leagueWobaCache = {};
-  async function getLeagueWOBA(season) {
+  const leagueSeasonInfoCache = {};
+  async function getLeagueSeasonInfo(season) {
     const isPastSeason = Number(season) < new Date().getFullYear();
-    if (isPastSeason && leagueWobaCache[season] !== undefined) return leagueWobaCache[season];
+    if (isPastSeason && leagueSeasonInfoCache[season] !== undefined) return leagueSeasonInfoCache[season];
     try {
       const res = await fetch(`https://statsapi.mlb.com/api/v1/teams/stats?stats=season&group=hitting&season=${season}&sportId=1`);
       const data = await res.json();
       const splits = (data.stats && data.stats[0] && data.stats[0].splits) || [];
       const totals = { plateAppearances: 0, baseOnBalls: 0, hitByPitch: 0, hits: 0, doubles: 0, triples: 0, homeRuns: 0 };
+      let teamGamesPlayed = 0;
       splits.forEach(s => {
         const stat = s.stat || {};
         totals.plateAppearances += stat.plateAppearances || 0;
@@ -7194,14 +7285,20 @@
         totals.doubles += stat.doubles || 0;
         totals.triples += stat.triples || 0;
         totals.homeRuns += stat.homeRuns || 0;
+        teamGamesPlayed = Math.max(teamGamesPlayed, stat.gamesPlayed || 0);
       });
-      const woba = rawWOBA(totals);
-      if (isPastSeason) leagueWobaCache[season] = woba;
-      return woba;
+      const info = { woba: rawWOBA(totals), teamGamesPlayed };
+      if (isPastSeason) leagueSeasonInfoCache[season] = info;
+      return info;
     } catch (e) {
-      if (isPastSeason) leagueWobaCache[season] = null;
-      return null;
+      const info = { woba: null, teamGamesPlayed: 0 };
+      if (isPastSeason) leagueSeasonInfoCache[season] = info;
+      return info;
     }
+  }
+  async function getLeagueWOBA(season) {
+    const info = await getLeagueSeasonInfo(season);
+    return info.woba;
   }
 
   // Stolen bases as "made/attempted" (e.g. "20/24") instead of separate
@@ -7274,9 +7371,16 @@
     if (!outs) return '&#8212;';
     return ((baseOnBalls + hits) * 3 / outs).toFixed(2);
   }
+  // Numeric K%-BB%, or null if no batters faced -- split out so the
+  // Players tab's sortable list can sort by the real value instead of
+  // parsing formatKBB's "12.3%" string back apart.
+  function rawKBB(strikeOuts, baseOnBalls, battersFaced) {
+    if (!battersFaced) return null;
+    return ((strikeOuts - baseOnBalls) / battersFaced) * 100;
+  }
   function formatKBB(strikeOuts, baseOnBalls, battersFaced) {
-    if (!battersFaced) return '&#8212;';
-    return `${(((strikeOuts - baseOnBalls) / battersFaced) * 100).toFixed(1)}%`;
+    const value = rawKBB(strikeOuts, baseOnBalls, battersFaced);
+    return value == null ? '&#8212;' : `${value.toFixed(1)}%`;
   }
 
   // Mirrors collapseCareerByYear, but for pitching: sums innings as outs
@@ -7331,6 +7435,159 @@
         <thead><tr><th>Year</th><th>Team</th><th>G</th><th>IP</th><th>ERA</th><th>WHIP</th><th>K%-BB%</th><th>SO</th><th>BB</th></tr></thead>
         <tbody>${rows.join('')}</tbody>
       </table></div>`;
+  }
+
+  // Players tab's browsable list -- every player with a current-season stat
+  // line in this group, unfiltered (the API has no server-side batting-
+  // title/ERA-title qualifier param as far as this file uses it). Filtered
+  // down to qualified players client-side by renderPlayerListPanel using
+  // getLeagueSeasonInfo's teamGamesPlayed. Cached like standingsCache/
+  // hrLeadersCache (both success and failure) rather than fetchGameStats'
+  // isFinal split -- this is a browse list the user can just re-open the
+  // tab to refresh, not a value baked into a stat the rest of the session
+  // depends on staying fresh.
+  const seasonPlayerStatsCache = {};
+  async function getSeasonPlayerStats(group, season) {
+    const key = `${season}-${group}`;
+    if (seasonPlayerStatsCache[key] !== undefined) return seasonPlayerStatsCache[key];
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/stats?stats=season&group=${group}&sportId=1&season=${season}&limit=3000`);
+      const data = await res.json();
+      const splits = (data.stats && data.stats[0] && data.stats[0].splits) || [];
+      const rows = splits
+        .filter(s => s.player && s.player.id != null)
+        .map(s => ({
+          id: s.player.id,
+          name: s.player.fullName || '',
+          team: (s.team && teamNickname(s.team)) || '&#8212;',
+          stat: s.stat || {}
+        }));
+      seasonPlayerStatsCache[key] = rows;
+      return rows;
+    } catch (e) {
+      seasonPlayerStatsCache[key] = [];
+      return [];
+    }
+  }
+
+  // Column definitions for the Players tab's sortable list -- get() returns
+  // the raw sort value (a number, or a string for name/team; null/undefined
+  // sorts to the bottom regardless of direction) and render() the display
+  // string, so both a click-to-sort and the table body share one source of
+  // truth per column. ctx carries the one piece of per-render context a
+  // column's own row data can't supply: the season's league wOBA.
+  const BATTER_LIST_COLUMNS = [
+    { key: 'name', label: 'Player', dir: 'asc', get: r => r.name, render: r => r.name },
+    { key: 'team', label: 'Team', dir: 'asc', get: r => r.team, render: r => r.team },
+    { key: 'g', label: 'G', dir: 'desc', get: r => r.stat.gamesPlayed ?? null, render: r => r.stat.gamesPlayed ?? '&#8212;' },
+    { key: 'avg', label: 'AVG', dir: 'desc', get: r => r.stat.avg != null ? Number(r.stat.avg) : null, render: r => r.stat.avg ?? '&#8212;' },
+    { key: 'obp', label: 'OBP', dir: 'desc', get: r => r.stat.obp != null ? Number(r.stat.obp) : null, render: r => r.stat.obp ?? '&#8212;' },
+    { key: 'slg', label: 'SLG', dir: 'desc', get: r => r.stat.slg != null ? Number(r.stat.slg) : null, render: r => r.stat.slg ?? '&#8212;' },
+    { key: 'wobaPlus', label: 'wOBA+', dir: 'desc',
+      get: (r, ctx) => (ctx.leagueWoba ? wobaPlusValue(r.stat, ctx.leagueWoba) : null),
+      render: (r, ctx) => computeWOBAPlus(r.stat, ctx.leagueWoba) },
+    { key: 'hr', label: 'HR', dir: 'desc', get: r => r.stat.homeRuns ?? null, render: r => r.stat.homeRuns ?? '&#8212;' },
+    { key: 'rbi', label: 'RBI', dir: 'desc', get: r => r.stat.rbi ?? null, render: r => r.stat.rbi ?? '&#8212;' },
+    { key: 'sb', label: 'SB', dir: 'desc', get: r => r.stat.stolenBases ?? null, render: r => formatStolenBases(r.stat.stolenBases, r.stat.caughtStealing) }
+  ];
+  const PITCHER_LIST_COLUMNS = [
+    { key: 'name', label: 'Player', dir: 'asc', get: r => r.name, render: r => r.name },
+    { key: 'team', label: 'Team', dir: 'asc', get: r => r.team, render: r => r.team },
+    { key: 'g', label: 'G', dir: 'desc', get: r => r.stat.gamesPitched ?? r.stat.gamesPlayed ?? null, render: r => r.stat.gamesPitched ?? r.stat.gamesPlayed ?? '&#8212;' },
+    { key: 'ip', label: 'IP', dir: 'desc', get: r => ipToOuts(r.stat.inningsPitched), render: r => r.stat.inningsPitched ?? '&#8212;' },
+    { key: 'era', label: 'ERA', dir: 'asc', get: r => r.stat.era != null ? Number(r.stat.era) : null, render: r => r.stat.era ?? '&#8212;' },
+    { key: 'whip', label: 'WHIP', dir: 'asc', get: r => r.stat.whip != null ? Number(r.stat.whip) : null, render: r => r.stat.whip ?? '&#8212;' },
+    { key: 'kbb', label: 'K%-BB%', dir: 'desc',
+      get: r => rawKBB(r.stat.strikeOuts, r.stat.baseOnBalls, r.stat.battersFaced),
+      render: r => formatKBB(r.stat.strikeOuts, r.stat.baseOnBalls, r.stat.battersFaced) },
+    { key: 'so', label: 'SO', dir: 'desc', get: r => r.stat.strikeOuts ?? null, render: r => r.stat.strikeOuts ?? '&#8212;' },
+    { key: 'bb', label: 'BB', dir: 'asc', get: r => r.stat.baseOnBalls ?? null, render: r => r.stat.baseOnBalls ?? '&#8212;' }
+  ];
+
+  function compareListRows(a, b, column, dir, ctx) {
+    const av = column.get(a, ctx);
+    const bv = column.get(b, ctx);
+    if (av == null && bv == null) return 0;
+    if (av == null) return 1;
+    if (bv == null) return -1;
+    if (typeof av === 'string') return dir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+    return dir === 'asc' ? av - bv : bv - av;
+  }
+
+  function renderPlayerListTable(type, rows, sortKey, sortDir, ctx) {
+    const columns = type === 'pitching' ? PITCHER_LIST_COLUMNS : BATTER_LIST_COLUMNS;
+    const sortColumn = columns.find(c => c.key === sortKey) || columns[0];
+    const sorted = rows.slice().sort((a, b) => compareListRows(a, b, sortColumn, sortDir, ctx));
+    const headHtml = columns.map(c => {
+      const active = c.key === sortColumn.key;
+      const arrow = active ? (sortDir === 'asc' ? ' &#9650;' : ' &#9660;') : '';
+      return `<th data-sort-key="${c.key}"${active ? ' class="sorted"' : ''}>${c.label}${arrow}</th>`;
+    }).join('');
+    const bodyHtml = sorted.map(row => {
+      const cells = columns.map(c => `<td>${c.render(row, ctx)}</td>`).join('');
+      return `<tr class="player-list-row" data-player-id="${row.id}" data-player-name="${row.name}">${cells}</tr>`;
+    }).join('');
+    return `<div class="table-scroll"><table class="pitch-table player-list-table">
+        <thead><tr>${headHtml}</tr></thead>
+        <tbody>${bodyHtml}</tbody>
+      </table></div>`;
+  }
+
+  // rows === null means still loading; [] means loaded but nothing
+  // qualified. leagueWoba is only meaningful (and only fetched) for the
+  // batting list.
+  function renderPlayerListPanel(type, rows, sortKey, sortDir, leagueWoba) {
+    const bodyHtml = rows === null
+      ? '<div class="mlb-status-msg">Loading season stats&#8230;</div>'
+      : rows.length
+        ? renderPlayerListTable(type, rows, sortKey, sortDir, { leagueWoba })
+        : '<div class="pitch-empty">No qualified players found.</div>';
+    return `<div class="player-list">${bodyHtml}</div>`;
+  }
+
+  function renderPlayerListInto(rows, leagueWoba) {
+    const { type } = playerListState;
+    const { key, dir } = playerListSort[type];
+    playersBody.innerHTML = renderPlayerListPanel(type, rows, key, dir, leagueWoba);
+  }
+
+  // Standard batting-title/ERA-title qualification (3.1 PA / 1 IP per team
+  // game, prorated by how many games the team's actually played so far)
+  // rather than every player who's had a single plate appearance -- see
+  // getLeagueSeasonInfo for where teamGamesPlayed comes from. Approximates
+  // the real rule (which also lets a player who's short qualify if padding
+  // their PA with hitless at-bats would still lead the league) by skipping
+  // that edge case entirely.
+  function filterQualifiedPlayers(type, rows, teamGamesPlayed) {
+    if (!teamGamesPlayed) return rows;
+    if (type === 'pitching') {
+      const outsQualifier = teamGamesPlayed * 3;
+      return rows.filter(r => ipToOuts(r.stat.inningsPitched) >= outsQualifier);
+    }
+    const paQualifier = teamGamesPlayed * 3.1;
+    return rows.filter(r => (r.stat.plateAppearances || 0) >= paQualifier);
+  }
+
+  async function showPlayerList() {
+    const { type } = playerListState;
+    const cached = playerListCache[type];
+    if (cached.rows) {
+      renderPlayerListInto(cached.rows, cached.leagueWoba);
+      return;
+    }
+    const requestId = ++playerListRequestId;
+    const season = new Date().getFullYear();
+    renderPlayerListInto(null, null);
+    const group = type === 'pitching' ? 'pitching' : 'hitting';
+    const [allRows, leagueInfo] = await Promise.all([
+      getSeasonPlayerStats(group, season),
+      getLeagueSeasonInfo(season)
+    ]);
+    if (requestId !== playerListRequestId) return;
+    const rows = filterQualifiedPlayers(type, allRows, leagueInfo.teamGamesPlayed);
+    const leagueWoba = type === 'pitching' ? null : leagueInfo.woba;
+    playerListCache[type] = { rows, leagueWoba };
+    renderPlayerListInto(rows, leagueWoba);
   }
 
   function renderPlayerProfile(person, careerSplits, awardTags, leagueWobaBySeason) {
@@ -7485,7 +7742,7 @@
   Tabs.register('standings', { init: () => loadStandings(standingsDateInput.value) });
   Tabs.register('schedule', { init: () => { populateTeamSelect(scheduleTeamSelect, SCHEDULE_TEAM_KEY); loadTeamSchedule(scheduleTeamSelect.value); } });
   Tabs.register('roster', { init: () => { populateTeamSelect(rosterTabTeamSelect, ROSTER_TAB_TEAM_KEY); loadRosterTab(rosterTabTeamSelect.value); } });
-  Tabs.register('players');
+  Tabs.register('players', { init: () => showPlayerList() });
 
   const playerOverlay = document.getElementById('playerOverlay');
   const playerModalBody = document.getElementById('playerModalBody');
