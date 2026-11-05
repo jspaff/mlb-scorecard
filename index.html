@@ -3060,18 +3060,22 @@
       .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
       .map(([label, count]) => count > 1 ? `${label} ${count}x` : label);
   }
+  // Returns null on failure (vs. [] for a successful response with no
+  // records) so loadStandings can show a load error instead of the "not
+  // available for this date" empty state. Failures aren't cached -- today's
+  // standings can still change, and a transient error shouldn't stick.
   async function getStandings(season, date) {
     const key = `${season}-${date}`;
     if (standingsCache[key] !== undefined) return standingsCache[key];
     try {
       const url = `https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=${season}&date=${date}`;
       const res = await fetch(url);
+      if (!res.ok) return null;
       const data = await res.json();
       standingsCache[key] = data.records || [];
       return standingsCache[key];
     } catch (e) {
-      standingsCache[key] = [];
-      return [];
+      return null;
     }
   }
   // The leaders endpoint has no as-of-date filtering of its own (a bare
@@ -3082,13 +3086,15 @@
   // request, and re-rank locally. The pool is capped at 50, so a player
   // outside this season's top 50 who happened to be leading earlier in the
   // year wouldn't show up -- an accepted approximation given the endpoint's
-  // limits.
+  // limits. Same null-on-failure, never-cache-a-failure contract as
+  // getStandings.
   async function getHrLeaders(season, date) {
     const key = `${season}-${date}`;
     if (hrLeadersCache[key] !== undefined) return hrLeadersCache[key];
     try {
       const poolUrl = `https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=homeRuns&season=${season}&sportId=1&limit=50`;
       const poolRes = await fetch(poolUrl);
+      if (!poolRes.ok) return null;
       const poolData = await poolRes.json();
       const pool = (poolData.leagueLeaders && poolData.leagueLeaders[0] && poolData.leagueLeaders[0].leaders) || [];
       if (!pool.length) {
@@ -3098,6 +3104,7 @@
       const ids = pool.map(l => l.person.id).join(',');
       const statsUrl = `https://statsapi.mlb.com/api/v1/people?personIds=${ids}&hydrate=${encodeURIComponent(`stats(group=[hitting],type=[byDateRange],startDate=${season}-01-01,endDate=${date})`)}`;
       const statsRes = await fetch(statsUrl);
+      if (!statsRes.ok) return null;
       const statsData = await statsRes.json();
       const hrById = {};
       (statsData.people || []).forEach(p => {
@@ -3113,7 +3120,7 @@
       hrLeadersCache[key] = leaders;
       return leaders;
     } catch (e) {
-      return [];
+      return null;
     }
   }
   async function getPitcherGameLog(personId, season) {
@@ -6092,10 +6099,16 @@
       const season = dateStr.slice(0, 4);
       if (standingsView === 'homeruns') {
         const leaders = await getHrLeaders(season, dateStr);
-        standingsBody.innerHTML = `<div class="sheet">${renderHrLeaderboard(leaders, season)}</div>`;
+        standingsBody.innerHTML = leaders === null
+          ? apiErrorMsg('home run leaders')
+          : `<div class="sheet">${renderHrLeaderboard(leaders, season)}</div>`;
         return;
       }
       const records = await getStandings(season, dateStr);
+      if (records === null) {
+        standingsBody.innerHTML = apiErrorMsg('standings');
+        return;
+      }
       const content = standingsView === 'wildcard'
         ? renderWildcardContent(records)
         : renderStandingsContent(records);
@@ -7434,17 +7447,16 @@
   // line in this group, unfiltered (the API has no server-side batting-
   // title/ERA-title qualifier param as far as this file uses it). Filtered
   // down to qualified players client-side by renderPlayerListPanel using
-  // getLeagueSeasonInfo's teamGamesPlayed. Cached like standingsCache/
-  // hrLeadersCache (both success and failure) rather than fetchGameStats'
-  // isFinal split -- this is a browse list the user can just re-open the
-  // tab to refresh, not a value baked into a stat the rest of the session
-  // depends on staying fresh.
+  // getLeagueSeasonInfo's teamGamesPlayed. Returns null on failure (vs. []
+  // for a successful empty response) and, since season stats keep moving,
+  // only caches a success -- like standingsCache/hrLeadersCache.
   const seasonPlayerStatsCache = {};
   async function getSeasonPlayerStats(group, season) {
     const key = `${season}-${group}`;
     if (seasonPlayerStatsCache[key] !== undefined) return seasonPlayerStatsCache[key];
     try {
       const res = await fetch(`https://statsapi.mlb.com/api/v1/stats?stats=season&group=${group}&sportId=1&season=${season}&limit=3000`);
+      if (!res.ok) return null;
       const data = await res.json();
       const splits = (data.stats && data.stats[0] && data.stats[0].splits) || [];
       const rows = splits
@@ -7459,8 +7471,7 @@
       seasonPlayerStatsCache[key] = rows;
       return rows;
     } catch (e) {
-      seasonPlayerStatsCache[key] = [];
-      return [];
+      return null;
     }
   }
 
@@ -7590,6 +7601,10 @@
       getLeagueSeasonInfo(season)
     ]);
     if (requestId !== playerListRequestId) return;
+    if (allRows === null) {
+      playersBody.innerHTML = apiErrorMsg('season stats');
+      return;
+    }
     const rows = filterQualifiedPlayers(type, allRows, leagueInfo.teamGamesPlayed);
     const leagueWoba = type === 'pitching' ? null : leagueInfo.woba;
     playerListCache[type] = { rows, leagueWoba };
