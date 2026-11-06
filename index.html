@@ -2652,6 +2652,14 @@
      fixed column width rather than stretched across the sheet. */
   .pp-recent { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 22px; }
   @container (min-width: 900px) { .pp-recent { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+  /* Widest sheets: the five cards stack in a column beside the log and
+     stay in view (just under the sticky tab header, see --tab-header-h)
+     while the season scrolls past. Below this width a side column would
+     squeeze the log, so the five-across row above takes over. */
+  @container (min-width: 1150px) {
+    .pp-gl { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 22px; align-items: start; }
+    .pp-gl .pp-recent { grid-template-columns: 1fr; margin-bottom: 0; position: sticky; top: calc(var(--tab-header-h, 0px) + 12px); }
+  }
   /* A flex column, not a plain block: a <button> centers its content
      vertically by default, and cards in a row are stretched to the
      tallest one, so shorter cards would otherwise float down. */
@@ -8552,8 +8560,8 @@
     }
     const cols = pitcher ? 9 : 12;
     const body = groups.map(grp => `<tr class="pp-month"><td colspan="${cols}"><span class="pp-month-name">${grp.label}</span><span class="pp-month-total">${total(grp)}</span></td></tr>${grp.games.map(row).join('')}`).join('');
-    return `${recent}
-      <div class="table-scroll"><table class="pitch-table pp-table pp-log${pitcher ? ' is-pitcher' : ''}"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+    return `<div class="pp-gl">${recent}
+      <div class="table-scroll pp-gl-log"><table class="pitch-table pp-table pp-log${pitcher ? ' is-pitcher' : ''}"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div></div>`;
   }
 
   // ---- Splits ----
@@ -8862,7 +8870,10 @@
   Tabs.register('standings', { init: () => loadStandings(standingsDateInput.value) });
   Tabs.register('schedule', { init: () => { populateTeamSelect(scheduleTeamSelect, SCHEDULE_TEAM_KEY); loadTeamSchedule(scheduleTeamSelect.value); } });
   Tabs.register('roster', { init: () => { populateTeamSelect(rosterTabTeamSelect, ROSTER_TAB_TEAM_KEY); loadRosterTab(rosterTabTeamSelect.value); } });
-  Tabs.register('players', { init: () => showPlayerList() });
+  // onShow keeps --tab-header-h current for this tab's own header height
+  // (its controls row differs from the Scorecard's), which the Game Log's
+  // sticky recent-games column reads.
+  Tabs.register('players', { init: () => showPlayerList(), onShow: syncSidebarOffsets });
 
   const playerOverlay = document.getElementById('playerOverlay');
   const playerModalBody = document.getElementById('playerModalBody');
