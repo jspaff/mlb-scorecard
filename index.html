@@ -1359,10 +1359,10 @@
      for Safari's wider text rendering. */
   .player-filters {
     display: grid;
-    grid-template-columns: 84px 84px 160px 116px 116px;
+    grid-template-columns: 72px 72px 140px 104px 104px;
     grid-template-areas: "season league team pos pool";
-    gap: 10px 12px;
-    padding-bottom: 14px;
+    gap: 12px 22px;
+    padding-bottom: 16px;
     margin-bottom: 12px;
     border-bottom: 1px solid var(--paper-line);
   }
@@ -1371,15 +1371,21 @@
   .player-filter-team { grid-area: team; }
   .player-filter-pos { grid-area: pos; }
   .player-filter-pool { grid-area: pool; }
-  .player-filter { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .player-filter { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
   .player-filter-label {
     font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 11px;
-    letter-spacing: 0.06em;
+    font-weight: 600;
+    font-size: 10px;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--ink-soft);
   }
+  /* Written-in fields on a scorecard line rather than boxed controls --
+     these sit inside a .sheet that already frames them, so five more
+     bordered boxes read as noise. The thin rule and chevron still mark
+     each one as something to pick. A choice left at its default ("All",
+     "Both", "Qualified") drops to the softer ink so the filters that are
+     actually narrowing the list are the ones that stand out. */
   .player-filter select {
     width: 100%;
     max-width: none;
@@ -1388,8 +1394,28 @@
     white-space: nowrap;
     text-overflow: ellipsis;
     cursor: pointer;
+    text-transform: none;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    color: var(--ink);
+    background-color: transparent;
+    border: none;
+    border-bottom: 1px solid var(--paper-line);
+    padding: 4px 18px 5px 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6' viewBox='0 0 9 6'%3E%3Cpath d='M1 1l3.5 3.5L8 1' fill='none' stroke='%23c3c8bb' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-position: right 2px center;
+    transition: border-color 0.15s ease, color 0.15s ease;
   }
-  .player-filter select:hover { border-color: var(--ink-soft); }
+  .player-filter select.is-default { color: var(--ink-soft); }
+  .player-filter select option { text-transform: none; color: var(--ink); }
+  .player-filter select:hover { border-bottom-color: var(--ink-soft); color: var(--ink); }
+  .player-filter select:focus { outline: none; }
+  .player-filter select:focus-visible {
+    color: var(--ink);
+    border-bottom-color: var(--gold);
+    box-shadow: 0 1px 0 var(--gold);
+  }
   .player-list-count {
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
@@ -1403,11 +1429,10 @@
      a double-width slot below beside Position. */
   @media (max-width: 520px) {
     .player-filters {
-      grid-template-columns: minmax(68px, 0.8fr) minmax(64px, 0.8fr) minmax(0, 1.4fr);
+      grid-template-columns: minmax(64px, 0.8fr) minmax(60px, 0.8fr) minmax(0, 1.4fr);
       grid-template-areas: "season league pool" "team team pos";
-      gap: 10px;
+      gap: 12px 16px;
     }
-    .player-filter select { padding-left: 8px; padding-right: 22px; background-position: right 8px center; }
   }
   .roster-row {
     display: flex;
@@ -7806,10 +7831,14 @@
       </table></div>`;
   }
 
-  function renderFilterSelect(id, label, options, value) {
+  // defaultValue is what the filter starts at -- a select still showing it
+  // gets .is-default and recedes (see .player-filter select). Season has
+  // none, since some season is always being narrowed to.
+  function renderFilterSelect(id, label, options, value, defaultValue) {
     const opts = options.map(([v, text]) => `<option value="${v}"${String(v) === String(value) ? ' selected' : ''}>${text}</option>`).join('');
     const filter = id.replace('playerFilter', '').toLowerCase();
-    return `<label class="player-filter player-filter-${filter}"><span class="player-filter-label">${label}</span><select id="${id}" data-filter="${filter}">${opts}</select></label>`;
+    const isDefault = defaultValue !== undefined && String(value) === String(defaultValue);
+    return `<label class="player-filter player-filter-${filter}"><span class="player-filter-label">${label}</span><select id="${id}" data-filter="${filter}"${isDefault ? ' class="is-default"' : ''}>${opts}</select></label>`;
   }
 
   // Team choices come from the loaded rows themselves rather than the
@@ -7829,10 +7858,10 @@
     const posOptions = type === 'pitching' ? PITCHER_POSITION_FILTERS : BATTER_POSITION_FILTERS;
     return `<div class="player-filters">
       ${renderFilterSelect('playerFilterSeason', 'Season', seasons, season)}
-      ${renderFilterSelect('playerFilterLeague', 'League', [['all', 'Both'], [AL_LEAGUE_ID, 'AL'], [NL_LEAGUE_ID, 'NL']], league)}
-      ${renderFilterSelect('playerFilterTeam', 'Team', teamOptions, team)}
-      ${renderFilterSelect('playerFilterPos', 'Position', posOptions, pos)}
-      ${renderFilterSelect('playerFilterPool', 'Players', [['qualified', 'Qualified'], ['all', 'All']], pool)}
+      ${renderFilterSelect('playerFilterLeague', 'League', [['all', 'Both'], [AL_LEAGUE_ID, 'AL'], [NL_LEAGUE_ID, 'NL']], league, 'all')}
+      ${renderFilterSelect('playerFilterTeam', 'Team', teamOptions, team, 'all')}
+      ${renderFilterSelect('playerFilterPos', 'Position', posOptions, pos, 'all')}
+      ${renderFilterSelect('playerFilterPool', 'Players', [['qualified', 'Qualified'], ['all', 'All']], pool, 'qualified')}
     </div>`;
   }
 
