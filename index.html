@@ -5841,6 +5841,14 @@
   function savantVideoUrl(playId) {
     return playId ? `https://baseballsavant.mlb.com/sporty-videos?playId=${playId}` : null;
   }
+  // A Watch link's attributes: its Savant href (kept for open-in-new-tab)
+  // plus what the clip popup needs to play it in the app instead -- see
+  // the data-clip-play-id click handler. gameLink: false where the link
+  // already sits on that game's scorecard.
+  function clipWatchAttrs(videoUrl, label, { gameLink = true } = {}) {
+    const playId = new URL(videoUrl).searchParams.get('playId');
+    return `href="${videoUrl}" target="_blank" rel="noopener noreferrer" data-clip-play-id="${playId}" data-clip-label="${label}"${gameLink ? '' : ' data-clip-no-game'}`;
+  }
 
   const gameStatsCache = {};
 
@@ -5892,7 +5900,7 @@
   function renderHomeRunRow(hr) {
     const grandSlamLabel = hr.isGrandSlam ? '<div class="hr-grand-slam-label">Grand Slam</div>' : '';
     const distanceHtml = hr.distance != null ? `<div class="hr-distance">${Math.round(hr.distance)} ft</div>` : '';
-    const watchHtml = hr.videoUrl ? `<a class="hr-watch" href="${hr.videoUrl}" target="_blank" rel="noopener noreferrer">Watch &#9654;</a>` : '';
+    const watchHtml = hr.videoUrl ? `<a class="hr-watch" ${clipWatchAttrs(hr.videoUrl, `Home Run &#183; ${hr.batterName}`)}>Watch &#9654;</a>` : '';
     return `
       <div class="hr-row${hr.isGrandSlam ? ' is-grand-slam' : ''}">
         <div class="hr-main">
@@ -6549,10 +6557,10 @@
     }
   }
 
-  function renderPlayOfGame(playOfGame) {
+  function renderPlayOfGame(playOfGame, onItsScorecard) {
     if (!playOfGame) return '';
     const watchHtml = playOfGame.videoUrl
-      ? `<a class="pog-watch" href="${playOfGame.videoUrl}" target="_blank" rel="noopener noreferrer">Watch &#9654;</a>`
+      ? `<a class="pog-watch" ${clipWatchAttrs(playOfGame.videoUrl, 'Play of the Game', { gameLink: !onItsScorecard })}>Watch &#9654;</a>`
       : '';
     return `
       <div class="pog-section">
@@ -6580,11 +6588,11 @@
       </div>`;
   }
 
-  function renderGameHighlights(playOfGame, leaders) {
+  function renderGameHighlights(playOfGame, leaders, onItsScorecard) {
     if (!playOfGame && !leaders.length) {
       return `<div class="pog-section"><div class="potg-loading">Highlights unavailable for this game.</div></div>`;
     }
-    return renderPlayOfGame(playOfGame) + renderPlayersOfTheGame(leaders);
+    return renderPlayOfGame(playOfGame, onItsScorecard) + renderPlayersOfTheGame(leaders);
   }
 
   // getVenueInfo is cached by venue id, so this is cheap on repeat opens of
@@ -6603,7 +6611,7 @@
     if (requestId !== gameSummaryRequestId) return;
     if (includeHighlights) {
       const wpaEl = document.getElementById(`wpaLeaders-${game.gamePk}`);
-      if (wpaEl) wpaEl.outerHTML = renderGameHighlights(playOfGame, leaders);
+      if (wpaEl) wpaEl.outerHTML = renderGameHighlights(playOfGame, leaders, game.hideScorecardCta);
     }
     if (!game.linescore) {
       const boxEl = document.getElementById(`boxScore-${game.gamePk}`);
@@ -7549,7 +7557,7 @@
     return `
       <div class="pitch-header">${c.batterName || 'Batter'}</div>
       <div class="pitch-subheader">vs ${c.pitcherFullName || 'pitcher'}</div>
-      ${c.videoUrl ? `<a class="pog-watch atbat-watch" href="${c.videoUrl}" target="_blank" rel="noopener noreferrer" data-clip-play-id="${new URL(c.videoUrl).searchParams.get('playId')}" data-clip-label="${c.batterName || ''}${c.pitcherFullName ? ` vs ${c.pitcherFullName}` : ''}">Watch &#9654;</a>` : ''}
+      ${c.videoUrl ? `<a class="pog-watch atbat-watch" ${clipWatchAttrs(c.videoUrl, `${c.batterName || ''}${c.pitcherFullName ? ` vs ${c.pitcherFullName}` : ''}`, { gameLink: false })}>Watch &#9654;</a>` : ''}
       ${locationHtml}
       ${rows}
       ${reviewsHtml}
@@ -9692,17 +9700,18 @@
     });
   }
 
-  // The Scorecard's at-bat Watch links (in the at-bat popup and the wide
-  // layout's sidebar) keep their Savant href, so a long-press or
-  // middle-click can still open it in a new tab; a plain click plays the
-  // clip here instead.
+  // Every Watch link (the Scorecard's at-bats, the Highlights tab's home
+  // runs, the game summary's Play of the Game) keeps its Savant href, so a
+  // long-press or middle-click can still open it in a new tab; a plain
+  // click plays the clip here instead. A link inside the game summary
+  // popup also keeps that popup open beneath the clip.
   document.getElementById('mlb-root').addEventListener('click', (e) => {
-    const watch = e.target.closest('a.atbat-watch[data-clip-play-id]');
+    const watch = e.target.closest('a[data-clip-play-id]');
     if (!watch || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     e.preventDefault();
     showClipModal(watch.dataset.clipPlayId, {
       head: `<div class="cv-head"><span class="cv-result">${watch.dataset.clipLabel || ''}</span></div>`,
-      gameLink: false
+      gameLink: !('clipNoGame' in watch.dataset)
     });
   });
 
