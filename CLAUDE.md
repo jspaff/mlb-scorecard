@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A self-contained HTML app (`index.html`, ~4,700 lines) implementing a live MLB scorecard widget styled after a traditional paper scorecard, installable as a PWA on mobile home screens. There is no backend, no build step, and no dependencies — all data comes from the public MLB Stats API, fetched directly from the browser at runtime.
+A self-contained HTML app (`index.html`, ~9,300 lines) implementing a live MLB scorecard widget styled after a traditional paper scorecard, installable as a PWA on mobile home screens. There is no backend, no build step, and no dependencies — all data comes from the public MLB Stats API, fetched directly from the browser at runtime.
 
-The whole page is one file: `<style>` (lines ~9-1471), then the markup (`#mlb-root` and its tab panels/overlays), then a single `<script>` IIFE (from ~1592 to the end) containing all the JS. There is no test suite, linter, or package manager config in this repo.
+The whole page is one file: `<style>` (lines ~18-2985), then the markup (`#mlb-root` and its tab panels/overlays), then a single `<script>` IIFE (from ~3153 to the end) containing all the JS. There is no test suite, linter, or package manager config in this repo.
 
 Alongside `index.html` sit the PWA support files: `manifest.json` (name, theme colors, icons), `sw.js` (an app-shell service worker — same-origin GET requests only; it never touches `statsapi.mlb.com` or Google Fonts, so it can't go stale on live data), and `icons/` (generated PNGs, see `sizes` in `manifest.json`). These are separate files by necessity (a manifest must be linked, a service worker must be its own script with its own scope) — the JS/CSS/markup itself stays single-file.
 
@@ -20,17 +20,37 @@ Whenever a Claude Code session edits `index.html` (or `sw.js`/`manifest.json`), 
 
 ## Structure
 
-The page is scoped under `#mlb-root` with a set of CSS custom properties (`--paper`, `--ink`, `--gold`, `--brick`, `--frame`) defining the vintage scorecard palette in `:root`. The `PALETTE` JS constant near the top of the script (`const PALETTE = { ink, gold, brick, ball, paper, gray }`) mirrors those same colors for the handful of SVG strings that can't reference a CSS variable directly — if you change the palette, update both places.
+The page is scoped under `#mlb-root` with a set of CSS custom properties (`--paper`, `--ink`, `--gold`, `--brick`, `--frame`) defining the vintage scorecard palette in `:root`. The `PALETTE` JS constant near the top of the script (`const PALETTE = { ink, inkSoft, gold, brick, ball, paper, paperLine, gray, startMuted }`) mirrors those same colors for the handful of SVG strings that can't reference a CSS variable directly — if you change the palette, update both places.
 
 ### Tabs
 
-Six tabs — Scorecard, Highlights, Standings, Schedule, Roster, Players — are plain markup (`data-tab-panel` / `data-tab-controls` attributes) driven by a small hand-rolled router near the bottom of the script (the `Tabs` IIFE: `register`/`switchTo`/`init`). Each tab is registered with an optional `init` (runs once, on first activation) and `onShow` (runs every time the tab becomes active). The active tab is also mirrored into the URL hash, and `Tabs.init('scorecard')` makes Scorecard the default on load. Adding a new tab means a `register()` call plus a button + panel in the HTML — there's no routing framework to wire up.
+Six tabs — Scorecard, Highlights, Standings, Schedule, Roster, Players — are plain markup (`data-tab-panel` / `data-tab-controls` attributes) driven by a small hand-rolled router near the bottom of the script (the `Tabs` IIFE: `register`/`switchTo`/`init`/`current`). Each tab is registered with an optional `init` (runs once, on first activation) and `onShow` (runs every time the tab becomes active). The active tab is also mirrored into the URL hash, and `Tabs.init('scorecard')` makes Scorecard the default on load. Adding a new tab means a `register()` call plus a button + panel in the HTML — there's no routing framework to wire up.
+
+`.tab-header` is sticky, and its real height (it varies by tab, since each tab has its own controls row) is kept in the `--tab-header-h` custom property on `#mlb-root` by `syncSidebarOffsets` — on resize, on any change to the header's own size (a `ResizeObserver`, since web fonts landing or a controls row wrapping changes it without a resize), and on showing the Scorecard and Players tabs. Anything else that sticks below the header (the Scorecard sidebar, the Game Log's column heads and recent-games column) reads that property rather than hard-coding an offset.
+
+### History and the Back button
+
+The app takes part in browser history so the phone's Back button behaves like an app's: it undoes the last drill-in rather than leaving the app. The model, in the block right after the `Tabs` IIFE:
+
+- **Drill-ins push an entry** describing the screen they open — `navPush({ tab, ... })` records the scroll position on the entry being left, then pushes the new one. Opening a player pushes `{ tab: 'players', profile, from, depth }` (`from` is `'list'` or `'other'`, `depth` how many players deep through search); opening a game from elsewhere (`jumpToScorecardGame`) pushes `{ tab: 'scorecard', game: { date, pk } }`; opening a popup pushes the current screen's state plus `modals` (see below).
+- **Tab-bar switches replace** the current entry (`Tabs.switchTo` does a `replaceState`) rather than pushing, so Back doesn't walk through every tab that was tapped.
+- **One `popstate` handler restores** whatever entry Back or Forward lands on: popups first (closing any the entry doesn't list), then the tab (`Tabs.switchTo(id, { history: false })` — the browser has already set the URL), the Players tab's list or profile, the Scorecard's game, and the scroll position.
+- Navigating *from another tab* (`jumpToPlayerProfile`, `jumpToScorecardGame`) pushes its entry *before* switching tabs, so the tab being left keeps its own entry and Back returns to it.
+- A profile's back link and the Batters/Pitchers toggle go "to the list" through `leaveProfileForList`: `history.go(-depth)` when the profile was opened from the list (so Back and the link agree), otherwise a `replaceState` to the list in place.
+
+When adding a new drill-in, push an entry for it with `navPush` and teach the `popstate` handler to restore it; when adding a new way to *switch* screens within a tab (a date change, a filter), don't push one.
+
+### Players tab
+
+`playersBody` shows either the sortable list or one player's profile — `playersView` (`'list'`/`'profile'`) says which, and `rerenderPlayerProfile` is a no-op unless it's `'profile'`, so a slow profile fetch can't redraw over the list after the user has gone back. The list's filters (`playerListState`) apply client-side over cached rows except season and pool, which pick what's fetched (`playerListCacheKey`). The profile follows the list's season; its data arrives in stages (`showPlayerProfile` → person/career/awards, then `loadProfileSeason` → the season detail and the Overview board, then — only once the Game Log tab is opened — `loadProfileRecent` for the last five games' play-by-play), each stage guarded by `playerProfileRequestId` and each kept in a `lastProfile*` variable that `renderPlayerProfile` reads. Ranks and gold on the Overview board are against that season's qualified pool — the same rows, and so the same count, the list shows (`buildProfileBoard`).
 
 The Highlights tab is `daily` internally (`data-tab="daily"`, `dailyBody`, `dailyPollTimer`, etc.) — it used to be called "Daily" and show a grid of the day's games before that moved to the Scorecard tab's own game strip (see below), leaving Highlights with just its Home Runs/Strikeouts views. The user-facing rename wasn't pushed through the internal identifiers; match that if you touch this code.
 
 ### Overlays / modals
 
-Pitch detail, roster, spray chart, player, game summary, and team win/loss chart each have their own overlay `<div>`, a `show*Modal`/`hide*Modal` pair, and are dismissed via close button, backdrop click, or the global `Escape` keydown handler at the bottom of the script.
+Pitch detail, roster, spray chart, player, game summary, team win/loss chart, and the Scorecard's game-strip list each have their own overlay `<div>`, a `show*Modal`/`hide*Modal` pair, and are dismissed via close button, backdrop click, the global `Escape` keydown handler at the bottom of the script — or the Back button.
+
+Every overlay must open through `openOverlay(el)` and close through `closeOverlay(el)` (`hidePitchPopup` wraps it), never by toggling the `open` class directly — that's what keeps them in step with history. `openOverlay` pushes an entry listing the popups open over the screen (`state.modals`, mirrored in memory as `modalStack`), so Back closes the top one; `closeOverlay`, used by every other way of closing one, steps history back to match (batched, so `Escape` closing a stack is a single `history.go(-n)`), which leaves no dead entries behind. Navigation *out* of a popup (View Full Profile, View Full Scorecard, a Players of the Game name) has to wait for that step back to land before pushing its own entry, or the pending step would pop the new one — wrap it in `whenModalHistorySettled(fn)`, as `jumpToPlayerProfile` and `jumpToScorecardGame` do.
 
 ### Live polling
 
@@ -44,6 +64,8 @@ The Scorecard tab turns the live game feed's play-by-play (`allPlays`) into trad
 - `getPlayCode(play)` derives shorthand like `6-3`, `F8`, `K`, `DP` from the event name and fielder sequence.
 - `diamondSVG(...)` draws the small diamond glyph per plate appearance (base-runner lines, out ticks, HR/K shading, special-play labels like `CS`/`PO`).
 - `buildTeamRows(...)` / `renderTeamTable(...)` assemble the per-inning batting grid from the boxscore and play list.
+
+The spray charts (the Scorecard's per-team chart and a hitter's profile chart) share `renderBattedBallFieldSVG`, which draws the field in the API's own hit-coordinate space (`hitData.coordinates`): home plate at `SPRAY_HOME` (125.42, 198.27), `SPRAY_FT_PER_UNIT` ≈ 2.495 ft per unit — a convention checked against MLB's own `totalDistance` on fly balls and home runs. Keep the field and the dots in those same units, so a 400-ft home run lands just past a 400-ft fence.
 
 ### Data flow and caching
 
