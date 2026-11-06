@@ -2631,7 +2631,6 @@
 
   .pp-table td, .pp-table th { white-space: nowrap; }
   .pp-table td.pp-soft { color: var(--ink-soft); }
-  .pp-table tr.pp-group td { font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); border-bottom: 0; padding-top: 12px; }
   .pp-game-link {
     padding: 0;
     background: none;
@@ -2759,6 +2758,27 @@
   .pp-month-name { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); }
   .pp-month-total { margin-left: 12px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
 
+
+  /* Splits tab: OPS bars on one scale, with a dashed tick at the season
+     OPS (see renderProfileSplits). Hitters get the spray chart beside the
+     bars on a wide sheet, above them on a narrow one. */
+  .pp-spl { display: grid; grid-template-columns: 1fr; gap: 22px; }
+  @container (min-width: 820px) { .pp-spl { grid-template-columns: minmax(300px, 420px) minmax(0, 1fr); gap: 32px; align-items: start; } }
+  .pp-spl .player-spray-section { margin-top: 0; }
+  .pp-splits { max-width: 640px; }
+  .pp-splits-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 4px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); }
+  .pp-splits-key { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; letter-spacing: 0.04em; text-transform: none; font-size: 11px; color: var(--ink-soft); }
+  .pp-splits-key i { width: 0; height: 12px; border-left: 1.5px dashed var(--ink); }
+  .pp-sgroup { margin-top: 12px; }
+  .pp-sgroup-name { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); padding-bottom: 4px; border-bottom: 1px solid var(--paper-line); margin-bottom: 2px; }
+  .pp-srow { display: grid; grid-template-columns: 68px minmax(0, 1fr) 44px 52px; align-items: center; gap: 10px; padding: 5px 0; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 12px; font-variant-numeric: tabular-nums; }
+  .pp-slabel { color: var(--ink); white-space: nowrap; }
+  .pp-sbar { position: relative; height: 12px; background: rgba(0, 0, 0, 0.22); border-radius: 2px; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4); }
+  .pp-sbar > i:first-child { position: absolute; left: 0; top: 0; bottom: 0; background: var(--ink-soft); border-radius: 0 3px 3px 0; }
+  .pp-sb-season { position: absolute; top: -3px; bottom: -3px; width: 0; border-left: 1.5px dashed var(--ink); }
+  .pp-sops { text-align: right; color: var(--ink); }
+  .pp-ssample { text-align: right; color: var(--ink-soft); font-size: 10.5px; white-space: nowrap; }
+
   .pp-chart { position: relative; }
   .pp-chart.is-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .pp-chart svg { display: block; width: 100%; height: auto; }
@@ -2782,7 +2802,7 @@
   }
   .pp-chart-tip.is-on { opacity: 1; }
 
-  /* The profile's Spray tab -- reuses the same
+  /* The spray chart on a hitter's profile Splits tab -- reuses the same
      .spray-card/.spray-header/.spray-legend look as the Scorecard tab's
      per-game chart, but capped to a max-width and centered so it doesn't
      blow up to the full width of the sheet on a wide screen. */
@@ -4522,11 +4542,11 @@
     </div>`;
   }
 
-  // Player profile's current-season spray chart, shown below the Career
-  // table. Same field/dot drawing and .spray-card/.spray-header/.spray-legend
-  // look as the Scorecard tab's per-game chart above -- always the current
-  // season (no year picker), and no per-dot filtering since there's only
-  // ever one batter. Sizing (bigger than a corner widget, but capped so it
+  // A hitter's spray chart for the profile's season, on its Splits tab.
+  // Same field/dot drawing and .spray-card/.spray-header/.spray-legend
+  // look as the Scorecard tab's per-game chart above -- no year picker of
+  // its own (it follows the profile's season), and no per-dot filtering
+  // since there's only ever one batter. Sizing (bigger than a corner widget, but capped so it
   // doesn't take over the sheet on a wide screen) is handled by the
   // .player-spray-section rule in the stylesheet.
   function renderPlayerSprayWidget(state) {
@@ -8565,29 +8585,43 @@
   }
 
   // ---- Splits ----
-  // March is only the season's first few days, so it folds into April as
-  // one Mar/Apr row (summed from counting stats, see sumStatLines).
+  // OPS only (opponents' OPS for a pitcher): one bar per split on a shared
+  // scale, with a dashed mark at his full-season OPS so each split reads
+  // as above or below his norm. PA (batters faced) stays as a small soft
+  // count so a thin sample is visible. March is only the season's first
+  // few days, so it folds into April as one Mar/Apr row (summed from
+  // counting stats, see sumStatLines).
   const SPLIT_MONTHS = ['May', 'June', 'July', 'August', 'September'];
-  function renderProfileSplits(splits, pitcher) {
+  function renderProfileSplits(splits, pitcher, seasonStat) {
     const marApr = [splits.March, splits.April].filter(Boolean);
     const groups = [
       ['Platoon', [[pitcher ? 'vs LHB' : 'vs LHP', splits['vs Left']], [pitcher ? 'vs RHB' : 'vs RHP', splits['vs Right']]]],
       ['Venue', [['Home', splits['Home Games']], ['Away', splits['Away Games']]]],
       ['By month', [['Mar/Apr', marApr.length ? sumStatLines(marApr) : null], ...SPLIT_MONTHS.map(m => [m, splits[m]])]]
-    ].map(([name, rows]) => [name, rows.filter(([, s]) => s)]).filter(([, rows]) => rows.length);
+    ].map(([name, rows]) => [name, rows.filter(([, st]) => st).map(([label, st]) => {
+      const ops = slashFromCounts(st).ops;
+      return { label, st, ops, value: Number(ops) || 0, sample: pitcher ? st.battersFaced : st.plateAppearances };
+    })]).filter(([, rows]) => rows.length);
     if (!groups.length) return '<div class="pitch-empty">No splits this season.</div>';
-    const head = pitcher
-      ? '<th>Split</th><th>BF</th><th>IP</th><th>ERA</th><th>Opp AVG</th><th>Opp OPS</th><th>K</th>'
-      : '<th>Split</th><th>PA</th><th>AVG</th><th>OBP</th><th>SLG</th><th>OPS</th><th>HR</th>';
-    const row = (label, s) => {
-      const r = slashFromCounts(s);
-      return pitcher
-        ? `<tr><td>${label}</td><td class="pp-soft">${s.battersFaced ?? 0}</td><td>${s.inningsPitched ?? '0.0'}</td><td>${formatERA(s.earnedRuns || 0, ipToOuts(s.inningsPitched))}</td><td>${r.avg}</td><td>${r.ops}</td><td>${s.strikeOuts ?? 0}</td></tr>`
-        : `<tr><td>${label}</td><td class="pp-soft">${s.plateAppearances ?? 0}</td><td>${r.avg}</td><td>${r.obp}</td><td>${r.slg}</td><td>${r.ops}</td><td>${s.homeRuns ?? 0}</td></tr>`;
-    };
-    return `<div class="table-scroll"><table class="pitch-table pp-table"><thead><tr>${head}</tr></thead><tbody>
-      ${groups.map(([name, rows]) => `<tr class="pp-group"><td colspan="7">${name}</td></tr>${rows.map(([l, s]) => row(l, s)).join('')}`).join('')}
-    </tbody></table></div>`;
+    const seasonOps = seasonStat ? slashFromCounts(seasonStat).ops : null;
+    const seasonValue = Number(seasonOps) || 0;
+    const top = Math.max(1, seasonValue, ...groups.flatMap(([, rows]) => rows.map(r => r.value)));
+    const scale = Math.ceil(top * 10) / 10;
+    const pct = v => `${Math.min(100, (v / scale) * 100).toFixed(1)}%`;
+    const mark = seasonValue ? `<i class="pp-sb-season" style="left:${pct(seasonValue)}"></i>` : '';
+    const sampleLabel = pitcher ? 'BF' : 'PA';
+    return `<div class="pp-splits">
+      <div class="pp-splits-head"><span>${pitcher ? 'Opponent OPS' : 'OPS'}</span>${seasonOps ? `<span class="pp-splits-key"><i></i>Season ${seasonOps}</span>` : ''}</div>
+      ${groups.map(([name, rows]) => `<div class="pp-sgroup">
+        <div class="pp-sgroup-name">${name}</div>
+        ${rows.map(r => `<div class="pp-srow">
+          <span class="pp-slabel">${r.label}</span>
+          <span class="pp-sbar"><i style="width:${pct(r.value)}"></i>${mark}</span>
+          <span class="pp-sops">${r.ops}</span>
+          <span class="pp-ssample">${r.sample ?? 0} ${sampleLabel}</span>
+        </div>`).join('')}
+      </div>`).join('')}
+    </div>`;
   }
 
   // ---- Starts chart ----
@@ -8652,7 +8686,7 @@
     const hasStarts = pitcher && detail && detail.gameLog.some(g => g.stat && g.stat.gamesStarted);
     return pitcher
       ? [['ov', 'Overview'], ...(hasStarts ? [['starts', 'Starts']] : []), ['log', 'Game Log'], ['spl', 'Splits'], ['car', 'Career']]
-      : [['ov', 'Overview'], ['log', 'Game Log'], ['spl', 'Splits'], ['car', 'Career'], ['spray', 'Spray']];
+      : [['ov', 'Overview'], ['log', 'Game Log'], ['spl', 'Splits'], ['car', 'Career']];
   }
 
   function renderProfileTabBody(tab, pitcher) {
@@ -8664,9 +8698,6 @@
       if (!yearSplits.length) return '<div class="pitch-empty">Career stats not available.</div>';
       return pitcher ? renderPitchingCareerTable(yearSplits) : renderCareerTable(yearSplits, lastProfileLeagueWoba || {});
     }
-    if (tab === 'spray') {
-      return playerSprayState.personId === Number(lastProfilePerson.id) ? renderPlayerSprayWidget(playerSprayState) : '';
-    }
     if (detail === undefined) return '<div class="mlb-status-msg">Loading season stats&#8230;</div>';
     if (detail === null) return apiErrorMsg('season stats');
     if (tab === 'ov') {
@@ -8675,7 +8706,12 @@
     }
     if (tab === 'starts') return renderStartsChart(profileStarts(detail.gameLog));
     if (tab === 'log') return renderProfileGameLog(detail.gameLog, pitcher);
-    return renderProfileSplits(detail.splits, pitcher);
+    // A hitter's Splits tab carries his spray chart beside the splits --
+    // where he hits the ball, next to how he hits by situation.
+    const splitsHtml = renderProfileSplits(detail.splits, pitcher, detail.seasonStat);
+    if (pitcher) return splitsHtml;
+    const spray = playerSprayState.personId === Number(lastProfilePerson.id) ? renderPlayerSprayWidget(playerSprayState) : '';
+    return `<div class="pp-spl">${spray ? `<div class="pp-spl-spray">${spray}</div>` : ''}<div class="pp-spl-splits">${splitsHtml}</div></div>`;
   }
 
   function renderPlayerProfile(person) {
