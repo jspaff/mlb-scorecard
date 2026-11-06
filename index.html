@@ -2712,13 +2712,18 @@
     .pp-recent .pp-rc { flex: 0 0 86%; max-width: 420px; scroll-snap-align: start; }
   }
 
-
   .pp-log td:nth-child(n+4), .pp-log th:nth-child(n+4) { text-align: center; }
   /* Date, opponent and result shrink to their content (width: 1% is the
-     table idiom for "as narrow as fits"), so the slack on a wide sheet
-     spreads across the stat columns instead of opening a gap after the
-     opponent. */
+     table idiom for "as narrow as fits"); on a wide sheet the Result
+     column then takes the slack instead (see below). */
   .pp-log td:nth-child(-n+3), .pp-log th:nth-child(-n+3) { width: 1%; padding-right: 16px; }
+  /* Wide sheets: the stat columns take a fixed, compact width and the
+     Result column absorbs the slack, so the stats sit together as one
+     block instead of each spreading to fill the sheet. */
+  @container (min-width: 700px) {
+    table.pitch-table.pp-log td:nth-child(3), table.pitch-table.pp-log th:nth-child(3) { width: auto; }
+    table.pitch-table.pp-log td:nth-child(n+4), table.pitch-table.pp-log th:nth-child(n+4) { width: 58px; padding-left: 4px; padding-right: 4px; }
+  }
   .pp-log td:nth-child(3) { font-variant-numeric: tabular-nums; }
   .pp-log .pp-opp-short { display: none; }
   /* Qualified as table.pitch-table.pp-log so these outrank the shared
@@ -8535,15 +8540,17 @@
       // 1B/2B/3B only on a wide sheet (see .pp-xbh) -- room the phone
       // doesn't have, and the hit breakdown the wide log otherwise lacked.
       const xbh = (label, v) => `<${label ? 'th' : 'td'} class="pp-xbh">${label || blank(v)}</${label ? 'th' : 'td'}>`;
-      head = `<th>Date</th><th>Opp</th><th></th><th>H-AB</th>${xbh('1B')}${xbh('2B')}${xbh('3B')}<th>HR</th><th>RBI</th><th>BB</th><th>K</th>`;
-      row = g => { const s = g.stat || {}; return `<tr><td>${dateCell(g)}</td><td class="pp-soft">${opp(g)}</td><td>${wl(g)}</td><td>${s.hits ?? 0}-${s.atBats ?? 0}</td>${xbh(null, (s.hits || 0) - (s.doubles || 0) - (s.triples || 0) - (s.homeRuns || 0))}${xbh(null, s.doubles)}${xbh(null, s.triples)}<td>${blank(s.homeRuns)}</td><td>${blank(s.rbi)}</td><td>${blank(s.baseOnBalls)}</td><td>${blank(s.strikeOuts)}</td></tr>`; };
+      // SB as made/attempted (formatStolenBases), blank with no attempts.
+      const sb = st => ((st.stolenBases || 0) + (st.caughtStealing || 0) ? formatStolenBases(st.stolenBases || 0, st.caughtStealing) : '');
+      head = `<th>Date</th><th>Opp</th><th>Result</th><th>H-AB</th>${xbh('1B')}${xbh('2B')}${xbh('3B')}<th>HR</th><th>RBI</th><th>BB</th><th>K</th>${xbh('SB')}`;
+      row = g => { const s = g.stat || {}; return `<tr><td>${dateCell(g)}</td><td class="pp-soft">${opp(g)}</td><td>${wl(g)}</td><td>${s.hits ?? 0}-${s.atBats ?? 0}</td>${xbh(null, (s.hits || 0) - (s.doubles || 0) - (s.triples || 0) - (s.homeRuns || 0))}${xbh(null, s.doubles)}${xbh(null, s.triples)}<td>${blank(s.homeRuns)}</td><td>${blank(s.rbi)}</td><td>${blank(s.baseOnBalls)}</td><td>${blank(s.strikeOuts)}</td><td class="pp-xbh">${sb(s)}</td></tr>`; };
       total = grp => { const t = sumStatLines(grp.games.map(g => g.stat || {})); const r = slashFromCounts(t); return `${grp.games.length} G &#183; ${r.avg} / ${r.obp} / ${r.slg}${t.homeRuns ? ` &#183; ${t.homeRuns} HR` : ''}`; };
     } else {
-      head = '<th>Date</th><th>Opp</th><th></th><th>IP</th><th>H</th><th>ER</th><th>BB</th><th>K</th><th>Pit</th>';
+      head = '<th>Date</th><th>Opp</th><th>Result</th><th>IP</th><th>H</th><th>ER</th><th>BB</th><th>K</th><th>Pit</th>';
       row = g => { const s = g.stat || {}; return `<tr><td>${dateCell(g)}</td><td class="pp-soft">${opp(g)}</td><td>${wl(g)}</td><td>${s.inningsPitched ?? '0.0'}</td><td>${blank(s.hits)}</td><td>${blank(s.earnedRuns)}</td><td>${blank(s.baseOnBalls)}</td><td>${blank(s.strikeOuts)}</td><td class="pp-soft">${s.numberOfPitches ?? ''}</td></tr>`; };
       total = grp => { const t = sumStatLines(grp.games.map(g => g.stat || {})); return `${grp.games.length} G &#183; ${t.inningsPitched} IP &#183; ${formatERA(t.earnedRuns, ipToOuts(t.inningsPitched))} ERA &#183; ${t.strikeOuts} K`; };
     }
-    const cols = pitcher ? 9 : 11;
+    const cols = pitcher ? 9 : 12;
     const body = groups.map(grp => `<tr class="pp-month"><td colspan="${cols}"><span class="pp-month-name">${grp.label}</span><span class="pp-month-total">${total(grp)}</span></td></tr>${grp.games.map(row).join('')}`).join('');
     return `${recent}
       <div class="table-scroll"><table class="pitch-table pp-table pp-log${pitcher ? ' is-pitcher' : ''}"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
