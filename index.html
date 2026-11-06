@@ -9071,7 +9071,28 @@
   // browser like the Stats API. Its numbers update overnight, never
   // mid-game, so a success is kept for the session; a failure isn't.
   const SAVANT = 'https://baseballsavant.mlb.com';
-  const DEFENSE_POOLS = [['7', 'LF', 'left fielders'], ['8', 'CF', 'center fielders'], ['9', 'RF', 'right fielders'], ['of', 'All OF', 'outfielders']];
+  // Which Defense tab a player gets, by his primary position's type: the
+  // positions to compare at (Savant's own position codes, plus the whole
+  // group), the board's second slot, and whether he has a catch board
+  // (catch stars are outfield only).
+  const DEFENSE_GROUPS = {
+    Outfielder: {
+      noun: 'outfield',
+      pools: [['7', 'LF', 'left fielders'], ['8', 'CF', 'center fielders'], ['9', 'RF', 'right fielders'], ['of', 'All OF', 'outfielders']],
+      second: 'arm',
+      catches: true
+    },
+    Infielder: {
+      noun: 'infield',
+      pools: [['3', '1B', 'first basemen'], ['4', '2B', 'second basemen'], ['5', '3B', 'third basemen'], ['6', 'SS', 'shortstops'], ['if', 'All IF', 'infielders']],
+      second: 'frv',
+      catches: false
+    }
+  };
+  function defenseGroupFor(person) {
+    const type = person && person.primaryPosition && person.primaryPosition.type;
+    return DEFENSE_GROUPS[type] || null;
+  }
   const STATCAST_FIRST_SEASON = 2016;
   // Savant's arm strength leaderboard comes back empty before this.
   const ARM_FIRST_SEASON = 2020;
@@ -9145,6 +9166,28 @@
     }
   }
 
+  // Fielding Run Value at one infield position ('3'..'6'), as an id ->
+  // runs map. Savant's position filter splits a player's runs by position
+  // (its qualified filter does nothing), so the infield as a whole is the
+  // sum of these -- see buildProfileDefense.
+  const savantFrvCache = {};
+  async function getSavantFrv(season, pos) {
+    const key = `${season}-${pos}`;
+    if (savantFrvCache[key]) return savantFrvCache[key];
+    try {
+      const res = await fetch(`${SAVANT}/leaderboard/fielding-run-value?gameType=Regular&seasonStart=${season}&seasonEnd=${season}&type=fielder&position=${pos}&csv=true`);
+      if (!res.ok) return null;
+      const byId = {};
+      parseCsv(await res.text()).forEach(r => {
+        if (r.total_runs !== '') byId[Number(r.id)] = Number(r.total_runs);
+      });
+      savantFrvCache[key] = byId;
+      return byId;
+    } catch (e) {
+      return null;
+    }
+  }
+
   // Every outfield catch opportunity of the player's most recent season,
   // each with Statcast's star rating (5 = a catch made 0-25% of the time).
   // Savant has no API for these; its player page embeds them as one
@@ -9208,32 +9251,40 @@
     }
   }
 
-  // OAA at each outfield position the player covered,
-  // plus all three combined, each ranked against Savant's qualified pool
-  // for that position (unranked if he isn't in it). Positions he never
-  // played are left out.
-  // Arm strength ranks against that same OAA-qualified pool (those of
-  // them with an arm reading there), so both slots share one denominator.
-  // A failed arm fetch only blanks the arm slot.
-  async function buildProfileDefense(personId, season) {
-    const [lists, arms] = await Promise.all([
-      Promise.all(DEFENSE_POOLS.flatMap(([pos]) => [getSavantOaa(season, pos, '0'), getSavantOaa(season, pos, 'q')])),
-      Number(season) >= ARM_FIRST_SEASON ? getSavantArm(season) : Promise.resolve(undefined)
+  // OAA at each position of the group the player covered, plus the group
+  // as a whole, each ranked against Savant's qualified pool for that
+  // position (unranked if he isn't in it). Positions he never played are
+  // left out. The second slot -- arm strength for outfielders, Fielding
+  // Run Value for infielders -- ranks against that same OAA-qualified pool
+  // (those of them with a reading there), so both slots share one
+  // denominator; a failed fetch for it only blanks that slot.
+  async function buildProfileDefense(personId, season, group) {
+    const positions = group.pools.map(([pos]) => pos);
+    const single = positions.slice(0, -1);
+    const [lists, arms, frvs] = await Promise.all([
+      Promise.all(positions.flatMap(pos => [getSavantOaa(season, pos, '0'), getSavantOaa(season, pos, 'q')])),
+      group.second === 'arm' && Number(season) >= ARM_FIRST_SEASON ? getSavantArm(season) : Promise.resolve(undefined),
+      group.second === 'frv' ? Promise.all(single.map(pos => getSavantFrv(season, pos))) : Promise.resolve(undefined)
     ]);
     if (lists.some(l => l === null)) return null;
+    const secondOf = (id, pos) => {
+      if (group.second === 'arm') return arms && arms[id] ? arms[id][pos] : null;
+      if (!frvs || frvs.some(f => f === null)) return null;
+      const parts = (single.includes(pos) ? [frvs[single.indexOf(pos)]] : frvs).map(f => f[id]).filter(v => v != null);
+      return parts.length ? Math.round(parts.reduce((a, b) => a + b, 0)) : null;
+    };
     const pools = {};
-    DEFENSE_POOLS.forEach(([pos], i) => {
+    group.pools.forEach(([pos], i) => {
       const all = lists[2 * i], qualified = lists[2 * i + 1];
       const row = all.find(r => r.id === personId);
       if (!row) return;
       const inPool = qualified.some(r => r.id === personId);
       const pool = qualified.map(r => ({ stat: r }));
       const rank = inPool ? rankInPool({ get: s => s.oaa }, { stat: row }, pool, {}) : null;
-      const armOf = id => (arms && arms[id] ? arms[id][pos] : null);
-      const arm = armOf(personId);
-      const armPool = qualified.filter(r => armOf(r.id) != null).map(r => ({ stat: { arm: armOf(r.id) } }));
-      const armRank = inPool && arm != null ? rankInPool({ get: s => s.arm }, { stat: { arm } }, armPool, {}) : null;
-      pools[pos] = { row, rank, arm, armRank };
+      const second = secondOf(personId, pos);
+      const secondPool = qualified.filter(r => secondOf(r.id, pos) != null).map(r => ({ stat: { v: secondOf(r.id, pos) } }));
+      const secondRank = inPool && second != null ? rankInPool({ get: s => s.v }, { stat: { v: second } }, secondPool, {}) : null;
+      pools[pos] = { row, rank, second, secondRank };
     });
     return pools;
   }
@@ -9249,15 +9300,16 @@
   function renderProfileDefense() {
     if (Number(lastProfileSeason) < STATCAST_FIRST_SEASON) return `<div class="pitch-empty">Statcast fielding starts in ${STATCAST_FIRST_SEASON}.</div>`;
     const def = lastProfileDefense;
+    const group = defenseGroupFor(lastProfilePerson);
     if (def === undefined) return '<div class="mlb-status-msg">Loading defense&#8230;</div>';
     if (def === null) return apiErrorMsg('defense stats');
-    const pools = DEFENSE_POOLS.filter(([pos]) => def[pos]);
-    if (!pools.length) return `<div class="pitch-empty">No ${lastProfileSeason} outfield defense.</div>`;
+    const pools = group.pools.filter(([pos]) => def[pos]);
+    if (!pools.length) return `<div class="pitch-empty">No ${lastProfileSeason} ${group.noun} defense.</div>`;
     if (!def[profileDefensePool]) {
       const primary = lastProfilePerson.primaryPosition && lastProfilePerson.primaryPosition.code;
       profileDefensePool = def[primary] ? primary : pools[0][0];
     }
-    const [, , poolNoun] = DEFENSE_POOLS.find(([pos]) => pos === profileDefensePool);
+    const [, , poolNoun] = group.pools.find(([pos]) => pos === profileDefensePool);
     const current = def[profileDefensePool];
     const toggle = `<div class="view-toggle pp-def-pools" role="group" aria-label="Compare against">${pools.map(([pos, label]) =>
       `<button type="button" class="view-toggle-btn${pos === profileDefensePool ? ' active' : ''}" data-def-pool="${pos}" aria-pressed="${pos === profileDefensePool}">${label}</button>`).join('')}</div>`;
@@ -9266,9 +9318,11 @@
       const badge = r ? `<span class="pp-rank" title="Rank among ${r.of} qualified ${poolNoun}">${r.tied ? 'T' : ''}${r.rank}/${r.of}</span>` : '';
       return `<div class="pp-stat${top ? ' is-top' : ''}"><span class="pp-painted">${label}</span><span class="pp-slot">${value}${badge}</span></div>`;
     };
-    const slots = slot('OAA', formatSigned(current.row.oaa), current.rank)
-      + (Number(lastProfileSeason) >= ARM_FIRST_SEASON ? slot('Arm mph', current.arm != null ? current.arm.toFixed(1) : '&#8212;', current.armRank) : '');
-    return `<div class="pp-def"><div class="pp-def-top">${slots}${toggle}</div>${renderCatchBoard()}</div>`;
+    let second = '';
+    if (group.second === 'arm' && Number(lastProfileSeason) >= ARM_FIRST_SEASON) second = slot('Arm mph', current.second != null ? current.second.toFixed(1) : '&#8212;', current.secondRank);
+    if (group.second === 'frv') second = slot('FRV', current.second != null ? formatSigned(current.second) : '&#8212;', current.secondRank);
+    const slots = slot('OAA', formatSigned(current.row.oaa), current.rank) + second;
+    return `<div class="pp-def"><div class="pp-def-top">${slots}${toggle}</div>${group.catches ? renderCatchBoard() : ''}</div>`;
   }
 
   // Each catch chance is a lamp in its star row: lit for a catch, a dark
@@ -9319,10 +9373,10 @@
   // ---- Assembly ----
   function profileTabsFor(pitcher, detail, person) {
     const hasStarts = pitcher && detail && detail.gameLog.some(g => g.stat && g.stat.gamesStarted);
-    const outfielder = !pitcher && person && person.primaryPosition && person.primaryPosition.type === 'Outfielder';
+    const fielder = !pitcher && defenseGroupFor(person);
     return pitcher
       ? [['ov', 'Overview'], ...(hasStarts ? [['starts', 'Starts']] : []), ['log', 'Game Log'], ['spl', 'Splits'], ['car', 'Career']]
-      : [['ov', 'Overview'], ['log', 'Game Log'], ['spl', 'Splits'], ...(outfielder ? [['def', 'Defense']] : []), ['car', 'Career']];
+      : [['ov', 'Overview'], ['log', 'Game Log'], ['spl', 'Splits'], ...(fielder ? [['def', 'Defense']] : []), ['car', 'Career']];
   }
 
   function renderProfileTabBody(tab, pitcher) {
@@ -9446,12 +9500,16 @@
   // Board and catches arrive separately: the catch list comes from a far
   // bigger page than the leaderboards, so the board doesn't wait on it.
   async function loadProfileDefense(personId, season, requestId) {
-    getSavantCatches(personId).then(catches => {
-      if (requestId !== playerProfileRequestId) return;
-      lastProfileCatches = catches;
-      rerenderPlayerProfile();
-    });
-    const def = Number(season) < STATCAST_FIRST_SEASON ? {} : await buildProfileDefense(personId, season);
+    const group = defenseGroupFor(lastProfilePerson);
+    if (!group) return;
+    if (group.catches) {
+      getSavantCatches(personId).then(catches => {
+        if (requestId !== playerProfileRequestId) return;
+        lastProfileCatches = catches;
+        rerenderPlayerProfile();
+      });
+    }
+    const def = Number(season) < STATCAST_FIRST_SEASON ? {} : await buildProfileDefense(personId, season, group);
     if (requestId !== playerProfileRequestId) return;
     lastProfileDefense = def;
     rerenderPlayerProfile();
