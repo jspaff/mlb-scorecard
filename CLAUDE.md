@@ -55,7 +55,7 @@ Every `getX`/`fetchX` function wraps its `fetch` in its own try/catch and degrad
 
 When adding a new cached fetcher, pick the side of that line matching the data, don't default to "always cache null on error."
 
-MLB Stats API endpoints in use: `/v1/schedule`, `/v1/standings`, `/v1/seasons/{year}`, `/v1/stats` (league-wide season leaderboards for the Players list), `/v1/teams/stats`, `/v1/teams/{id}/roster`, `/v1/people` and `/v1/people/{id}` (search, bio, awards), `/v1/people/{id}/stats` (season, yearByYear, gameLog, and statSplits for the player profile), `/v1/venues/{id}`, `/v1/transactions`, `/v1/game/{gamePk}/winProbability`, and `/v1.1/game/{gamePk}/feed/live` (the live boxscore/play-by-play feed that drives the Scorecard and Daily tabs).
+MLB Stats API endpoints in use: `/v1/schedule`, `/v1/standings`, `/v1/seasons/{year}`, `/v1/stats` (league-wide season leaderboards for the Players list), `/v1/teams/stats`, `/v1/teams/{id}/roster`, `/v1/people` and `/v1/people/{id}` (search, bio, awards), `/v1/people/{id}/stats` (season, yearByYear, gameLog, and statSplits for the player profile), `/v1/venues/{id}`, `/v1/transactions`, `/v1/game/{gamePk}/winProbability`, `/v1/game/{gamePk}/playByPlay` and `/v1/game/{gamePk}/linescore` (the profile Game Log's last-five cards), and `/v1.1/game/{gamePk}/feed/live` (the live boxscore/play-by-play feed that drives the Scorecard and Daily tabs).
 
 ### HTML building and escaping
 

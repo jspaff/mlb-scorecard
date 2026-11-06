@@ -2646,6 +2646,78 @@
   .pp-game-link:hover { text-decoration-color: var(--gold); }
   .pp-game-link:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
+
+  /* Game Log: the last five games as cards (a row across on a wide sheet,
+     stacked on a narrow one), then the season by month at a compact,
+     fixed column width rather than stretched across the sheet. */
+  .pp-recent { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 22px; }
+  @container (min-width: 900px) { .pp-recent { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+  /* A flex column, not a plain block: a <button> centers its content
+     vertically by default, and cards in a row are stretched to the
+     tallest one, so shorter cards would otherwise float down. */
+  .pp-rc {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    width: 100%;
+    text-align: left;
+    font: inherit;
+    color: var(--ink);
+    background: rgba(0, 0, 0, 0.16);
+    border: 1px solid var(--paper-line);
+    padding: 10px 12px 10px;
+    cursor: pointer;
+  }
+  .pp-rc:hover { border-color: var(--ink-soft); }
+  .pp-rc:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .pp-rc-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 12px; }
+  .pp-rc-date { color: var(--ink); }
+  .pp-rc-opp { color: var(--ink-soft); }
+  .pp-rc-line { margin-left: auto; color: var(--ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .pp-wl { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 11px; }
+  .pp-wl.is-w { color: var(--ink); }
+  .pp-wl.is-l { color: var(--ink-soft); }
+  /* Diamonds share the card's width (up to 46px each), so a six-PA game
+     still fits on one line in a narrow five-across card. */
+  .pp-rc-pas { display: flex; gap: 2px; margin-top: 8px; }
+  .pp-rc-pa { position: relative; display: flex; flex-direction: column; align-items: center; flex: 0 1 46px; min-width: 0; }
+  .pp-rc-pa svg { width: 100%; height: auto; max-width: 46px; }
+  .pp-rc-inn { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 9px; color: var(--ink-soft); margin-top: -3px; }
+  /* RBI dots, scorebook style: one per run driven in, tucked into the
+     diamond's upper-left corner. */
+  .pp-rc-rbi { position: absolute; top: 3px; left: 2px; display: flex; gap: 2px; }
+  .pp-rc-rbi i { width: 5px; height: 5px; border-radius: 50%; background: var(--gold); }
+  .pp-rc-nums { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; margin-top: 10px; }
+  .pp-rc-num { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .pp-rc-k { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.1em; color: var(--ink-soft); }
+  .pp-rc-v {
+    align-self: stretch;
+    text-align: center;
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: 20px;
+    line-height: 1.45;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    background: rgba(0, 0, 0, 0.22);
+    border-radius: 2px;
+    box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.5);
+  }
+  /* Below five-across, the cards become a swipeable row, one card per
+     step with the next one peeking in, so the season log starts one
+     card's height down instead of five. */
+  @container (max-width: 899px) {
+    .pp-recent { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 10px; padding-bottom: 6px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+    .pp-recent::-webkit-scrollbar { display: none; }
+    .pp-recent .pp-rc { flex: 0 0 86%; max-width: 420px; scroll-snap-align: start; }
+  }
+
+
+  .pp-log td:nth-child(n+3), .pp-log th:nth-child(n+3) { text-align: center; }
+  .pp-log tr.pp-month td { padding: 14px 6px 4px; border-bottom: 1px solid var(--paper-line); }
+  .pp-month-name { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); }
+  .pp-month-total { margin-left: 12px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+
   .pp-chart { position: relative; }
   .pp-chart.is-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .pp-chart svg { display: block; width: 100%; height: auto; }
@@ -3107,6 +3179,10 @@
   let lastProfileSeason = null;
   let lastProfileDetail;
   let lastProfileBoard = null;
+  // The Game Log's last-five-games cards (undefined until loaded -- they
+  // need each game's play-by-play, so they load only once that tab opens).
+  let lastProfileRecent;
+  let profileRecentRequested = false;
   // Players tab's browsable list (Batters/Pitchers toggle, sortable current-
   // season stats) -- separate from the search/profile state above since the
   // list and a profile are just two different things playersBody can show.
@@ -7454,9 +7530,10 @@
     if (tab) {
       profileTab = tab.dataset.ppTab;
       rerenderPlayerProfile();
+      ensureProfileRecent();
       return;
     }
-    const gameLink = e.target.closest('.pp-game-link');
+    const gameLink = e.target.closest('.pp-game-link, .pp-game-link-card');
     if (gameLink) jumpToScorecardGame(gameLink.dataset.date, Number(gameLink.dataset.gamePk));
   });
 
@@ -8252,27 +8329,205 @@
     }).join('')}</div>`;
   }
 
-  // ---- Game Log / Splits ----
-  function renderProfileGameLog(gameLog, pitcher) {
-    if (!gameLog.length) return '<div class="pitch-empty">No games this season.</div>';
-    const dateCell = g => {
-      const label = formatShortDate(g.date);
-      return g.game && g.game.gamePk
-        ? `<button type="button" class="pp-game-link" data-date="${g.date}" data-game-pk="${g.game.gamePk}">${label}</button>`
-        : label;
-    };
-    const opp = g => `${g.isHome ? 'vs' : '@'} ${teamNickname(g.opponent)}`;
-    if (!pitcher) {
-      return `<div class="table-scroll"><table class="pitch-table pp-table"><thead><tr><th>Date</th><th>Opp</th><th>H-AB</th><th>HR</th><th>RBI</th><th>BB</th><th>K</th></tr></thead><tbody>
-        ${gameLog.map(g => { const s = g.stat || {}; return `<tr><td>${dateCell(g)}</td><td class="pp-soft">${opp(g)}</td><td>${s.hits ?? 0}-${s.atBats ?? 0}</td><td>${s.homeRuns ?? 0}</td><td>${s.rbi ?? 0}</td><td>${s.baseOnBalls ?? 0}</td><td>${s.strikeOuts ?? 0}</td></tr>`; }).join('')}
-      </tbody></table></div>`;
+  // ---- Game Log ----
+  // The tab leads with the last five games in scorecard terms, then the
+  // full season grouped by month. Zeros are left blank throughout, so the
+  // games where something happened (a homer, a walk, an earned run) are
+  // the ones that carry ink.
+
+  // Play-by-play for one game, fetched only for the five games the Game
+  // Log leads with, and only once that tab is opened. A finished game
+  // never changes, so it's cached; a game still in progress isn't.
+  const gamePlayByPlayCache = {};
+  async function getGamePlayByPlay(gamePk, isFinal) {
+    if (gamePlayByPlayCache[gamePk]) return gamePlayByPlayCache[gamePk];
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/game/${gamePk}/playByPlay`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      const plays = data.allPlays || [];
+      if (isFinal) gamePlayByPlayCache[gamePk] = plays;
+      return plays;
+    } catch (e) {
+      return null;
     }
-    const dec = s => s.wins ? 'W' : s.losses ? 'L' : s.saves ? 'SV' : s.holds ? 'HLD' : '&#8212;';
-    return `<div class="table-scroll"><table class="pitch-table pp-table"><thead><tr><th>Date</th><th>Opp</th><th>Dec</th><th>IP</th><th>H</th><th>ER</th><th>BB</th><th>K</th><th>Pit</th></tr></thead><tbody>
-      ${gameLog.map(g => { const s = g.stat || {}; return `<tr><td>${dateCell(g)}</td><td class="pp-soft">${opp(g)}</td><td>${dec(s)}</td><td>${s.inningsPitched ?? '0.0'}</td><td>${s.hits ?? 0}</td><td>${s.earnedRuns ?? 0}</td><td>${s.baseOnBalls ?? 0}</td><td>${s.strikeOuts ?? 0}</td><td class="pp-soft">${s.numberOfPitches ?? '&#8212;'}</td></tr>`; }).join('')}
-    </tbody></table></div>`;
   }
 
+  // One batter's plate appearances in a game, each as the same cell the
+  // scorecard grid draws (see buildTeamRows): his result code, his RBIs,
+  // and his own trip around the bases afterward -- how far he got, whether
+  // he scored, and any steal/caught-stealing/pickoff along the way, read
+  // from every later play in that half-inning that moved him. Other
+  // runners' movement on his plate appearance isn't drawn; his RBI dots
+  // already say what it produced.
+  function buildBatterGameCells(allPlays, playerId) {
+    const cells = [];
+    allPlays.forEach(play => {
+      const about = play.about || {};
+      const event = (play.result && play.result.event) || '';
+      const isAtBat = play.result && play.result.type === 'atBat';
+      const batterId = play.matchup && play.matchup.batter && play.matchup.batter.id;
+      if (isAtBat && batterId === playerId && event && !NON_RESULT_EVENT_RE.test(event)) {
+        const rb = reachedBase(event);
+        cells.push({
+          inning: about.inning, half: about.halfInning, code: getPlayCode(play), reached: rb, scored: rb === 4,
+          isOut: rb === 0, outEdge: null, specialEdges: [], calledLooking: isCalledStrikeout(play),
+          rbi: (play.result && play.result.rbi) || 0
+        });
+      }
+      const cell = cells[cells.length - 1];
+      if (!cell || cell.inning !== about.inning || cell.half !== about.halfInning || cell.outEdge) return;
+      (play.runners || []).forEach(rm => {
+        const rid = rm.details && rm.details.runner && rm.details.runner.id;
+        if (rid !== playerId || cell.outEdge) return;
+        const end = rm.movement && rm.movement.end;
+        const rmEvent = (rm.details && (rm.details.event || rm.details.eventType)) || '';
+        const edge = { 1: 'first-second', 2: 'second-third', 3: 'third-home' }[cell.reached];
+        if (rm.movement && rm.movement.isOut) {
+          if (edge) {
+            cell.outEdge = edge;
+            const label = /caught stealing/i.test(rmEvent) ? 'CS' : /pickoff/i.test(rmEvent) ? 'PO' : null;
+            if (label) cell.specialEdges.push({ edge, label });
+          }
+          return;
+        }
+        const advanceLabel =
+          /stolen[\s_]?base/i.test(rmEvent) ? 'S' :
+          /wild[\s_]?pitch/i.test(rmEvent) ? 'WP' :
+          /passed[\s_]?ball/i.test(rmEvent) ? 'PB' :
+          /balk/i.test(rmEvent) ? 'BK' : null;
+        if (advanceLabel && edge) cell.specialEdges.push({ edge, label: advanceLabel });
+        const base = { '1B': 1, '2B': 2, '3B': 3 }[end];
+        if (end === 'score') { cell.reached = Math.max(cell.reached, 3); cell.scored = true; }
+        else if (base) cell.reached = Math.max(cell.reached, base);
+      });
+    });
+    return cells;
+  }
+
+  // Final score from the game's linescore -- a few KB, for the pitcher
+  // cards, which otherwise need nothing beyond the game log. Cached once
+  // the game is final; hitters' cards read it off the play-by-play they
+  // already load (see finalScoreFromPlays).
+  const gameLinescoreCache = {};
+  async function getGameLinescore(gamePk, isFinal) {
+    if (gameLinescoreCache[gamePk]) return gameLinescoreCache[gamePk];
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/game/${gamePk}/linescore`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      const t = data.teams || {};
+      const score = t.home && t.away && t.home.runs != null && t.away.runs != null ? { home: t.home.runs, away: t.away.runs } : null;
+      if (isFinal && score) gameLinescoreCache[gamePk] = score;
+      return score;
+    } catch (e) {
+      return null;
+    }
+  }
+  function finalScoreFromPlays(allPlays) {
+    const r = allPlays.length && allPlays[allPlays.length - 1].result;
+    return r && r.homeScore != null && r.awayScore != null ? { home: r.homeScore, away: r.awayScore } : null;
+  }
+
+  // Hitters' cards need each game's play-by-play (for the diamonds, and
+  // the final score with it); pitchers' are box-score numbers already in
+  // the game log, so they only fetch the small linescore for the score.
+  async function loadProfileRecent(personId, pitcher, gameLog, requestId) {
+    const games = gameLog.slice(0, 5);
+    const today = todayStr();
+    const fetchOne = g => {
+      const pk = g.game && g.game.gamePk;
+      if (!pk) return Promise.resolve(null);
+      return pitcher ? getGameLinescore(pk, g.date < today) : getGamePlayByPlay(pk, g.date < today);
+    };
+    const results = await Promise.all(games.map(fetchOne));
+    if (requestId !== playerProfileRequestId) return;
+    lastProfileRecent = games.map((g, i) => {
+      const r = results[i];
+      if (pitcher) return { log: g, score: r, cells: null };
+      return { log: g, score: r ? finalScoreFromPlays(r) : null, cells: r ? buildBatterGameCells(r, personId) : null };
+    });
+    rerenderPlayerProfile();
+  }
+
+  const blank = v => (v ? v : '');
+  // "W 7-3", his team's score first.
+  const teamResult = (g, score) => {
+    if (g.isWin == null) return '';
+    const runs = score ? (g.isHome ? `${score.home}-${score.away}` : `${score.away}-${score.home}`) : '';
+    return `<span class="pp-wl ${g.isWin ? 'is-w' : 'is-l'}">${g.isWin ? 'W' : 'L'}${runs ? ` ${runs}` : ''}</span>`;
+  };
+
+  // Each card leads with its stat line in the header row (date, opponent,
+  // team result, line), then the game itself: a hitter's plate
+  // appearances as diamonds with an RBI dot per run driven in, or a
+  // pitcher's line as big numbers in scoreboard slots.
+  function renderRecentCard(entry, pitcher) {
+    const g = entry.log, s = g.stat || {};
+    const count = (n, label) => (n ? `${n > 1 ? n + ' ' : ''}${label}` : '');
+    const line = pitcher ? '' : [`${s.hits ?? 0}-${s.atBats ?? 0}`, count(s.homeRuns, 'HR'), s.rbi ? `${s.rbi} RBI` : '', count(s.baseOnBalls, 'BB')].filter(Boolean).join(' &#183; ');
+    const head = `<div class="pp-rc-head"><span class="pp-rc-date">${formatShortDate(g.date)}</span><span class="pp-rc-opp">${g.isHome ? 'vs' : '@'} ${teamNickname(g.opponent)}</span>${teamResult(g, entry.score)}${line ? `<span class="pp-rc-line">${line}</span>` : ''}</div>`;
+    let body;
+    if (!pitcher) {
+      body = entry.cells && entry.cells.length
+        ? `<div class="pp-rc-pas">${entry.cells.map(c => {
+            const dots = c.rbi ? `<span class="pp-rc-rbi" aria-label="${c.rbi} RBI">${'<i></i>'.repeat(c.rbi)}</span>` : '';
+            return `<span class="pp-rc-pa">${dots}${diamondSVG(c.reached, c.scored, c.code, c.isOut, c.outEdge, c.specialEdges, false, c.calledLooking)}<span class="pp-rc-inn">${c.inning}</span></span>`;
+          }).join('')}</div>`
+        : '';
+    } else {
+      const slots = [['IP', s.inningsPitched ?? '0.0'], ['H', s.hits ?? 0], ['ER', s.earnedRuns ?? 0], ['BB', s.baseOnBalls ?? 0], ['K', s.strikeOuts ?? 0], ['P', s.numberOfPitches ?? '&#8212;']];
+      body = `<div class="pp-rc-nums">${slots.map(([k, v]) => `<span class="pp-rc-num"><span class="pp-rc-k">${k}</span><span class="pp-rc-v">${v}</span></span>`).join('')}</div>`;
+    }
+    const pk = g.game && g.game.gamePk;
+    return pk
+      ? `<button type="button" class="pp-rc pp-game-link-card" data-date="${g.date}" data-game-pk="${pk}">${head}${body}</button>`
+      : `<div class="pp-rc">${head}${body}</div>`;
+  }
+
+  // Month groups for the full log, newest first -- March folds into
+  // April, as on Splits. The group's header row carries its totals.
+  function gameLogMonths(gameLog) {
+    const groups = [];
+    gameLog.forEach(g => {
+      const m = g.date.slice(5, 7) === '03' ? '04' : g.date.slice(5, 7);
+      let grp = groups[groups.length - 1];
+      if (!grp || grp.m !== m) { grp = { m, games: [] }; groups.push(grp); }
+      grp.games.push(g);
+    });
+    const hasMarch = gameLog.some(g => g.date.slice(5, 7) === '03');
+    groups.forEach(grp => { grp.label = grp.m === '04' && hasMarch ? 'Mar/Apr' : MONTH_NAMES[Number(grp.m) - 1]; });
+    return groups;
+  }
+
+  function renderProfileGameLog(gameLog, pitcher) {
+    if (!gameLog.length) return '<div class="pitch-empty">No games this season.</div>';
+    const recent = lastProfileRecent === undefined
+      ? '<div class="mlb-status-msg">Loading recent games&#8230;</div>'
+      : `<div class="pp-recent">${(lastProfileRecent || []).map(e => renderRecentCard(e, pitcher)).join('')}</div>`;
+    const dateCell = g => g.game && g.game.gamePk
+      ? `<button type="button" class="pp-game-link" data-date="${g.date}" data-game-pk="${g.game.gamePk}">${formatShortDate(g.date)}</button>`
+      : formatShortDate(g.date);
+    const opp = g => `${g.isHome ? 'vs' : '@'} ${teamNickname(g.opponent)}`;
+    const wl = g => g.isWin == null ? '' : `<span class="pp-wl ${g.isWin ? 'is-w' : 'is-l'}">${g.isWin ? 'W' : 'L'}</span>`;
+    const groups = gameLogMonths(gameLog);
+    let head, row, total;
+    if (!pitcher) {
+      head = '<th>Date</th><th>Opp</th><th></th><th>H-AB</th><th>HR</th><th>RBI</th><th>BB</th><th>K</th>';
+      row = g => { const s = g.stat || {}; return `<tr><td>${dateCell(g)}</td><td class="pp-soft">${opp(g)}</td><td>${wl(g)}</td><td>${s.hits ?? 0}-${s.atBats ?? 0}</td><td>${blank(s.homeRuns)}</td><td>${blank(s.rbi)}</td><td>${blank(s.baseOnBalls)}</td><td>${blank(s.strikeOuts)}</td></tr>`; };
+      total = grp => { const t = sumStatLines(grp.games.map(g => g.stat || {})); const r = slashFromCounts(t); return `${grp.games.length} G &#183; ${r.avg} / ${r.obp} / ${r.slg}${t.homeRuns ? ` &#183; ${t.homeRuns} HR` : ''}`; };
+    } else {
+      head = '<th>Date</th><th>Opp</th><th></th><th>IP</th><th>H</th><th>ER</th><th>BB</th><th>K</th><th>Pit</th>';
+      row = g => { const s = g.stat || {}; return `<tr><td>${dateCell(g)}</td><td class="pp-soft">${opp(g)}</td><td>${wl(g)}</td><td>${s.inningsPitched ?? '0.0'}</td><td>${blank(s.hits)}</td><td>${blank(s.earnedRuns)}</td><td>${blank(s.baseOnBalls)}</td><td>${blank(s.strikeOuts)}</td><td class="pp-soft">${s.numberOfPitches ?? ''}</td></tr>`; };
+      total = grp => { const t = sumStatLines(grp.games.map(g => g.stat || {})); return `${grp.games.length} G &#183; ${t.inningsPitched} IP &#183; ${formatERA(t.earnedRuns, ipToOuts(t.inningsPitched))} ERA &#183; ${t.strikeOuts} K`; };
+    }
+    const cols = pitcher ? 9 : 8;
+    const body = groups.map(grp => `<tr class="pp-month"><td colspan="${cols}"><span class="pp-month-name">${grp.label}</span><span class="pp-month-total">${total(grp)}</span></td></tr>${grp.games.map(row).join('')}`).join('');
+    return `${recent}
+      <div class="table-scroll"><table class="pitch-table pp-table pp-log${pitcher ? ' is-pitcher' : ''}"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+  }
+
+  // ---- Splits ----
   // March is only the season's first few days, so it folds into April as
   // one Mar/Apr row (summed from counting stats, see sumStatLines).
   const SPLIT_MONTHS = ['May', 'June', 'July', 'August', 'September'];
@@ -8462,11 +8717,18 @@
     rerenderPlayerProfile();
   }
 
+  function ensureProfileRecent() {
+    if (profileRecentRequested || profileTab !== 'log' || !lastProfileDetail) return;
+    profileRecentRequested = true;
+    loadProfileRecent(Number(lastProfilePerson.id), isPitcher(lastProfilePerson), lastProfileDetail.gameLog, playerProfileRequestId);
+  }
+
   async function loadProfileSeason(personId, season, pitcher, requestId) {
     const detail = await getPlayerSeasonDetail(personId, season, pitcher ? 'pitching' : 'hitting');
     if (requestId !== playerProfileRequestId) return;
     lastProfileDetail = detail;
     rerenderPlayerProfile();
+    ensureProfileRecent();
     if (!detail || !detail.seasonStat) return;
     const board = await buildProfileBoard(personId, season, pitcher, detail.seasonStat);
     if (requestId !== playerProfileRequestId) return;
@@ -8493,6 +8755,8 @@
     lastProfileLeagueWoba = {};
     lastProfileDetail = undefined;
     lastProfileBoard = null;
+    lastProfileRecent = undefined;
+    profileRecentRequested = false;
     lastProfileSeason = playerListState.season || defaultListSeason;
     playerSprayState = { personId: person.id, season: null, balls: null, loading: true };
     rerenderPlayerProfile();
