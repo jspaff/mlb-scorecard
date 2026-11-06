@@ -5628,6 +5628,9 @@
   // pushes an entry first, so Back returns to where it was opened from.
   function jumpToScorecardGame(dateStr, gamePk) {
     hideGameSummaryModal();
+    whenModalHistorySettled(() => openScorecardGame(dateStr, gamePk));
+  }
+  function openScorecardGame(dateStr, gamePk) {
     navPush({ tab: 'scorecard', game: { date: dateStr, pk: Number(gamePk) } });
     Tabs.switchTo('scorecard', { history: false });
     setDateInputValue(dateInput, dateInputText, dateStr);
@@ -6175,7 +6178,7 @@
     if (!games || !games.length) return;
     const requestId = ++gameSummaryRequestId;
     gameSummaryModalBody.innerHTML = renderGameSummaryContent(dateStr, games, headerLabel);
-    gameSummaryOverlay.classList.add('open');
+    openOverlay(gameSummaryOverlay);
     // Venue (name+city) applies to every game regardless of state. The box
     // score now shows for every game including pre-game (Preview never has
     // g.linescore, so it always needs the fetch); highlights still only
@@ -6216,8 +6219,70 @@
   }
   // Shared by every modal here whose hide function is just this one line
   // (hidePitchPopup is kept separate since it also resets extra state).
-  function closeOverlay(overlay) {
+  // Popups take part in history too: opening one pushes an entry listing
+  // the popups open over the current screen (state.modals), so the phone's
+  // Back button closes the top one rather than leaving the screen behind
+  // it. Closing one any other way (close button, backdrop, Escape, or
+  // code) steps history back to match -- batched, so Escape closing a
+  // stack at once is a single history.go(-n). modalStack mirrors the open
+  // popups in order; openOverlay is a no-op on one already open (e.g. the
+  // pitch popup refreshing in place during a live at-bat).
+  let modalStack = [];
+  let pendingModalPops = 0;
+  let awaitingModalPop = false;
+  const afterModalPop = [];
+  function openOverlay(overlay) {
+    if (overlay.classList.contains('open')) return;
+    overlay.classList.add('open');
+    modalStack.push(overlay.id);
+    try {
+      const here = history.state || { tab: Tabs.current() };
+      history.replaceState({ ...here, scrollY: window.scrollY }, '', location.hash);
+      history.pushState({ ...here, scrollY: window.scrollY, modals: modalStack.slice() }, '', location.hash);
+    } catch (e) {}
+  }
+  function closeOverlay(overlay, { fromHistory = false } = {}) {
     overlay.classList.remove('open');
+    const idx = modalStack.indexOf(overlay.id);
+    if (idx < 0 || fromHistory) return;
+    // anything opened on top of it goes too
+    const above = modalStack.splice(idx);
+    above.slice(1).forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('open'); });
+    pendingModalPops += above.length;
+    if (pendingModalPops === above.length) {
+      queueMicrotask(() => {
+        const n = pendingModalPops;
+        pendingModalPops = 0;
+        awaitingModalPop = true;
+        history.go(-n);
+      });
+    }
+  }
+  // For navigation out of a popup (View Full Profile, View Full
+  // Scorecard...): its close above steps history back asynchronously, so a
+  // new entry pushed right away would be the one popped. Run fn once that
+  // pop has landed instead (immediately when nothing is pending).
+  function whenModalHistorySettled(fn) {
+    if (pendingModalPops || awaitingModalPop) afterModalPop.push(fn);
+    else fn();
+  }
+  // Called first by the popstate handler: closes whatever popups the entry
+  // landed on doesn't list (running each one's own hide cleanup), and
+  // reports whether this pop was closeOverlay's own, which needs nothing
+  // else restored.
+  function syncModalsToHistory(state) {
+    const keep = (state && state.modals) || [];
+    modalStack.filter(id => !keep.includes(id)).forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (id === 'pitchOverlay') hidePitchPopup({ fromHistory: true });
+      else closeOverlay(el, { fromHistory: true });
+    });
+    modalStack = keep.filter(id => { const el = document.getElementById(id); return el && el.classList.contains('open'); });
+    if (!awaitingModalPop) return false;
+    awaitingModalPop = false;
+    afterModalPop.splice(0).forEach(fn => fn());
+    return true;
   }
   function hideGameSummaryModal() {
     closeOverlay(gameSummaryOverlay);
@@ -6550,7 +6615,7 @@
   function showGameStripModal(dateStr, games) {
     gameStripOverlayBody.innerHTML = `<div class="pitch-header">${formatShortDate(dateStr)} Games</div>
       <div class="daily-games-grid">${games.map(g => renderDailyGameTile(dateStr, scheduleGameToTileGame(g))).join('')}</div>`;
-    gameStripOverlay.classList.add('open');
+    openOverlay(gameStripOverlay);
   }
   function hideGameStripModal() {
     closeOverlay(gameStripOverlay);
@@ -7380,7 +7445,7 @@
     }
     lastRenderedPitchNum = pitches.reduce((max, p) => Math.max(max, p.num || 0), 0);
     pitchModalBody.innerHTML = renderPitchDetailHtml(c, newPitchNums);
-    pitchOverlay.classList.add('open');
+    openOverlay(pitchOverlay);
     wirePitchLocationSync(pitchModalBody);
   }
 
@@ -7409,8 +7474,8 @@
     });
   }
 
-  function hidePitchPopup() {
-    pitchOverlay.classList.remove('open');
+  function hidePitchPopup({ fromHistory = false } = {}) {
+    closeOverlay(pitchOverlay, { fromHistory });
     currentOpenPkey = null;
     lastRenderedPitchNum = 0;
   }
@@ -7481,7 +7546,7 @@
     const html = rosterStore[team];
     if (!html) return;
     rosterModalBody.innerHTML = html;
-    rosterOverlay.classList.add('open');
+    openOverlay(rosterOverlay);
   }
   function hideRosterModal() {
     closeOverlay(rosterOverlay);
@@ -7494,7 +7559,7 @@
   function showSprayModal(team) {
     const html = sprayStore[team] || '<div class="pitch-header">' + team + '</div><div class="pitch-empty">No batted balls recorded yet.</div>';
     sprayModalBody.innerHTML = html;
-    sprayOverlay.classList.add('open');
+    openOverlay(sprayOverlay);
   }
   function hideSprayModal() {
     closeOverlay(sprayOverlay);
@@ -7506,7 +7571,7 @@
 
   async function showTeamChartModal(teamId, teamName, season, throughDate) {
     teamChartModalBody.innerHTML = `<div class="pitch-header">${teamName}</div><div class="pitch-subheader">${season} Season</div><div class="pitch-empty">Loading&#8230;</div>`;
-    teamChartOverlay.classList.add('open');
+    openOverlay(teamChartOverlay);
     try {
       const series = await getTeamWinLossSeries(teamId, season);
       if (!teamChartOverlay.classList.contains('open')) return;
@@ -7582,6 +7647,10 @@
   }
   window.addEventListener('popstate', (e) => {
     const st = e.state || { tab: location.hash.slice(1) };
+    // A popup closing (by Back, or closeOverlay's own step back) leaves the
+    // screen beneath as it was -- nothing else to restore.
+    const closedModals = modalStack.some(id => !((st.modals || []).includes(id)));
+    if (syncModalsToHistory(st) || closedModals) return;
     if (!st.tab) return;
     Tabs.switchTo(st.tab, { history: false });
     if (st.tab === 'players') {
@@ -9053,6 +9122,9 @@
     const info = playerStore[playerId];
     hidePlayerModal();
     hideGameSummaryModal();
+    whenModalHistorySettled(() => openProfileFromAnywhere(playerId, info));
+  }
+  function openProfileFromAnywhere(playerId, info) {
     const person = { id: playerId, fullName: (info && info.name) || '' };
     if (Tabs.current() === 'players') {
       showPlayerProfile(person);
@@ -9112,7 +9184,7 @@
     const info = playerStore[playerId];
     if (!info) return;
     playerModalBody.innerHTML = renderPlayerModalContent(info, null) + '<div class="pitch-empty">Loading season stats&#8230;</div>';
-    playerOverlay.classList.add('open');
+    openOverlay(playerOverlay);
     const pitcher = info.pos === 'P';
     const [seasonStat, awards, recentGames, details, leagueWoba] = await Promise.all([
       getPlayerSeasonStats(playerId, info.season, pitcher ? 'pitching' : 'hitting'),
