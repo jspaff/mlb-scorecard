@@ -2755,6 +2755,58 @@
   .pp-cb-tag { padding: 2px 4px 1px; border: 1px solid var(--paper-line); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
   .pp-cb-play { width: 8px; height: 10px; color: var(--ink-soft); }
 
+  /* An infielder's highlights and double-play plays: date, opponent, what
+     happened, play mark -- dates and opponents in fixed columns so the
+     descriptions line up. The ledger rows reuse the catch board's row,
+     with the play's notation in the scorekeeper's typewriter face. */
+  .pp-pl-row {
+    display: grid;
+    grid-template-columns: 48px 58px minmax(0, 1fr) 8px;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 36px;
+    padding: 6px 4px;
+    background: rgba(0, 0, 0, 0.16);
+    border: 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.25);
+    color: var(--ink);
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    text-align: left;
+    cursor: pointer;
+  }
+  .pp-pl-row:hover { background: rgba(243, 236, 219, 0.08); }
+  .pp-pl-row:hover .pp-cb-play { color: var(--gold); }
+  .pp-pl-row:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+  .pp-pl-opp { color: var(--ink-soft); white-space: nowrap; }
+  .pp-pl-text { font-family: 'Inter', sans-serif; font-weight: 400; font-size: 12.5px; line-height: 1.35; }
+  .pp-pl-list { border-bottom: 1px solid var(--paper-line); }
+  .pp-pl-more {
+    display: block;
+    margin: 10px 0 0 auto;
+    padding: 6px 0;
+    background: none;
+    border: 0;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .pp-pl-more:hover { color: var(--gold); }
+  .pp-pl-more:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .pp-dp-row { grid-template-columns: 80px minmax(0, 1fr) 46px 10px; }
+  .pp-dp-code, .cv-code { font-family: 'Special Elite', monospace; font-size: 16px; color: var(--ink); }
+  .pp-dp-role { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+  .pp-dp-roles { border-top: 0; padding: 0 0 9px; display: flex; flex-wrap: wrap; gap: 4px 16px; }
+  .pp-dp-roles span { margin-left: 6px; }
+  .pp-dp-total { margin-left: 6px; color: var(--ink); }
+
   /* Clip popup: wider than the other popups, for the video, and above
      them all, since the at-bat popup opens it. */
   #clipOverlay { z-index: 300; }
@@ -3410,6 +3462,14 @@
   let profileDefenseRequested = false;
   let profileDefensePool = null;
   let profileCatchTier = null;
+  // An infielder's season of double plays and MLB highlight clips
+  // (getInfieldSeasonPlays): undefined while the sweep runs, with its
+  // progress in lastProfilePlaysProgress; profileDpCode is the expanded
+  // ledger row.
+  let lastProfilePlays;
+  let lastProfilePlaysProgress = null;
+  let profileDpCode = null;
+  let profileHighlightsAll = false;
   // Players tab's browsable list (Batters/Pitchers toggle, sortable current-
   // season stats) -- separate from the search/profile state above since the
   // list and a profile are just two different things playersBody can show.
@@ -7951,13 +8011,39 @@
       rerenderPlayerProfile();
       return;
     }
-    const tier = e.target.closest('.pp-cb-row');
+    const tier = e.target.closest('.pp-cb-row[data-cb-tier]');
     if (tier) {
       const stars = Number(tier.dataset.cbTier);
       profileCatchTier = profileCatchTier === stars ? null : stars;
       rerenderPlayerProfile();
       const again = playersBody.querySelector(`.pp-cb-row[data-cb-tier="${stars}"]`);
       if (again) again.focus({ preventScroll: true });
+      return;
+    }
+    const dpRow = e.target.closest('.pp-dp-row');
+    if (dpRow) {
+      const code = dpRow.dataset.dpCode;
+      profileDpCode = profileDpCode === code ? null : code;
+      rerenderPlayerProfile();
+      const again = playersBody.querySelector(`.pp-dp-row[data-dp-code="${code}"]`);
+      if (again) again.focus({ preventScroll: true });
+      return;
+    }
+    const dpPlay = e.target.closest('[data-dp-play]');
+    if (dpPlay && dpPlay.dataset.dpPlay) {
+      const dp = lastProfilePlays && lastProfilePlays.doublePlays.find(d => d.playId === dpPlay.dataset.dpPlay);
+      if (dp) showClipModal(dp.playId, { head: `<div class="cv-head"><span class="cv-code">${dp.code}</span><span class="cv-result">${dp.triple ? 'Triple' : 'Double'} Play &#183; ${dp.role}</span></div>` });
+      return;
+    }
+    if (e.target.closest('[data-hl-all]')) {
+      profileHighlightsAll = true;
+      rerenderPlayerProfile();
+      return;
+    }
+    const hl = e.target.closest('[data-hl-index]');
+    if (hl) {
+      const h = lastProfilePlays && lastProfilePlays.highlights[Number(hl.dataset.hlIndex)];
+      if (h) showClipModal(h.playId, { head: '<div class="cv-head"><span class="cv-result">Highlight</span></div>', clip: { mp4: h.mp4, title: h.headline, date: h.date, gamePk: h.gamePk, matchup: h.matchup } });
       return;
     }
     const catchBtn = e.target.closest('.pp-cb-catch');
@@ -9289,7 +9375,7 @@
     };
     const slots = slot('OAA', formatSigned(current.row.oaa), current.rank)
       + slot('FRV', current.frv != null ? formatSigned(current.frv) : '&#8212;', current.frvRank);
-    return `<div class="pp-def"><div class="pp-def-top">${slots}${toggle}</div>${group.catches ? renderCatchBoard() : ''}</div>`;
+    return `<div class="pp-def"><div class="pp-def-top">${slots}${toggle}</div>${group.catches ? renderCatchBoard() : renderInfieldPlays()}</div>`;
   }
 
   // Each catch chance is a lamp in its star row: lit for a catch, a dark
@@ -9335,6 +9421,174 @@
       ${[5, 4, 3, 2, 1].map(tierRow).join('')}
       ${routine.length ? `<div class="pp-cb-routine">Routine <span>${routineMade}/${routine.length}</span></div>` : ''}
     </div>`;
+  }
+
+  // ---- Infield plays: double plays and MLB highlight clips ----
+  const INFIELD_CODES = ['3', '4', '5', '6'];
+  const HIGHLIGHTS_SHOWN = 6;
+
+  // MLB's own highlight clips of one game that are tagged as defense and
+  // with this player -- their video team's pick of his best plays, since
+  // nothing publishes a difficulty rating for infield plays.
+  async function getGameDefenseHighlights(gamePk, personId) {
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/game/${gamePk}/content`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      const items = (data.highlights && data.highlights.highlights && data.highlights.highlights.items) || [];
+      return items.filter(item => {
+        const kw = item.keywordsAll || [];
+        return kw.some(k => k.value === 'defense') && kw.some(k => k.type === 'player_id' && Number(k.value) === personId);
+      }).map(item => {
+        const pb = (item.playbacks || []).find(b => b.name === 'mp4Avc') || (item.playbacks || []).find(b => /\.mp4$/.test(b.url || ''));
+        return pb ? { headline: item.headline || '', mp4: pb.url, playId: item.guid || null } : null;
+      }).filter(Boolean);
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // A double play in scorebook order. The feed lists each runner's credits
+  // (assists, then the putout) but not which out came first: a caught ball
+  // (a putout with no assist) is always the first out, a batter thrown out
+  // at first the last, so the batter goes first or last accordingly.
+  function buildDoublePlay(play, personId) {
+    const event = (play.result && play.result.event) || '';
+    if (!/Double Play|Grounded Into DP|Triple Play/.test(event)) return null;
+    const outs = (play.runners || []).filter(r => (r.credits || []).some(c => /putout/.test(c.credit)));
+    const isBatter = r => !r.movement || r.movement.originBase == null;
+    const caught = r => !(r.credits || []).some(c => /assist/.test(c.credit));
+    const batter = outs.filter(isBatter);
+    const others = outs.filter(r => !isBatter(r));
+    const ordered = batter.length && caught(batter[0]) ? [...batter, ...others] : [...others, ...batter];
+    const seq = [];
+    ordered.forEach(r => {
+      const credits = (r.credits || []).filter(c => /assist|putout/.test(c.credit));
+      [...credits.filter(c => /assist/.test(c.credit)), ...credits.filter(c => /putout/.test(c.credit))].forEach(c => {
+        const code = c.position && c.position.code;
+        if (code && seq[seq.length - 1] !== code) seq.push(code);
+      });
+    });
+    const mine = (play.runners || []).flatMap(r => r.credits || []).find(c => c.player && c.player.id === personId && c.position);
+    if (!mine || !seq.length) return null;
+    const pos = mine.position.code;
+    const at = seq.indexOf(pos);
+    const role = seq.length === 1 ? 'Unassisted' : at === 0 ? 'Started' : at === seq.length - 1 ? 'Finished' : 'Turned';
+    return { code: seq.length === 1 ? `${seq[0]}U` : seq.join('-'), role, pos, triple: /Triple Play/.test(event) };
+  }
+
+  // One season of an infielder's double plays and MLB's defensive clips of
+  // him, swept from each game he played the infield: its play-by-play and
+  // its highlights. That's ~14 MB for a full season, so it only runs once
+  // the Defense tab opens, and only the plays kept here (not the games)
+  // are held for the session. A game that fails is skipped; a failed game
+  // log isn't cached, so reopening retries.
+  const infieldPlaysCache = {};
+  async function getInfieldSeasonPlays(personId, season, onProgress) {
+    const key = `${personId}-${season}`;
+    if (infieldPlaysCache[key]) return infieldPlaysCache[key];
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/people/${personId}/stats?stats=gameLog&group=fielding&season=${season}`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      const games = new Map();
+      ((data.stats && data.stats[0] && data.stats[0].splits) || []).forEach(s => {
+        const pos = s.stat && s.stat.position && s.stat.position.code;
+        if (INFIELD_CODES.includes(pos) && s.game && s.game.gamePk) games.set(s.game.gamePk, s);
+      });
+      const list = [...games.values()];
+      const doublePlays = [], highlights = [];
+      let next = 0, done = 0;
+      async function worker() {
+        while (next < list.length) {
+          const s = list[next++];
+          const [plays, clips] = await Promise.all([getGamePlayByPlay(s.game.gamePk, false), getGameDefenseHighlights(s.game.gamePk, personId)]);
+          const opp = teamAbbr(s.opponent);
+          const game = {
+            date: s.date,
+            gamePk: s.game.gamePk,
+            opp: `${s.isHome ? 'vs' : '@'} ${opp}`,
+            matchup: s.isHome ? `${opp} @ ${teamAbbr(s.team)}` : `${teamAbbr(s.team)} @ ${opp}`
+          };
+          const posByPlay = {};
+          (plays || []).forEach(play => {
+            const credit = (play.runners || []).flatMap(r => r.credits || []).find(c => c.player && c.player.id === personId && c.position);
+            if (!credit) return;
+            const playId = extractPlayId(play);
+            if (playId) posByPlay[playId] = credit.position.code;
+            const dp = buildDoublePlay(play, personId);
+            if (dp) doublePlays.push({ ...dp, ...game, playId, batter: (play.matchup && play.matchup.batter && play.matchup.batter.fullName) || '' });
+          });
+          clips.forEach(c => highlights.push({ ...c, ...game, pos: (c.playId && posByPlay[c.playId]) || null }));
+          onProgress(++done, list.length);
+        }
+      }
+      await Promise.all(Array.from({ length: Math.min(SPRAY_FETCH_CONCURRENCY, list.length) }, worker));
+      const byNewest = (a, b) => (b.date || '').localeCompare(a.date || '');
+      const result = { doublePlays: doublePlays.sort(byNewest), highlights: highlights.sort(byNewest) };
+      infieldPlaysCache[key] = result;
+      return result;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Below an infielder's board: his double plays as a scorebook ledger,
+  // then MLB's highlight clips of him, newest first (the latest few, until
+  // asked for all -- a season can run past 30). The ledger has one row per
+  // notation (6-4-3, 4-6-3...) and his part in it, since the same
+  // notation can be one he started at one position and finished at
+  // another (a utility man's 5-4-3 at third, and at first). Both
+  // follow the position toggle; a clip MLB didn't tie to a play shows
+  // under every position.
+  function renderInfieldPlays() {
+    const data = lastProfilePlays;
+    if (data === undefined) {
+      const p = lastProfilePlaysProgress;
+      return `<div class="pp-cb"><div class="mlb-status-msg pp-plays-progress">Loading plays&#8230;${p ? ` ${p.done}/${p.total} games` : ''}</div></div>`;
+    }
+    if (data === null) return `<div class="pp-cb">${apiErrorMsg('plays')}</div>`;
+    const inPool = pos => profileDefensePool === 'if' || pos === profileDefensePool;
+    const playRow = (attrs, play, text) => `<button type="button" class="pp-pl-row" ${attrs}>
+        <span>${formatShortDate(play.date)}</span>
+        <span class="pp-pl-opp">${play.opp}</span>
+        <span class="pp-pl-text">${text}</span>
+        <svg class="pp-cb-play" viewBox="0 0 8 10" aria-hidden="true"><path d="M1 1l6 4-6 4z" fill="currentColor"/></svg>
+      </button>`;
+    const highlights = data.highlights.filter(h => !h.pos || inPool(h.pos));
+    const shown = profileHighlightsAll ? highlights : highlights.slice(0, HIGHLIGHTS_SHOWN);
+    const more = highlights.length > shown.length
+      ? `<button type="button" class="pp-pl-more" data-hl-all>All ${highlights.length} highlights</button>`
+      : '';
+    const highlightsHtml = highlights.length
+      ? `<div class="pp-pl-list">${shown.map(h => playRow(`data-hl-index="${data.highlights.indexOf(h)}"`, h, h.headline)).join('')}</div>${more}`
+      : `<div class="pitch-empty">No ${lastProfileSeason} highlights.</div>`;
+
+    const dps = data.doublePlays.filter(d => inPool(d.pos));
+    const byCode = new Map();
+    dps.forEach(d => {
+      const key = `${d.code} ${d.role}`;
+      if (!byCode.has(key)) byCode.set(key, []);
+      byCode.get(key).push(d);
+    });
+    const roles = ['Started', 'Turned', 'Finished', 'Unassisted'].map(r => [r, dps.filter(d => d.role === r).length]).filter(([, n]) => n);
+    const rows = [...byCode.entries()].sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0])).map(([key, plays]) => {
+      const open = profileDpCode === key;
+      const row = `<button type="button" class="pp-cb-row pp-dp-row" data-dp-code="${key}" aria-expanded="${open}">
+        <span class="pp-dp-code">${plays[0].code}</span>
+        <span class="pp-dp-role">${plays[0].role}${plays.some(p => p.triple) ? ' &#183; TP' : ''}</span>
+        <span class="pp-cb-count">${plays.length}</span>
+        <svg class="pp-cb-chev" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>`;
+      if (!open) return row;
+      const list = plays.map(p => playRow(`data-dp-play="${p.playId || ''}"`, p, p.batter)).join('');
+      return `${row}<div class="pp-cb-list">${list}</div>`;
+    }).join('');
+    const dpHtml = dps.length
+      ? `<div class="pp-cb-routine pp-dp-roles">${roles.map(([r, n]) => `${r} <span>${n}</span>`).join('')}</div>${rows}`
+      : `<div class="pitch-empty">No ${lastProfileSeason} double plays.</div>`;
+    return `<div class="pp-cb"><span class="pp-painted pp-cb-title">Double Plays <span class="pp-dp-total">${dps.length || ''}</span></span>${dpHtml}</div>
+      <div class="pp-cb"><span class="pp-painted pp-cb-title">Highlights <span class="pp-dp-total">${highlights.length || ''}</span></span>${highlightsHtml}</div>`;
   }
 
   // ---- Assembly ----
@@ -9475,6 +9729,20 @@
         lastProfileCatches = catches;
         rerenderPlayerProfile();
       });
+    } else {
+      // Progress is written straight into the status line rather than by
+      // re-rendering the whole profile once per game.
+      const onProgress = (done, total) => {
+        if (requestId !== playerProfileRequestId) return;
+        lastProfilePlaysProgress = { done, total };
+        const el = playersBody.querySelector('.pp-plays-progress');
+        if (el) el.textContent = `Loading plays\u2026 ${done}/${total} games`;
+      };
+      getInfieldSeasonPlays(personId, season, onProgress).then(plays => {
+        if (requestId !== playerProfileRequestId) return;
+        lastProfilePlays = plays;
+        rerenderPlayerProfile();
+      });
     }
     const def = Number(season) < STATCAST_FIRST_SEASON ? {} : await buildProfileDefense(personId, season, group);
     if (requestId !== playerProfileRequestId) return;
@@ -9539,6 +9807,10 @@
     profileDefenseRequested = false;
     profileDefensePool = null;
     profileCatchTier = null;
+    lastProfilePlays = undefined;
+    lastProfilePlaysProgress = null;
+    profileDpCode = null;
+    profileHighlightsAll = false;
     lastProfileSeason = playerListState.season || defaultListSeason;
     playerSprayState = { personId: person.id, season: null, balls: null, loading: true };
     rerenderPlayerProfile();
@@ -9675,11 +9947,13 @@
   const clipOverlay = document.getElementById('clipOverlay');
   const clipModalBody = document.getElementById('clipModalBody');
   let clipRequestId = 0;
-  async function showClipModal(playId, { head, facts = '', gameLink = true }) {
+  // clip: an already-known { mp4, title, date, gamePk, matchup } (an MLB
+  // highlight) to play instead of looking up the play's Savant clip.
+  async function showClipModal(playId, { head, facts = '', gameLink = true, clip: knownClip = null }) {
     const requestId = ++clipRequestId;
     clipModalBody.innerHTML = `${head}<div class="cv-video cv-video-wait"><div class="mlb-status-msg">Loading clip&#8230;</div></div>${facts}`;
     openOverlay(clipOverlay);
-    const clip = await getSavantClip(playId);
+    const clip = knownClip || await getSavantClip(playId);
     if (requestId !== clipRequestId || !clipOverlay.classList.contains('open')) return;
     if (!clip) {
       clipModalBody.innerHTML = `${head}<div class="cv-video cv-video-wait">${apiErrorMsg('clip')}</div>${facts}`;
