@@ -36,7 +36,7 @@ Success is that it stays the app they reach for in those moments instead of the 
 ## Capabilities and Constraints
 
 - **Single-file app.** One `index.html` with no build step, no dependencies and no backend, plus the PWA files (`manifest.json`, `sw.js`, `icons/`). It is hosted as static files on GitHub Pages.
-- **Data source.** Data comes from MLB's public Stats API, plus Baseball Savant for Statcast defense (Outs Above Average, catch star ratings and their clips), both fetched directly from the browser. Headshots and team logos come from MLB's image hosts. There are no accounts and no server-side storage. Persisted state is limited to a couple of small UI preferences in `localStorage`.
+- **Data source.** Data comes from MLB's public Stats API, plus Baseball Savant for Statcast defense (Outs Above Average, Fielding Run Value, catch star ratings and their clips), both fetched directly from the browser. Headshots and team logos come from MLB's image hosts. There are no accounts and no server-side storage. Persisted state is limited to a couple of small UI preferences in `localStorage`.
 - **Live data.** Live games poll every few seconds. Anything that can still change during a session must not cache a failure.
 - **Teams.** In function, every team is treated the same today. Whether defaults or touches should ever lean toward a particular team (the Fenway look notwithstanding) is undecided.
 - **Terminology.** Standard baseball terms throughout (AVG/OBP/SLG/OPS, wOBA+, IP, WHIP, K%-BB%, QS, H-AB). Users know them, so they aren't spelled out.

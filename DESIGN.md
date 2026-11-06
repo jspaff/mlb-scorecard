@@ -187,7 +187,7 @@ A three-layer palette of wall, board and ink, with two spare signal colors.
 - **Data** (Overpass 700, 12px, tabular figures): table cells, game-log rows, splits.
 - **Label** (Overpass 700–800, 9–11px, 0.05–0.12em tracking, uppercase): tabs, column heads, slot labels ("painted" on the board), section titles, award plates.
 - **Body** (Inter 400, 12.5–13px, 1.5): rare running text such as tooltips and footnotes.
-- **Notation** (Special Elite, 10–18px inside a diamond): play codes K, HR, 6-3, F8. Used in the diamond glyph only.
+- **Notation** (Special Elite, 10–18px inside a diamond): play codes K, HR, 6-3, F8. Used in the diamond glyph, and wherever a play is named by its scorebook notation outside one (the Defense tab's double-play ledger, a double play's clip popup).
 
 ### Named Rules
 **The Tabular Figures Rule.** Every column of numbers uses tabular figures, so ranks, averages and scores line up digit for digit.
@@ -243,11 +243,17 @@ Numbers in recessed scoreboard slots, under a painted label.
 - **Rank:** a small Faded Cream rank in the bottom-right corner ("T12/134"), shrinking to 8px on phones so the number keeps its full slot. Playing-time counts (G, PA, GS) are never ranked.
 
 ### Catch Lamps
-The Defense tab's catch board: one row per Statcast star rating (5 down to 1), every catch chance a lamp in that row, like the live scoreboard's count lamps.
+The Defense tab's catch board: one row per Statcast star rating (5 down to 1), every catch chance a lamp in that row, like the live scoreboard's count lamps. A catcher's boards use the same lamps: steals against him by base (lit for a runner he threw out) and his ABS challenges, those with two strikes apart from the rest (lit for an overturned call). Their rows are labelled in painted Overpass instead of stars, and none of their lamps light gold.
 - **Lamps:** 11px circles. A catch is lit cream; a miss is a dark recessed socket. Made catches come first, then misses, so the lit run reads as the count.
 - **Gold:** only a made 5-star catch lights gold, the catch counterpart of a top-10% stat. Other rows stay cream.
 - **Row:** the stars and the made/chances count sit in fixed columns, so every row's lamps start in line. Routine (0-star) chances get a count line, not lamps.
 - **Drill-in:** a row opens its catches (made first, hardest first), and each opens its clip in a popup.
+
+### Double-Play Ledger
+An infielder's double plays on the Defense tab, kept the way a scorebook would.
+- **Rows:** one per notation and role (6-4-3 · Started, 4-6-3 · Turned), the notation in Special Elite, the count in a fixed column, most frequent first. A role line above totals Started / Turned / Finished.
+- **Drill-in:** a row opens its plays (date, opponent, batter), each opening its clip.
+- **Highlights** follow it: MLB's own defensive clips of the player, newest first, the latest six until asked for all.
 
 ### Award Plates
 - **Shape:** square, 1px Pennant Gold border, gold uppercase label.
