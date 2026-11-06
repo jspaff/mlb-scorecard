@@ -8,6 +8,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="theme-color" content="#54796d">
+<meta name="color-scheme" content="dark">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -19,7 +20,14 @@
 
   html, body { margin: 0; padding: 0; background: var(--frame, #54796d); }
 
+  /* The page is dark, so ask the browser for the dark variant of anything
+     it draws itself -- above all the native date picker popup, which CSS
+     can't style directly and otherwise opens as a bright white calendar.
+     accent-color tints what the browser does let it (selected day, focus
+     highlights) gold, where supported. */
   :root {
+    color-scheme: dark;
+    accent-color: var(--gold);
     --paper: #3b4336;
     --paper-line: #545e4d;
     --ink: #f3ecdb;
@@ -27,12 +35,18 @@
     --gold: #d9a91a;
     --brick: #e0604a;
     --brick-dim: #5c4038;
+    /* Text-only tint of --brick: the fill color is 2.9:1 on --paper, too low
+       for small type. */
+    --brick-text: #f59a87;
     --frame: #54796d;
     --monster-green: #3fae56;
     --monster-green-dim: #33422e;
   }
 
   #mlb-root * { box-sizing: border-box; }
+  ::selection { background: rgba(217, 169, 26, 0.45); color: var(--ink); }
+  input { caret-color: var(--gold); }
+  .table-scroll, .monster-panel { scrollbar-color: var(--ink-soft) var(--paper-line); }
 
   #mlb-root {
     background: var(--frame);
@@ -78,7 +92,7 @@
     font-size: 12px;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    color: var(--ink-soft);
+    color: var(--ink);
     background: none;
     border: none;
     border-bottom: 2px solid transparent;
@@ -88,8 +102,11 @@
     white-space: nowrap;
     flex-shrink: 0;
   }
-  .tab-btn:hover { color: var(--ink); }
-  .tab-btn.active { color: var(--ink); border-bottom-color: var(--gold); }
+  /* Every label stays full --ink: anything softer drops below 4:1 on the
+     Monster green, so the gold rule alone marks the active tab. */
+  .tab-btn:hover { border-bottom-color: rgba(243, 236, 219, 0.35); }
+  .tab-btn.active { border-bottom-color: var(--gold); }
+  .tab-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
   .tab-panel[hidden] { display: none; }
   .mlb-controls[hidden] { display: none; }
   /* One bordered pill instead of three separate boxes (arrow / date / arrow)
@@ -117,10 +134,10 @@
     line-height: 1;
     cursor: pointer;
   }
-  .date-nav-btn:hover { background: rgba(28, 58, 44, 0.1); }
+  .date-nav-btn:hover { background: rgba(243, 236, 219, 0.08); }
   /* Negative offset keeps the ring inside the shared pill border instead of
      spilling out over the neighboring segment. */
-  .date-nav-btn:focus { outline: 2px solid var(--gold); outline-offset: -2px; }
+  .date-nav-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
   .date-nav-btn:disabled { opacity: 0.35; cursor: default; }
   .date-nav-btn:disabled:hover { background: none; }
   select, input[type=date], input[type=text] {
@@ -152,6 +169,7 @@
   }
   select option { background: var(--paper); color: var(--ink); text-transform: uppercase; }
   select:focus, input:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
+  input::placeholder { color: var(--ink-soft); opacity: 0.8; }
   /* input[type=date]'s own text is rendered by the browser in whatever
      locale format it picks (MM/DD/YYYY, DD/MM/YYYY, ...) with no way to
      restyle just that text -- so instead of fighting it, the real input
@@ -248,13 +266,31 @@
     border-right: 1px solid var(--paper-line);
   }
 
+  /* On the bare frame a message sits on its own dark plate, like an empty
+     slot on the Monster's scoreboard -- the frame green is too light for
+     small text to clear 4.5:1 on its own. Already-dark surfaces (a .sheet,
+     a modal, the sidebar) don't need the plate, just the softer ink. */
   .mlb-status-msg {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 13px;
-    color: var(--paper);
-    opacity: 0.75;
-    padding: 30px 10px;
+    line-height: 1.5;
+    color: var(--ink);
+    background: var(--paper);
+    border: 2px solid var(--paper-line);
+    max-width: 46ch;
+    margin: 24px auto;
+    padding: 16px 18px;
     text-align: center;
+    text-wrap: balance;
+  }
+  .sheet .mlb-status-msg,
+  .pitch-overlay .mlb-status-msg,
+  .scorecard-sidebar .mlb-status-msg {
+    color: var(--ink-soft);
+    background: none;
+    border: none;
+    margin: 0 auto;
+    padding: 30px 10px;
   }
 
   .sheet {
@@ -395,18 +431,18 @@
     flex-shrink: 0;
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
-    font-size: 10.5px;
+    font-size: 11px;
     letter-spacing: 0.05em;
     text-transform: uppercase;
     color: var(--ink);
-    background: rgba(28, 58, 44, 0.05);
+    background: rgba(243, 236, 219, 0.04);
     border: 1px solid var(--paper-line);
-    border-radius: 5px;
+    border-radius: 0;
     padding: 6px 12px;
     cursor: pointer;
     white-space: nowrap;
   }
-  .box-score-link:hover { background: rgba(28, 58, 44, 0.1); }
+  .box-score-link:hover { background: rgba(243, 236, 219, 0.08); }
   .box-score-link:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
   .score-strip-sub {
     font-family: 'Inter', sans-serif;
@@ -749,11 +785,12 @@
     color: var(--paper);
     background: var(--gold);
     border: none;
-    border-radius: 6px;
+    border-radius: 0;
     padding: 11px 14px;
     cursor: pointer;
   }
-  .modal-cta:hover, .modal-cta:focus-visible { filter: brightness(0.93); outline: none; }
+  .modal-cta:hover { filter: brightness(1.08); }
+  .modal-cta:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 
   .game-summary-game + .game-summary-game {
     margin-top: 18px;
@@ -1211,7 +1248,9 @@
   .spray-key .dot.hr-dot { background: #fff8ea; border: 1.6px solid; box-sizing: border-box; }
   .spray-key .dot.out { background: #8a8478; }
 
-  .view-toggle { display: flex; border: 1px solid var(--paper-line); border-radius: 6px; overflow: hidden; }
+  /* Paper backing so the inactive segments' --ink-soft labels clear 4.5:1
+     when the toggle sits on the bare frame instead of inside a .sheet. */
+  .view-toggle { display: flex; background: var(--paper); border: 1px solid var(--paper-line); border-radius: 0; overflow: hidden; }
   .view-toggle-btn {
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
@@ -1225,24 +1264,26 @@
     cursor: pointer;
   }
   .view-toggle-btn + .view-toggle-btn { border-left: 1px solid var(--paper-line); }
-  .view-toggle-btn:hover { color: var(--ink); background: rgba(28, 58, 44, 0.1); }
-  .view-toggle-btn.active { color: var(--ink); background: rgba(217, 169, 26, 0.15); }
+  .view-toggle-btn:hover { color: var(--ink); background: rgba(243, 236, 219, 0.08); }
+  .view-toggle-btn.active { color: var(--ink); background: rgba(217, 169, 26, 0.15); box-shadow: inset 0 -2px 0 var(--gold); }
+  .view-toggle-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
   .wc-cutoff-line { border-top: 2px solid var(--ink); margin: 2px 0 0; }
 
   .roster-btn, .spray-btn {
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
-    font-size: 10.5px;
+    font-size: 11px;
     letter-spacing: 0.05em;
     text-transform: uppercase;
     color: var(--ink);
-    background: rgba(28, 58, 44, 0.05);
+    background: rgba(243, 236, 219, 0.04);
     border: 1px solid var(--paper-line);
-    border-radius: 5px;
+    border-radius: 0;
     padding: 6px 12px;
     cursor: pointer;
   }
-  .roster-btn:hover, .spray-btn:hover { background: rgba(28, 58, 44, 0.1); }
+  .roster-btn:hover, .spray-btn:hover { background: rgba(243, 236, 219, 0.08); }
+  .roster-btn:focus-visible, .spray-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
   .roster-section-title {
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
@@ -2021,8 +2062,8 @@
 
   .footnote {
     font-size: 10.5px;
-    color: var(--paper);
-    opacity: 0.55;
+    color: var(--ink);
+    opacity: 0.85;
     text-align: right;
     margin-top: 10px;
     font-family: 'Inter', sans-serif;
@@ -2209,16 +2250,23 @@
   }
   .pitch-close {
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: 4px;
+    right: 4px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: none;
     border: none;
     font-size: 14px;
     color: var(--ink-soft);
     cursor: pointer;
     line-height: 1;
-    padding: 4px;
+    padding: 0;
   }
+  .pitch-close:hover { color: var(--ink); background: rgba(243, 236, 219, 0.08); }
+  .pitch-close:focus-visible { color: var(--ink); outline: 2px solid var(--gold); outline-offset: -2px; }
   .pitch-header {
     font-family: 'Oswald', sans-serif;
     font-weight: 600;
@@ -2428,11 +2476,11 @@
   table.pitch-table td.pnum { color: var(--ink-soft); width: 20px; }
   table.pitch-table td.pcount { color: var(--ink-soft); white-space: nowrap; }
   table.pitch-table td.pspeed { color: var(--ink-soft); white-space: nowrap; }
-  .pitch-result-ball { color: #4f7a5f; font-weight: 600; }
-  .pitch-result-strike { color: var(--brick); font-weight: 600; }
+  .pitch-result-ball { color: #7fae8f; font-weight: 600; }
+  .pitch-result-strike { color: var(--brick-text); font-weight: 600; }
   .pitch-result-foulhit { color: var(--gold); font-weight: 600; }
-  .pitch-result-out { color: #8a8478; font-weight: 700; }
-  .pitch-result-hbp { color: #4f7a5f; font-weight: 700; font-style: italic; }
+  .pitch-result-out { color: #a39d90; font-weight: 700; }
+  .pitch-result-hbp { color: #7fae8f; font-weight: 700; font-style: italic; }
   table.pitch-table tr.hl td { background: rgba(217, 169, 26, 0.14); }
   table.pitch-table tr.challenged td { border-bottom-style: dashed; }
   .abs-tag {
@@ -2745,6 +2793,19 @@
   // .date-display's comment. Every one of the three date pickers pairs its
   // real (invisible) input with a .date-display-text span kept in sync via
   // this, rather than each tab reimplementing the same "Aug 23" formatting.
+  // The invisible input stretched over .date-display is mostly its
+  // month/day/year segments, and on desktop Chromium a click there only
+  // focuses a segment -- the picker opens solely from the calendar icon at
+  // the input's far right edge, so most clicks on the date did nothing.
+  // showPicker() opens it wherever the click lands. It throws without user
+  // activation or inside a cross-origin iframe, and older browsers lack it;
+  // either way the native click behavior is still there to fall back on.
+  [dateInput, dailyDateInput, standingsDateInput].forEach(input => {
+    input.addEventListener('click', () => {
+      if (typeof input.showPicker !== 'function') return;
+      try { input.showPicker(); } catch (e) {}
+    });
+  });
   function formatShortDate(dateStr) {
     return new Date(dateStr + 'T00:00:00Z').toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' });
   }
