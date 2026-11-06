@@ -1318,9 +1318,23 @@
   table.player-list-table th.sorted {
     color: var(--gold);
   }
-  table.player-list-table td:nth-child(1),
-  table.player-list-table td:nth-child(2) {
+  table.player-list-table {
+    --name-col-w: 200px;
+    --team-col-w: 150px;
+    --stat-col-min-w: 58px;
+    table-layout: fixed;
+    min-width: calc(var(--name-col-w) + var(--team-col-w) + var(--stat-cols, 8) * var(--stat-col-min-w));
+  }
+  table.player-list-table col.plc-player { width: var(--name-col-w); }
+  table.player-list-table col.plc-team { width: var(--team-col-w); }
+  @media (max-width: 520px) {
+    table.player-list-table { --name-col-w: 156px; --team-col-w: 118px; --stat-col-min-w: 52px; }
+  }
+  table.player-list-table th,
+  table.player-list-table td {
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   /* Matches the Player column's plate exactly, so the two columns read as
      one row of nameplates. */
@@ -7777,7 +7791,15 @@
       const cells = columns.map(c => `<td>${c.render(row, ctx)}</td>`).join('');
       return `<tr>${cells}</tr>`;
     }).join('');
-    return `<div class="table-scroll"><table class="pitch-table player-list-table">
+    // Fixed layout with set Player/Team widths -- auto layout sized every
+    // column to whichever names happened to be showing, so each filter
+    // change shifted the whole table sideways. --stat-cols feeds the CSS
+    // min-width (see table.player-list-table) that keeps the stat columns
+    // from squashing on a phone, where .table-scroll scrolls instead.
+    const statCols = columns.length - 2;
+    const colsHtml = '<col class="plc-player"><col class="plc-team">' + '<col>'.repeat(statCols);
+    return `<div class="table-scroll"><table class="pitch-table player-list-table" style="--stat-cols: ${statCols}">
+        <colgroup>${colsHtml}</colgroup>
         <thead><tr>${headHtml}</tr></thead>
         <tbody>${bodyHtml}</tbody>
       </table></div>`;
@@ -7826,9 +7848,13 @@
       const filtered = applyPlayerListFilters(rows);
       const who = type === 'pitching' ? 'pitchers' : 'batters';
       const qualifier = playerListState.pool === 'qualified' ? 'qualified ' : '';
+      // The ERA title needs an inning per team game, which relievers almost
+      // never reach -- so Relievers + Qualified is nearly always empty.
+      const relieverHint = playerListState.pos === 'RP' && playerListState.pool === 'qualified'
+        ? ' Relievers rarely pitch enough innings to qualify &#8212; set Players to All to see them.' : '';
       bodyHtml = filtered.length
         ? `<div class="player-list-count">${filtered.length} ${qualifier}${who}</div>${renderPlayerListTable(type, filtered, sortKey, sortDir, { leagueWoba })}`
-        : `<div class="pitch-empty">${rows.length ? `No ${qualifier}${who} match these filters.` : `No ${qualifier}${who} found for ${playerListState.season}.`}</div>`;
+        : `<div class="pitch-empty">${rows.length ? `No ${qualifier}${who} match these filters.` : `No ${qualifier}${who} found for ${playerListState.season}.`}${relieverHint}</div>`;
     }
     return `<div class="sheet">${renderPlayerListFilters(rows)}${bodyHtml}</div>`;
   }
