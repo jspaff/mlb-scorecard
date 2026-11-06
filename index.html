@@ -2497,71 +2497,179 @@
     color: var(--ink-soft);
     font-family: 'IBM Plex Mono', monospace;
   }
-  /* z-index: 0 (not auto) turns this into its own stacking context, so the
-     watermark's negative z-index stays pinned behind this card's content
-     instead of sinking behind the overlay/tab panel underneath it. */
-  .player-profile-sheet {
-    position: relative;
-    z-index: 0;
-    overflow: hidden;
-  }
-  .player-profile-watermark {
-    position: absolute;
-    top: 14px;
-    right: 14px;
-    z-index: -1;
-    width: 130px;
-    height: 130px;
-    object-fit: contain;
-    opacity: 0.14;
-    pointer-events: none;
-  }
-  .player-profile-head {
-    display: flex;
+  /* ---- Player profile ----
+     The photo is a print pinned to the page (cream border, drop shadow);
+     .pp is the size container the header and board respond to, since the
+     profile sits inside a sheet whose width isn't the viewport's. */
+  .pp { container-type: inline-size; }
+  .pp-back {
+    display: inline-flex;
     align-items: center;
-    gap: 16px;
-    margin-bottom: 16px;
+    gap: 7px;
+    margin: 0 0 10px;
+    padding: 6px 2px;
+    background: none;
+    border: 0;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink);
+    cursor: pointer;
   }
-  .player-profile-photo {
-    width: 80px;
-    height: 100px;
-    border-radius: 0;
-    object-fit: cover;
+  .pp-back svg { width: 7px; height: 11px; }
+  .pp-back:hover { color: var(--gold); }
+  .pp-back:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .pp-head { display: grid; grid-template-columns: 112px 1fr; gap: 16px; align-items: start; }
+  @container (min-width: 700px) { .pp-head { grid-template-columns: 184px 1fr; gap: 26px; } }
+  .pp-photo {
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
     background: var(--paper-line);
-    border: 1.5px solid var(--paper-line);
-    flex-shrink: 0;
+    border: 3px solid var(--ink);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.45);
   }
-  .player-profile-name {
+  .pp-photo img { width: 100%; height: 100%; object-fit: cover; object-position: center 18%; display: block; }
+  .pp-num { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 30px; line-height: 1; color: var(--gold); }
+  .pp-name { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 26px; line-height: 1.05; margin: 2px 0 6px; color: var(--ink); text-wrap: balance; }
+  /* Team and position as a plain line of type -- the nameplates are for
+     things you click through to; here they're just who he is. On a narrow
+     sheet each gets its own line so a position can't break mid-phrase. */
+  .pp-ident { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 16px; line-height: 1.3; letter-spacing: 0.01em; color: var(--ink); margin-bottom: 12px; }
+  .pp-pos { color: var(--ink-soft); }
+  .pp-sep { color: var(--gold); padding: 0 7px; }
+  @container (max-width: 699px) { .pp-sep { display: none; } .pp-pos { display: block; } }
+  @container (min-width: 700px) {
+    .pp-num { font-size: 44px; }
+    .pp-name { font-size: 42px; margin: 4px 0 8px; }
+    .pp-ident { font-size: 20px; margin-bottom: 16px; }
+  }
+  .pp-bio { font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); margin-bottom: 10px; }
+  .pp-bio b { color: var(--ink); font-weight: 600; }
+  .pp-narrow .player-award-tags, .pp-wide .player-award-tags { margin-bottom: 0; }
+  .pp-wide { display: none; }
+  @container (min-width: 700px) { .pp-wide { display: block; } .pp-narrow { display: none; } }
+  .pp-narrow.pp-bio { margin-top: 14px; }
+
+  .pp-tabs {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    border-bottom: 1px solid var(--paper-line);
+    margin: 18px 0 16px;
+  }
+  .pp-tabs::-webkit-scrollbar { display: none; }
+  .pp-tab {
+    flex: none;
+    background: none;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    padding: 9px 10px 8px;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 11.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+  .pp-tab:hover { color: var(--ink); }
+  .pp-tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--gold); }
+  .pp-tab:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+
+  /* Overview board: eight numbers in the live scoreboard's recessed slots
+     (same inset shadow as .monster-box-cell). Gold on a number marks the
+     top 10% of the qualified pool; the rank sits small in the corner --
+     shrunk further on a narrow sheet rather than taking a strip of its
+     own, so the number stays centered in its slot. */
+  .pp-board { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 12px; padding: 4px 0 6px; }
+  @container (min-width: 520px) { .pp-board { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px 14px; } }
+  .pp-painted {
+    display: block;
+    text-align: center;
+    margin-bottom: 6px;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 800;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink);
+    opacity: 0.85;
+  }
+  .pp-slot {
+    position: relative;
+    display: block;
+    text-align: center;
     font-family: 'Oswald', sans-serif;
     font-weight: 600;
-    font-size: 22px;
+    font-size: 34px;
+    line-height: 1.5;
     color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    background: rgba(0, 0, 0, 0.22);
+    border-radius: 2px;
+    box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.5), inset 0 -1px 1px rgba(255, 255, 255, 0.05);
   }
-  .player-profile-meta {
-    font-family: 'Inter', sans-serif;
-    font-size: 13px;
-    color: var(--ink-soft);
-    margin-top: 2px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .player-profile-bio {
+  @container (min-width: 700px) { .pp-slot { font-size: 46px; line-height: 1.45; } }
+  .pp-rank {
+    position: absolute;
+    bottom: 4px;
+    right: 5px;
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
-    font-size: 11.5px;
+    font-size: 8px;
+    line-height: 1;
     color: var(--ink-soft);
-    margin-top: 4px;
+    font-variant-numeric: tabular-nums;
   }
-  .player-profile-bt {
-    font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 11.5px;
-    color: var(--ink-soft);
-    margin-top: 2px;
-  }
+  @container (min-width: 520px) { .pp-rank { font-size: 10px; bottom: 5px; right: 7px; letter-spacing: 0.02em; } }
+  @container (min-width: 700px) { .pp-rank { font-size: 11px; bottom: 7px; right: 9px; } }
+  .pp-stat.is-top .pp-slot, .pp-stat.is-top .pp-rank { color: var(--gold); }
 
-  /* Current-season spray chart, below the Career table -- reuses the same
+  .pp-table td, .pp-table th { white-space: nowrap; }
+  .pp-table td.pp-soft { color: var(--ink-soft); }
+  .pp-table tr.pp-group td { font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); border-bottom: 0; padding-top: 12px; }
+  .pp-game-link {
+    padding: 0;
+    background: none;
+    border: 0;
+    font: inherit;
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-color: var(--paper-line);
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+  .pp-game-link:hover { text-decoration-color: var(--gold); }
+  .pp-game-link:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+  .pp-chart { position: relative; }
+  .pp-chart.is-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .pp-chart svg { display: block; width: 100%; height: auto; }
+  .pp-chart-hit { cursor: crosshair; touch-action: pan-x; }
+  .pp-chart-tip {
+    position: absolute;
+    top: 4px;
+    transform: translateX(-50%);
+    pointer-events: none;
+    white-space: nowrap;
+    padding: 5px 8px;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    line-height: 1.35;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    transition: opacity 0.12s ease;
+  }
+  .pp-chart-tip.is-on { opacity: 1; }
+
+  /* The profile's Spray tab -- reuses the same
      .spray-card/.spray-header/.spray-legend look as the Scorecard tab's
      per-game chart, but capped to a max-width and centered so it doesn't
      blow up to the full width of the sheet on a wide screen. */
@@ -2988,6 +3096,17 @@
   // on a second round of requests (one per season) that resolve later.
   let lastProfileLeagueWoba = {};
   let lastProfileAwardTags = [];
+  // Which of the two things playersBody shows -- the list or a profile --
+  // so a profile's late-arriving fetches don't redraw over the list after
+  // the user has gone back to it (see rerenderPlayerProfile).
+  let playersView = 'list';
+  let profileTab = 'ov';
+  // The season the profile's season tabs show (see showPlayerProfile), its
+  // getPlayerSeasonDetail result (undefined while loading, null if it
+  // failed), and the Overview board built from it (null until ready).
+  let lastProfileSeason = null;
+  let lastProfileDetail;
+  let lastProfileBoard = null;
   // Players tab's browsable list (Batters/Pitchers toggle, sortable current-
   // season stats) -- separate from the search/profile state above since the
   // list and a profile are just two different things playersBody can show.
@@ -3019,7 +3138,7 @@
   // Mirrors the --ink/--gold/--brick/--paper CSS variables (plus the ball
   // green that only exists as a literal on .pitch-result-ball), for the few
   // spots (SVG strings) that can't reference a CSS custom property directly.
-  const PALETTE = { ink: '#f3ecdb', gold: '#d9a91a', brick: '#e0604a', ball: '#4f7a5f', paper: '#3b4336', gray: '#8a8478' };
+  const PALETTE = { ink: '#f3ecdb', inkSoft: '#c3c8bb', gold: '#d9a91a', brick: '#e0604a', ball: '#4f7a5f', paper: '#3b4336', paperLine: '#545e4d', gray: '#8a8478', startMuted: '#7d8577' };
   const gameLogCache = {};
   // Separate cache/fetcher (rather than a `group` param on gameLogCache) so
   // a two-way player's pitching and hitting logs -- keyed the same way,
@@ -7254,22 +7373,6 @@
       person.primaryPosition && person.primaryPosition.abbreviation
     ].filter(Boolean).join(' &#183; ');
   }
-  function playerBioLine(person) {
-    return [
-      person.currentAge != null ? `${person.currentAge} yrs` : null,
-      person.height,
-      person.weight != null ? `${person.weight} lbs` : null
-    ].filter(Boolean).join(' &#183; ');
-  }
-  function playerBatsThrowsLine(person) {
-    const bats = person.batSide && person.batSide.code;
-    const throwsHand = person.pitchHand && person.pitchHand.code;
-    if (bats && throwsHand) return `Bats ${bats} / Throws ${throwsHand}`;
-    if (bats) return `Bats ${bats}`;
-    if (throwsHand) return `Throws ${throwsHand}`;
-    return null;
-  }
-
   function renderPlayerSearchResults(people) {
     if (!people.length) {
       playerSearchResults.innerHTML = '<div class="player-search-empty">No players found.</div>';
@@ -7341,6 +7444,63 @@
     current.dir = current.key === key ? (current.dir === 'asc' ? 'desc' : 'asc') : column.dir;
     current.key = key;
     showPlayerList();
+  });
+
+  // Profile controls: the back link, the profile's own tab row, and Game
+  // Log dates (each opens that game's scorecard).
+  playersBody.addEventListener('click', (e) => {
+    if (e.target.closest('.pp-back')) { showPlayerList(); return; }
+    const tab = e.target.closest('.pp-tab');
+    if (tab) {
+      profileTab = tab.dataset.ppTab;
+      rerenderPlayerProfile();
+      return;
+    }
+    const gameLink = e.target.closest('.pp-game-link');
+    if (gameLink) jumpToScorecardGame(gameLink.dataset.date, Number(gameLink.dataset.gamePk));
+  });
+
+  // Starts chart readout -- pointer events cover mouse hover and a tap on
+  // touch screens alike. The column under the pointer is looked up from
+  // the same profileStarts() list the chart was drawn from.
+  function updateStartsTip(e) {
+    const hit = e.target.closest && e.target.closest('.pp-chart-hit');
+    if (!hit || !lastProfileDetail) return;
+    const chart = hit.closest('.pp-chart');
+    const svg = hit.ownerSVGElement;
+    const starts = profileStarts(lastProfileDetail.gameLog);
+    const vb = svg.viewBox.baseVal;
+    const rect = svg.getBoundingClientRect();
+    const colW = Number(hit.dataset.colW);
+    const left = Number(hit.getAttribute('x'));
+    const svgX = (e.clientX - rect.left) / rect.width * vb.width;
+    const i = Math.max(0, Math.min(starts.length - 1, Math.floor((svgX - left) / colW)));
+    const s = starts[i];
+    const col = svg.querySelector('.pp-chart-col');
+    col.setAttribute('x', left + i * colW);
+    col.setAttribute('opacity', '0.1');
+    const tip = chart.querySelector('.pp-chart-tip');
+    tip.innerHTML = `${formatShortDate(s.date)} ${s.isHome ? 'vs' : '@'} ${teamNickname(s.opp)}<br>${s.ip} IP &#183; ${s.er} ER &#183; ${s.k} K${s.qs ? ' &#183; QS' : ''}`;
+    const chartRect = chart.getBoundingClientRect();
+    tip.style.left = (rect.left - chartRect.left + chart.scrollLeft + (left + (i + 0.5) * colW) / vb.width * rect.width) + 'px';
+    tip.classList.add('is-on');
+  }
+  // The Starts chart is sized from the sheet's width at render time, so a
+  // resize or rotation redraws it rather than leaving it at the old width.
+  let startsResizeTimer = null;
+  window.addEventListener('resize', () => {
+    if (playersView !== 'profile' || profileTab !== 'starts') return;
+    clearTimeout(startsResizeTimer);
+    startsResizeTimer = setTimeout(rerenderPlayerProfile, 150);
+  });
+  playersBody.addEventListener('pointermove', updateStartsTip);
+  playersBody.addEventListener('pointerdown', updateStartsTip);
+  playersBody.addEventListener('pointerout', (e) => {
+    const hit = e.target.closest && e.target.closest('.pp-chart-hit');
+    if (!hit) return;
+    const chart = hit.closest('.pp-chart');
+    chart.querySelector('.pp-chart-tip').classList.remove('is-on');
+    hit.ownerSVGElement.querySelector('.pp-chart-col').setAttribute('opacity', '0');
   });
 
   // A league switch drops a team pick from the other league (it would
@@ -7921,6 +8081,9 @@
   }
 
   async function showPlayerList() {
+    playersView = 'list';
+    playerProfileRequestId++;
+    playerSprayToken++;
     const requestId = ++playerListRequestId;
     if (playerListState.season == null) {
       renderPlayerListInto(undefined, null);
@@ -7951,45 +8114,323 @@
     renderPlayerListInto(rows, leagueWoba);
   }
 
-  function renderPlayerProfile(person, careerSplits, awardTags, leagueWobaBySeason) {
-    const teamId = person.currentTeam && person.currentTeam.id;
-    const watermarkHtml = teamId ? `<img class="player-profile-watermark" src="${capLogoUrl(teamId)}" alt="" aria-hidden="true">` : '';
-    const meta = playerMetaLine(person);
-    const bio = playerBioLine(person);
-    const bt = playerBatsThrowsLine(person);
-    const awardsHtml = renderAwardTags(awardTags);
-    const pitcher = isPitcher(person);
-    const yearSplits = careerSplits === null ? null : (pitcher ? careerSplits.pitching : careerSplits.hitting);
-    const careerHtml = yearSplits === null
-      ? '<div class="mlb-status-msg">Loading career stats&#8230;</div>'
-      : yearSplits.length
-        ? (pitcher ? renderPitchingCareerTable(yearSplits) : renderCareerTable(yearSplits, leagueWobaBySeason || {}))
-        : '<div class="pitch-empty">Career stats not available.</div>';
-    const sprayHtml = !pitcher && playerSprayState.personId === Number(person.id) ? renderPlayerSprayWidget(playerSprayState) : '';
-    return `<div class="sheet player-profile-sheet">
-      ${watermarkHtml}
-      <div class="player-profile-head">
-        <img class="player-profile-photo" src="${headshotUrl(person.id, 180)}" alt="" loading="lazy" onerror="this.style.display='none'">
-        <div>
-          <div class="player-profile-name">${person.fullName}</div>
-          ${meta ? `<div class="player-profile-meta">${meta}</div>` : ''}
-          ${bio ? `<div class="player-profile-bio">${bio}</div>` : ''}
-          ${bt ? `<div class="player-profile-bt">${bt}</div>` : ''}
-        </div>
-      </div>
-      ${awardsHtml}
-      <div class="roster-section-title">Career</div>
-      ${careerHtml}
-      ${sprayHtml}
+  // ---- Player profile ----------------------------------------------------
+  // Header (photo, number, name, team/position, bio, awards) over a row of
+  // tabs. The season tabs (Overview, Starts, Game Log, Splits) all read one
+  // season: the Players list's season filter, so a profile opened off a
+  // 2012 leaderboard shows 2012 and its ranks match that list's.
+
+  // Everything the season tabs need in one request. A traded player's
+  // season and each of his splits come back as one line per team plus a
+  // teamless combined line -- pickCombinedStat takes the combined one.
+  // Past seasons are final, so they're cached; the current one isn't (a
+  // game may finish mid-session), and a failure is never cached, so
+  // reopening the profile retries.
+  const playerSeasonDetailCache = {};
+  function pickCombinedStat(splits) {
+    if (!splits.length) return null;
+    const combined = splits.find(s => !s.team);
+    if (combined) return combined.stat || null;
+    return splits.length === 1 ? (splits[0].stat || null) : sumStatLines(splits.map(s => s.stat || {}));
+  }
+  async function getPlayerSeasonDetail(personId, season, group) {
+    const key = `${personId}-${season}-${group}`;
+    if (playerSeasonDetailCache[key]) return playerSeasonDetailCache[key];
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/people/${personId}/stats?stats=season,statSplits,gameLog&group=${group}&season=${season}&sitCodes=vl,vr,h,a,3,4,5,6,7,8,9`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      const byType = t => {
+        const entry = (data.stats || []).find(s => s.type && s.type.displayName === t);
+        return (entry && entry.splits) || [];
+      };
+      const splitsByDesc = {};
+      byType('statSplits').forEach(s => {
+        const desc = s.split && s.split.description;
+        if (!desc) return;
+        (splitsByDesc[desc] = splitsByDesc[desc] || []).push(s);
+      });
+      const splits = {};
+      Object.keys(splitsByDesc).forEach(desc => { splits[desc] = pickCombinedStat(splitsByDesc[desc]); });
+      const gameLog = byType('gameLog').slice().sort((a, b) =>
+        (b.date || '').localeCompare(a.date || '') || ((b.game && b.game.gameNumber) || 1) - ((a.game && a.game.gameNumber) || 1));
+      const detail = { seasonStat: pickCombinedStat(byType('season')), splits, gameLog };
+      if (Number(season) < new Date().getFullYear()) playerSeasonDetailCache[key] = detail;
+      return detail;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Counting stats summed across several stat lines (a merged Mar/Apr
+  // split, or per-team lines with no combined total) -- rates are always
+  // recomputed from these rather than averaged.
+  function sumStatLines(stats) {
+    const keys = ['atBats', 'hits', 'doubles', 'triples', 'homeRuns', 'baseOnBalls', 'hitByPitch', 'sacFlies', 'totalBases',
+      'plateAppearances', 'battersFaced', 'strikeOuts', 'earnedRuns', 'gamesPlayed', 'gamesStarted', 'gamesPitched', 'rbi', 'runs'];
+    const out = {};
+    keys.forEach(k => { out[k] = stats.reduce((sum, s) => sum + (s[k] || 0), 0); });
+    out.inningsPitched = formatIP(stats.reduce((sum, s) => sum + ipToOuts(s.inningsPitched), 0));
+    return out;
+  }
+  // OPS as the API reports it: the already-rounded OBP plus the
+  // already-rounded SLG, so a recomputed row agrees with the API's own.
+  function slashFromCounts(s) {
+    const ab = s.atBats || 0, h = s.hits || 0, bb = s.baseOnBalls || 0, hbp = s.hitByPitch || 0, sf = s.sacFlies || 0;
+    const obpDen = ab + bb + hbp + sf;
+    if (!ab || !obpDen) return { avg: '&#8212;', obp: '&#8212;', slg: '&#8212;', ops: '&#8212;' };
+    const obp = Number(((h + bb + hbp) / obpDen).toFixed(3));
+    const slg = Number(((s.totalBases || 0) / ab).toFixed(3));
+    return { avg: formatRate(h, ab), obp: formatRate(h + bb + hbp, obpDen), slg: formatRate(s.totalBases || 0, ab), ops: formatRate(obp + slg, 1) };
+  }
+
+  // ---- Overview board ----
+  // get() is the rankable value (null = not ranked, as for playing-time
+  // counts like G/PA/GS); low marks the stats where lower is better, which
+  // still rank 1 = best.
+  const HITTER_BOARD = [
+    { label: 'AVG', show: s => s.avg ?? '&#8212;', get: s => s.avg != null ? Number(s.avg) : null },
+    { label: 'OBP', show: s => s.obp ?? '&#8212;', get: s => s.obp != null ? Number(s.obp) : null },
+    { label: 'SLG', show: s => s.slg ?? '&#8212;', get: s => s.slg != null ? Number(s.slg) : null },
+    { label: 'OPS', show: s => s.ops ?? '&#8212;', get: s => s.ops != null ? Number(s.ops) : null },
+    { label: 'HR', show: s => s.homeRuns ?? 0, get: s => s.homeRuns ?? null },
+    { label: 'G', show: s => s.gamesPlayed ?? 0 },
+    { label: 'PA', show: s => s.plateAppearances ?? 0 },
+    { label: 'wOBA+', show: (s, ctx) => computeWOBAPlus(s, ctx.leagueWoba), get: (s, ctx) => wobaPlusValue(s, ctx.leagueWoba) }
+  ];
+  const PITCHER_BOARD = [
+    { label: 'GS', show: s => s.gamesStarted ?? 0 },
+    { label: 'ERA', show: s => s.era ?? '&#8212;', get: s => s.era != null && s.era !== '-.--' ? Number(s.era) : null, low: true },
+    { label: 'IP', show: s => s.inningsPitched ?? '&#8212;', get: s => ipToOuts(s.inningsPitched) },
+    { label: 'WHIP', show: s => s.whip ?? '&#8212;', get: s => s.whip != null && s.whip !== '-.--' ? Number(s.whip) : null, low: true },
+    { label: 'K', show: s => s.strikeOuts ?? 0, get: s => s.strikeOuts ?? null },
+    { label: 'BB', show: s => s.baseOnBalls ?? 0, get: s => s.baseOnBalls ?? null, low: true },
+    { label: 'K%-BB%', show: s => formatKBB(s.strikeOuts, s.baseOnBalls, s.battersFaced), get: s => rawKBB(s.strikeOuts, s.baseOnBalls, s.battersFaced) },
+    { label: 'Opp AVG', show: s => s.avg ?? '&#8212;', get: s => s.avg != null ? Number(s.avg) : null, low: true }
+  ];
+  // Gold marks the top 10% of that season's qualified pool, the same pool
+  // (and so the same denominator) the Players list shows.
+  const PROFILE_GOLD_SHARE = 0.10;
+
+  // Standard competition ranking (1, 2, 2, 4) against the qualified pool;
+  // only computed when the player is in that pool -- someone who doesn't
+  // qualify gets no ranks and no gold rather than a rank against players
+  // whose samples he doesn't share.
+  function rankInPool(column, me, pool, ctx) {
+    const mine = column.get(me.stat, ctx);
+    if (mine == null) return null;
+    const values = pool.map(r => column.get(r.stat, ctx)).filter(v => v != null);
+    const better = values.filter(v => column.low ? v < mine : v > mine).length;
+    const tied = values.filter(v => v === mine).length > 1;
+    return { rank: better + 1, tied, of: pool.length };
+  }
+
+  async function buildProfileBoard(personId, season, pitcher, seasonStat) {
+    const type = pitcher ? 'pitching' : 'batting';
+    const [allRows, leagueInfo] = await Promise.all([
+      getSeasonPlayerStats(pitcher ? 'pitching' : 'hitting', season, 'qualified'),
+      getLeagueSeasonInfo(season)
+    ]);
+    const pool = allRows ? filterQualifiedPlayers(type, allRows, leagueInfo.teamGamesPlayed) : [];
+    const me = pool.find(r => r.id === personId);
+    const ctx = { leagueWoba: leagueInfo.woba };
+    const columns = pitcher ? PITCHER_BOARD : HITTER_BOARD;
+    return {
+      ctx,
+      stat: (me && me.stat) || seasonStat,
+      ranks: columns.map(c => (me && c.get ? rankInPool(c, me, pool, ctx) : null))
+    };
+  }
+
+  function renderProfileBoard(board, pitcher) {
+    const columns = pitcher ? PITCHER_BOARD : HITTER_BOARD;
+    return `<div class="pp-board">${columns.map((c, i) => {
+      const r = board.ranks[i];
+      const top = r && r.rank / r.of <= PROFILE_GOLD_SHARE;
+      const badge = r ? `<span class="pp-rank" title="Rank among ${r.of} qualified ${pitcher ? 'pitchers' : 'hitters'}">${r.tied ? 'T' : ''}${r.rank}/${r.of}</span>` : '';
+      return `<div class="pp-stat${top ? ' is-top' : ''}"><span class="pp-painted">${c.label}</span><span class="pp-slot">${c.show(board.stat, board.ctx)}${badge}</span></div>`;
+    }).join('')}</div>`;
+  }
+
+  // ---- Game Log / Splits ----
+  function renderProfileGameLog(gameLog, pitcher) {
+    if (!gameLog.length) return '<div class="pitch-empty">No games this season.</div>';
+    const dateCell = g => {
+      const label = formatShortDate(g.date);
+      return g.game && g.game.gamePk
+        ? `<button type="button" class="pp-game-link" data-date="${g.date}" data-game-pk="${g.game.gamePk}">${label}</button>`
+        : label;
+    };
+    const opp = g => `${g.isHome ? 'vs' : '@'} ${teamNickname(g.opponent)}`;
+    if (!pitcher) {
+      return `<div class="table-scroll"><table class="pitch-table pp-table"><thead><tr><th>Date</th><th>Opp</th><th>H-AB</th><th>HR</th><th>RBI</th><th>BB</th><th>K</th></tr></thead><tbody>
+        ${gameLog.map(g => { const s = g.stat || {}; return `<tr><td>${dateCell(g)}</td><td class="pp-soft">${opp(g)}</td><td>${s.hits ?? 0}-${s.atBats ?? 0}</td><td>${s.homeRuns ?? 0}</td><td>${s.rbi ?? 0}</td><td>${s.baseOnBalls ?? 0}</td><td>${s.strikeOuts ?? 0}</td></tr>`; }).join('')}
+      </tbody></table></div>`;
+    }
+    const dec = s => s.wins ? 'W' : s.losses ? 'L' : s.saves ? 'SV' : s.holds ? 'HLD' : '&#8212;';
+    return `<div class="table-scroll"><table class="pitch-table pp-table"><thead><tr><th>Date</th><th>Opp</th><th>Dec</th><th>IP</th><th>H</th><th>ER</th><th>BB</th><th>K</th><th>Pit</th></tr></thead><tbody>
+      ${gameLog.map(g => { const s = g.stat || {}; return `<tr><td>${dateCell(g)}</td><td class="pp-soft">${opp(g)}</td><td>${dec(s)}</td><td>${s.inningsPitched ?? '0.0'}</td><td>${s.hits ?? 0}</td><td>${s.earnedRuns ?? 0}</td><td>${s.baseOnBalls ?? 0}</td><td>${s.strikeOuts ?? 0}</td><td class="pp-soft">${s.numberOfPitches ?? '&#8212;'}</td></tr>`; }).join('')}
+    </tbody></table></div>`;
+  }
+
+  // March is only the season's first few days, so it folds into April as
+  // one Mar/Apr row (summed from counting stats, see sumStatLines).
+  const SPLIT_MONTHS = ['May', 'June', 'July', 'August', 'September'];
+  function renderProfileSplits(splits, pitcher) {
+    const marApr = [splits.March, splits.April].filter(Boolean);
+    const groups = [
+      ['Platoon', [[pitcher ? 'vs LHB' : 'vs LHP', splits['vs Left']], [pitcher ? 'vs RHB' : 'vs RHP', splits['vs Right']]]],
+      ['Venue', [['Home', splits['Home Games']], ['Away', splits['Away Games']]]],
+      ['By month', [['Mar/Apr', marApr.length ? sumStatLines(marApr) : null], ...SPLIT_MONTHS.map(m => [m, splits[m]])]]
+    ].map(([name, rows]) => [name, rows.filter(([, s]) => s)]).filter(([, rows]) => rows.length);
+    if (!groups.length) return '<div class="pitch-empty">No splits this season.</div>';
+    const head = pitcher
+      ? '<th>Split</th><th>BF</th><th>IP</th><th>ERA</th><th>Opp AVG</th><th>Opp OPS</th><th>K</th>'
+      : '<th>Split</th><th>PA</th><th>AVG</th><th>OBP</th><th>SLG</th><th>OPS</th><th>HR</th>';
+    const row = (label, s) => {
+      const r = slashFromCounts(s);
+      return pitcher
+        ? `<tr><td>${label}</td><td class="pp-soft">${s.battersFaced ?? 0}</td><td>${s.inningsPitched ?? '0.0'}</td><td>${formatERA(s.earnedRuns || 0, ipToOuts(s.inningsPitched))}</td><td>${r.avg}</td><td>${r.ops}</td><td>${s.strikeOuts ?? 0}</td></tr>`
+        : `<tr><td>${label}</td><td class="pp-soft">${s.plateAppearances ?? 0}</td><td>${r.avg}</td><td>${r.obp}</td><td>${r.slg}</td><td>${r.ops}</td><td>${s.homeRuns ?? 0}</td></tr>`;
+    };
+    return `<div class="table-scroll"><table class="pitch-table pp-table"><thead><tr>${head}</tr></thead><tbody>
+      ${groups.map(([name, rows]) => `<tr class="pp-group"><td colspan="7">${name}</td></tr>${rows.map(([l, s]) => row(l, s)).join('')}`).join('')}
+    </tbody></table></div>`;
+  }
+
+  // ---- Starts chart ----
+  // One column per start, oldest first: bar height is innings pitched
+  // against a 6-inning guide, gold for a quality start (6+ IP, 3 or fewer
+  // ER). Drawn at the sheet's real width (not a fixed viewBox scaled up),
+  // so text and bars keep their size on a wide screen; on a narrow one
+  // columns keep a readable minimum width and the chart scrolls sideways.
+  function profileStarts(gameLog) {
+    return gameLog.filter(g => g.stat && g.stat.gamesStarted).slice().reverse().map(g => {
+      const outs = ipToOuts(g.stat.inningsPitched);
+      const er = g.stat.earnedRuns || 0;
+      return { date: g.date, opp: g.opponent, isHome: g.isHome, ip: g.stat.inningsPitched, outs, er, k: g.stat.strikeOuts || 0, qs: outs >= 18 && er <= 3 };
+    });
+  }
+  function renderStartsChart(starts) {
+    if (!starts.length) return '<div class="pitch-empty">No starts this season.</div>';
+    const L = 40, R = 4, T = 10, PH = 190, AX = 18, MIN_COL = 20;
+    // playersBody minus the sheet's own padding and border
+    const avail = Math.max(240, playersBody.clientWidth - 40);
+    const narrow = (avail - L - R) / starts.length < MIN_COL;
+    const colW = narrow ? MIN_COL : Math.min(48, (avail - L - R) / starts.length);
+    const W = L + R + colW * starts.length;
+    const base = T + PH, H = base + AX;
+    const maxIP = Math.max(9, Math.ceil(Math.max(...starts.map(s => s.outs)) / 3));
+    const y = v => T + (1 - v / maxIP) * PH;
+    const text = (x, yy, t, anchor, fill, weight) => `<text x="${x}" y="${yy}" text-anchor="${anchor}" fill="${fill}" font-size="10" font-family="Overpass" font-weight="${weight}">${t}</text>`;
+    const ticks = [0, 3, 6, 9].filter(v => v <= maxIP);
+    const grid = ticks.map(v => `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="${PALETTE.paperLine}" stroke-width="1"/>${text(L - 6, y(v) + 3.5, v, 'end', PALETTE.inkSoft, 700)}`).join('');
+    const bars = starts.map((s, i) => {
+      const x0 = L + i * colW + 1.5, w = colW - 3, top = y(s.outs / 3);
+      const r = Math.min(3, w / 2, base - top);
+      return `<path d="M${x0},${base} V${top + r} Q${x0},${top} ${x0 + r},${top} H${x0 + w - r} Q${x0 + w},${top} ${x0 + w},${top + r} V${base} Z" fill="${s.qs ? PALETTE.gold : PALETTE.startMuted}"/>`;
+    }).join('');
+    let lastMonth = '', lastX = -99;
+    const months = starts.map((s, i) => {
+      const m = s.date.slice(5, 7) === '03' ? '04' : s.date.slice(5, 7);
+      if (m === lastMonth) return '';
+      lastMonth = m;
+      const x = L + i * colW;
+      if (x - lastX < 30) return '';
+      lastX = x;
+      const name = i === 0 && starts[0].date.slice(5, 7) === '03' ? 'Mar/Apr' : MONTH_NAMES[Number(m) - 1].slice(0, 3);
+      return text(x + 1.5, H - 3, name, 'start', PALETTE.inkSoft, 700);
+    }).join('');
+    const six = `<line x1="${L}" x2="${W - R}" y1="${y(6)}" y2="${y(6)}" stroke="${PALETTE.ink}" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.8"/>`;
+    const ipY = T + PH / 2;
+    const ipTitle = `<text x="10" y="${ipY}" transform="rotate(-90 10 ${ipY})" text-anchor="middle" fill="${PALETTE.ink}" font-size="10" font-family="Overpass" font-weight="800" letter-spacing="1.2">IP</text>`;
+    const qsCount = starts.filter(s => s.qs).length;
+    return `<div class="pp-chart${narrow ? ' is-scroll' : ''}">
+      <svg viewBox="0 0 ${W} ${H}"${narrow ? ` style="width:${W}px"` : ''} role="img" aria-label="Innings pitched in each of ${starts.length} starts; ${qsCount} quality starts">
+        ${ipTitle}${grid}${six}${bars}${months}
+        <rect class="pp-chart-col" x="0" y="0" width="${colW}" height="${base}" fill="${PALETTE.ink}" opacity="0" pointer-events="none"/>
+        <rect class="pp-chart-hit" x="${L}" y="0" width="${W - L - R}" height="${base}" fill="transparent" data-col-w="${colW}"/>
+      </svg>
+      <div class="pp-chart-tip" aria-hidden="true"></div>
     </div>`;
   }
 
-  // Re-renders the profile from the last-fetched person/career/awards data
-  // without re-fetching them -- used when the spray widget's own fetch
-  // resolves, since that doesn't touch person/career/awards.
+  // ---- Assembly ----
+  function profileTabsFor(pitcher, detail) {
+    const hasStarts = pitcher && detail && detail.gameLog.some(g => g.stat && g.stat.gamesStarted);
+    return pitcher
+      ? [['ov', 'Overview'], ...(hasStarts ? [['starts', 'Starts']] : []), ['log', 'Game Log'], ['spl', 'Splits'], ['car', 'Career']]
+      : [['ov', 'Overview'], ['log', 'Game Log'], ['spl', 'Splits'], ['car', 'Career'], ['spray', 'Spray']];
+  }
+
+  function renderProfileTabBody(tab, pitcher) {
+    const detail = lastProfileDetail;
+    if (tab === 'car') {
+      const careerSplits = lastProfileCareerSplits;
+      const yearSplits = careerSplits === null ? null : (pitcher ? careerSplits.pitching : careerSplits.hitting);
+      if (yearSplits === null) return '<div class="mlb-status-msg">Loading career stats&#8230;</div>';
+      if (!yearSplits.length) return '<div class="pitch-empty">Career stats not available.</div>';
+      return pitcher ? renderPitchingCareerTable(yearSplits) : renderCareerTable(yearSplits, lastProfileLeagueWoba || {});
+    }
+    if (tab === 'spray') {
+      return playerSprayState.personId === Number(lastProfilePerson.id) ? renderPlayerSprayWidget(playerSprayState) : '';
+    }
+    if (detail === undefined) return '<div class="mlb-status-msg">Loading season stats&#8230;</div>';
+    if (detail === null) return apiErrorMsg('season stats');
+    if (tab === 'ov') {
+      if (!detail.seasonStat) return `<div class="pitch-empty">No ${lastProfileSeason} stats.</div>`;
+      return lastProfileBoard ? renderProfileBoard(lastProfileBoard, pitcher) : '<div class="mlb-status-msg">Loading season stats&#8230;</div>';
+    }
+    if (tab === 'starts') return renderStartsChart(profileStarts(detail.gameLog));
+    if (tab === 'log') return renderProfileGameLog(detail.gameLog, pitcher);
+    return renderProfileSplits(detail.splits, pitcher);
+  }
+
+  function renderPlayerProfile(person) {
+    const pitcher = isPitcher(person);
+    const tabs = profileTabsFor(pitcher, lastProfileDetail);
+    if (!tabs.some(([id]) => id === profileTab)) profileTab = 'ov';
+    const team = person.currentTeam && person.currentTeam.name;
+    const pos = person.primaryPosition && person.primaryPosition.name;
+    const ident = [team, pos].filter(Boolean).map((t, i) => (i ? `<span class="pp-sep">&#183;</span><span class="pp-pos">${t}</span>` : t)).join('');
+    const born = [person.birthCity, person.birthStateProvince || person.birthCountry].filter(Boolean).join(', ');
+    const bio = [
+      person.currentAge != null ? `Age <b>${person.currentAge}</b>` : null,
+      person.height ? `Ht / Wt <b>${person.height}${person.weight ? ` &#183; ${person.weight}` : ''}</b>` : null,
+      person.batSide && person.pitchHand ? `B / T <b>${person.batSide.code} / ${person.pitchHand.code}</b>` : null,
+      born ? `Born <b>${born}</b>` : null,
+      person.mlbDebutDate ? `Debut <b>${formatShortDate(person.mlbDebutDate)}, ${person.mlbDebutDate.slice(0, 4)}</b>` : null
+    ].filter(Boolean).join(' &#183; ');
+    const awardsHtml = renderAwardTags(lastProfileAwardTags);
+    const listName = playerListState.type === 'pitching' ? 'Pitchers' : 'Batters';
+    return `<div class="pp">
+      <button type="button" class="pp-back"><svg viewBox="0 0 7 11" aria-hidden="true"><path d="M6 1L1.5 5.5 6 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>${lastProfileSeason || ''} ${listName}</button>
+      <div class="sheet pp-sheet">
+        <div class="pp-head">
+          <div class="pp-photo"><img src="${headshotUrl(person.id, 360)}" alt="" onerror="this.style.display='none'"></div>
+          <div class="pp-id">
+            ${person.primaryNumber ? `<div class="pp-num">#${person.primaryNumber}</div>` : ''}
+            <div class="pp-name">${person.fullName || ''}</div>
+            ${ident ? `<div class="pp-ident">${ident}</div>` : ''}
+            ${bio ? `<div class="pp-bio pp-wide">${bio}</div>` : ''}
+            <div class="pp-wide">${awardsHtml}</div>
+          </div>
+        </div>
+        ${bio ? `<div class="pp-bio pp-narrow">${bio}</div>` : ''}
+        <div class="pp-narrow">${awardsHtml}</div>
+        <div class="pp-tabs" role="tablist">${tabs.map(([id, label]) => `<button type="button" class="pp-tab" role="tab" data-pp-tab="${id}" aria-selected="${id === profileTab}">${label}</button>`).join('')}</div>
+        <div class="pp-panel" role="tabpanel">${renderProfileTabBody(profileTab, pitcher)}</div>
+      </div>
+    </div>`;
+  }
+
+  // Re-renders the profile from the last-fetched data without re-fetching
+  // -- used as each piece (person, career, season detail, board, spray)
+  // resolves, and on tab switches. A no-op once the user has gone back to
+  // the list, so a slow profile fetch can't overwrite it.
   function rerenderPlayerProfile() {
-    if (!lastProfilePerson) return;
-    playersBody.innerHTML = renderPlayerProfile(lastProfilePerson, lastProfileCareerSplits, lastProfileAwardTags, lastProfileLeagueWoba);
+    if (playersView !== 'profile' || !lastProfilePerson) return;
+    playersBody.innerHTML = renderPlayerProfile(lastProfilePerson);
   }
 
   async function loadPlayerSpray(personId, season) {
@@ -8021,6 +8462,18 @@
     rerenderPlayerProfile();
   }
 
+  async function loadProfileSeason(personId, season, pitcher, requestId) {
+    const detail = await getPlayerSeasonDetail(personId, season, pitcher ? 'pitching' : 'hitting');
+    if (requestId !== playerProfileRequestId) return;
+    lastProfileDetail = detail;
+    rerenderPlayerProfile();
+    if (!detail || !detail.seasonStat) return;
+    const board = await buildProfileBoard(personId, season, pitcher, detail.seasonStat);
+    if (requestId !== playerProfileRequestId) return;
+    lastProfileBoard = board;
+    rerenderPlayerProfile();
+  }
+
   async function showPlayerProfile(rawPerson) {
     // Normalized once, here, since callers don't agree on type: search
     // results carry a numeric id straight from the API, but a dataset
@@ -8032,26 +8485,38 @@
     const person = { ...rawPerson, id: Number(rawPerson.id) };
     const requestId = ++playerProfileRequestId;
     playerSprayToken++; // abandon any spray fetch still in flight for whatever was open before
-    const currentSeason = new Date().getFullYear();
-    playerSprayState = { personId: person.id, season: currentSeason, balls: null, loading: true };
-    // Position isn't always known yet here (jumpToPlayerProfile passes only
-    // an id/name, filled in below by getPlayerDetails) -- when it is known
-    // up front (e.g. a search result), skip the fetch entirely rather than
-    // firing it and having renderPlayerProfile just discard the result.
-    if (!isPitcher(person)) loadPlayerSpray(person.id, currentSeason);
+    playersView = 'profile';
+    profileTab = 'ov';
+    lastProfilePerson = person;
+    lastProfileCareerSplits = null;
+    lastProfileAwardTags = [];
     lastProfileLeagueWoba = {};
-    playersBody.innerHTML = renderPlayerProfile(person, null, []);
-    const [fullPerson, careerSplits, awards] = await Promise.all([
+    lastProfileDetail = undefined;
+    lastProfileBoard = null;
+    lastProfileSeason = playerListState.season || defaultListSeason;
+    playerSprayState = { personId: person.id, season: null, balls: null, loading: true };
+    rerenderPlayerProfile();
+    const [fullPerson, careerSplits, awards, season] = await Promise.all([
       getPlayerDetails(person.id),
       getPlayerCareerStats(person.id),
-      getPlayerAwards(person.id)
+      getPlayerAwards(person.id),
+      lastProfileSeason ? Promise.resolve(lastProfileSeason) : getDefaultListSeason()
     ]);
     if (requestId !== playerProfileRequestId) return;
     lastProfilePerson = fullPerson || person;
     lastProfileCareerSplits = careerSplits;
     lastProfileAwardTags = summarizeAwardTags(awards);
+    lastProfileSeason = season;
+    // Position (so which stat group to load) is only certain once the full
+    // person record is in -- jumpToPlayerProfile passes just an id/name.
+    const pitcher = isPitcher(lastProfilePerson);
+    if (!pitcher) {
+      playerSprayState.season = season;
+      loadPlayerSpray(person.id, season);
+    }
     rerenderPlayerProfile();
     if (careerSplits.hitting.length) loadCareerLeagueWoba(careerSplits.hitting, requestId);
+    loadProfileSeason(person.id, season, pitcher, requestId);
   }
 
   // Mirrors jumpToScorecardGame: leave the modal, switch tabs, load the
