@@ -2785,6 +2785,19 @@
   // .date-display's comment. Every one of the three date pickers pairs its
   // real (invisible) input with a .date-display-text span kept in sync via
   // this, rather than each tab reimplementing the same "Aug 23" formatting.
+  // The invisible input stretched over .date-display is mostly its
+  // month/day/year segments, and on desktop Chromium a click there only
+  // focuses a segment -- the picker opens solely from the calendar icon at
+  // the input's far right edge, so most clicks on the date did nothing.
+  // showPicker() opens it wherever the click lands. It throws without user
+  // activation or inside a cross-origin iframe, and older browsers lack it;
+  // either way the native click behavior is still there to fall back on.
+  [dateInput, dailyDateInput, standingsDateInput].forEach(input => {
+    input.addEventListener('click', () => {
+      if (typeof input.showPicker !== 'function') return;
+      try { input.showPicker(); } catch (e) {}
+    });
+  });
   function formatShortDate(dateStr) {
     return new Date(dateStr + 'T00:00:00Z').toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' });
   }
