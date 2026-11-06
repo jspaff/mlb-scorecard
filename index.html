@@ -2713,10 +2713,36 @@
   }
 
 
-  .pp-log td:nth-child(n+3), .pp-log th:nth-child(n+3) { text-align: center; }
+  .pp-log td:nth-child(n+4), .pp-log th:nth-child(n+4) { text-align: center; }
+  /* Date, opponent and result shrink to their content (width: 1% is the
+     table idiom for "as narrow as fits"), so the slack on a wide sheet
+     spreads across the stat columns instead of opening a gap after the
+     opponent. */
+  .pp-log td:nth-child(-n+3), .pp-log th:nth-child(-n+3) { width: 1%; padding-right: 16px; }
+  .pp-log td:nth-child(3) { font-variant-numeric: tabular-nums; }
+  .pp-log .pp-opp-short { display: none; }
+  /* Qualified as table.pitch-table.pp-log so these outrank the shared
+     table.pitch-table cell padding and font size, which come later in
+     the stylesheet at equal specificity otherwise. */
+  @container (max-width: 519px) {
+    .pp-log .pp-opp-long { display: none; }
+    .pp-log .pp-opp-short { display: inline; }
+    table.pitch-table.pp-log td, table.pitch-table.pp-log th { padding-left: 4px; padding-right: 4px; }
+    table.pitch-table.pp-log td:nth-child(-n+3), table.pitch-table.pp-log th:nth-child(-n+3) { padding-right: 8px; }
+  }
+  /* Small phones: one type size down and tighter cells, so the log fits
+     down to a 320px screen without its own sideways scroll. */
+  @container (max-width: 339px) {
+    table.pitch-table.pp-log { font-size: 11px; }
+    table.pitch-table.pp-log td, table.pitch-table.pp-log th { padding-left: 2px; padding-right: 2px; }
+    table.pitch-table.pp-log td:nth-child(-n+3), table.pitch-table.pp-log th:nth-child(-n+3) { padding-right: 5px; }
+  }
   .pp-log .pp-xbh { display: none; }
   @container (min-width: 700px) { .pp-log .pp-xbh { display: table-cell; } }
-  .pp-log tr.pp-month td { padding: 14px 6px 4px; border-bottom: 1px solid var(--paper-line); }
+  /* white-space: normal -- the month's totals line may wrap on a phone;
+     left on the table's nowrap, it set the whole log's minimum width. */
+  .pp-log tr.pp-month td { padding: 14px 6px 4px; border-bottom: 1px solid var(--paper-line); white-space: normal; }
+  .pp-month-total { display: inline-block; }
   .pp-month-name { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); }
   .pp-month-total { margin-left: 12px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
 
@@ -3184,6 +3210,10 @@
   // The Game Log's last-five-games cards (undefined until loaded -- they
   // need each game's play-by-play, so they load only once that tab opens).
   let lastProfileRecent;
+  // gamePk -> { home, away } final score for the Game Log (see
+  // loadGameLogScores); empty until loaded, and a game missing from it
+  // just shows its W/L without a score.
+  let lastProfileScores = {};
   let profileRecentRequested = false;
   // Players tab's browsable list (Batters/Pitchers toggle, sortable current-
   // season stats) -- separate from the search/profile state above since the
@@ -8407,48 +8437,33 @@
     return cells;
   }
 
-  // Final score from the game's linescore -- a few KB, for the pitcher
-  // cards, which otherwise need nothing beyond the game log. Cached once
-  // the game is final; hitters' cards read it off the play-by-play they
-  // already load (see finalScoreFromPlays).
-  const gameLinescoreCache = {};
-  async function getGameLinescore(gamePk, isFinal) {
-    if (gameLinescoreCache[gamePk]) return gameLinescoreCache[gamePk];
-    try {
-      const res = await fetch(`https://statsapi.mlb.com/api/v1/game/${gamePk}/linescore`);
-      if (!res.ok) return null;
-      const data = await res.json();
-      const t = data.teams || {};
-      const score = t.home && t.away && t.home.runs != null && t.away.runs != null ? { home: t.home.runs, away: t.away.runs } : null;
-      if (isFinal && score) gameLinescoreCache[gamePk] = score;
-      return score;
-    } catch (e) {
-      return null;
-    }
-  }
-  function finalScoreFromPlays(allPlays) {
-    const r = allPlays.length && allPlays[allPlays.length - 1].result;
-    return r && r.homeScore != null && r.awayScore != null ? { home: r.homeScore, away: r.awayScore } : null;
+  // Final scores for every game in the log, keyed by gamePk -- read off
+  // the team's season schedule (fetchTeamSchedule, shared with and cached
+  // for the Schedule tab), one request per team he played for that season
+  // rather than one per game.
+  async function loadGameLogScores(gameLog, season) {
+    const teamIds = Array.from(new Set(gameLog.map(g => g.team && g.team.id).filter(Boolean)));
+    const schedules = await Promise.all(teamIds.map(id => fetchTeamSchedule(id, season)));
+    const scores = {};
+    schedules.forEach(sched => Object.values(sched.gamesByDate || {}).forEach(games => games.forEach(game => {
+      if (game.homeScore != null && game.awayScore != null) scores[game.gamePk] = { home: game.homeScore, away: game.awayScore };
+    })));
+    return scores;
   }
 
-  // Hitters' cards need each game's play-by-play (for the diamonds, and
-  // the final score with it); pitchers' are box-score numbers already in
-  // the game log, so they only fetch the small linescore for the score.
-  async function loadProfileRecent(personId, pitcher, gameLog, requestId) {
+  // The scores, plus (for hitters) each of the last five games'
+  // play-by-play for the diamonds -- pitchers' cards are box-score numbers
+  // the game log already has.
+  async function loadProfileRecent(personId, pitcher, gameLog, season, requestId) {
     const games = gameLog.slice(0, 5);
     const today = todayStr();
-    const fetchOne = g => {
-      const pk = g.game && g.game.gamePk;
-      if (!pk) return Promise.resolve(null);
-      return pitcher ? getGameLinescore(pk, g.date < today) : getGamePlayByPlay(pk, g.date < today);
-    };
-    const results = await Promise.all(games.map(fetchOne));
+    const [scores, plays] = await Promise.all([
+      loadGameLogScores(gameLog, season),
+      pitcher ? Promise.resolve([]) : Promise.all(games.map(g => (g.game && g.game.gamePk ? getGamePlayByPlay(g.game.gamePk, g.date < today) : Promise.resolve(null))))
+    ]);
     if (requestId !== playerProfileRequestId) return;
-    lastProfileRecent = games.map((g, i) => {
-      const r = results[i];
-      if (pitcher) return { log: g, score: r, cells: null };
-      return { log: g, score: r ? finalScoreFromPlays(r) : null, cells: r ? buildBatterGameCells(r, personId) : null };
-    });
+    lastProfileScores = scores;
+    lastProfileRecent = games.map((g, i) => ({ log: g, cells: !pitcher && plays[i] ? buildBatterGameCells(plays[i], personId) : null }));
     rerenderPlayerProfile();
   }
 
@@ -8468,7 +8483,7 @@
     const g = entry.log, s = g.stat || {};
     const count = (n, label) => (n ? `${n > 1 ? n + ' ' : ''}${label}` : '');
     const line = pitcher ? '' : [`${s.hits ?? 0}-${s.atBats ?? 0}`, count(s.homeRuns, 'HR'), s.rbi ? `${s.rbi} RBI` : '', count(s.baseOnBalls, 'BB')].filter(Boolean).join(' &#183; ');
-    const head = `<div class="pp-rc-head"><span class="pp-rc-date">${formatShortDate(g.date)}</span><span class="pp-rc-opp">${g.isHome ? 'vs' : '@'} ${teamNickname(g.opponent)}</span>${teamResult(g, entry.score)}${line ? `<span class="pp-rc-line">${line}</span>` : ''}</div>`;
+    const head = `<div class="pp-rc-head"><span class="pp-rc-date">${formatShortDate(g.date)}</span><span class="pp-rc-opp">${g.isHome ? 'vs' : '@'} ${teamNickname(g.opponent)}</span>${teamResult(g, lastProfileScores[g.game && g.game.gamePk])}${line ? `<span class="pp-rc-line">${line}</span>` : ''}</div>`;
     let body;
     if (!pitcher) {
       body = entry.cells && entry.cells.length
@@ -8510,8 +8525,10 @@
     const dateCell = g => g.game && g.game.gamePk
       ? `<button type="button" class="pp-game-link" data-date="${g.date}" data-game-pk="${g.game.gamePk}">${formatShortDate(g.date)}</button>`
       : formatShortDate(g.date);
-    const opp = g => `${g.isHome ? 'vs' : '@'} ${teamNickname(g.opponent)}`;
-    const wl = g => g.isWin == null ? '' : `<span class="pp-wl ${g.isWin ? 'is-w' : 'is-l'}">${g.isWin ? 'W' : 'L'}</span>`;
+    // Nickname on a wide sheet, abbreviation on a narrow one (see
+    // .pp-opp-short) -- "@ Diamondbacks" plus a score won't fit a phone.
+    const opp = g => `${g.isHome ? 'vs' : '@'} <span class="pp-opp-long">${teamNickname(g.opponent)}</span><span class="pp-opp-short">${teamAbbr(g.opponent)}</span>`;
+    const wl = g => teamResult(g, lastProfileScores[g.game && g.game.gamePk]);
     const groups = gameLogMonths(gameLog);
     let head, row, total;
     if (!pitcher) {
@@ -8725,7 +8742,7 @@
   function ensureProfileRecent() {
     if (profileRecentRequested || profileTab !== 'log' || !lastProfileDetail) return;
     profileRecentRequested = true;
-    loadProfileRecent(Number(lastProfilePerson.id), isPitcher(lastProfilePerson), lastProfileDetail.gameLog, playerProfileRequestId);
+    loadProfileRecent(Number(lastProfilePerson.id), isPitcher(lastProfilePerson), lastProfileDetail.gameLog, lastProfileSeason, playerProfileRequestId);
   }
 
   async function loadProfileSeason(personId, season, pitcher, requestId) {
@@ -8761,6 +8778,7 @@
     lastProfileDetail = undefined;
     lastProfileBoard = null;
     lastProfileRecent = undefined;
+    lastProfileScores = {};
     profileRecentRequested = false;
     lastProfileSeason = playerListState.season || defaultListSeason;
     playerSprayState = { personId: person.id, season: null, balls: null, loading: true };
