@@ -7682,7 +7682,7 @@
   // Scorebook abbreviations, not spelled-out names, so every choice fits
   // its fixed-width slot (see .player-filters).
   const BATTER_POSITION_FILTERS = [
-    ['all', 'All'], ['C', 'C'], ['1B', '1B'], ['2B', '2B'], ['3B', '3B'], ['SS', 'SS'],
+    ['all', 'All'], ['C', 'C'], ['IF', 'IF (any)'], ['1B', '1B'], ['2B', '2B'], ['3B', '3B'], ['SS', 'SS'],
     ['OF', 'OF (any)'], ['LF', 'LF'], ['CF', 'CF'], ['RF', 'RF'], ['DH', 'DH']
   ];
   const PITCHER_POSITION_FILTERS = [['all', 'All'], ['SP', 'Starters'], ['RP', 'Relievers']];
@@ -7697,6 +7697,7 @@
   function matchesPositionFilter(row, type, pos) {
     if (pos === 'all') return true;
     if (type === 'pitching') return (pos === 'SP') === isStartingPitcher(row.stat);
+    if (pos === 'IF') return row.pos === '1B' || row.pos === '2B' || row.pos === '3B' || row.pos === 'SS';
     if (pos === 'OF') return row.pos === 'LF' || row.pos === 'CF' || row.pos === 'RF';
     return row.pos === pos;
   }
