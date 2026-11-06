@@ -1,0 +1,398 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-06T19:35:08Z",
+  "title": "Design System: MLB Scorecard",
+  "extensions": {
+    "colorMeta": {
+      "monster-green": {
+        "role": "primary",
+        "displayName": "Monster Green",
+        "canonical": "#54796d",
+        "tonalRamp": [
+          "#222a28",
+          "#384843",
+          "#4c665e",
+          "#5f867a",
+          "#82a59a",
+          "#a8bdb6",
+          "#ccd6d3",
+          "#eef1f0"
+        ]
+      },
+      "scorebook-board": {
+        "role": "neutral",
+        "displayName": "Scorebook Board",
+        "canonical": "#3b4336",
+        "tonalRamp": [
+          "#262924",
+          "#3f453b",
+          "#576151",
+          "#707e67",
+          "#919e89",
+          "#b1b9ac",
+          "#d0d4ce",
+          "#f0f0ef"
+        ]
+      },
+      "board-rule": {
+        "role": "neutral",
+        "displayName": "Board Rule",
+        "canonical": "#545e4d",
+        "tonalRamp": [
+          "#262824",
+          "#3f443b",
+          "#586152",
+          "#717d68",
+          "#929e8a",
+          "#b1b8ad",
+          "#d1d4ce",
+          "#f0f0ef"
+        ]
+      },
+      "scorekeeper-cream": {
+        "role": "neutral",
+        "displayName": "Scorekeeper Cream",
+        "canonical": "#f3ecdb",
+        "tonalRamp": [
+          "#312b1b",
+          "#564929",
+          "#7e6835",
+          "#a9893d",
+          "#c4a863",
+          "#d0bf95",
+          "#dfd7c3",
+          "#f3f1ec"
+        ]
+      },
+      "faded-cream": {
+        "role": "neutral",
+        "displayName": "Faded Cream",
+        "canonical": "#c3c8bb",
+        "tonalRamp": [
+          "#272924",
+          "#41443b",
+          "#5b6152",
+          "#757e67",
+          "#969e8a",
+          "#b4b9ac",
+          "#d2d4ce",
+          "#f0f0ef"
+        ]
+      },
+      "pennant-gold": {
+        "role": "secondary",
+        "displayName": "Pennant Gold",
+        "canonical": "#d9a91a",
+        "tonalRamp": [
+          "#382f15",
+          "#63511d",
+          "#937620",
+          "#c89d1e",
+          "#e0ba48",
+          "#e0c985",
+          "#e7dcbb",
+          "#f5f3ea"
+        ]
+      },
+      "brick-red": {
+        "role": "tertiary",
+        "displayName": "Brick Red",
+        "canonical": "#e0604a",
+        "tonalRamp": [
+          "#361b17",
+          "#5f2920",
+          "#8d3525",
+          "#bf3d26",
+          "#d8634f",
+          "#dc9589",
+          "#e5c3bd",
+          "#f5eceb"
+        ]
+      },
+      "brick-red-text": {
+        "role": "tertiary",
+        "displayName": "Brick Red Text",
+        "canonical": "#f59a87",
+        "tonalRamp": [
+          "#391a13",
+          "#66271a",
+          "#97311b",
+          "#ce3717",
+          "#e65e42",
+          "#e49281",
+          "#e9c1b9",
+          "#f6ecea"
+        ]
+      },
+      "brick-shadow": {
+        "role": "tertiary",
+        "displayName": "Brick Shadow",
+        "canonical": "#5c4038",
+        "tonalRamp": [
+          "#2c2321",
+          "#4b3a35",
+          "#6b4f47",
+          "#8d6459",
+          "#ab877c",
+          "#c1aba4",
+          "#d8cdca",
+          "#f1efee"
+        ]
+      },
+      "scoreboard-lamp-green": {
+        "role": "neutral",
+        "displayName": "Scoreboard Lamp Green",
+        "canonical": "#3fae56",
+        "tonalRamp": [
+          "#1c3120",
+          "#2b5534",
+          "#377c45",
+          "#40a555",
+          "#67c179",
+          "#97cea3",
+          "#c4dec9",
+          "#ecf3ee"
+        ]
+      },
+      "scoreboard-panel": {
+        "role": "neutral",
+        "displayName": "Scoreboard Panel",
+        "canonical": "#33422e",
+        "tonalRamp": [
+          "#242a22",
+          "#3c4838",
+          "#53664c",
+          "#69865f",
+          "#8ba583",
+          "#adbda8",
+          "#cfd6cc",
+          "#eff1ee"
+        ]
+      },
+      "weathered-sage": {
+        "role": "neutral",
+        "displayName": "Weathered Sage",
+        "canonical": "#7d8577",
+        "tonalRamp": [
+          "#262725",
+          "#3f423d",
+          "#595d55",
+          "#72796d",
+          "#93998f",
+          "#b2b6af",
+          "#d1d3d0",
+          "#f0f0ef"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Player names on the profile."
+      },
+      "stat": {
+        "displayName": "Stat",
+        "purpose": "Numbers in recessed slots."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Team and position line."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Vitals values, select values."
+      },
+      "data": {
+        "displayName": "Data",
+        "purpose": "Table cells and logs, tabular figures."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Painted uppercase labels, tabs, column heads."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Rare running text."
+      },
+      "notation": {
+        "displayName": "Notation",
+        "purpose": "Play codes inside the diamond glyph."
+      }
+    },
+    "shadows": [
+      {
+        "name": "sheet",
+        "value": "0 2px 0 rgba(0,0,0,0.25) inset, 0 4px 14px rgba(0,0,0,0.35)",
+        "purpose": "A board page laid on the wall."
+      },
+      {
+        "name": "hung-plate",
+        "value": "0 2px 3px rgba(0,0,0,0.35)",
+        "purpose": "Nameplates; 0 3px 4px rgba(0,0,0,0.45) on hover."
+      },
+      {
+        "name": "print",
+        "value": "0 6px 14px rgba(0,0,0,0.45)",
+        "purpose": "The pinned headshot print."
+      },
+      {
+        "name": "recessed-slot",
+        "value": "inset 0 2px 3px rgba(0,0,0,0.5), inset 0 -1px 1px rgba(255,255,255,0.05)",
+        "purpose": "Number slots pressed into the board."
+      },
+      {
+        "name": "header-lip",
+        "value": "0 6px 8px -6px rgba(11,15,12,0.35)",
+        "purpose": "Sticky tab header edge."
+      }
+    ],
+    "motion": [
+      {
+        "name": "state",
+        "value": "0.15s ease",
+        "purpose": "Hover/focus color and shadow changes on plates, selects and toggles; nothing animates on entry."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "phone",
+        "value": "520px"
+      },
+      {
+        "name": "wide-sheet",
+        "value": "700px"
+      },
+      {
+        "name": "five-across",
+        "value": "900px"
+      },
+      {
+        "name": "side-column",
+        "value": "1150px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Nameplate",
+      "kind": "custom",
+      "refersTo": "nameplate",
+      "description": "A clickable player or team name, hung like a scoreboard plate.",
+      "html": "<button class=\"ds-nameplate\">Kyle Schwarber</button>",
+      "css": ".ds-nameplate{position:relative;font-family:'Overpass',sans-serif;font-weight:700;font-size:10.5px;letter-spacing:.02em;text-transform:uppercase;color:var(--ink,#f3ecdb);background:rgba(243,236,219,.08);border:1px solid var(--paper-line,#545e4d);border-radius:0;padding:2px 7px;box-shadow:0 2px 3px rgba(0,0,0,.35);cursor:pointer;transition:background .15s,color .15s,box-shadow .15s}.ds-nameplate::before,.ds-nameplate::after{content:'';position:absolute;top:1.5px;width:2px;height:2px;border-radius:50%;background:var(--paper,#3b4336)}.ds-nameplate::before{left:2.5px}.ds-nameplate::after{right:2.5px}.ds-nameplate:hover,.ds-nameplate:focus-visible{background:var(--gold,#d9a91a);border-color:var(--gold,#d9a91a);color:var(--paper,#3b4336);outline:none;box-shadow:0 3px 4px rgba(0,0,0,.45)}"
+    },
+    {
+      "name": "Stat Slot",
+      "kind": "custom",
+      "refersTo": "stat-slot",
+      "description": "A number in a recessed scoreboard slot under a painted label; gold when elite, rank in the corner.",
+      "html": "<div class=\"ds-stat\"><span class=\"ds-stat-k\">HR</span><span class=\"ds-stat-v is-top\">45<span class=\"ds-stat-rk\">T1/134</span></span></div>",
+      "css": ".ds-stat{width:150px;text-align:center}.ds-stat-k{display:block;margin-bottom:6px;font-family:'Overpass',sans-serif;font-weight:800;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink,#f3ecdb);opacity:.85}.ds-stat-v{position:relative;display:block;font-family:'Oswald',sans-serif;font-weight:600;font-size:46px;line-height:1.45;color:var(--ink,#f3ecdb);font-variant-numeric:tabular-nums;background:rgba(0,0,0,.22);border-radius:2px;box-shadow:inset 0 2px 3px rgba(0,0,0,.5),inset 0 -1px 1px rgba(255,255,255,.05)}.ds-stat-v.is-top,.ds-stat-v.is-top .ds-stat-rk{color:var(--gold,#d9a91a)}.ds-stat-rk{position:absolute;bottom:7px;right:9px;font-family:'Overpass',sans-serif;font-weight:700;font-size:11px;line-height:1;color:var(--ink-soft,#c3c8bb)}"
+    },
+    {
+      "name": "Award Plate",
+      "kind": "chip",
+      "refersTo": "award-plate",
+      "description": "A major award, with a gold count cell when won more than once.",
+      "html": "<span class=\"ds-award\" title=\"All-Star: 2012, 2013, 2015\"><span class=\"ds-award-n\">9&times;</span><span class=\"ds-award-l\">All-Star</span></span>",
+      "css": ".ds-award{display:inline-flex;align-items:stretch;border:1px solid var(--gold,#d9a91a);white-space:nowrap}.ds-award-n{display:flex;align-items:center;padding:1px 5px 0;background:var(--gold,#d9a91a);color:var(--paper,#3b4336);font-family:'Oswald',sans-serif;font-weight:600;font-size:12px;line-height:1}.ds-award-l{padding:4px 7px 3px;font-family:'Overpass',sans-serif;font-weight:700;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--gold,#d9a91a)}"
+    },
+    {
+      "name": "Tab Bar",
+      "kind": "nav",
+      "refersTo": "tab",
+      "description": "Top-level navigation; gold underline marks the active tab.",
+      "html": "<nav class=\"ds-tabs\"><button class=\"ds-tab is-on\">Overview</button><button class=\"ds-tab\">Game Log</button><button class=\"ds-tab\">Splits</button></nav>",
+      "css": ".ds-tabs{display:flex;gap:4px;border-bottom:1px solid var(--paper-line,#545e4d)}.ds-tab{background:none;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;padding:9px 10px 8px;font-family:'Overpass',sans-serif;font-weight:700;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft,#c3c8bb);cursor:pointer}.ds-tab:hover{color:var(--ink,#f3ecdb)}.ds-tab.is-on{color:var(--ink,#f3ecdb);border-bottom-color:var(--gold,#d9a91a)}.ds-tab:focus-visible{outline:2px solid var(--gold,#d9a91a);outline-offset:-2px}"
+    },
+    {
+      "name": "Segmented Toggle",
+      "kind": "button",
+      "refersTo": "segmented-toggle",
+      "description": "Square segments on a board backing; the active one gets a gold wash and rule.",
+      "html": "<div class=\"ds-seg\"><button class=\"is-on\">Batters</button><button>Pitchers</button></div>",
+      "css": ".ds-seg{display:inline-flex;background:var(--paper,#3b4336);border:1px solid var(--paper-line,#545e4d)}.ds-seg button{font-family:'Overpass',sans-serif;font-weight:700;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft,#c3c8bb);background:none;border:0;padding:7px 12px;cursor:pointer}.ds-seg button+button{border-left:1px solid var(--paper-line,#545e4d)}.ds-seg button:hover{color:var(--ink,#f3ecdb);background:rgba(243,236,219,.08)}.ds-seg button.is-on{color:var(--ink,#f3ecdb);background:rgba(217,169,26,.15);box-shadow:inset 0 -2px 0 var(--gold,#d9a91a)}.ds-seg button:focus-visible{outline:2px solid var(--gold,#d9a91a);outline-offset:-2px}"
+    },
+    {
+      "name": "Field Select",
+      "kind": "input",
+      "refersTo": "field-select",
+      "description": "In-sheet filter: a written-in field on a rule; defaults recede.",
+      "html": "<label class=\"ds-field\"><span>League</span><select><option>American</option></select></label>",
+      "css": ".ds-field{display:flex;flex-direction:column;gap:2px;width:110px}.ds-field span{font-family:'Overpass',sans-serif;font-weight:600;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft,#c3c8bb)}.ds-field select{appearance:none;width:100%;font-family:'Oswald',sans-serif;font-weight:500;font-size:14px;color:var(--ink,#f3ecdb);background:transparent;border:0;border-bottom:1px solid var(--paper-line,#545e4d);border-radius:0;padding:4px 18px 5px 0;cursor:pointer}.ds-field select:hover{border-bottom-color:var(--ink-soft,#c3c8bb)}.ds-field select:focus-visible{outline:none;border-bottom-color:var(--gold,#d9a91a);box-shadow:0 1px 0 var(--gold,#d9a91a)}"
+    },
+    {
+      "name": "Sheet",
+      "kind": "card",
+      "refersTo": "sheet",
+      "description": "A scorebook page laid on the Monster-green wall.",
+      "html": "<div class=\"ds-sheet\">Scorebook page</div>",
+      "css": ".ds-sheet{background:var(--paper,#3b4336);color:var(--ink,#f3ecdb);border:2px solid var(--ink,#f3ecdb);border-radius:0;padding:18px;box-shadow:0 2px 0 rgba(0,0,0,.25) inset,0 4px 14px rgba(0,0,0,.35);font-family:'Inter',sans-serif;font-size:13px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Fenway Scorebook",
+    "overview": "A fan's paper scorebook, kept under the Green Monster. Every surface is either the Monster-green wall (the frame around everything), the dark board pages laid on it (sheets), or the cream ink a scorekeeper writes with. The game is told in scorebook notation: diamonds per plate appearance, play codes like 6-3 and F8, and fielder sequences. The rest of the app, from leaderboards to profiles and game logs, is kept with the same pencil.\n\nThe mood is precise, spare and scorekeeper-like. The old-ballpark character lives in the type, the notation and a few physical scoreboard parts, not in ornament. Numbers carry the page; captions, legends and helper text are left out because these readers know baseball. Color is rationed: cream for everything that is simply true, gold only for what is excellent, and brick red only for outs and runs against.\n\nComponents split by role. Data and identity get physical scoreboard parts: recessed number slots, pegged nameplates and award plates. Controls and navigation stay quiet: thin rules, soft labels and square segments that recede until touched.",
+    "keyCharacteristics": [
+      "Monster-green frame, dark board sheets, cream ink. Three layers, always in that order.",
+      "Square corners everywhere except the 2px recessed slot and round data dots.",
+      "Condensed Oswald for names and numbers; small-caps Overpass for every label.",
+      "Gold is earned (elite rank, quality start, award); it is never decoration.",
+      "Zeros left blank in tables, so the cells that carry ink are the ones that happened."
+    ],
+    "rules": [
+      {
+        "name": "The Monster Stays Rule",
+        "body": "The frame is Monster Green and never darkens or shifts. Text on the frame is full Scorekeeper Cream. Small or secondary text belongs on a board plate, not directly on the wall.",
+        "section": "colors"
+      },
+      {
+        "name": "The Gold Is Earned Rule",
+        "body": "Gold marks excellence or the user's own focus (active tab, focus ring), nothing else. A stat turns gold only in the top 10% of that season's qualified pool. A \"lead stat\" or decorative highlight is never gold.",
+        "section": "colors"
+      },
+      {
+        "name": "The Blank Zero Rule",
+        "body": "In game logs and tables, a zero count is left blank, never written as 0. The exceptions are pairs read aloud (\"0-4\" H-AB, an inning pitched) and a linescore or big-number summary, where a blank would read as missing.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tabular Figures Rule",
+        "body": "Every column of numbers uses tabular figures, so ranks, averages and scores line up digit for digit.",
+        "section": "typography"
+      },
+      {
+        "name": "The Painted Label Rule",
+        "body": "Labels sit above what they name, in small uppercase Overpass with wide tracking, like paint on a scoreboard. A value is never prefixed inline with its abbreviation (\"Ht / Wt …\") when a labelled pair fits.",
+        "section": "typography"
+      },
+      {
+        "name": "The Fixed Slot Rule",
+        "body": "Any control whose content changes, such as a filter select, a stat column or a swipe card, gets a fixed slot sized for its longest real value. Changing a filter must never shift the row around it.",
+        "section": "layout"
+      },
+      {
+        "name": "The Pressed, Not Raised Rule",
+        "body": "Numbers sit in slots pressed into the board; names hang on plates in front of it. Data is never raised on a card.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** keep the Monster Green frame (#54796d) exactly. Fix contrast by changing what sits on it.",
+      "**Do** put numbers in recessed slots and clickable names on pegged nameplates.",
+      "**Do** leave zero counts blank in logs and tables.",
+      "**Do** reserve Pennant Gold for top-10% stats, quality starts, awards, RBIs, hits, and active or focus states.",
+      "**Do** use tabular figures for every column of numbers.",
+      "**Do** size changeable controls to fixed slots so filters never shift the layout.",
+      "**Do** draw spray charts in the API's own coordinate space (home 125.42, 198.27; 2.495 ft per unit) so fences and batted balls agree."
+    ],
+    "donts": [
+      "**Don't** round corners on plates, cards, buttons or selects. Only slots (2px), bar ends (3px) and dots are rounded.",
+      "**Don't** use Faded Cream for text on the green frame. It fails contrast there.",
+      "**Don't** add helper captions, legends or tutorial text. These users know baseball.",
+      "**Don't** make a \"lead stat\" or decorative accent gold.",
+      "**Don't** use nameplates for identity that isn't a link, such as a profile's own team and position.",
+      "**Don't** let a zero-based scale waste half a bar. Start the axis near the data and label both ends."
+    ]
+  }
+}

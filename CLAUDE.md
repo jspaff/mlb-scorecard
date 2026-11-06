@@ -18,6 +18,10 @@ There's no automated way to verify a change — after editing, open the file in 
 
 Whenever a Claude Code session edits `index.html` (or `sw.js`/`manifest.json`), attach the updated file(s) to the response (e.g. via a "send file" tool if available) rather than waiting to be asked — the user's workflow is downloading it straight into a local server setup to test.
 
+## Product and design context
+
+`PRODUCT.md` records who the app is for, how it's used, and its binding commitments (the Green Monster green frame among them). `DESIGN.md` records the visual system — tokens in its YAML frontmatter, then the rules for applying them (gold is earned, blank zeros, square corners, slots vs. nameplates), with `.impeccable/design.json` as its machine-readable companion. Read both before any visual or UX change, and update `DESIGN.md` when a change establishes or retires a design rule.
+
 ## Structure
 
 The page is scoped under `#mlb-root` with a set of CSS custom properties (`--paper`, `--ink`, `--gold`, `--brick`, `--frame`) defining the vintage scorecard palette in `:root`. The `PALETTE` JS constant near the top of the script (`const PALETTE = { ink, inkSoft, gold, brick, ball, paper, paperLine, gray, startMuted }`) mirrors those same colors for the handful of SVG strings that can't reference a CSS variable directly — if you change the palette, update both places.
