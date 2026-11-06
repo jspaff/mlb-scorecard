@@ -2440,21 +2440,37 @@
   .player-award-tags {
     display: flex;
     flex-wrap: wrap;
-    gap: 5px;
+    gap: 6px;
     margin-bottom: 12px;
   }
-  .player-award-tag {
+  .player-award {
+    display: inline-flex;
+    align-items: stretch;
+    border: 1px solid var(--gold);
+    white-space: nowrap;
+    cursor: default;
+  }
+  .player-award-n {
+    display: flex;
+    align-items: center;
+    padding: 1px 5px 0;
+    background: var(--gold);
+    color: var(--paper);
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .player-award-label {
+    padding: 4px 7px 3px;
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
-    font-size: 8px;
-    letter-spacing: 0.05em;
+    font-size: 10px;
+    line-height: 1.2;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--gold);
-    background: rgba(217, 169, 26, 0.1);
-    border: 1px solid var(--gold);
-    padding: 2px 6px;
-    border-radius: 3px;
-    white-space: nowrap;
   }
   .player-search-wrap { position: relative; }
   #playerSearchInput { width: 220px; max-width: 220px; }
@@ -2545,12 +2561,23 @@
     .pp-name { font-size: 42px; margin: 4px 0 8px; }
     .pp-ident { font-size: 20px; margin-bottom: 16px; }
   }
-  .pp-bio { font-size: 12.5px; line-height: 1.5; color: var(--ink-soft); margin-bottom: 10px; }
-  .pp-bio b { color: var(--ink); font-weight: 600; }
+  .pp-vitals { display: flex; flex-wrap: wrap; gap: 10px 22px; margin: 0 0 14px; }
+  .pp-vitals > div { display: flex; flex-direction: column; gap: 1px; }
+  .pp-vitals dt { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+  .pp-vitals dd { margin: 0; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 15px; line-height: 1.3; color: var(--ink); }
+  /* Faint team mark behind the header's top-right corner. overflow: clip
+     on the sheet (not hidden) trims it without making the sheet a scroll
+     container, which would stop the Game Log's header from sticking. */
+  .pp-sheet { position: relative; overflow: clip; }
+  .pp-sheet > :not(.pp-watermark) { position: relative; }
+  /* On a narrow sheet the name runs nearly the full width, so the mark
+     stays small and in the corner beside the jersey number, clear of it. */
+  .pp-watermark { position: absolute; top: 10px; right: 10px; width: 46px; height: 46px; object-fit: contain; opacity: 0.1; pointer-events: none; }
+  @container (min-width: 700px) { .pp-watermark { top: 18px; right: 22px; width: 170px; height: 170px; opacity: 0.12; } }
   .pp-narrow .player-award-tags, .pp-wide .player-award-tags { margin-bottom: 0; }
   .pp-wide { display: none; }
   @container (min-width: 700px) { .pp-wide { display: block; } .pp-narrow { display: none; } }
-  .pp-narrow.pp-bio { margin-top: 14px; }
+  .pp-vitals-narrow { margin-top: 14px; }
 
   .pp-tabs {
     display: flex;
@@ -2722,6 +2749,9 @@
   }
 
   .pp-log td:nth-child(n+4), .pp-log th:nth-child(n+4) { text-align: center; }
+  /* Column heads stay put under the sticky tab header while the season
+     scrolls (see --tab-header-h). */
+  table.pitch-table.pp-log thead th { position: sticky; top: var(--tab-header-h, 0px); z-index: 2; background: var(--paper); }
   /* Date, opponent and result shrink to their content (width: 1% is the
      table idiom for "as narrow as fits"); on a wide sheet the Result
      column then takes the slack instead (see below). */
@@ -2773,6 +2803,8 @@
   .pp-splits-key i { width: 0; height: 12px; border-left: 1.5px dashed var(--ink); }
   .pp-sgroup { margin-top: 12px; }
   .pp-sgroup-name { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); padding-bottom: 4px; border-bottom: 1px solid var(--paper-line); margin-bottom: 2px; }
+  .pp-saxis { padding-top: 2px; }
+  .pp-saxis-ends { display: flex; justify-content: space-between; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10px; color: var(--ink-soft); }
   .pp-srow { display: grid; grid-template-columns: 68px minmax(0, 1fr) 44px 52px; align-items: center; gap: 10px; padding: 5px 0; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 12px; font-variant-numeric: tabular-nums; }
   .pp-slabel { color: var(--ink); white-space: nowrap; }
   .pp-sbar { position: relative; height: 12px; background: rgba(0, 0, 0, 0.22); border-radius: 2px; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4); }
@@ -3488,18 +3520,24 @@
   function categorizeAward(award) {
     return AWARD_ID_TAGS[(award.id || '').toUpperCase()] || null;
   }
-  // Collapses repeat wins of the same award (e.g. three Gold Gloves at
-  // different positions) into one "Gold Glove 3x" tag instead of three rows.
+  // Collapses repeat wins of the same award into one tag with a count and
+  // the seasons it was won (e.g. three Gold Gloves at different positions
+  // is one "Gold Glove" tag, count 3) -- ordered by the award's standing,
+  // not by how many times it was won, so a single MVP leads nine All-Star
+  // selections.
+  const AWARD_ORDER = ['MVP', 'Cy Young', 'Rookie of the Year', 'Reliever of the Year', 'All-Star', 'Silver Slugger', 'Gold Glove'];
   function summarizeAwardTags(awards) {
-    const counts = {};
+    const seasonsByLabel = {};
     awards.forEach(a => {
       const label = categorizeAward(a);
       if (!label) return;
-      counts[label] = (counts[label] || 0) + 1;
+      (seasonsByLabel[label] = seasonsByLabel[label] || []).push(a.season);
     });
-    return Object.entries(counts)
-      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-      .map(([label, count]) => count > 1 ? `${label} ${count}x` : label);
+    return AWARD_ORDER.filter(label => seasonsByLabel[label]).map(label => ({
+      label,
+      count: seasonsByLabel[label].length,
+      years: Array.from(new Set(seasonsByLabel[label].filter(Boolean))).sort()
+    }));
   }
   async function getStandings(season, date) {
     const key = `${season}-${date}`;
@@ -4424,68 +4462,87 @@
     out: '#8a8478'
   };
 
-  // Draws the fence/infield/dot field itself -- factored out of
-  // renderSprayChart so the player profile's season spray widget can reuse
-  // the same to-scale geometry instead of duplicating it. `pkeyPrefix`, if
-  // given, makes each dot clickable (stored in pitchStore, opens the shared
-  // pitch-detail popup); `visible(ball)` lets a caller hide some dots
-  // without excluding them from the markup, matching how the team chart's
-  // batter filter toggles `g[data-batter]` visibility in place.
-  function renderBattedBallFieldSVG(balls, { viewBox = '0 15 250 200', pkeyPrefix = null, visible = null } = {}) {
-    const home = [125, 205];
+  // Draws the field and its batted-ball dots -- factored out of
+  // renderSprayChart so the player profile's season spray chart reuses the
+  // same geometry. `pkeyPrefix`, if given, makes each dot clickable
+  // (stored in pitchStore, opens the shared pitch-detail popup);
+  // `visible(ball)` lets a caller hide some dots without excluding them
+  // from the markup, matching how the team chart's batter filter toggles
+  // `g[data-batter]` visibility in place.
+  //
+  // The field is drawn in the API's own hit-coordinate space (hitData
+  // coordX/coordY): home plate at (125.42, 198.27), about 2.495 ft per
+  // unit -- the commonly published convention, which matched MLB's own
+  // totalDistance on fly balls and home runs to within a few feet on
+  // average. Drawing the fence in those units is what puts a 400-ft home
+  // run just beyond a 400-ft fence (the old, larger field put them
+  // inside it), and the viewBox leaves headroom past the fence so deep
+  // home runs aren't clipped.
+  const SPRAY_HOME = [125.42, 198.27];
+  const SPRAY_FT_PER_UNIT = 2.495;
+  function renderBattedBallFieldSVG(balls, { viewBox = '2 6 247 200', pkeyPrefix = null, visible = null } = {}) {
     const { ink, brick } = PALETTE;
     const grass = 'rgba(243,236,219,0.06)';
-    const dirt = 'rgba(217,169,26,0.18)';
-
-    // generic MLB fence distances: shallower down the lines, deeper in the
-    // gaps, deepest to straightaway center. Scale is set so center field
-    // (the deepest point) comfortably fits the visible chart area.
-    const leftLineFt = 330, leftCenterFt = 370, centerFt = 400, rightCenterFt = 370, rightLineFt = 330;
-    const maxDepthUnits = 182;
-    const scale = maxDepthUnits / centerFt; // units per foot, anchored to center field
-    const ptAt = (angleDeg, distFeet) => {
+    const infieldGrass = 'rgba(243,236,219,0.09)';
+    const dirt = 'rgba(217,169,26,0.14)';
+    const track = 'rgba(217,169,26,0.1)';
+    // feet in field space (x toward first base, y toward center field) ->
+    // SVG units
+    const pt = (fx, fy) => [SPRAY_HOME[0] + fx / SPRAY_FT_PER_UNIT, SPRAY_HOME[1] - fy / SPRAY_FT_PER_UNIT];
+    const polar = (angleDeg, feet) => {
       const rad = angleDeg * Math.PI / 180;
-      const d = distFeet * scale;
-      return [home[0] + d * Math.sin(rad), home[1] - d * Math.cos(rad)];
+      return pt(feet * Math.sin(rad), feet * Math.cos(rad));
     };
-    const fencePts = [
-      ptAt(-45, leftLineFt),    // left field line
-      ptAt(-22.5, leftCenterFt),  // left-center gap
-      ptAt(0, centerFt),      // straightaway center
-      ptAt(22.5, rightCenterFt),   // right-center gap
-      ptAt(45, rightLineFt)      // right field line
-    ];
+    const fmt = p => `${p[0].toFixed(2)},${p[1].toFixed(2)}`;
+    const poly = pts => pts.map((p, i) => `${i ? 'L' : 'M'} ${fmt(p)}`).join(' ');
 
-    // smooth curve through the fence points (Catmull-Rom -> cubic Bezier)
-    let fenceCurve = '';
-    for (let i = 0; i < fencePts.length - 1; i++) {
-      const p0 = fencePts[i - 1] || fencePts[i];
-      const p1 = fencePts[i];
-      const p2 = fencePts[i + 1];
-      const p3 = fencePts[i + 2] || p2;
-      const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
-      const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
-      fenceCurve += `C ${c1[0]},${c1[1]} ${c2[0]},${c2[1]} ${p2[0]},${p2[1]} `;
+    // Generic fence: 400 ft to center falling to 330 down the lines --
+    // one smooth curve, 400 - 70 * (|angle| / 45)^1.22, whose exponent puts
+    // the gaps (22.5 degrees) at 370 ft. Sampled every 1.5 degrees.
+    const fenceFt = a => 400 - 70 * Math.pow(Math.abs(a) / 45, 1.22);
+    const angles = [];
+    for (let a = -45; a <= 45.001; a += 1.5) angles.push(a);
+    const fence = angles.map(a => polar(a, fenceFt(a)));
+    const trackEdge = angles.map(a => polar(a, fenceFt(a) - 16));
+    const home = pt(0, 0);
+
+    // Infield to scale: 90-ft square, mound 60.5 ft out, and the dirt arc
+    // 95 ft from the mound, meeting each foul line where that circle
+    // crosses it.
+    const mound = [0, 60.5];
+    const arcR = 95;
+    const lineHit = (() => {
+      const c = Math.SQRT1_2 * mound[1];
+      return c + Math.sqrt(c * c - mound[1] * mound[1] + arcR * arcR);
+    })();
+    const arcFrom = Math.atan2(lineHit * Math.SQRT1_2 - mound[1], -lineHit * Math.SQRT1_2);
+    const arcTo = Math.atan2(lineHit * Math.SQRT1_2 - mound[1], lineHit * Math.SQRT1_2);
+    const arc = [];
+    for (let k = 0; k <= 40; k++) {
+      const th = arcFrom + (arcTo - arcFrom) * k / 40;
+      arc.push(pt(mound[0] + arcR * Math.cos(th), mound[1] + arcR * Math.sin(th)));
     }
+    const half = 90 * Math.SQRT1_2;
+    const first = pt(half, half), second = pt(0, 2 * half), third = pt(-half, half);
+    const inset = 10; // infield grass stops short of the base paths
+    const grassDiamond = [pt(0, inset * Math.SQRT2), pt(half - inset, half), pt(0, 2 * half - inset * Math.SQRT2), pt(-(half - inset), half)];
+    const unitR = ft => ft / SPRAY_FT_PER_UNIT;
 
-    // infield diamond, to scale: bases are 90ft apart, so home-to-second is
-    // 90*sqrt(2) ft. Uses the same 45-degree foul-line direction as the fence.
-    const baseDist = 90 * scale;
-    const diagBase = baseDist * Math.SQRT1_2;
-    const first = [home[0] + diagBase, home[1] - diagBase];
-    const third = [home[0] - diagBase, home[1] - diagBase];
-    const second = [home[0], home[1] - baseDist * Math.SQRT2];
-
-    let svg = `<svg viewBox="${viewBox}" width="100%" style="display:block">`;
-    svg += `<path d="M ${home[0]},${home[1]} L ${fencePts[0][0]},${fencePts[0][1]} ${fenceCurve} L ${home[0]},${home[1]} Z" fill="${grass}" stroke="${ink}" stroke-width="1.3" stroke-linejoin="round"/>`;
-    svg += `<line x1="${home[0]}" y1="${home[1]}" x2="${fencePts[0][0]}" y2="${fencePts[0][1]}" stroke="${ink}" stroke-width="1"/>`;
-    svg += `<line x1="${home[0]}" y1="${home[1]}" x2="${fencePts[4][0]}" y2="${fencePts[4][1]}" stroke="${ink}" stroke-width="1"/>`;
-
-    svg += `<path d="M ${home[0]},${home[1]} L ${first[0]},${first[1]} L ${second[0]},${second[1]} L ${third[0]},${third[1]} Z" fill="${dirt}" stroke="${ink}" stroke-width="1"/>`;
+    let svg = `<svg viewBox="${viewBox}" width="100%" style="display:block;overflow:visible">`;
+    svg += `<path d="M ${fmt(home)} ${poly(fence).replace(/^M/, 'L')} Z" fill="${grass}"/>`;
+    svg += `<path d="${poly(fence)} ${poly(trackEdge.slice().reverse()).replace(/^M/, 'L')} Z" fill="${track}"/>`;
+    svg += `<path d="M ${fmt(home)} L ${fmt(pt(-lineHit * Math.SQRT1_2, lineHit * Math.SQRT1_2))} ${poly(arc).replace(/^M/, 'L')} Z" fill="${dirt}"/>`;
+    svg += `<path d="${poly(grassDiamond)} Z" fill="${infieldGrass}"/>`;
+    const moundPt = pt(...mound);
+    svg += `<circle cx="${moundPt[0].toFixed(2)}" cy="${moundPt[1].toFixed(2)}" r="${unitR(9).toFixed(2)}" fill="${dirt}"/>`;
+    svg += `<circle cx="${home[0]}" cy="${home[1]}" r="${unitR(13).toFixed(2)}" fill="${dirt}"/>`;
+    svg += `<path d="${poly(fence)}" fill="none" stroke="${ink}" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"/>`;
+    svg += `<path d="M ${fmt(fence[0])} L ${fmt(home)} L ${fmt(fence[fence.length - 1])}" fill="none" stroke="${ink}" stroke-width="0.9" stroke-linejoin="round"/>`;
+    svg += `<path d="M ${fmt(first)} L ${fmt(second)} L ${fmt(third)}" fill="none" stroke="${ink}" stroke-width="0.5" opacity="0.55"/>`;
     [first, second, third].forEach(b => {
-      svg += `<rect x="${b[0] - 2}" y="${b[1] - 2}" width="4" height="4" fill="#fff8ea" stroke="${ink}" stroke-width="0.6" transform="rotate(45 ${b[0]} ${b[1]})"/>`;
+      svg += `<rect x="${(b[0] - 1.6).toFixed(2)}" y="${(b[1] - 1.6).toFixed(2)}" width="3.2" height="3.2" fill="#fff8ea" stroke="${ink}" stroke-width="0.5" transform="rotate(45 ${fmt(b).replace(',', ' ')})"/>`;
     });
-    svg += `<circle cx="${home[0]}" cy="${home[1]}" r="2.5" fill="${ink}"/>`;
+    svg += `<path d="M ${home[0] - 1.6},${home[1] - 1.6} h 3.2 v 1.6 l -1.6 1.6 l -1.6 -1.6 Z" fill="#fff8ea" stroke="${ink}" stroke-width="0.5"/>`;
 
     balls.forEach((b, i) => {
       const color = HIT_DOT_COLORS[b.hitType] || brick;
@@ -5567,9 +5624,15 @@
     }
   }
 
+  // Opening a game from elsewhere (a profile's Game Log, a game summary)
+  // pushes an entry first, so Back returns to where it was opened from.
   function jumpToScorecardGame(dateStr, gamePk) {
     hideGameSummaryModal();
-    Tabs.switchTo('scorecard');
+    whenModalHistorySettled(() => openScorecardGame(dateStr, gamePk));
+  }
+  function openScorecardGame(dateStr, gamePk) {
+    navPush({ tab: 'scorecard', game: { date: dateStr, pk: Number(gamePk) } });
+    Tabs.switchTo('scorecard', { history: false });
     setDateInputValue(dateInput, dateInputText, dateStr);
     loadSchedule(dateStr, gamePk);
   }
@@ -5588,10 +5651,16 @@
     return `https://img.mlbstatic.com/mlb-photos/image/upload/w_${width || 112},q_100,f_auto/v1/people/${personId}/headshot/67/current`;
   }
 
+  // A square plate per award; a repeat award gets its count in a gold
+  // cell of its own ("9x" beside "All-Star"), and the years it was won ride
+  // along as the plate's title.
   function renderAwardTags(awardTags) {
-    return awardTags && awardTags.length
-      ? `<div class="player-award-tags">${awardTags.map(t => `<span class="player-award-tag">${t}</span>`).join('')}</div>`
-      : '';
+    if (!awardTags || !awardTags.length) return '';
+    return `<div class="player-award-tags">${awardTags.map(t => {
+      const title = t.years.length ? `${t.label}: ${t.years.join(', ')}` : t.label;
+      const count = t.count > 1 ? `<span class="player-award-n">${t.count}&times;</span>` : '';
+      return `<span class="player-award" title="${title}">${count}<span class="player-award-label">${t.label}</span></span>`;
+    }).join('')}</div>`;
   }
 
   function dailyTileRow(name, teamId, score, won) {
@@ -6109,7 +6178,7 @@
     if (!games || !games.length) return;
     const requestId = ++gameSummaryRequestId;
     gameSummaryModalBody.innerHTML = renderGameSummaryContent(dateStr, games, headerLabel);
-    gameSummaryOverlay.classList.add('open');
+    openOverlay(gameSummaryOverlay);
     // Venue (name+city) applies to every game regardless of state. The box
     // score now shows for every game including pre-game (Preview never has
     // g.linescore, so it always needs the fetch); highlights still only
@@ -6150,8 +6219,70 @@
   }
   // Shared by every modal here whose hide function is just this one line
   // (hidePitchPopup is kept separate since it also resets extra state).
-  function closeOverlay(overlay) {
+  // Popups take part in history too: opening one pushes an entry listing
+  // the popups open over the current screen (state.modals), so the phone's
+  // Back button closes the top one rather than leaving the screen behind
+  // it. Closing one any other way (close button, backdrop, Escape, or
+  // code) steps history back to match -- batched, so Escape closing a
+  // stack at once is a single history.go(-n). modalStack mirrors the open
+  // popups in order; openOverlay is a no-op on one already open (e.g. the
+  // pitch popup refreshing in place during a live at-bat).
+  let modalStack = [];
+  let pendingModalPops = 0;
+  let awaitingModalPop = false;
+  const afterModalPop = [];
+  function openOverlay(overlay) {
+    if (overlay.classList.contains('open')) return;
+    overlay.classList.add('open');
+    modalStack.push(overlay.id);
+    try {
+      const here = history.state || { tab: Tabs.current() };
+      history.replaceState({ ...here, scrollY: window.scrollY }, '', location.hash);
+      history.pushState({ ...here, scrollY: window.scrollY, modals: modalStack.slice() }, '', location.hash);
+    } catch (e) {}
+  }
+  function closeOverlay(overlay, { fromHistory = false } = {}) {
     overlay.classList.remove('open');
+    const idx = modalStack.indexOf(overlay.id);
+    if (idx < 0 || fromHistory) return;
+    // anything opened on top of it goes too
+    const above = modalStack.splice(idx);
+    above.slice(1).forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('open'); });
+    pendingModalPops += above.length;
+    if (pendingModalPops === above.length) {
+      queueMicrotask(() => {
+        const n = pendingModalPops;
+        pendingModalPops = 0;
+        awaitingModalPop = true;
+        history.go(-n);
+      });
+    }
+  }
+  // For navigation out of a popup (View Full Profile, View Full
+  // Scorecard...): its close above steps history back asynchronously, so a
+  // new entry pushed right away would be the one popped. Run fn once that
+  // pop has landed instead (immediately when nothing is pending).
+  function whenModalHistorySettled(fn) {
+    if (pendingModalPops || awaitingModalPop) afterModalPop.push(fn);
+    else fn();
+  }
+  // Called first by the popstate handler: closes whatever popups the entry
+  // landed on doesn't list (running each one's own hide cleanup), and
+  // reports whether this pop was closeOverlay's own, which needs nothing
+  // else restored.
+  function syncModalsToHistory(state) {
+    const keep = (state && state.modals) || [];
+    modalStack.filter(id => !keep.includes(id)).forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (id === 'pitchOverlay') hidePitchPopup({ fromHistory: true });
+      else closeOverlay(el, { fromHistory: true });
+    });
+    modalStack = keep.filter(id => { const el = document.getElementById(id); return el && el.classList.contains('open'); });
+    if (!awaitingModalPop) return false;
+    awaitingModalPop = false;
+    afterModalPop.splice(0).forEach(fn => fn());
+    return true;
   }
   function hideGameSummaryModal() {
     closeOverlay(gameSummaryOverlay);
@@ -6484,7 +6615,7 @@
   function showGameStripModal(dateStr, games) {
     gameStripOverlayBody.innerHTML = `<div class="pitch-header">${formatShortDate(dateStr)} Games</div>
       <div class="daily-games-grid">${games.map(g => renderDailyGameTile(dateStr, scheduleGameToTileGame(g))).join('')}</div>`;
-    gameStripOverlay.classList.add('open');
+    openOverlay(gameStripOverlay);
   }
   function hideGameStripModal() {
     closeOverlay(gameStripOverlay);
@@ -7314,7 +7445,7 @@
     }
     lastRenderedPitchNum = pitches.reduce((max, p) => Math.max(max, p.num || 0), 0);
     pitchModalBody.innerHTML = renderPitchDetailHtml(c, newPitchNums);
-    pitchOverlay.classList.add('open');
+    openOverlay(pitchOverlay);
     wirePitchLocationSync(pitchModalBody);
   }
 
@@ -7343,8 +7474,8 @@
     });
   }
 
-  function hidePitchPopup() {
-    pitchOverlay.classList.remove('open');
+  function hidePitchPopup({ fromHistory = false } = {}) {
+    closeOverlay(pitchOverlay, { fromHistory });
     currentOpenPkey = null;
     lastRenderedPitchNum = 0;
   }
@@ -7415,7 +7546,7 @@
     const html = rosterStore[team];
     if (!html) return;
     rosterModalBody.innerHTML = html;
-    rosterOverlay.classList.add('open');
+    openOverlay(rosterOverlay);
   }
   function hideRosterModal() {
     closeOverlay(rosterOverlay);
@@ -7428,7 +7559,7 @@
   function showSprayModal(team) {
     const html = sprayStore[team] || '<div class="pitch-header">' + team + '</div><div class="pitch-empty">No batted balls recorded yet.</div>';
     sprayModalBody.innerHTML = html;
-    sprayOverlay.classList.add('open');
+    openOverlay(sprayOverlay);
   }
   function hideSprayModal() {
     closeOverlay(sprayOverlay);
@@ -7440,7 +7571,7 @@
 
   async function showTeamChartModal(teamId, teamName, season, throughDate) {
     teamChartModalBody.innerHTML = `<div class="pitch-header">${teamName}</div><div class="pitch-subheader">${season} Season</div><div class="pitch-empty">Loading&#8230;</div>`;
-    teamChartOverlay.classList.add('open');
+    openOverlay(teamChartOverlay);
     try {
       const series = await getTeamWinLossSeries(teamId, season);
       if (!teamChartOverlay.classList.contains('open')) return;
@@ -7468,7 +7599,10 @@
       tabs[id] = { init, onShow, initialized: false };
     }
 
-    function switchTo(id) {
+    // history: false when restoring a tab from Back (popstate), where the
+    // browser has already set the URL; a tab-bar switch replaces the
+    // current entry rather than pushing one (see navPush).
+    function switchTo(id, { history: touchHistory = true } = {}) {
       if (!tabs[id] || id === active) return;
       tabBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === id));
       tabPanels.forEach(p => { p.hidden = p.dataset.tabPanel !== id; });
@@ -7477,7 +7611,9 @@
       if (!tab.initialized) { if (tab.init) tab.init(); tab.initialized = true; }
       if (tab.onShow) tab.onShow();
       active = id;
-      try { history.replaceState(null, '', '#' + id); } catch (e) {}
+      if (touchHistory) {
+        try { history.replaceState({ tab: id }, '', '#' + id); } catch (e) {}
+      }
     }
 
     function init(defaultId) {
@@ -7486,8 +7622,54 @@
       switchTo(tabs[fromHash] ? fromHash : defaultId);
     }
 
-    return { register, switchTo, init };
+    return { register, switchTo, init, current: () => active };
   })();
+
+  // ---- History ----
+  // Drill-ins -- opening a player, opening a game from elsewhere -- push an
+  // entry describing the screen: { tab, profile, from, depth } for a
+  // player, { tab, game: { date, pk } } for a game. Back lands on the
+  // previous entry and popstate (below) puts that screen back: the tab,
+  // the Players tab's list or profile, the game, and the scroll position
+  // recorded on the entry when the reader left it. Tab-bar switches
+  // replace the current entry instead, so Back doesn't walk through every
+  // tab that was tapped.
+  function navPush(state) {
+    try {
+      const here = history.state || { tab: Tabs.current() };
+      const listKey = here.tab === 'players' && !here.profile ? playerListCacheKey() : undefined;
+      history.replaceState({ ...here, scrollY: window.scrollY, listKey }, '', location.hash);
+      history.pushState(state, '', '#' + state.tab);
+    } catch (e) {}
+  }
+  function navReplace(state) {
+    try { history.replaceState(state, '', '#' + state.tab); } catch (e) {}
+  }
+  window.addEventListener('popstate', (e) => {
+    const st = e.state || { tab: location.hash.slice(1) };
+    // A popup closing (by Back, or closeOverlay's own step back) leaves the
+    // screen beneath as it was -- nothing else to restore.
+    const closedModals = modalStack.some(id => !((st.modals || []).includes(id)));
+    if (syncModalsToHistory(st) || closedModals) return;
+    if (!st.tab) return;
+    Tabs.switchTo(st.tab, { history: false });
+    if (st.tab === 'players') {
+      if (st.profile) {
+        if (playersView !== 'profile' || Number(lastProfilePerson && lastProfilePerson.id) !== st.profile) {
+          showPlayerProfile({ id: st.profile, fullName: '' }, { history: false });
+        }
+      } else if (playersView === 'profile') {
+        showPlayerList();
+      }
+    } else if (st.tab === 'scorecard' && st.game && st.game.pk !== Number(currentGamePk)) {
+      setDateInputValue(dateInput, dateInputText, st.game.date);
+      loadSchedule(st.game.date, st.game.pk);
+    }
+    // A list entry's scroll belongs to that list -- if the Batters/Pitchers
+    // toggle has since switched which list shows, start it at the top.
+    const scrollY = st.listKey && st.listKey !== playerListCacheKey() ? 0 : st.scrollY;
+    if (scrollY != null) requestAnimationFrame(() => window.scrollTo(0, scrollY));
+  });
 
   const playerSearchInput = document.getElementById('playerSearchInput');
   const playerSearchResults = document.getElementById('playerSearchResults');
@@ -7563,13 +7745,37 @@
   // to the list" affordance from a profile opened off a list row or a
   // search result.
   const playerListViewToggle = document.getElementById('playerListViewToggle');
+  // On the list, the toggle shows which list it is. On a profile neither
+  // half is lit -- a pitcher opened from search while browsing Batters
+  // isn't a batter -- though either half still jumps to that list.
+  function syncPlayerToggle() {
+    playerListViewToggle.querySelectorAll('.view-toggle-btn').forEach(b => {
+      const on = playersView === 'list' && b.dataset.view === playerListState.type;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
+  // Leaving a profile for the list. Opened from the list (however many
+  // players deep through search since), step back through history to it,
+  // so Back and this agree and popstate restores the list's scroll.
+  // Opened from another tab, there's no list entry behind it, so show the
+  // list in place of the profile entry.
+  function leaveProfileForList() {
+    const st = history.state || {};
+    if (st.profile && st.from === 'list') {
+      history.go(-(st.depth || 1));
+    } else {
+      navReplace({ tab: 'players' });
+      showPlayerList();
+    }
+  }
   playerListViewToggle.addEventListener('click', (e) => {
     const btn = e.target.closest('.view-toggle-btn');
     if (!btn) return;
-    playerListViewToggle.querySelectorAll('.view-toggle-btn').forEach(b => b.classList.toggle('active', b === btn));
     if (playerListState.type !== btn.dataset.view) playerListState.pos = 'all';
     playerListState.type = btn.dataset.view;
-    showPlayerList();
+    if (playersView === 'profile') leaveProfileForList();
+    else showPlayerList();
   });
 
   // Delegated for the list's own re-renders (sorting redraws the whole
@@ -7592,7 +7798,7 @@
   // Profile controls: the back link, the profile's own tab row, and Game
   // Log dates (each opens that game's scorecard).
   playersBody.addEventListener('click', (e) => {
-    if (e.target.closest('.pp-back')) { showPlayerList(); return; }
+    if (e.target.closest('.pp-back')) { leaveProfileForList(); return; }
     const tab = e.target.closest('.pp-tab');
     if (tab) {
       profileTab = tab.dataset.ppTab;
@@ -7825,22 +8031,27 @@
       const avg = formatRate(y.hits, y.atBats);
       const obp = formatRate(y.hits + y.baseOnBalls + y.hitByPitch, y.atBats + y.baseOnBalls + y.hitByPitch + y.sacFlies);
       const slg = formatRate(y.totalBases, y.atBats);
+      // OPS as the API reports it: the rounded OBP plus the rounded SLG.
+      const obpDen = y.atBats + y.baseOnBalls + y.hitByPitch + y.sacFlies;
+      const ops = y.atBats && obpDen
+        ? formatRate(Number(((y.hits + y.baseOnBalls + y.hitByPitch) / obpDen).toFixed(3)) + Number((y.totalBases / y.atBats).toFixed(3)), 1)
+        : '&#8212;';
       const leagueWoba = leagueWobaBySeason[y.season];
       const wobaPlus = computeWOBAPlus(y, leagueWoba);
       const sb = formatStolenBases(y.stolenBases, y.caughtStealing);
-      const yearRow = `<tr class="career-year-row"><td>${y.season}</td><td>${team}</td><td>${y.gamesPlayed}</td><td>${avg}</td><td>${obp}</td><td>${slg}</td><td>${wobaPlus}</td><td>${y.doubles}</td><td>${y.triples}</td><td>${y.homeRuns}</td><td>${sb}</td></tr>`;
+      const yearRow = `<tr class="career-year-row"><td>${y.season}</td><td>${team}</td><td>${y.gamesPlayed}</td><td>${avg}</td><td>${obp}</td><td>${slg}</td><td>${ops}</td><td>${wobaPlus}</td><td>${y.doubles}</td><td>${y.triples}</td><td>${y.homeRuns}</td><td>${sb}</td></tr>`;
       const stints = stintsBySeason.get(y.season) || [];
       const subRows = stints.length > 1
         ? stints.map(s => {
             const stat = s.stat || {};
             const teamName = (s.team && teamNickname(s.team)) || '&#8212;';
-            return `<tr class="career-team-subrow"><td></td><td>${teamName}</td><td>${stat.gamesPlayed ?? '&#8212;'}</td><td>${stat.avg ?? '&#8212;'}</td><td>${stat.obp ?? '&#8212;'}</td><td>${stat.slg ?? '&#8212;'}</td><td>${computeWOBAPlus(stat, leagueWoba)}</td><td>${stat.doubles ?? '&#8212;'}</td><td>${stat.triples ?? '&#8212;'}</td><td>${stat.homeRuns ?? '&#8212;'}</td><td>${formatStolenBases(stat.stolenBases, stat.caughtStealing)}</td></tr>`;
+            return `<tr class="career-team-subrow"><td></td><td>${teamName}</td><td>${stat.gamesPlayed ?? '&#8212;'}</td><td>${stat.avg ?? '&#8212;'}</td><td>${stat.obp ?? '&#8212;'}</td><td>${stat.slg ?? '&#8212;'}</td><td>${stat.ops ?? '&#8212;'}</td><td>${computeWOBAPlus(stat, leagueWoba)}</td><td>${stat.doubles ?? '&#8212;'}</td><td>${stat.triples ?? '&#8212;'}</td><td>${stat.homeRuns ?? '&#8212;'}</td><td>${formatStolenBases(stat.stolenBases, stat.caughtStealing)}</td></tr>`;
           }).join('')
         : '';
       return yearRow + subRows;
     });
     return `<div class="table-scroll"><table class="pitch-table career-table">
-        <thead><tr><th>Year</th><th>Team</th><th>G</th><th>AVG</th><th>OBP</th><th>SLG</th><th>wOBA+</th><th>2B</th><th>3B</th><th>HR</th><th>SB</th></tr></thead>
+        <thead><tr><th>Year</th><th>Team</th><th>G</th><th>AVG</th><th>OBP</th><th>SLG</th><th>OPS</th><th>wOBA+</th><th>2B</th><th>3B</th><th>HR</th><th>SB</th></tr></thead>
         <tbody>${rows.join('')}</tbody>
       </table></div>`;
   }
@@ -8228,6 +8439,7 @@
     playersView = 'list';
     playerProfileRequestId++;
     playerSprayToken++;
+    syncPlayerToggle();
     const requestId = ++playerListRequestId;
     if (playerListState.season == null) {
       renderPlayerListInto(undefined, null);
@@ -8281,7 +8493,7 @@
     const key = `${personId}-${season}-${group}`;
     if (playerSeasonDetailCache[key]) return playerSeasonDetailCache[key];
     try {
-      const res = await fetch(`https://statsapi.mlb.com/api/v1/people/${personId}/stats?stats=season,statSplits,gameLog&group=${group}&season=${season}&sitCodes=vl,vr,h,a,3,4,5,6,7,8,9`);
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/people/${personId}/stats?stats=season,statSplits,gameLog&group=${group}&season=${season}&sitCodes=vl,vr,3,4,5,6,7,8,9`);
       if (!res.ok) return null;
       const data = await res.json();
       const byType = t => {
@@ -8583,7 +8795,7 @@
     const cols = pitcher ? 9 : 12;
     const body = groups.map(grp => `<tr class="pp-month"><td colspan="${cols}"><span class="pp-month-name">${grp.label}</span><span class="pp-month-total">${total(grp)}</span></td></tr>${grp.games.map(row).join('')}`).join('');
     return `<div class="pp-gl">${recent}
-      <div class="table-scroll pp-gl-log"><table class="pitch-table pp-table pp-log${pitcher ? ' is-pitcher' : ''}"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div></div>`;
+      <div class="pp-gl-log"><table class="pitch-table pp-table pp-log${pitcher ? ' is-pitcher' : ''}"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div></div>`;
   }
 
   // ---- Splits ----
@@ -8593,12 +8805,18 @@
   // count so a thin sample is visible. March is only the season's first
   // few days, so it folds into April as one Mar/Apr row (summed from
   // counting stats, see sumStatLines).
+  //
+  // The scale doesn't start at zero -- almost no split sits below .500,
+  // so a zero-based bar spent half its length on nothing. A hitter's
+  // starts at .500 (lower only if a split dips under it); a pitcher's,
+  // whose opponents' OPS runs far lower, is fit to his own range. Both
+  // ends are labelled under the bars, since a truncated bar's length is
+  // only meaningful against them.
   const SPLIT_MONTHS = ['May', 'June', 'July', 'August', 'September'];
   function renderProfileSplits(splits, pitcher, seasonStat) {
     const marApr = [splits.March, splits.April].filter(Boolean);
     const groups = [
       ['Platoon', [[pitcher ? 'vs LHB' : 'vs LHP', splits['vs Left']], [pitcher ? 'vs RHB' : 'vs RHP', splits['vs Right']]]],
-      ['Venue', [['Home', splits['Home Games']], ['Away', splits['Away Games']]]],
       ['By month', [['Mar/Apr', marApr.length ? sumStatLines(marApr) : null], ...SPLIT_MONTHS.map(m => [m, splits[m]])]]
     ].map(([name, rows]) => [name, rows.filter(([, st]) => st).map(([label, st]) => {
       const ops = slashFromCounts(st).ops;
@@ -8607,9 +8825,12 @@
     if (!groups.length) return '<div class="pitch-empty">No splits this season.</div>';
     const seasonOps = seasonStat ? slashFromCounts(seasonStat).ops : null;
     const seasonValue = Number(seasonOps) || 0;
-    const top = Math.max(1, seasonValue, ...groups.flatMap(([, rows]) => rows.map(r => r.value)));
-    const scale = Math.ceil(top * 10) / 10;
-    const pct = v => `${Math.min(100, (v / scale) * 100).toFixed(1)}%`;
+    const values = [...groups.flatMap(([, rows]) => rows.map(r => r.value)), ...(seasonValue ? [seasonValue] : [])];
+    const fitLo = Math.max(0, Math.floor((Math.min(...values) - 0.05) * 10) / 10);
+    const lo = pitcher ? fitLo : Math.min(0.5, fitLo);
+    const hi = Math.max(lo + 0.3, Math.ceil((Math.max(...values) + 0.05) * 10) / 10);
+    const pct = v => `${Math.max(0, Math.min(100, ((v - lo) / (hi - lo)) * 100)).toFixed(1)}%`;
+    const tick = v => formatRate(v, 1);
     const mark = seasonValue ? `<i class="pp-sb-season" style="left:${pct(seasonValue)}"></i>` : '';
     const sampleLabel = pitcher ? 'BF' : 'PA';
     return `<div class="pp-splits">
@@ -8623,6 +8844,7 @@
           <span class="pp-ssample">${r.sample ?? 0} ${sampleLabel}</span>
         </div>`).join('')}
       </div>`).join('')}
+      <div class="pp-srow pp-saxis" aria-hidden="true"><span></span><span class="pp-saxis-ends"><span>${tick(lo)}</span><span>${tick(hi)}</span></span><span></span><span></span></div>
     </div>`;
   }
 
@@ -8724,29 +8946,39 @@
     const pos = person.primaryPosition && person.primaryPosition.name;
     const ident = [team, pos].filter(Boolean).map((t, i) => (i ? `<span class="pp-sep">&#183;</span><span class="pp-pos">${t}</span>` : t)).join('');
     const born = [person.birthCity, person.birthStateProvince || person.birthCountry].filter(Boolean).join(', ');
-    const bio = [
-      person.currentAge != null ? `Age <b>${person.currentAge}</b>` : null,
-      person.height ? `Ht / Wt <b>${person.height}${person.weight ? ` &#183; ${person.weight}` : ''}</b>` : null,
-      person.batSide && person.pitchHand ? `B / T <b>${person.batSide.code} / ${person.pitchHand.code}</b>` : null,
-      born ? `Born <b>${born}</b>` : null,
-      person.mlbDebutDate ? `Debut <b>${formatShortDate(person.mlbDebutDate)}, ${person.mlbDebutDate.slice(0, 4)}</b>` : null
-    ].filter(Boolean).join(' &#183; ');
+    // Label-over-value pairs, spelled out, wrapping onto as many lines as
+    // the sheet needs -- one run-on line of abbreviations blurred together.
+    const bioPairs = [
+      ['Age', person.currentAge],
+      ['Height', person.height],
+      ['Weight', person.weight ? `${person.weight} lb` : null],
+      ['Bats', person.batSide && person.batSide.description],
+      ['Throws', person.pitchHand && person.pitchHand.description],
+      ['Born', born],
+      ['Debut', person.mlbDebutDate ? `${formatShortDate(person.mlbDebutDate)}, ${person.mlbDebutDate.slice(0, 4)}` : null]
+    ].filter(([, v]) => v != null && v !== '');
+    const bio = bioPairs.length
+      ? `<dl class="pp-vitals">${bioPairs.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>`
+      : '';
+    const teamId = person.currentTeam && person.currentTeam.id;
+    const watermark = teamId ? `<img class="pp-watermark" src="${capLogoUrl(teamId)}" alt="" aria-hidden="true" onerror="this.remove()">` : '';
     const awardsHtml = renderAwardTags(lastProfileAwardTags);
     const listName = playerListState.type === 'pitching' ? 'Pitchers' : 'Batters';
     return `<div class="pp">
       <button type="button" class="pp-back"><svg viewBox="0 0 7 11" aria-hidden="true"><path d="M6 1L1.5 5.5 6 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>${lastProfileSeason || ''} ${listName}</button>
       <div class="sheet pp-sheet">
+        ${watermark}
         <div class="pp-head">
           <div class="pp-photo"><img src="${headshotUrl(person.id, 360)}" alt="" onerror="this.style.display='none'"></div>
           <div class="pp-id">
             ${person.primaryNumber ? `<div class="pp-num">#${person.primaryNumber}</div>` : ''}
             <div class="pp-name">${person.fullName || ''}</div>
             ${ident ? `<div class="pp-ident">${ident}</div>` : ''}
-            ${bio ? `<div class="pp-bio pp-wide">${bio}</div>` : ''}
+            ${bio ? `<div class="pp-wide">${bio}</div>` : ''}
             <div class="pp-wide">${awardsHtml}</div>
           </div>
         </div>
-        ${bio ? `<div class="pp-bio pp-narrow">${bio}</div>` : ''}
+        ${bio ? `<div class="pp-narrow pp-vitals-narrow">${bio}</div>` : ''}
         <div class="pp-narrow">${awardsHtml}</div>
         <div class="pp-tabs" role="tablist">${tabs.map(([id, label]) => `<button type="button" class="pp-tab" role="tab" data-pp-tab="${id}" aria-selected="${id === profileTab}">${label}</button>`).join('')}</div>
         <div class="pp-panel" role="tabpanel">${renderProfileTabBody(profileTab, pitcher)}</div>
@@ -8811,7 +9043,12 @@
     rerenderPlayerProfile();
   }
 
-  async function showPlayerProfile(rawPerson) {
+  // Pushes the profile's history entry (see navPush) unless history:
+  // false -- when Back is what's restoring it, or when a caller already
+  // pushed one (jumpToPlayerProfile, before switching tabs). from/depth
+  // record whether it was opened from the list and how many players deep,
+  // for leaveProfileForList.
+  async function showPlayerProfile(rawPerson, { history: pushHistory = true } = {}) {
     // Normalized once, here, since callers don't agree on type: search
     // results carry a numeric id straight from the API, but a dataset
     // attribute (jumpToPlayerProfile, showPlayerModal) is always a string.
@@ -8822,7 +9059,13 @@
     const person = { ...rawPerson, id: Number(rawPerson.id) };
     const requestId = ++playerProfileRequestId;
     playerSprayToken++; // abandon any spray fetch still in flight for whatever was open before
+    if (pushHistory) {
+      const here = history.state || {};
+      const deeper = playersView === 'profile' && here.profile;
+      navPush({ tab: 'players', profile: person.id, from: deeper ? here.from : 'list', depth: deeper ? (here.depth || 1) + 1 : 1 });
+    }
     playersView = 'profile';
+    syncPlayerToggle();
     profileTab = 'ov';
     lastProfilePerson = person;
     lastProfileCareerSplits = null;
@@ -8836,6 +9079,10 @@
     lastProfileSeason = playerListState.season || defaultListSeason;
     playerSprayState = { personId: person.id, season: null, balls: null, loading: true };
     rerenderPlayerProfile();
+    // Opened from deep in the list: start at the top of the profile, not
+    // at whatever point the list had been scrolled to.
+    const profileTop = playersBody.getBoundingClientRect().top + window.scrollY - (playersBody.closest('#mlb-root').querySelector('.tab-header') || {}).offsetHeight - 8;
+    if (window.scrollY > profileTop) window.scrollTo(0, Math.max(0, profileTop));
     const [fullPerson, careerSplits, awards, season] = await Promise.all([
       getPlayerDetails(person.id),
       getPlayerCareerStats(person.id),
@@ -8868,12 +9115,24 @@
   // from inside the player modal's own CTA and directly off a Players of
   // the Game name button nested inside the game summary modal; closeOverlay
   // is a no-op on an overlay that isn't open.
+  // From another tab, the entry is pushed before switching tabs, so the
+  // tab being left keeps its own entry (and Back returns to it); from the
+  // Players tab itself, showPlayerProfile pushes it as for any profile.
   function jumpToPlayerProfile(playerId) {
     const info = playerStore[playerId];
     hidePlayerModal();
     hideGameSummaryModal();
-    Tabs.switchTo('players');
-    showPlayerProfile({ id: playerId, fullName: (info && info.name) || '' });
+    whenModalHistorySettled(() => openProfileFromAnywhere(playerId, info));
+  }
+  function openProfileFromAnywhere(playerId, info) {
+    const person = { id: playerId, fullName: (info && info.name) || '' };
+    if (Tabs.current() === 'players') {
+      showPlayerProfile(person);
+      return;
+    }
+    navPush({ tab: 'players', profile: Number(playerId), from: 'other', depth: 1 });
+    Tabs.switchTo('players', { history: false });
+    showPlayerProfile(person, { history: false });
   }
 
   // Feeds .scorecard-sidebar's fixed top/right offsets (--tab-header-h and
@@ -8895,6 +9154,10 @@
     mlbRootEl.style.setProperty('--sidebar-right', rightOffset + 'px');
   }
   window.addEventListener('resize', syncSidebarOffsets);
+  // The header's height also changes without a resize -- web fonts
+  // landing, a tab's controls row wrapping -- and sticky things read it
+  // (the Scorecard sidebar, the Game Log's header and recent-games column).
+  if (tabHeaderEl && typeof ResizeObserver === 'function') new ResizeObserver(syncSidebarOffsets).observe(tabHeaderEl);
 
   Tabs.register('scorecard', { onShow: syncSidebarOffsets });
   Tabs.register('daily', {
@@ -8921,7 +9184,7 @@
     const info = playerStore[playerId];
     if (!info) return;
     playerModalBody.innerHTML = renderPlayerModalContent(info, null) + '<div class="pitch-empty">Loading season stats&#8230;</div>';
-    playerOverlay.classList.add('open');
+    openOverlay(playerOverlay);
     const pitcher = info.pos === 'P';
     const [seasonStat, awards, recentGames, details, leagueWoba] = await Promise.all([
       getPlayerSeasonStats(playerId, info.season, pitcher ? 'pitching' : 'hitting'),
