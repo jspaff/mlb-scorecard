@@ -1338,14 +1338,25 @@
     vertical-align: middle;
     cursor: help;
   }
+  /* Fixed slots rather than content-sized selects: a <select> sizes itself
+     to its longest option, and the Team list is rebuilt per league/season,
+     so a content-sized row would shift every time a filter changed. Each
+     slot is sized to its longest option (Diamondbacks for Team) with room
+     for Safari's wider text rendering. */
   .player-filters {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: 84px 84px 160px 116px 116px;
+    grid-template-areas: "season league team pos pool";
     gap: 10px 12px;
     padding-bottom: 14px;
     margin-bottom: 12px;
     border-bottom: 1px solid var(--paper-line);
   }
+  .player-filter-season { grid-area: season; }
+  .player-filter-league { grid-area: league; }
+  .player-filter-team { grid-area: team; }
+  .player-filter-pos { grid-area: pos; }
+  .player-filter-pool { grid-area: pool; }
   .player-filter { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
   .player-filter-label {
     font-family: 'Overpass', sans-serif;
@@ -1355,7 +1366,16 @@
     text-transform: uppercase;
     color: var(--ink-soft);
   }
-  .player-filter select { max-width: 100%; }
+  .player-filter select {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    cursor: pointer;
+  }
+  .player-filter select:hover { border-color: var(--ink-soft); }
   .player-list-count {
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
@@ -1365,9 +1385,15 @@
     color: var(--ink-soft);
     margin-bottom: 8px;
   }
+  /* Two rows on a phone: the three short pickers share the top, Team gets
+     a double-width slot below beside Position. */
   @media (max-width: 520px) {
-    .player-filters { display: grid; grid-template-columns: 1fr 1fr; }
-    .player-filter select { width: 100%; }
+    .player-filters {
+      grid-template-columns: minmax(68px, 0.8fr) minmax(64px, 0.8fr) minmax(0, 1.4fr);
+      grid-template-areas: "season league pool" "team team pos";
+      gap: 10px;
+    }
+    .player-filter select { padding-left: 8px; padding-right: 22px; background-position: right 8px center; }
   }
   .roster-row {
     display: flex;
@@ -7639,12 +7665,13 @@
 
   const AL_LEAGUE_ID = 103;
   const NL_LEAGUE_ID = 104;
+  // Scorebook abbreviations, not spelled-out names, so every choice fits
+  // its fixed-width slot (see .player-filters).
   const BATTER_POSITION_FILTERS = [
-    ['all', 'All positions'], ['C', 'Catcher'], ['1B', 'First base'], ['2B', 'Second base'],
-    ['3B', 'Third base'], ['SS', 'Shortstop'], ['OF', 'Outfield'], ['LF', 'Left field'],
-    ['CF', 'Center field'], ['RF', 'Right field'], ['DH', 'Designated hitter']
+    ['all', 'All'], ['C', 'C'], ['1B', '1B'], ['2B', '2B'], ['3B', '3B'], ['SS', 'SS'],
+    ['OF', 'OF (any)'], ['LF', 'LF'], ['CF', 'CF'], ['RF', 'RF'], ['DH', 'DH']
   ];
-  const PITCHER_POSITION_FILTERS = [['all', 'All pitchers'], ['SP', 'Starters'], ['RP', 'Relievers']];
+  const PITCHER_POSITION_FILTERS = [['all', 'All'], ['SP', 'Starters'], ['RP', 'Relievers']];
 
   // The API lists every pitcher as plain "P", so starter/reliever is read
   // off his usage instead: a starter is anyone who started at least half
@@ -7758,7 +7785,8 @@
 
   function renderFilterSelect(id, label, options, value) {
     const opts = options.map(([v, text]) => `<option value="${v}"${String(v) === String(value) ? ' selected' : ''}>${text}</option>`).join('');
-    return `<label class="player-filter"><span class="player-filter-label">${label}</span><select id="${id}" data-filter="${id.replace('playerFilter', '').toLowerCase()}">${opts}</select></label>`;
+    const filter = id.replace('playerFilter', '').toLowerCase();
+    return `<label class="player-filter player-filter-${filter}"><span class="player-filter-label">${label}</span><select id="${id}" data-filter="${filter}">${opts}</select></label>`;
   }
 
   // Team choices come from the loaded rows themselves rather than the
@@ -7774,14 +7802,14 @@
     (rows || []).forEach(r => {
       if (r.teamId && (league === 'all' || r.leagueId === Number(league))) teamsById.set(r.teamId, r.team);
     });
-    const teamOptions = [['all', 'All teams'], ...Array.from(teamsById, ([id, name]) => [id, name]).sort((a, b) => a[1].localeCompare(b[1]))];
+    const teamOptions = [['all', 'All'], ...Array.from(teamsById, ([id, name]) => [id, name]).sort((a, b) => a[1].localeCompare(b[1]))];
     const posOptions = type === 'pitching' ? PITCHER_POSITION_FILTERS : BATTER_POSITION_FILTERS;
     return `<div class="player-filters">
       ${renderFilterSelect('playerFilterSeason', 'Season', seasons, season)}
-      ${renderFilterSelect('playerFilterLeague', 'League', [['all', 'Both leagues'], [AL_LEAGUE_ID, 'American League'], [NL_LEAGUE_ID, 'National League']], league)}
+      ${renderFilterSelect('playerFilterLeague', 'League', [['all', 'Both'], [AL_LEAGUE_ID, 'AL'], [NL_LEAGUE_ID, 'NL']], league)}
       ${renderFilterSelect('playerFilterTeam', 'Team', teamOptions, team)}
       ${renderFilterSelect('playerFilterPos', 'Position', posOptions, pos)}
-      ${renderFilterSelect('playerFilterPool', 'Players', [['qualified', 'Qualified'], ['all', 'All players']], pool)}
+      ${renderFilterSelect('playerFilterPool', 'Players', [['qualified', 'Qualified'], ['all', 'All']], pool)}
     </div>`;
   }
 
