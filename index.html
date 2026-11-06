@@ -3267,9 +3267,6 @@
   // so a profile's late-arriving fetches don't redraw over the list after
   // the user has gone back to it (see rerenderPlayerProfile).
   let playersView = 'list';
-  // Where the reader was in the list when they opened a profile from it,
-  // and which list that was, so going back can return them there.
-  let listScroll = null;
   let profileTab = 'ov';
   // The season the profile's season tabs show (see showPlayerProfile), its
   // getPlayerSeasonDetail result (undefined while loading, null if it
@@ -5627,9 +5624,12 @@
     }
   }
 
+  // Opening a game from elsewhere (a profile's Game Log, a game summary)
+  // pushes an entry first, so Back returns to where it was opened from.
   function jumpToScorecardGame(dateStr, gamePk) {
     hideGameSummaryModal();
-    Tabs.switchTo('scorecard');
+    navPush({ tab: 'scorecard', game: { date: dateStr, pk: Number(gamePk) } });
+    Tabs.switchTo('scorecard', { history: false });
     setDateInputValue(dateInput, dateInputText, dateStr);
     loadSchedule(dateStr, gamePk);
   }
@@ -7534,7 +7534,10 @@
       tabs[id] = { init, onShow, initialized: false };
     }
 
-    function switchTo(id) {
+    // history: false when restoring a tab from Back (popstate), where the
+    // browser has already set the URL; a tab-bar switch replaces the
+    // current entry rather than pushing one (see navPush).
+    function switchTo(id, { history: touchHistory = true } = {}) {
       if (!tabs[id] || id === active) return;
       tabBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === id));
       tabPanels.forEach(p => { p.hidden = p.dataset.tabPanel !== id; });
@@ -7543,7 +7546,9 @@
       if (!tab.initialized) { if (tab.init) tab.init(); tab.initialized = true; }
       if (tab.onShow) tab.onShow();
       active = id;
-      try { history.replaceState(null, '', '#' + id); } catch (e) {}
+      if (touchHistory) {
+        try { history.replaceState({ tab: id }, '', '#' + id); } catch (e) {}
+      }
     }
 
     function init(defaultId) {
@@ -7552,8 +7557,50 @@
       switchTo(tabs[fromHash] ? fromHash : defaultId);
     }
 
-    return { register, switchTo, init };
+    return { register, switchTo, init, current: () => active };
   })();
+
+  // ---- History ----
+  // Drill-ins -- opening a player, opening a game from elsewhere -- push an
+  // entry describing the screen: { tab, profile, from, depth } for a
+  // player, { tab, game: { date, pk } } for a game. Back lands on the
+  // previous entry and popstate (below) puts that screen back: the tab,
+  // the Players tab's list or profile, the game, and the scroll position
+  // recorded on the entry when the reader left it. Tab-bar switches
+  // replace the current entry instead, so Back doesn't walk through every
+  // tab that was tapped.
+  function navPush(state) {
+    try {
+      const here = history.state || { tab: Tabs.current() };
+      const listKey = here.tab === 'players' && !here.profile ? playerListCacheKey() : undefined;
+      history.replaceState({ ...here, scrollY: window.scrollY, listKey }, '', location.hash);
+      history.pushState(state, '', '#' + state.tab);
+    } catch (e) {}
+  }
+  function navReplace(state) {
+    try { history.replaceState(state, '', '#' + state.tab); } catch (e) {}
+  }
+  window.addEventListener('popstate', (e) => {
+    const st = e.state || { tab: location.hash.slice(1) };
+    if (!st.tab) return;
+    Tabs.switchTo(st.tab, { history: false });
+    if (st.tab === 'players') {
+      if (st.profile) {
+        if (playersView !== 'profile' || Number(lastProfilePerson && lastProfilePerson.id) !== st.profile) {
+          showPlayerProfile({ id: st.profile, fullName: '' }, { history: false });
+        }
+      } else if (playersView === 'profile') {
+        showPlayerList();
+      }
+    } else if (st.tab === 'scorecard' && st.game && st.game.pk !== Number(currentGamePk)) {
+      setDateInputValue(dateInput, dateInputText, st.game.date);
+      loadSchedule(st.game.date, st.game.pk);
+    }
+    // A list entry's scroll belongs to that list -- if the Batters/Pitchers
+    // toggle has since switched which list shows, start it at the top.
+    const scrollY = st.listKey && st.listKey !== playerListCacheKey() ? 0 : st.scrollY;
+    if (scrollY != null) requestAnimationFrame(() => window.scrollTo(0, scrollY));
+  });
 
   const playerSearchInput = document.getElementById('playerSearchInput');
   const playerSearchResults = document.getElementById('playerSearchResults');
@@ -7620,7 +7667,7 @@
     playerSearchResults.hidden = true;
     if (!person) return;
     playerSearchInput.value = person.fullName;
-    showPlayerProfile(person, { push: playersView === 'list' && location.hash === '#players' });
+    showPlayerProfile(person);
   });
 
   // Switching Batters/Pitchers always re-shows the list (even re-clicking
@@ -7639,17 +7686,20 @@
       b.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
   }
-  // Leaving a profile for the list: through history.back() when the
-  // profile pushed a history entry (see showPlayerProfile), so the phone's
-  // back button and this stay in step -- the popstate handler below then
-  // shows the list -- otherwise directly.
+  // Leaving a profile for the list. Opened from the list (however many
+  // players deep through search since), step back through history to it,
+  // so Back and this agree and popstate restores the list's scroll.
+  // Opened from another tab, there's no list entry behind it, so show the
+  // list in place of the profile entry.
   function leaveProfileForList() {
-    if (history.state && history.state.ppProfile) history.back();
-    else showPlayerList();
+    const st = history.state || {};
+    if (st.profile && st.from === 'list') {
+      history.go(-(st.depth || 1));
+    } else {
+      navReplace({ tab: 'players' });
+      showPlayerList();
+    }
   }
-  window.addEventListener('popstate', () => {
-    if (playersView === 'profile') showPlayerList();
-  });
   playerListViewToggle.addEventListener('click', (e) => {
     const btn = e.target.closest('.view-toggle-btn');
     if (!btn) return;
@@ -8317,9 +8367,6 @@
   }
 
   async function showPlayerList() {
-    // Back from a profile to the same list it was opened from: return to
-    // where the reader was in it (see showPlayerProfile).
-    const restoreY = playersView === 'profile' && listScroll && listScroll.key === playerListCacheKey() ? listScroll.y : null;
     playersView = 'list';
     playerProfileRequestId++;
     playerSprayToken++;
@@ -8335,7 +8382,6 @@
     const cached = playerListCache[playerListCacheKey()];
     if (cached) {
       renderPlayerListInto(cached.rows, cached.leagueWoba);
-      if (restoreY != null) window.scrollTo(0, restoreY);
       return;
     }
     renderPlayerListInto(undefined, null);
@@ -8928,11 +8974,12 @@
     rerenderPlayerProfile();
   }
 
-  // push: add a history entry, so the phone's back button closes the
-  // profile -- only when it's opened from the list on the Players tab
-  // itself (a profile reached from another tab's player modal has no list
-  // behind it to go back to).
-  async function showPlayerProfile(rawPerson, { push = false } = {}) {
+  // Pushes the profile's history entry (see navPush) unless history:
+  // false -- when Back is what's restoring it, or when a caller already
+  // pushed one (jumpToPlayerProfile, before switching tabs). from/depth
+  // record whether it was opened from the list and how many players deep,
+  // for leaveProfileForList.
+  async function showPlayerProfile(rawPerson, { history: pushHistory = true } = {}) {
     // Normalized once, here, since callers don't agree on type: search
     // results carry a numeric id straight from the API, but a dataset
     // attribute (jumpToPlayerProfile, showPlayerModal) is always a string.
@@ -8943,9 +8990,10 @@
     const person = { ...rawPerson, id: Number(rawPerson.id) };
     const requestId = ++playerProfileRequestId;
     playerSprayToken++; // abandon any spray fetch still in flight for whatever was open before
-    if (playersView === 'list') listScroll = { key: playerListCacheKey(), y: window.scrollY };
-    if (push) {
-      try { history.pushState({ ppProfile: true }, '', location.hash); } catch (e) {}
+    if (pushHistory) {
+      const here = history.state || {};
+      const deeper = playersView === 'profile' && here.profile;
+      navPush({ tab: 'players', profile: person.id, from: deeper ? here.from : 'list', depth: deeper ? (here.depth || 1) + 1 : 1 });
     }
     playersView = 'profile';
     syncPlayerToggle();
@@ -8998,13 +9046,21 @@
   // from inside the player modal's own CTA and directly off a Players of
   // the Game name button nested inside the game summary modal; closeOverlay
   // is a no-op on an overlay that isn't open.
+  // From another tab, the entry is pushed before switching tabs, so the
+  // tab being left keeps its own entry (and Back returns to it); from the
+  // Players tab itself, showPlayerProfile pushes it as for any profile.
   function jumpToPlayerProfile(playerId) {
     const info = playerStore[playerId];
-    const fromPlayersList = location.hash === '#players' && playersView === 'list';
     hidePlayerModal();
     hideGameSummaryModal();
-    Tabs.switchTo('players');
-    showPlayerProfile({ id: playerId, fullName: (info && info.name) || '' }, { push: fromPlayersList });
+    const person = { id: playerId, fullName: (info && info.name) || '' };
+    if (Tabs.current() === 'players') {
+      showPlayerProfile(person);
+      return;
+    }
+    navPush({ tab: 'players', profile: Number(playerId), from: 'other', depth: 1 });
+    Tabs.switchTo('players', { history: false });
+    showPlayerProfile(person, { history: false });
   }
 
   // Feeds .scorecard-sidebar's fixed top/right offsets (--tab-header-h and
