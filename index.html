@@ -2440,21 +2440,37 @@
   .player-award-tags {
     display: flex;
     flex-wrap: wrap;
-    gap: 5px;
+    gap: 6px;
     margin-bottom: 12px;
   }
-  .player-award-tag {
+  .player-award {
+    display: inline-flex;
+    align-items: stretch;
+    border: 1px solid var(--gold);
+    white-space: nowrap;
+    cursor: default;
+  }
+  .player-award-n {
+    display: flex;
+    align-items: center;
+    padding: 1px 5px 0;
+    background: var(--gold);
+    color: var(--paper);
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .player-award-label {
+    padding: 4px 7px 3px;
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
-    font-size: 8px;
-    letter-spacing: 0.05em;
+    font-size: 10px;
+    line-height: 1.2;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--gold);
-    background: rgba(217, 169, 26, 0.1);
-    border: 1px solid var(--gold);
-    padding: 2px 6px;
-    border-radius: 3px;
-    white-space: nowrap;
   }
   .player-search-wrap { position: relative; }
   #playerSearchInput { width: 220px; max-width: 220px; }
@@ -3251,6 +3267,9 @@
   // so a profile's late-arriving fetches don't redraw over the list after
   // the user has gone back to it (see rerenderPlayerProfile).
   let playersView = 'list';
+  // Where the reader was in the list when they opened a profile from it,
+  // and which list that was, so going back can return them there.
+  let listScroll = null;
   let profileTab = 'ov';
   // The season the profile's season tabs show (see showPlayerProfile), its
   // getPlayerSeasonDetail result (undefined while loading, null if it
@@ -3504,18 +3523,24 @@
   function categorizeAward(award) {
     return AWARD_ID_TAGS[(award.id || '').toUpperCase()] || null;
   }
-  // Collapses repeat wins of the same award (e.g. three Gold Gloves at
-  // different positions) into one "Gold Glove 3x" tag instead of three rows.
+  // Collapses repeat wins of the same award into one tag with a count and
+  // the seasons it was won (e.g. three Gold Gloves at different positions
+  // is one "Gold Glove" tag, count 3) -- ordered by the award's standing,
+  // not by how many times it was won, so a single MVP leads nine All-Star
+  // selections.
+  const AWARD_ORDER = ['MVP', 'Cy Young', 'Rookie of the Year', 'Reliever of the Year', 'All-Star', 'Silver Slugger', 'Gold Glove'];
   function summarizeAwardTags(awards) {
-    const counts = {};
+    const seasonsByLabel = {};
     awards.forEach(a => {
       const label = categorizeAward(a);
       if (!label) return;
-      counts[label] = (counts[label] || 0) + 1;
+      (seasonsByLabel[label] = seasonsByLabel[label] || []).push(a.season);
     });
-    return Object.entries(counts)
-      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-      .map(([label, count]) => count > 1 ? `${label} ${count}x` : label);
+    return AWARD_ORDER.filter(label => seasonsByLabel[label]).map(label => ({
+      label,
+      count: seasonsByLabel[label].length,
+      years: Array.from(new Set(seasonsByLabel[label].filter(Boolean))).sort()
+    }));
   }
   async function getStandings(season, date) {
     const key = `${season}-${date}`;
@@ -5623,10 +5648,16 @@
     return `https://img.mlbstatic.com/mlb-photos/image/upload/w_${width || 112},q_100,f_auto/v1/people/${personId}/headshot/67/current`;
   }
 
+  // A square plate per award; a repeat award gets its count in a gold
+  // cell of its own ("9x" beside "All-Star"), and the years it was won ride
+  // along as the plate's title.
   function renderAwardTags(awardTags) {
-    return awardTags && awardTags.length
-      ? `<div class="player-award-tags">${awardTags.map(t => `<span class="player-award-tag">${t}</span>`).join('')}</div>`
-      : '';
+    if (!awardTags || !awardTags.length) return '';
+    return `<div class="player-award-tags">${awardTags.map(t => {
+      const title = t.years.length ? `${t.label}: ${t.years.join(', ')}` : t.label;
+      const count = t.count > 1 ? `<span class="player-award-n">${t.count}&times;</span>` : '';
+      return `<span class="player-award" title="${title}">${count}<span class="player-award-label">${t.label}</span></span>`;
+    }).join('')}</div>`;
   }
 
   function dailyTileRow(name, teamId, score, won) {
@@ -7589,7 +7620,7 @@
     playerSearchResults.hidden = true;
     if (!person) return;
     playerSearchInput.value = person.fullName;
-    showPlayerProfile(person);
+    showPlayerProfile(person, { push: playersView === 'list' && location.hash === '#players' });
   });
 
   // Switching Batters/Pitchers always re-shows the list (even re-clicking
@@ -7598,13 +7629,34 @@
   // to the list" affordance from a profile opened off a list row or a
   // search result.
   const playerListViewToggle = document.getElementById('playerListViewToggle');
+  // On the list, the toggle shows which list it is. On a profile neither
+  // half is lit -- a pitcher opened from search while browsing Batters
+  // isn't a batter -- though either half still jumps to that list.
+  function syncPlayerToggle() {
+    playerListViewToggle.querySelectorAll('.view-toggle-btn').forEach(b => {
+      const on = playersView === 'list' && b.dataset.view === playerListState.type;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
+  // Leaving a profile for the list: through history.back() when the
+  // profile pushed a history entry (see showPlayerProfile), so the phone's
+  // back button and this stay in step -- the popstate handler below then
+  // shows the list -- otherwise directly.
+  function leaveProfileForList() {
+    if (history.state && history.state.ppProfile) history.back();
+    else showPlayerList();
+  }
+  window.addEventListener('popstate', () => {
+    if (playersView === 'profile') showPlayerList();
+  });
   playerListViewToggle.addEventListener('click', (e) => {
     const btn = e.target.closest('.view-toggle-btn');
     if (!btn) return;
-    playerListViewToggle.querySelectorAll('.view-toggle-btn').forEach(b => b.classList.toggle('active', b === btn));
     if (playerListState.type !== btn.dataset.view) playerListState.pos = 'all';
     playerListState.type = btn.dataset.view;
-    showPlayerList();
+    if (playersView === 'profile') leaveProfileForList();
+    else showPlayerList();
   });
 
   // Delegated for the list's own re-renders (sorting redraws the whole
@@ -7627,7 +7679,7 @@
   // Profile controls: the back link, the profile's own tab row, and Game
   // Log dates (each opens that game's scorecard).
   playersBody.addEventListener('click', (e) => {
-    if (e.target.closest('.pp-back')) { showPlayerList(); return; }
+    if (e.target.closest('.pp-back')) { leaveProfileForList(); return; }
     const tab = e.target.closest('.pp-tab');
     if (tab) {
       profileTab = tab.dataset.ppTab;
@@ -8265,9 +8317,13 @@
   }
 
   async function showPlayerList() {
+    // Back from a profile to the same list it was opened from: return to
+    // where the reader was in it (see showPlayerProfile).
+    const restoreY = playersView === 'profile' && listScroll && listScroll.key === playerListCacheKey() ? listScroll.y : null;
     playersView = 'list';
     playerProfileRequestId++;
     playerSprayToken++;
+    syncPlayerToggle();
     const requestId = ++playerListRequestId;
     if (playerListState.season == null) {
       renderPlayerListInto(undefined, null);
@@ -8279,6 +8335,7 @@
     const cached = playerListCache[playerListCacheKey()];
     if (cached) {
       renderPlayerListInto(cached.rows, cached.leagueWoba);
+      if (restoreY != null) window.scrollTo(0, restoreY);
       return;
     }
     renderPlayerListInto(undefined, null);
@@ -8871,7 +8928,11 @@
     rerenderPlayerProfile();
   }
 
-  async function showPlayerProfile(rawPerson) {
+  // push: add a history entry, so the phone's back button closes the
+  // profile -- only when it's opened from the list on the Players tab
+  // itself (a profile reached from another tab's player modal has no list
+  // behind it to go back to).
+  async function showPlayerProfile(rawPerson, { push = false } = {}) {
     // Normalized once, here, since callers don't agree on type: search
     // results carry a numeric id straight from the API, but a dataset
     // attribute (jumpToPlayerProfile, showPlayerModal) is always a string.
@@ -8882,7 +8943,12 @@
     const person = { ...rawPerson, id: Number(rawPerson.id) };
     const requestId = ++playerProfileRequestId;
     playerSprayToken++; // abandon any spray fetch still in flight for whatever was open before
+    if (playersView === 'list') listScroll = { key: playerListCacheKey(), y: window.scrollY };
+    if (push) {
+      try { history.pushState({ ppProfile: true }, '', location.hash); } catch (e) {}
+    }
     playersView = 'profile';
+    syncPlayerToggle();
     profileTab = 'ov';
     lastProfilePerson = person;
     lastProfileCareerSplits = null;
@@ -8896,6 +8962,10 @@
     lastProfileSeason = playerListState.season || defaultListSeason;
     playerSprayState = { personId: person.id, season: null, balls: null, loading: true };
     rerenderPlayerProfile();
+    // Opened from deep in the list: start at the top of the profile, not
+    // at whatever point the list had been scrolled to.
+    const profileTop = playersBody.getBoundingClientRect().top + window.scrollY - (playersBody.closest('#mlb-root').querySelector('.tab-header') || {}).offsetHeight - 8;
+    if (window.scrollY > profileTop) window.scrollTo(0, Math.max(0, profileTop));
     const [fullPerson, careerSplits, awards, season] = await Promise.all([
       getPlayerDetails(person.id),
       getPlayerCareerStats(person.id),
@@ -8930,10 +9000,11 @@
   // is a no-op on an overlay that isn't open.
   function jumpToPlayerProfile(playerId) {
     const info = playerStore[playerId];
+    const fromPlayersList = location.hash === '#players' && playersView === 'list';
     hidePlayerModal();
     hideGameSummaryModal();
     Tabs.switchTo('players');
-    showPlayerProfile({ id: playerId, fullName: (info && info.name) || '' });
+    showPlayerProfile({ id: playerId, fullName: (info && info.name) || '' }, { push: fromPlayersList });
   }
 
   // Feeds .scorecard-sidebar's fixed top/right offsets (--tab-header-h and
