@@ -3588,10 +3588,9 @@
     if (!entry || !entry.stat) return null;
     return entry.stat.numberOfPitches ?? entry.stat.pitchesThrown ?? null;
   }
-  // The player modal's Last 10 Games list: the 9 games before `beforeDate`
-  // (its own "Today" row, built from the live boxscore rather than the
-  // game log, covers the most recent one -- see renderRecentGamesTable),
-  // most recent first.
+  // The player modal's Last 10 Games list: the 10 games before `beforeDate`,
+  // most recent first. renderRecentGamesTable drops the 10th when it adds
+  // its own "Today" row (built from the live boxscore, not the game log).
   async function getRecentGameStats(info) {
     const splits = info.pos === 'P'
       ? await getPitcherGameLog(info.id, info.season)
@@ -3600,7 +3599,7 @@
     return splits
       .filter(s => s.date && s.date < beforeDate)
       .sort((a, b) => b.date < a.date ? -1 : 1)
-      .slice(0, 9)
+      .slice(0, 10)
       .map(s => ({ date: s.date, stat: s.stat || {} }));
   }
   function addDays(dateStr, delta) {
@@ -4793,11 +4792,14 @@
       <div class="lb-grid">${rows}</div>`;
   }
 
-  // The player modal's Last 10 Games section: row 1 is always "Today",
-  // built from the live boxscore (info.todayStats) rather than the game
-  // log -- for a game still in progress the log hasn't caught up yet, and
-  // for one just finished it may not have either -- so recentGames (see
-  // getRecentGameStats) only ever needs to cover the 9 games before it.
+  // The player modal's Last 10 Games section: when the player has appeared
+  // today, row 1 is "Today", built from the live boxscore (info.todayStats)
+  // rather than the game log -- for a game still in progress the log hasn't
+  // caught up yet, and for one just finished it may not have either -- and
+  // the other 9 rows come from recentGames (see getRecentGameStats). Views
+  // that open the modal outside a game (leaderboards, Players list) pass
+  // todayStats as {}, so without an appearance check the offseason would
+  // show a "Today 0-0" row for everyone.
   // recentGames is undefined while that fetch is still in flight.
   function renderRecentGamesTable(pitcher, todayStats, recentGames) {
     if (recentGames === undefined) return '<div class="pitch-empty">Loading recent games&#8230;</div>';
@@ -4817,7 +4819,12 @@
     const cells = s => pitcher
       ? [s.inningsPitched ?? '0.0', s.hits ?? 0, s.earnedRuns ?? 0, s.baseOnBalls ?? 0, s.strikeOuts ?? 0]
       : [`${s.hits ?? 0}-${s.atBats ?? 0}`, notableBattingEvents(s)];
-    const games = [{ label: 'Today', stat: todayStats, hl: true }, ...recentGames.map(g => ({ label: formatShortDate(g.date), stat: g.stat }))];
+    const appearedToday = pitcher
+      ? Number(todayStats.battersFaced) > 0 || Number(todayStats.inningsPitched) > 0
+      : Number(todayStats.plateAppearances) > 0 || Number(todayStats.atBats) > 0;
+    const pastGames = recentGames.slice(0, appearedToday ? 9 : 10).map(g => ({ label: formatShortDate(g.date), stat: g.stat }));
+    const games = appearedToday ? [{ label: 'Today', stat: todayStats, hl: true }, ...pastGames] : pastGames;
+    if (!games.length) return '<div class="pitch-empty">No games this season.</div>';
     const rows = games.map(g => `<tr${g.hl ? ' class="hl"' : ''}><td>${g.label}</td>${cells(g.stat).map(v => `<td>${v}</td>`).join('')}</tr>`).join('');
     return `<div class="table-scroll"><table class="pitch-table recent-games-table${pitcher ? '' : ' batter'}">
         <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
