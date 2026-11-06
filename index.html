@@ -2656,15 +2656,19 @@
   @container (min-width: 700px) { .pp-rank { font-size: 11px; bottom: 7px; right: 9px; } }
   .pp-stat.is-top .pp-slot, .pp-stat.is-top .pp-rank { color: var(--gold); }
 
-  /* Defense tab: OAA in one slot (up to an Overview slot's width) with
-     the position toggle beside it -- the slot narrows to keep them on one
-     line, and the toggle only wraps under it on the narrowest sheets --
-     then the catch board, held to a reading width so a row's
-     count stays near its lamps on a wide sheet. */
+  /* Defense tab: OAA and arm strength in slots (up to an Overview
+     slot's width) with the position toggle beside them; on a phone the
+     toggle takes its own line above, so the two slots share the width.
+     Then the catch board, held to a reading width so a row's count stays
+     near its lamps on a wide sheet. */
   .pp-def { max-width: 720px; }
-  .pp-def-top { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px 18px; }
-  .pp-def-top .pp-stat { flex: 1 1 110px; max-width: 220px; }
-  .pp-def-pools { width: max-content; max-width: 100%; margin-left: auto; }
+  .pp-def-top { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end; gap: 14px 12px; }
+  .pp-def-pools { grid-column: 1 / -1; order: -1; justify-self: end; width: max-content; max-width: 100%; }
+  @container (min-width: 520px) {
+    .pp-def-top { display: flex; gap: 14px 18px; }
+    .pp-def-top .pp-stat { flex: 0 1 220px; min-width: 0; }
+    .pp-def-pools { order: 0; margin-left: auto; }
+  }
   .pp-def-pools .view-toggle-btn { flex: none; }
   /* Catch board: one row per star rating, each chance a scoreboard lamp
      (the live panel's count lamps, see .monster-dot) -- lit for a catch,
@@ -2751,8 +2755,10 @@
   .pp-cb-tag { padding: 2px 4px 1px; border: 1px solid var(--paper-line); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
   .pp-cb-play { width: 8px; height: 10px; color: var(--ink-soft); }
 
-  /* Catch clip popup: wider than the other popups, for the video. */
-  #catchOverlay .pitch-modal { max-width: 640px; }
+  /* Clip popup: wider than the other popups, for the video, and above
+     them all, since the at-bat popup opens it. */
+  #clipOverlay { z-index: 300; }
+  #clipOverlay .pitch-modal { max-width: 640px; }
   .cv-head { display: flex; align-items: baseline; gap: 10px; padding-right: 36px; margin-bottom: 12px; }
   .cv-stars { font-size: 14px; letter-spacing: 2px; color: var(--ink); }
   .cv-result { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); }
@@ -3254,10 +3260,10 @@
       <div id="gameStripOverlayBody"></div>
     </div>
   </div>
-  <div id="catchOverlay" class="pitch-overlay">
+  <div id="clipOverlay" class="pitch-overlay">
     <div class="pitch-modal">
-      <button id="catchClose" class="pitch-close" aria-label="Close">&#10005;</button>
-      <div id="catchModalBody"></div>
+      <button id="clipClose" class="pitch-close" aria-label="Close">&#10005;</button>
+      <div id="clipModalBody"></div>
     </div>
   </div>
 </div>
@@ -7543,7 +7549,7 @@
     return `
       <div class="pitch-header">${c.batterName || 'Batter'}</div>
       <div class="pitch-subheader">vs ${c.pitcherFullName || 'pitcher'}</div>
-      ${c.videoUrl ? `<a class="pog-watch atbat-watch" href="${c.videoUrl}" target="_blank" rel="noopener noreferrer">Watch &#9654;</a>` : ''}
+      ${c.videoUrl ? `<a class="pog-watch atbat-watch" href="${c.videoUrl}" target="_blank" rel="noopener noreferrer" data-clip-play-id="${new URL(c.videoUrl).searchParams.get('playId')}" data-clip-label="${c.batterName || ''}${c.pitcherFullName ? ` vs ${c.pitcherFullName}` : ''}">Watch &#9654;</a>` : ''}
       ${locationHtml}
       ${rows}
       ${reviewsHtml}
@@ -9059,6 +9065,9 @@
   const SAVANT = 'https://baseballsavant.mlb.com';
   const DEFENSE_POOLS = [['7', 'LF', 'left fielders'], ['8', 'CF', 'center fielders'], ['9', 'RF', 'right fielders'], ['of', 'All OF', 'outfielders']];
   const STATCAST_FIRST_SEASON = 2016;
+  // Savant's arm strength leaderboard comes back empty before this.
+  const ARM_FIRST_SEASON = 2020;
+  const ARM_COLUMNS = { '7': 'arm_lf', '8': 'arm_cf', '9': 'arm_rf', of: 'arm_of' };
 
   // Savant's CSVs quote every text field, and names carry a comma
   // ("Crow-Armstrong, Pete"), so a plain split(',') won't do.
@@ -9100,6 +9109,29 @@
         .filter(r => r.id && Number.isFinite(r.oaa));
       savantOaaCache[key] = rows;
       return rows;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Average arm strength (mph) at each outfield position, plus the
+  // outfield as a whole, for everyone who threw in the season -- one CSV
+  // for the whole league. An id -> { '7', '8', '9', of } map; a position
+  // he didn't throw from is null.
+  const savantArmCache = {};
+  async function getSavantArm(season) {
+    if (savantArmCache[season]) return savantArmCache[season];
+    try {
+      const res = await fetch(`${SAVANT}/leaderboard/arm-strength?type=player&year=${season}&csv=true`);
+      if (!res.ok) return null;
+      const byId = {};
+      parseCsv(await res.text()).forEach(r => {
+        const arm = {};
+        Object.entries(ARM_COLUMNS).forEach(([pos, col]) => { arm[pos] = r[col] ? Number(r[col]) : null; });
+        byId[Number(r.player_id)] = arm;
+      });
+      savantArmCache[season] = byId;
+      return byId;
     } catch (e) {
       return null;
     }
@@ -9172,8 +9204,14 @@
   // plus all three combined, each ranked against Savant's qualified pool
   // for that position (unranked if he isn't in it). Positions he never
   // played are left out.
+  // Arm strength ranks against that same OAA-qualified pool (those of
+  // them with an arm reading there), so both slots share one denominator.
+  // A failed arm fetch only blanks the arm slot.
   async function buildProfileDefense(personId, season) {
-    const lists = await Promise.all(DEFENSE_POOLS.flatMap(([pos]) => [getSavantOaa(season, pos, '0'), getSavantOaa(season, pos, 'q')]));
+    const [lists, arms] = await Promise.all([
+      Promise.all(DEFENSE_POOLS.flatMap(([pos]) => [getSavantOaa(season, pos, '0'), getSavantOaa(season, pos, 'q')])),
+      Number(season) >= ARM_FIRST_SEASON ? getSavantArm(season) : Promise.resolve(undefined)
+    ]);
     if (lists.some(l => l === null)) return null;
     const pools = {};
     DEFENSE_POOLS.forEach(([pos], i) => {
@@ -9183,7 +9221,11 @@
       const inPool = qualified.some(r => r.id === personId);
       const pool = qualified.map(r => ({ stat: r }));
       const rank = inPool ? rankInPool({ get: s => s.oaa }, { stat: row }, pool, {}) : null;
-      pools[pos] = { row, rank };
+      const armOf = id => (arms && arms[id] ? arms[id][pos] : null);
+      const arm = armOf(personId);
+      const armPool = qualified.filter(r => armOf(r.id) != null).map(r => ({ stat: { arm: armOf(r.id) } }));
+      const armRank = inPool && arm != null ? rankInPool({ get: s => s.arm }, { stat: { arm } }, armPool, {}) : null;
+      pools[pos] = { row, rank, arm, armRank };
     });
     return pools;
   }
@@ -9211,11 +9253,14 @@
     const current = def[profileDefensePool];
     const toggle = `<div class="view-toggle pp-def-pools" role="group" aria-label="Compare against">${pools.map(([pos, label]) =>
       `<button type="button" class="view-toggle-btn${pos === profileDefensePool ? ' active' : ''}" data-def-pool="${pos}" aria-pressed="${pos === profileDefensePool}">${label}</button>`).join('')}</div>`;
-    const r = current.rank;
-    const top = r && r.rank / r.of <= PROFILE_GOLD_SHARE;
-    const badge = r ? `<span class="pp-rank" title="Rank among ${r.of} qualified ${poolNoun}">${r.tied ? 'T' : ''}${r.rank}/${r.of}</span>` : '';
-    const oaa = `<div class="pp-stat${top ? ' is-top' : ''}"><span class="pp-painted">OAA</span><span class="pp-slot">${formatSigned(current.row.oaa)}${badge}</span></div>`;
-    return `<div class="pp-def"><div class="pp-def-top">${oaa}${toggle}</div>${renderCatchBoard()}</div>`;
+    const slot = (label, value, r) => {
+      const top = r && r.rank / r.of <= PROFILE_GOLD_SHARE;
+      const badge = r ? `<span class="pp-rank" title="Rank among ${r.of} qualified ${poolNoun}">${r.tied ? 'T' : ''}${r.rank}/${r.of}</span>` : '';
+      return `<div class="pp-stat${top ? ' is-top' : ''}"><span class="pp-painted">${label}</span><span class="pp-slot">${value}${badge}</span></div>`;
+    };
+    const slots = slot('OAA', formatSigned(current.row.oaa), current.rank)
+      + (Number(lastProfileSeason) >= ARM_FIRST_SEASON ? slot('Arm mph', current.arm != null ? current.arm.toFixed(1) : '&#8212;', current.armRank) : '');
+    return `<div class="pp-def"><div class="pp-def-top">${slots}${toggle}</div>${renderCatchBoard()}</div>`;
   }
 
   // Each catch chance is a lamp in its star row: lit for a catch, a dark
@@ -9588,12 +9633,48 @@
     const generalPos = (details && details.primaryPosition && details.primaryPosition.abbreviation) || info.pos;
     playerModalBody.innerHTML = renderPlayerModalContent(info, seasonStat, summarizeAwardTags(awards), recentGames, generalPos, leagueWoba);
   }
-  // A catch's clip, opened from the Defense tab's catch board. The clip's
-  // game is only known once its Savant page arrives, so the date and the
-  // link to that game's scorecard fill in with the video.
-  const catchOverlay = document.getElementById('catchOverlay');
-  const catchModalBody = document.getElementById('catchModalBody');
-  let catchClipRequestId = 0;
+  // Plays a Savant clip in the app rather than sending the user off to
+  // Savant: opened from the Defense tab's catch board and from the
+  // Scorecard's at-bat "Watch" links. The clip's game is only known once
+  // its Savant page arrives, so the date (a link to that game's scorecard,
+  // unless the clip was opened from that scorecard) fills in with the
+  // video. Above every other popup -- the at-bat popup opens it.
+  const clipOverlay = document.getElementById('clipOverlay');
+  const clipModalBody = document.getElementById('clipModalBody');
+  let clipRequestId = 0;
+  async function showClipModal(playId, { head, facts = '', gameLink = true }) {
+    const requestId = ++clipRequestId;
+    clipModalBody.innerHTML = `${head}<div class="cv-video cv-video-wait"><div class="mlb-status-msg">Loading clip&#8230;</div></div>${facts}`;
+    openOverlay(clipOverlay);
+    const clip = await getSavantClip(playId);
+    if (requestId !== clipRequestId || !clipOverlay.classList.contains('open')) return;
+    if (!clip) {
+      clipModalBody.innerHTML = `${head}<div class="cv-video cv-video-wait">${apiErrorMsg('clip')}</div>${facts}`;
+      return;
+    }
+    const when = clip.date ? `${formatShortDate(clip.date)}${clip.matchup ? ` &#183; ${clip.matchup}` : ''}` : '';
+    const game = when && gameLink && clip.gamePk
+      ? `<button type="button" class="pp-game-link cv-game" data-date="${clip.date}" data-game-pk="${clip.gamePk}">${when}</button>`
+      : when;
+    clipModalBody.innerHTML = `${head}
+      <video class="cv-video" src="${clip.mp4}" controls autoplay playsinline preload="auto"></video>
+      ${clip.title ? `<div class="cv-desc">${clip.title}</div>` : ''}
+      ${game ? `<div class="cv-meta">${game}</div>` : ''}
+      ${facts}`;
+  }
+  function hideClipModal() {
+    closeOverlay(clipOverlay);
+  }
+  document.getElementById('clipClose').addEventListener('click', hideClipModal);
+  clipOverlay.addEventListener('click', (e) => {
+    if (e.target === clipOverlay) { hideClipModal(); return; }
+    const game = e.target.closest('.cv-game');
+    if (game) {
+      hideClipModal();
+      jumpToScorecardGame(game.dataset.date, Number(game.dataset.gamePk));
+    }
+  });
+
   function renderCatchFacts(play) {
     const facts = [
       ['Catch %', `${Math.round(play.catchRate * 100)}%`],
@@ -9604,37 +9685,25 @@
     ];
     return `<dl class="pp-vitals cv-facts">${facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>`;
   }
-  async function showCatchModal(play) {
-    const requestId = ++catchClipRequestId;
-    const head = `<div class="cv-head"><span class="cv-stars">${STAR_GLYPHS(play.stars)}</span><span class="cv-result${play.made ? '' : ' is-miss'}">${play.made ? 'Caught' : 'Missed'}</span></div>`;
-    catchModalBody.innerHTML = `${head}<div class="cv-video cv-video-wait"><div class="mlb-status-msg">Loading clip&#8230;</div></div>${renderCatchFacts(play)}`;
-    openOverlay(catchOverlay);
-    const clip = await getSavantClip(play.playId);
-    if (requestId !== catchClipRequestId || !catchOverlay.classList.contains('open')) return;
-    if (!clip) {
-      catchModalBody.innerHTML = `${head}<div class="cv-video cv-video-wait">${apiErrorMsg('clip')}</div>${renderCatchFacts(play)}`;
-      return;
-    }
-    const game = clip.date && clip.gamePk
-      ? `<button type="button" class="pp-game-link cv-game" data-date="${clip.date}" data-game-pk="${clip.gamePk}">${formatShortDate(clip.date)}${clip.matchup ? ` &#183; ${clip.matchup}` : ''}</button>`
-      : '';
-    catchModalBody.innerHTML = `${head}
-      <video class="cv-video" src="${clip.mp4}" controls autoplay playsinline preload="auto"></video>
-      ${clip.title ? `<div class="cv-desc">${clip.title}</div>` : ''}
-      ${game ? `<div class="cv-meta">${game}</div>` : ''}
-      ${renderCatchFacts(play)}`;
+  function showCatchModal(play) {
+    showClipModal(play.playId, {
+      head: `<div class="cv-head"><span class="cv-stars">${STAR_GLYPHS(play.stars)}</span><span class="cv-result">${play.made ? 'Caught' : 'Missed'}</span></div>`,
+      facts: renderCatchFacts(play)
+    });
   }
-  function hideCatchModal() {
-    closeOverlay(catchOverlay);
-  }
-  document.getElementById('catchClose').addEventListener('click', hideCatchModal);
-  catchOverlay.addEventListener('click', (e) => {
-    if (e.target === catchOverlay) { hideCatchModal(); return; }
-    const game = e.target.closest('.cv-game');
-    if (game) {
-      hideCatchModal();
-      jumpToScorecardGame(game.dataset.date, Number(game.dataset.gamePk));
-    }
+
+  // The Scorecard's at-bat Watch links (in the at-bat popup and the wide
+  // layout's sidebar) keep their Savant href, so a long-press or
+  // middle-click can still open it in a new tab; a plain click plays the
+  // clip here instead.
+  document.getElementById('mlb-root').addEventListener('click', (e) => {
+    const watch = e.target.closest('a.atbat-watch[data-clip-play-id]');
+    if (!watch || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    showClipModal(watch.dataset.clipPlayId, {
+      head: `<div class="cv-head"><span class="cv-result">${watch.dataset.clipLabel || ''}</span></div>`,
+      gameLink: false
+    });
   });
 
   function hidePlayerModal() {
@@ -9717,7 +9786,7 @@
     if (e.target === teamChartOverlay) hideTeamChartModal();
   });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { hidePitchPopup(); hideRosterModal(); hideSprayModal(); hidePlayerModal(); hideGameSummaryModal(); hideTeamChartModal(); hideGameStripModal(); hideCatchModal(); playerSearchResults.hidden = true; }
+    if (e.key === 'Escape') { hidePitchPopup(); hideRosterModal(); hideSprayModal(); hidePlayerModal(); hideGameSummaryModal(); hideTeamChartModal(); hideGameStripModal(); hideClipModal(); playerSearchResults.hidden = true; }
   });
 
   // Backgrounding the tab (or the installed PWA) gets setTimeout/setInterval
