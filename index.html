@@ -2712,11 +2712,13 @@
   }
   /* Below five-across, the cards become a swipeable row, one card per
      step with the next one peeking in, so the season log starts one
-     card's height down instead of five. */
+     card's height down instead of five. Each card is capped near its
+     content's width (five diamonds plus the header line) -- a share of
+     the sheet alone made them stretch, half empty, on a wider phone. */
   @container (max-width: 899px) {
     .pp-recent { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 10px; padding-bottom: 6px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
     .pp-recent::-webkit-scrollbar { display: none; }
-    .pp-recent .pp-rc { flex: 0 0 86%; max-width: 420px; scroll-snap-align: start; }
+    .pp-recent .pp-rc { flex: 0 0 min(86%, 330px); scroll-snap-align: start; }
   }
 
   .pp-log td:nth-child(n+4), .pp-log th:nth-child(n+4) { text-align: center; }
