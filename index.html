@@ -8,6 +8,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="theme-color" content="#54796d">
+<meta name="color-scheme" content="dark">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -19,7 +20,14 @@
 
   html, body { margin: 0; padding: 0; background: var(--frame, #54796d); }
 
+  /* The page is dark, so ask the browser for the dark variant of anything
+     it draws itself -- above all the native date picker popup, which CSS
+     can't style directly and otherwise opens as a bright white calendar.
+     accent-color tints what the browser does let it (selected day, focus
+     highlights) gold, where supported. */
   :root {
+    color-scheme: dark;
+    accent-color: var(--gold);
     --paper: #3b4336;
     --paper-line: #545e4d;
     --ink: #f3ecdb;
