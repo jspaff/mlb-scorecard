@@ -1322,6 +1322,53 @@
   table.player-list-table td:nth-child(2) {
     white-space: nowrap;
   }
+  /* Matches the Player column's plate exactly, so the two columns read as
+     one row of nameplates. */
+  table.player-list-table button.standings-team-btn {
+    flex: none;
+    vertical-align: middle;
+    padding: 2px 7px;
+  }
+  .list-team-count {
+    margin-left: 4px;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    color: var(--ink-soft);
+    vertical-align: middle;
+    cursor: help;
+  }
+  .player-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 12px;
+    padding-bottom: 14px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--paper-line);
+  }
+  .player-filter { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .player-filter-label {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .player-filter select { max-width: 100%; }
+  .player-list-count {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+  }
+  @media (max-width: 520px) {
+    .player-filters { display: grid; grid-template-columns: 1fr 1fr; }
+    .player-filter select { width: 100%; }
+  }
   .roster-row {
     display: flex;
     align-items: center;
@@ -2881,7 +2928,12 @@
   // list and a profile are just two different things playersBody can show.
   // type is whichever toggle is active; sort state is kept per type so
   // switching tabs back and forth doesn't lose a custom sort.
-  let playerListState = { type: 'batting' };
+  // season stays null until getDefaultListSeason resolves on first show.
+  // league/team/pos are applied client-side over the cached rows, so
+  // changing one re-renders instantly; season and pool pick which rows to
+  // fetch. pos resets to 'all' on a Batters/Pitchers switch since the two
+  // lists don't share position values.
+  let playerListState = { type: 'batting', season: null, pool: 'qualified', league: 'all', team: 'all', pos: 'all' };
   let playerListSort = {
     batting: { key: 'wobaPlus', dir: 'desc' },
     pitching: { key: 'era', dir: 'asc' }
@@ -2890,14 +2942,15 @@
   // Batters/Pitchers toggle) can't overwrite state a newer one already
   // wrote -- same guard pattern as playerProfileRequestId.
   let playerListRequestId = 0;
-  // Qualified rows + that type's league wOBA (batting only), once loaded --
-  // rows stays null until the first successful load for that type, so a
-  // sort-header click or a toggle back to an already-loaded type can
-  // re-render instantly from here instead of re-showing the loading state.
-  let playerListCache = {
-    batting: { rows: null, leagueWoba: null },
-    pitching: { rows: null, leagueWoba: null }
-  };
+  // Rows + that list's league wOBA (batting only), keyed by
+  // playerListCacheKey() -- only successful loads are written, so a sort
+  // click, a filter change, or a toggle back to an already-loaded list
+  // re-renders instantly from here instead of re-showing the loading state.
+  const playerListCache = {};
+  function playerListCacheKey() {
+    const { type, season, pool } = playerListState;
+    return `${type}-${season}-${pool}`;
+  }
   // Mirrors the --ink/--gold/--brick/--paper CSS variables (plus the ball
   // green that only exists as a literal on .pitch-result-ball), for the few
   // spots (SVG strings) that can't reference a CSS custom property directly.
@@ -7203,6 +7256,7 @@
     const btn = e.target.closest('.view-toggle-btn');
     if (!btn) return;
     playerListViewToggle.querySelectorAll('.view-toggle-btn').forEach(b => b.classList.toggle('active', b === btn));
+    if (playerListState.type !== btn.dataset.view) playerListState.pos = 'all';
     playerListState.type = btn.dataset.view;
     showPlayerList();
   });
@@ -7221,6 +7275,28 @@
     const column = columns.find(c => c.key === key);
     current.dir = current.key === key ? (current.dir === 'asc' ? 'desc' : 'asc') : column.dir;
     current.key = key;
+    showPlayerList();
+  });
+
+  // A league switch drops a team pick from the other league (it would
+  // otherwise leave an always-empty list); a season or pool switch drops
+  // it too, since that team may not exist in the newly fetched rows.
+  playersBody.addEventListener('change', (e) => {
+    const sel = e.target.closest('.player-filters select[data-filter]');
+    if (!sel) return;
+    const filter = sel.getAttribute('data-filter');
+    const value = sel.value;
+    if (filter === 'season') {
+      playerListState.season = Number(value);
+      playerListState.team = 'all';
+    } else if (filter === 'pool') {
+      playerListState.pool = value;
+    } else if (filter === 'league') {
+      playerListState.league = value;
+      playerListState.team = 'all';
+    } else {
+      playerListState[filter] = value;
+    }
     showPlayerList();
   });
 
@@ -7500,12 +7576,23 @@
   // isFinal split -- this is a browse list the user can just re-open the
   // tab to refresh, not a value baked into a stat the rest of the session
   // depends on staying fresh.
+  //
+  // Returns null on failure (never cached, so reopening the tab retries)
+  // rather than [] -- an empty list is a real answer ("nobody qualified"),
+  // a failed request isn't, and the list renders the two differently.
+  //
+  // pool 'qualified' is the API's own batting/ERA-title qualifier; 'all'
+  // is everyone who appeared. A traded player comes back as one combined
+  // row whose team/league is his latest club, with numTeams counting the
+  // others. Pitchers' hitting lines and position players' mop-up innings
+  // are dropped so each list only holds its own kind of player.
   const seasonPlayerStatsCache = {};
-  async function getSeasonPlayerStats(group, season) {
-    const key = `${season}-${group}`;
+  async function getSeasonPlayerStats(group, season, pool = 'qualified') {
+    const key = `${season}-${group}-${pool}`;
     if (seasonPlayerStatsCache[key] !== undefined) return seasonPlayerStatsCache[key];
     try {
-      const res = await fetch(`https://statsapi.mlb.com/api/v1/stats?stats=season&group=${group}&sportId=1&season=${season}&limit=3000`);
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/stats?stats=season&group=${group}&sportId=1&season=${season}&limit=3000&playerPool=${pool === 'all' ? 'ALL' : 'QUALIFIED'}`);
+      if (!res.ok) return null;
       const data = await res.json();
       const splits = (data.stats && data.stats[0] && data.stats[0].splits) || [];
       const rows = splits
@@ -7514,15 +7601,70 @@
           id: s.player.id,
           name: s.player.fullName || '',
           team: (s.team && teamNickname(s.team)) || '&#8212;',
+          teamId: s.team ? s.team.id : null,
+          leagueId: s.league ? s.league.id : null,
+          numTeams: s.numTeams || 1,
+          pos: (s.position && s.position.abbreviation) || '',
           season,
           stat: s.stat || {}
-        }));
+        }))
+        .filter(r => group === 'pitching' ? (r.pos === 'P' || r.pos === 'TWP') : r.pos !== 'P');
       seasonPlayerStatsCache[key] = rows;
       return rows;
     } catch (e) {
-      seasonPlayerStatsCache[key] = [];
-      return [];
+      return null;
     }
+  }
+
+  // The list opens on the most recent season that has started -- from
+  // New Year's until Opening Day the calendar year has no stats yet, and
+  // the list would come up empty. A failed lookup falls back to the
+  // calendar year (the old behavior) and isn't cached, so it retries.
+  let defaultListSeason = null;
+  async function getDefaultListSeason() {
+    if (defaultListSeason) return defaultListSeason;
+    const year = new Date().getFullYear();
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/seasons/${year}?sportId=1`);
+      const data = await res.json();
+      const start = data.seasons && data.seasons[0] && data.seasons[0].regularSeasonStartDate;
+      if (!start) return year;
+      defaultListSeason = todayStr() < start ? year - 1 : year;
+      return defaultListSeason;
+    } catch (e) {
+      return year;
+    }
+  }
+  const PLAYER_LIST_FIRST_SEASON = 2000;
+
+  const AL_LEAGUE_ID = 103;
+  const NL_LEAGUE_ID = 104;
+  const BATTER_POSITION_FILTERS = [
+    ['all', 'All positions'], ['C', 'Catcher'], ['1B', 'First base'], ['2B', 'Second base'],
+    ['3B', 'Third base'], ['SS', 'Shortstop'], ['OF', 'Outfield'], ['LF', 'Left field'],
+    ['CF', 'Center field'], ['RF', 'Right field'], ['DH', 'Designated hitter']
+  ];
+  const PITCHER_POSITION_FILTERS = [['all', 'All pitchers'], ['SP', 'Starters'], ['RP', 'Relievers']];
+
+  // The API lists every pitcher as plain "P", so starter/reliever is read
+  // off his usage instead: a starter is anyone who started at least half
+  // the games he pitched in.
+  function isStartingPitcher(stat) {
+    const gp = stat.gamesPitched || stat.gamesPlayed || 0;
+    return gp > 0 && (stat.gamesStarted || 0) * 2 >= gp;
+  }
+  function matchesPositionFilter(row, type, pos) {
+    if (pos === 'all') return true;
+    if (type === 'pitching') return (pos === 'SP') === isStartingPitcher(row.stat);
+    if (pos === 'OF') return row.pos === 'LF' || row.pos === 'CF' || row.pos === 'RF';
+    return row.pos === pos;
+  }
+  function applyPlayerListFilters(rows) {
+    const { type, league, team, pos } = playerListState;
+    return rows.filter(r =>
+      (league === 'all' || r.leagueId === Number(league)) &&
+      (team === 'all' || r.teamId === Number(team)) &&
+      matchesPositionFilter(r, type, pos));
   }
 
   // Column definitions for the Players tab's sortable list -- get() returns
@@ -7543,9 +7685,23 @@
     return `<button type="button" class="player-name-btn potg-player-name" data-player-id="${row.id}">${row.name}</button>`;
   }
 
+  // Same plate as the Standings tab's team names, and the same click
+  // target (the team's win/loss chart) -- data-season tells the shared
+  // handler which season to chart, since there's no Standings date to
+  // read it from here. A traded player's "+1" notes that the combined line
+  // also covers stints elsewhere, not just the club on the plate.
+  function renderTeamNameplate(row) {
+    if (!row.teamId) return row.team;
+    const plate = `<button type="button" class="standings-team-btn" data-team-id="${row.teamId}" data-team-name="${row.team}" data-season="${row.season}">${row.team}</button>`;
+    if (row.numTeams <= 1) return plate;
+    const others = row.numTeams - 1;
+    const note = `Stats also include ${others} other team${others === 1 ? '' : 's'} this season`;
+    return `${plate}<span class="list-team-count" title="${note}" aria-label="${note}">+${others}</span>`;
+  }
+
   const BATTER_LIST_COLUMNS = [
     { key: 'name', label: 'Player', dir: 'asc', get: r => r.name, render: renderPlayerNameplate },
-    { key: 'team', label: 'Team', dir: 'asc', get: r => r.team, render: r => r.team },
+    { key: 'team', label: 'Team', dir: 'asc', get: r => r.team, render: renderTeamNameplate },
     { key: 'g', label: 'G', dir: 'desc', get: r => r.stat.gamesPlayed ?? null, render: r => r.stat.gamesPlayed ?? '&#8212;' },
     { key: 'avg', label: 'AVG', dir: 'desc', get: r => r.stat.avg != null ? Number(r.stat.avg) : null, render: r => r.stat.avg ?? '&#8212;' },
     { key: 'obp', label: 'OBP', dir: 'desc', get: r => r.stat.obp != null ? Number(r.stat.obp) : null, render: r => r.stat.obp ?? '&#8212;' },
@@ -7559,7 +7715,7 @@
   ];
   const PITCHER_LIST_COLUMNS = [
     { key: 'name', label: 'Player', dir: 'asc', get: r => r.name, render: renderPlayerNameplate },
-    { key: 'team', label: 'Team', dir: 'asc', get: r => r.team, render: r => r.team },
+    { key: 'team', label: 'Team', dir: 'asc', get: r => r.team, render: renderTeamNameplate },
     { key: 'g', label: 'G', dir: 'desc', get: r => r.stat.gamesPitched ?? r.stat.gamesPlayed ?? null, render: r => r.stat.gamesPitched ?? r.stat.gamesPlayed ?? '&#8212;' },
     { key: 'ip', label: 'IP', dir: 'desc', get: r => ipToOuts(r.stat.inningsPitched), render: r => r.stat.inningsPitched ?? '&#8212;' },
     { key: 'era', label: 'ERA', dir: 'asc', get: r => r.stat.era != null ? Number(r.stat.era) : null, render: r => r.stat.era ?? '&#8212;' },
@@ -7600,22 +7756,67 @@
       </table></div>`;
   }
 
-  // rows === null means still loading; [] means loaded but nothing
-  // qualified. leagueWoba is only meaningful (and only fetched) for the
-  // batting list.
-  function renderPlayerListPanel(type, rows, sortKey, sortDir, leagueWoba) {
-    const bodyHtml = rows === null
-      ? '<div class="mlb-status-msg">Loading season stats&#8230;</div>'
-      : rows.length
-        ? renderPlayerListTable(type, rows, sortKey, sortDir, { leagueWoba })
-        : '<div class="pitch-empty">No qualified players found.</div>';
-    return `<div class="sheet">${bodyHtml}</div>`;
+  function renderFilterSelect(id, label, options, value) {
+    const opts = options.map(([v, text]) => `<option value="${v}"${String(v) === String(value) ? ' selected' : ''}>${text}</option>`).join('');
+    return `<label class="player-filter"><span class="player-filter-label">${label}</span><select id="${id}" data-filter="${id.replace('playerFilter', '').toLowerCase()}">${opts}</select></label>`;
   }
 
+  // Team choices come from the loaded rows themselves rather than the
+  // fixed 30-team list, so a past season offers the clubs (and leagues)
+  // as they actually were that year -- the Astros in the NL before 2013,
+  // say. Before rows arrive there's nothing to offer but "All teams".
+  function renderPlayerListFilters(rows) {
+    const { type, season, pool, league, team, pos } = playerListState;
+    const current = defaultListSeason || new Date().getFullYear();
+    const seasons = [];
+    for (let y = current; y >= PLAYER_LIST_FIRST_SEASON; y--) seasons.push([y, y]);
+    const teamsById = new Map();
+    (rows || []).forEach(r => {
+      if (r.teamId && (league === 'all' || r.leagueId === Number(league))) teamsById.set(r.teamId, r.team);
+    });
+    const teamOptions = [['all', 'All teams'], ...Array.from(teamsById, ([id, name]) => [id, name]).sort((a, b) => a[1].localeCompare(b[1]))];
+    const posOptions = type === 'pitching' ? PITCHER_POSITION_FILTERS : BATTER_POSITION_FILTERS;
+    return `<div class="player-filters">
+      ${renderFilterSelect('playerFilterSeason', 'Season', seasons, season)}
+      ${renderFilterSelect('playerFilterLeague', 'League', [['all', 'Both leagues'], [AL_LEAGUE_ID, 'American League'], [NL_LEAGUE_ID, 'National League']], league)}
+      ${renderFilterSelect('playerFilterTeam', 'Team', teamOptions, team)}
+      ${renderFilterSelect('playerFilterPos', 'Position', posOptions, pos)}
+      ${renderFilterSelect('playerFilterPool', 'Players', [['qualified', 'Qualified'], ['all', 'All players']], pool)}
+    </div>`;
+  }
+
+  // rows === undefined means still loading, null means the fetch failed,
+  // [] means loaded but nothing qualified. leagueWoba is only meaningful
+  // (and only fetched) for the batting list.
+  function renderPlayerListPanel(type, rows, sortKey, sortDir, leagueWoba) {
+    let bodyHtml;
+    if (rows === undefined) {
+      bodyHtml = '<div class="mlb-status-msg">Loading season stats&#8230;</div>';
+    } else if (rows === null) {
+      bodyHtml = apiErrorMsg('season stats');
+    } else {
+      const filtered = applyPlayerListFilters(rows);
+      const who = type === 'pitching' ? 'pitchers' : 'batters';
+      const qualifier = playerListState.pool === 'qualified' ? 'qualified ' : '';
+      bodyHtml = filtered.length
+        ? `<div class="player-list-count">${filtered.length} ${qualifier}${who}</div>${renderPlayerListTable(type, filtered, sortKey, sortDir, { leagueWoba })}`
+        : `<div class="pitch-empty">${rows.length ? `No ${qualifier}${who} match these filters.` : `No ${qualifier}${who} found for ${playerListState.season}.`}</div>`;
+    }
+    return `<div class="sheet">${renderPlayerListFilters(rows)}${bodyHtml}</div>`;
+  }
+
+  // Rebuilds the whole panel, filters included -- so the select that
+  // triggered the change gets its focus back afterward, or keyboard users
+  // would be dropped back at the top of the page after every pick.
   function renderPlayerListInto(rows, leagueWoba) {
     const { type } = playerListState;
     const { key, dir } = playerListSort[type];
+    const focusedId = document.activeElement && playersBody.contains(document.activeElement) ? document.activeElement.id : null;
     playersBody.innerHTML = renderPlayerListPanel(type, rows, key, dir, leagueWoba);
+    if (focusedId) {
+      const el = document.getElementById(focusedId);
+      if (el) el.focus();
+    }
   }
 
   // Standard batting-title/ERA-title qualification (3.1 PA / 1 IP per team
@@ -7636,24 +7837,33 @@
   }
 
   async function showPlayerList() {
-    const { type } = playerListState;
-    const cached = playerListCache[type];
-    if (cached.rows) {
+    const requestId = ++playerListRequestId;
+    if (playerListState.season == null) {
+      renderPlayerListInto(undefined, null);
+      const season = await getDefaultListSeason();
+      if (requestId !== playerListRequestId) return;
+      if (playerListState.season == null) playerListState.season = season;
+    }
+    const { type, season, pool } = playerListState;
+    const cached = playerListCache[playerListCacheKey()];
+    if (cached) {
       renderPlayerListInto(cached.rows, cached.leagueWoba);
       return;
     }
-    const requestId = ++playerListRequestId;
-    const season = new Date().getFullYear();
-    renderPlayerListInto(null, null);
+    renderPlayerListInto(undefined, null);
     const group = type === 'pitching' ? 'pitching' : 'hitting';
     const [allRows, leagueInfo] = await Promise.all([
-      getSeasonPlayerStats(group, season),
+      getSeasonPlayerStats(group, season, pool),
       getLeagueSeasonInfo(season)
     ]);
     if (requestId !== playerListRequestId) return;
-    const rows = filterQualifiedPlayers(type, allRows, leagueInfo.teamGamesPlayed);
+    if (allRows === null) {
+      renderPlayerListInto(null, null);
+      return;
+    }
+    const rows = pool === 'qualified' ? filterQualifiedPlayers(type, allRows, leagueInfo.teamGamesPlayed) : allRows;
     const leagueWoba = type === 'pitching' ? null : leagueInfo.woba;
-    playerListCache[type] = { rows, leagueWoba };
+    playerListCache[playerListCacheKey()] = { rows, leagueWoba };
     renderPlayerListInto(rows, leagueWoba);
   }
 
@@ -7866,8 +8076,14 @@
     if (teamChartBtn) {
       const teamId = teamChartBtn.getAttribute('data-team-id');
       const teamName = teamChartBtn.getAttribute('data-team-name');
-      const teamSeason = standingsDateInput.value.slice(0, 4);
-      showTeamChartModal(teamId, teamName, teamSeason, standingsDateInput.value);
+      const plateSeason = teamChartBtn.getAttribute('data-season');
+      if (plateSeason) {
+        const isCurrent = Number(plateSeason) === new Date().getFullYear();
+        showTeamChartModal(teamId, teamName, plateSeason, isCurrent ? todayStr() : undefined);
+      } else {
+        const teamSeason = standingsDateInput.value.slice(0, 4);
+        showTeamChartModal(teamId, teamName, teamSeason, standingsDateInput.value);
+      }
     }
     if (!e.target.closest('.player-search-wrap')) playerSearchResults.hidden = true;
   });
