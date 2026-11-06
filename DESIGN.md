@@ -243,7 +243,7 @@ Numbers in recessed scoreboard slots, under a painted label.
 - **Rank:** a small Faded Cream rank in the bottom-right corner ("T12/134"), shrinking to 8px on phones so the number keeps its full slot. Playing-time counts (G, PA, GS) are never ranked.
 
 ### Catch Lamps
-The Defense tab's catch board: one row per Statcast star rating (5 down to 1), every catch chance a lamp in that row, like the live scoreboard's count lamps.
+The Defense tab's catch board: one row per Statcast star rating (5 down to 1), every catch chance a lamp in that row, like the live scoreboard's count lamps. A catcher's boards use the same lamps: steals against him by base (lit for a runner he threw out) and his ABS challenges, those with two strikes apart from the rest (lit for an overturned call). Their rows are labelled in painted Overpass instead of stars, and none of their lamps light gold.
 - **Lamps:** 11px circles. A catch is lit cream; a miss is a dark recessed socket. Made catches come first, then misses, so the lit run reads as the count.
 - **Gold:** only a made 5-star catch lights gold, the catch counterpart of a top-10% stat. Other rows stay cream.
 - **Row:** the stars and the made/chances count sit in fixed columns, so every row's lamps start in line. Routine (0-star) chances get a count line, not lamps.

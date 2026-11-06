@@ -2801,6 +2801,9 @@
   .pp-pl-more:hover { color: var(--gold); }
   .pp-pl-more:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
   .pp-dp-row { grid-template-columns: 80px minmax(0, 1fr) 46px 10px; }
+  .pp-cb-label { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; }
+  .pp-pl-row:disabled { cursor: default; }
+  .pp-pl-row:disabled .pp-cb-play { visibility: hidden; }
   .pp-dp-code, .cv-code { font-family: 'Special Elite', monospace; font-size: 16px; color: var(--ink); }
   .pp-dp-role { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
   .pp-dp-roles { border-top: 0; padding: 0 0 9px; display: flex; flex-wrap: wrap; gap: 4px 16px; }
@@ -3462,13 +3465,13 @@
   let profileDefenseRequested = false;
   let profileDefensePool = null;
   let profileCatchTier = null;
-  // An infielder's season of double plays and MLB highlight clips
-  // (getInfieldSeasonPlays): undefined while the sweep runs, with its
-  // progress in lastProfilePlaysProgress; profileDpCode is the expanded
-  // ledger row.
+  // An infielder's or catcher's season of plays and MLB highlight clips
+  // (getSeasonFieldingPlays): undefined while the sweep runs, with its
+  // progress in lastProfilePlaysProgress; profileOpenRow is the expanded
+  // ledger or lamp row.
   let lastProfilePlays;
   let lastProfilePlaysProgress = null;
-  let profileDpCode = null;
+  let profileOpenRow = null;
   let profileHighlightsAll = false;
   // Players tab's browsable list (Batters/Pitchers toggle, sortable current-
   // season stats) -- separate from the search/profile state above since the
@@ -8008,6 +8011,7 @@
     if (pool) {
       profileDefensePool = pool.dataset.defPool;
       profileCatchTier = null;
+      profileOpenRow = null;
       rerenderPlayerProfile();
       return;
     }
@@ -8020,19 +8024,18 @@
       if (again) again.focus({ preventScroll: true });
       return;
     }
-    const dpRow = e.target.closest('.pp-dp-row');
-    if (dpRow) {
-      const code = dpRow.dataset.dpCode;
-      profileDpCode = profileDpCode === code ? null : code;
+    const openRow = e.target.closest('[data-open-row]');
+    if (openRow) {
+      const key = openRow.dataset.openRow;
+      profileOpenRow = profileOpenRow === key ? null : key;
       rerenderPlayerProfile();
-      const again = playersBody.querySelector(`.pp-dp-row[data-dp-code="${code}"]`);
+      const again = playersBody.querySelector(`[data-open-row="${key}"]`);
       if (again) again.focus({ preventScroll: true });
       return;
     }
-    const dpPlay = e.target.closest('[data-dp-play]');
-    if (dpPlay && dpPlay.dataset.dpPlay) {
-      const dp = lastProfilePlays && lastProfilePlays.doublePlays.find(d => d.playId === dpPlay.dataset.dpPlay);
-      if (dp) showClipModal(dp.playId, { head: `<div class="cv-head"><span class="cv-code">${dp.code}</span><span class="cv-result">${dp.triple ? 'Triple' : 'Double'} Play &#183; ${dp.role}</span></div>` });
+    const playClip = e.target.closest('[data-play-clip]');
+    if (playClip) {
+      showClipModal(playClip.dataset.playClip, { head: `<div class="cv-head">${playClip.dataset.clipHead || ''}</div>` });
       return;
     }
     if (e.target.closest('[data-hl-all]')) {
@@ -9151,7 +9154,7 @@
     </div>`;
   }
 
-  // ---- Defense (outfielders, from Baseball Savant) ----
+  // ---- Defense (fielders, from Baseball Savant and the game feeds) ----
   // Savant serves its leaderboards and player pages with
   // Access-Control-Allow-Origin: *, so they're fetched straight from the
   // browser like the Stats API. Its numbers update overnight, never
@@ -9159,20 +9162,31 @@
   const SAVANT = 'https://baseballsavant.mlb.com';
   // Which Defense tab a player gets, by his primary position's type: the
   // positions to compare at (Savant's own position codes, then the whole
-  // group last), and whether he has a catch board (catch stars are
-  // outfield only).
+  // group last), its board (OAA and FRV, or a catcher's FRV and its
+  // parts -- catchers have no OAA), and what's below it: the outfield
+  // catch board (catch stars are outfield only), or a season sweep of
+  // his plays (getSeasonFieldingPlays) of that kind.
   const DEFENSE_GROUPS = {
     Outfielder: {
       noun: 'outfield',
       pools: [['7', 'LF', 'left fielders'], ['8', 'CF', 'center fielders'], ['9', 'RF', 'right fielders'], ['of', 'All OF', 'outfielders']],
-      catches: true
+      board: 'oaa',
+      plays: 'catches'
     },
     Infielder: {
       noun: 'infield',
       pools: [['3', '1B', 'first basemen'], ['4', '2B', 'second basemen'], ['5', '3B', 'third basemen'], ['6', 'SS', 'shortstops'], ['if', 'All IF', 'infielders']],
-      catches: false
+      board: 'oaa',
+      plays: 'infield'
+    },
+    Catcher: {
+      noun: 'catching',
+      pools: [['2', 'C', 'catchers']],
+      board: 'catcher',
+      plays: 'catcher'
     }
   };
+  const SWEEP_POSITIONS = { infield: ['3', '4', '5', '6'], catcher: ['2'] };
   function defenseGroupFor(person) {
     const type = person && person.primaryPosition && person.primaryPosition.type;
     return DEFENSE_GROUPS[type] || null;
@@ -9224,20 +9238,24 @@
     }
   }
 
-  // Fielding Run Value at one position ('3'..'9'), as an id -> runs map.
-  // Savant's position filter splits a player's runs by position (its
-  // qualified filter does nothing), so a whole group -- infield or
-  // outfield -- is the sum of these; see buildProfileDefense.
+  // Fielding Run Value at one position ('2'..'9'), as an id -> { total,
+  // framing, throwing, blocking } map (the three parts are a catcher's;
+  // null where Savant leaves them blank -- framing starts in 2018).
+  // Savant's position filter splits a player's runs by position, so a
+  // whole group -- infield or outfield -- is the sum of these; see
+  // buildProfileDefense. At catcher the list is only qualified catchers
+  // unless everyone (minInnings=0) is asked for.
   const savantFrvCache = {};
-  async function getSavantFrv(season, pos) {
-    const key = `${season}-${pos}`;
+  async function getSavantFrv(season, pos, everyone = false) {
+    const key = `${season}-${pos}-${everyone}`;
     if (savantFrvCache[key]) return savantFrvCache[key];
     try {
-      const res = await fetch(`${SAVANT}/leaderboard/fielding-run-value?gameType=Regular&seasonStart=${season}&seasonEnd=${season}&type=fielder&position=${pos}&csv=true`);
+      const res = await fetch(`${SAVANT}/leaderboard/fielding-run-value?gameType=Regular&seasonStart=${season}&seasonEnd=${season}&type=fielder&position=${pos}${everyone ? '&minInnings=0' : ''}&csv=true`);
       if (!res.ok) return null;
       const byId = {};
+      const num = v => (v === '' || v == null ? null : Number(v));
       parseCsv(await res.text()).forEach(r => {
-        if (r.total_runs !== '') byId[Number(r.id)] = Number(r.total_runs);
+        if (r.total_runs !== '') byId[Number(r.id)] = { total: Number(r.total_runs), framing: num(r.framing_runs), throwing: num(r.throwing_runs), blocking: num(r.blocking_runs) };
       });
       savantFrvCache[key] = byId;
       return byId;
@@ -9316,6 +9334,7 @@
   // pool (those of them with an FRV there), so both slots share one
   // denominator; a failed FRV fetch only blanks that slot.
   async function buildProfileDefense(personId, season, group) {
+    if (group.board === 'catcher') return buildCatcherDefense(personId, season);
     const positions = group.pools.map(([pos]) => pos);
     const single = positions.slice(0, -1);
     const [lists, frvs] = await Promise.all([
@@ -9325,7 +9344,7 @@
     if (lists.some(l => l === null)) return null;
     const frvOf = (id, pos) => {
       if (frvs.some(f => f === null)) return null;
-      const parts = (single.includes(pos) ? [frvs[single.indexOf(pos)]] : frvs).map(f => f[id]).filter(v => v != null);
+      const parts = (single.includes(pos) ? [frvs[single.indexOf(pos)]] : frvs).map(f => f[id] && f[id].total).filter(v => v != null);
       return parts.length ? Math.round(parts.reduce((a, b) => a + b, 0)) : null;
     };
     const pools = {};
@@ -9342,6 +9361,25 @@
       pools[pos] = { row, rank, frv, frvRank };
     });
     return pools;
+  }
+
+  // A catcher's FRV and its framing, throwing and blocking parts, each
+  // ranked against Savant's qualified catchers (his own line comes from
+  // the everyone list, so a backup catcher still gets his numbers).
+  const CATCHER_PARTS = [['total', 'FRV'], ['framing', 'Framing'], ['throwing', 'Throwing'], ['blocking', 'Blocking']];
+  async function buildCatcherDefense(personId, season) {
+    const [qualified, everyone] = await Promise.all([getSavantFrv(season, '2'), getSavantFrv(season, '2', true)]);
+    if (!qualified || !everyone) return null;
+    const row = everyone[personId];
+    if (!row) return {};
+    const inPool = !!qualified[personId];
+    const ranks = {};
+    CATCHER_PARTS.forEach(([part]) => {
+      const value = row[part] == null ? null : Math.round(row[part]);
+      const pool = Object.values(qualified).filter(r => r[part] != null).map(r => ({ stat: { v: Math.round(r[part]) } }));
+      ranks[part] = inPool && value != null ? rankInPool({ get: s => s.v }, { stat: { v: value } }, pool, {}) : null;
+    });
+    return { '2': { catcher: row, ranks } };
   }
 
   function formatSigned(n) {
@@ -9373,9 +9411,12 @@
       const badge = r ? `<span class="pp-rank" title="Rank among ${r.of} qualified ${poolNoun}">${r.tied ? 'T' : ''}${r.rank}/${r.of}</span>` : '';
       return `<div class="pp-stat${top ? ' is-top' : ''}"><span class="pp-painted">${label}</span><span class="pp-slot">${value}${badge}</span></div>`;
     };
-    const slots = slot('OAA', formatSigned(current.row.oaa), current.rank)
-      + slot('FRV', current.frv != null ? formatSigned(current.frv) : '&#8212;', current.frvRank);
-    return `<div class="pp-def"><div class="pp-def-top">${slots}${toggle}</div>${group.catches ? renderCatchBoard() : renderInfieldPlays()}</div>`;
+    const slots = group.board === 'catcher'
+      ? CATCHER_PARTS.map(([part, label]) => slot(label, current.catcher[part] != null ? formatSigned(Math.round(current.catcher[part])) : '&#8212;', current.ranks[part])).join('')
+      : slot('OAA', formatSigned(current.row.oaa), current.rank)
+        + slot('FRV', current.frv != null ? formatSigned(current.frv) : '&#8212;', current.frvRank);
+    const below = group.plays === 'catches' ? renderCatchBoard() : group.plays === 'infield' ? renderInfieldPlays() : renderCatcherPlays();
+    return `<div class="pp-def"><div class="pp-def-top${pools.length > 1 ? '' : ' is-solo'}">${slots}${pools.length > 1 ? toggle : ''}</div>${below}</div>`;
   }
 
   // Each catch chance is a lamp in its star row: lit for a catch, a dark
@@ -9423,9 +9464,11 @@
     </div>`;
   }
 
-  // ---- Infield plays: double plays and MLB highlight clips ----
-  const INFIELD_CODES = ['3', '4', '5', '6'];
+  // ---- A fielder's season of plays: double plays, steals, challenges,
+  // and MLB highlight clips ----
   const HIGHLIGHTS_SHOWN = 6;
+  // MLB's ABS challenge system began with the 2026 season.
+  const ABS_FIRST_SEASON = 2026;
 
   // MLB's own highlight clips of one game that are tagged as defense and
   // with this player -- their video team's pick of his best plays, since
@@ -9477,16 +9520,93 @@
     return { code: seq.length === 1 ? `${seq[0]}U` : seq.join('-'), role, pos, triple: /Triple Play/.test(event) };
   }
 
-  // One season of an infielder's double plays and MLB's defensive clips of
-  // him, swept from each game he played the infield: its play-by-play and
-  // its highlights. That's ~14 MB for a full season, so it only runs once
-  // the Defense tab opens, and only the plays kept here (not the games)
-  // are held for the session. A game that fails is skipped; a failed game
-  // log isn't cached, so reopening retries.
-  const infieldPlaysCache = {};
-  async function getInfieldSeasonPlays(personId, season, onProgress) {
-    const key = `${personId}-${season}`;
-    if (infieldPlaysCache[key]) return infieldPlaysCache[key];
+  // A catcher's steals against him and ABS challenges in one game. A
+  // stolen base credits no fielder, so who's catching is tracked through
+  // the game: whoever started there (from his game log), then each
+  // defensive substitution or switch to catcher, confirmed by any play
+  // that credits a catcher (every strikeout does). Caught stealing counts
+  // only when his throw is in it -- a pitcher's pickoff isn't his.
+  const STEAL_EVENT = /^(Stolen Base|Caught Stealing) (2B|3B|Home)$/;
+  function buildCatcherGamePlays(plays, personId, split, game) {
+    let catching = !!(split.stat && split.stat.gamesStarted);
+    const steals = [], challenges = [];
+    (plays || []).forEach(play => {
+      const fielding = split.isHome === !!(play.about && play.about.isTopInning);
+      if (!fielding) return;
+      const events = play.playEvents || [];
+      const batter = (play.matchup && play.matchup.batter && play.matchup.batter.fullName) || '';
+      let count = { balls: 0, strikes: 0 };
+      let challengedHere = false;
+      events.forEach(ev => {
+        if (ev.type === 'action' && ev.position && ev.player) {
+          if (ev.position.code === '2') catching = ev.player.id === personId;
+          else if (ev.player.id === personId) catching = false;
+        }
+        const review = ev.reviewDetails;
+        if (ev.isPitch && review && review.reviewType === 'MJ' && review.player && review.player.id === personId) {
+          challengedHere = true;
+          challenges.push({
+            ...game, batter, playId: ev.playId || null,
+            overturned: !!review.isOverturned,
+            count: `${count.balls}-${count.strikes}`,
+            twoStrikes: count.strikes === 2,
+            call: (ev.details && ev.details.call && ev.details.call.description) || ''
+          });
+        }
+        if (ev.isPitch && ev.count) count = ev.count;
+      });
+      // A challenge that ends the plate appearance (a called third strike
+      // won, ball four upheld) is often recorded on the play rather than
+      // its pitch. A catcher challenges a ball, so the pitch is the last
+      // called strike if he won, else the last ball.
+      const review = play.reviewDetails;
+      if (!challengedHere && review && review.reviewType === 'MJ' && review.player && review.player.id === personId) {
+        const pitches = events.filter(ev => ev.isPitch);
+        const call = review.isOverturned ? 'Called Strike' : 'Ball';
+        let at = -1;
+        pitches.forEach((ev, i) => { if (ev.details && ev.details.call && ev.details.call.description === call) at = i; });
+        const pitch = at >= 0 ? pitches[at] : pitches[pitches.length - 1];
+        const before = at > 0 ? pitches[at - 1].count : at === 0 ? { balls: 0, strikes: 0 } : null;
+        challenges.push({
+          ...game, batter, playId: (pitch && pitch.playId) || null,
+          overturned: !!review.isOverturned,
+          count: before ? `${before.balls}-${before.strikes}` : '',
+          twoStrikes: !!before && before.strikes === 2,
+          call: at >= 0 ? call : ''
+        });
+      }
+      const credits = (play.runners || []).flatMap(r => r.credits || []);
+      const catcherCredit = credits.find(c => c.position && c.position.code === '2' && c.player);
+      if (catcherCredit) catching = catcherCredit.player.id === personId;
+      // The feed occasionally lists one runner's steal twice in a play.
+      const counted = new Set();
+      (play.runners || []).forEach(r => {
+        const m = STEAL_EVENT.exec((r.details && r.details.event) || '');
+        if (!m) return;
+        const once = `${r.details.runner && r.details.runner.id}-${m[0]}`;
+        if (counted.has(once)) return;
+        counted.add(once);
+        const thrownOut = m[1] === 'Caught Stealing';
+        if (thrownOut ? !(r.credits || []).some(c => c.player && c.player.id === personId) : !catching) return;
+        const at = r.details.playIndex;
+        const clip = (events[at] && events[at].playId) || ([...events.slice(0, at)].reverse().find(ev => ev.playId) || {}).playId || null;
+        steals.push({ ...game, base: m[2], thrownOut, runner: (r.details.runner && r.details.runner.fullName) || '', playId: clip });
+      });
+    });
+    return { steals, challenges };
+  }
+
+  // One season of a fielder's plays -- an infielder's double plays, or a
+  // catcher's steals against him and ABS challenges -- and MLB's defensive
+  // clips of him, swept from each game he played there: its play-by-play
+  // and its highlights. That's ~14 MB for a full season, so it only runs
+  // once the Defense tab opens, and only the plays kept here (not the
+  // games) are held for the session. A game that fails is skipped; a
+  // failed game log isn't cached, so reopening retries.
+  const fieldingPlaysCache = {};
+  async function getSeasonFieldingPlays(personId, season, kind, onProgress) {
+    const key = `${personId}-${season}-${kind}`;
+    if (fieldingPlaysCache[key]) return fieldingPlaysCache[key];
     try {
       const res = await fetch(`https://statsapi.mlb.com/api/v1/people/${personId}/stats?stats=gameLog&group=fielding&season=${season}`);
       if (!res.ok) return null;
@@ -9494,10 +9614,10 @@
       const games = new Map();
       ((data.stats && data.stats[0] && data.stats[0].splits) || []).forEach(s => {
         const pos = s.stat && s.stat.position && s.stat.position.code;
-        if (INFIELD_CODES.includes(pos) && s.game && s.game.gamePk) games.set(s.game.gamePk, s);
+        if (SWEEP_POSITIONS[kind].includes(pos) && s.game && s.game.gamePk) games.set(s.game.gamePk, s);
       });
       const list = [...games.values()];
-      const doublePlays = [], highlights = [];
+      const doublePlays = [], steals = [], challenges = [], highlights = [];
       let next = 0, done = 0;
       async function worker() {
         while (next < list.length) {
@@ -9511,12 +9631,17 @@
             matchup: s.isHome ? `${opp} @ ${teamAbbr(s.team)}` : `${teamAbbr(s.team)} @ ${opp}`
           };
           const posByPlay = {};
+          if (kind === 'catcher') {
+            const mine = buildCatcherGamePlays(plays, personId, s, game);
+            steals.push(...mine.steals);
+            challenges.push(...mine.challenges);
+          }
           (plays || []).forEach(play => {
             const credit = (play.runners || []).flatMap(r => r.credits || []).find(c => c.player && c.player.id === personId && c.position);
             if (!credit) return;
             const playId = extractPlayId(play);
             if (playId) posByPlay[playId] = credit.position.code;
-            const dp = buildDoublePlay(play, personId);
+            const dp = kind === 'infield' && buildDoublePlay(play, personId);
             if (dp) doublePlays.push({ ...dp, ...game, playId, batter: (play.matchup && play.matchup.batter && play.matchup.batter.fullName) || '' });
           });
           clips.forEach(c => highlights.push({ ...c, ...game, pos: (c.playId && posByPlay[c.playId]) || null }));
@@ -9525,17 +9650,62 @@
       }
       await Promise.all(Array.from({ length: Math.min(SPRAY_FETCH_CONCURRENCY, list.length) }, worker));
       const byNewest = (a, b) => (b.date || '').localeCompare(a.date || '');
-      const result = { doublePlays: doublePlays.sort(byNewest), highlights: highlights.sort(byNewest) };
-      infieldPlaysCache[key] = result;
+      const result = {
+        doublePlays: doublePlays.sort(byNewest),
+        steals: steals.sort(byNewest),
+        challenges: challenges.sort(byNewest),
+        highlights: highlights.sort(byNewest)
+      };
+      fieldingPlaysCache[key] = result;
       return result;
     } catch (e) {
       return null;
     }
   }
 
+  // The parts shared by an infielder's and a catcher's plays: one play's
+  // row (date, opponent, what happened, play mark -- data-play-clip and
+  // its head say what the clip popup shows), the status line while the
+  // sweep runs, and MLB's highlight clips, newest first (the latest few
+  // until asked for all -- a season can run past 30).
+  const PLAY_MARK = '<svg class="pp-cb-play" viewBox="0 0 8 10" aria-hidden="true"><path d="M1 1l6 4-6 4z" fill="currentColor"/></svg>';
+  const CHEVRON = '<svg class="pp-cb-chev" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  function renderPlayRow(play, text, clipHead) {
+    const attrs = play.playId ? ` data-play-clip="${play.playId}" data-clip-head="${clipHead}"` : ' disabled';
+    return `<button type="button" class="pp-pl-row"${attrs}>
+        <span>${formatShortDate(play.date)}</span>
+        <span class="pp-pl-opp">${play.opp}</span>
+        <span class="pp-pl-text">${text}</span>
+        ${PLAY_MARK}
+      </button>`;
+  }
+  function renderPlaysStatus(data) {
+    if (data === undefined) {
+      const p = lastProfilePlaysProgress;
+      return `<div class="pp-cb"><div class="mlb-status-msg pp-plays-progress">Loading plays&#8230;${p ? ` ${p.done}/${p.total} games` : ''}</div></div>`;
+    }
+    return `<div class="pp-cb">${apiErrorMsg('plays')}</div>`;
+  }
+  function renderHighlightsSection(data, inPool) {
+    const highlights = data.highlights.filter(h => !h.pos || inPool(h.pos));
+    const shown = profileHighlightsAll ? highlights : highlights.slice(0, HIGHLIGHTS_SHOWN);
+    const more = highlights.length > shown.length
+      ? `<button type="button" class="pp-pl-more" data-hl-all>All ${highlights.length} highlights</button>`
+      : '';
+    const rows = shown.map(h => `<button type="button" class="pp-pl-row" data-hl-index="${data.highlights.indexOf(h)}">
+        <span>${formatShortDate(h.date)}</span>
+        <span class="pp-pl-opp">${h.opp}</span>
+        <span class="pp-pl-text">${h.headline}</span>
+        ${PLAY_MARK}
+      </button>`).join('');
+    const body = highlights.length
+      ? `<div class="pp-pl-list">${rows}</div>${more}`
+      : `<div class="pitch-empty">No ${lastProfileSeason} highlights.</div>`;
+    return `<div class="pp-cb"><span class="pp-painted pp-cb-title">Highlights <span class="pp-dp-total">${highlights.length || ''}</span></span>${body}</div>`;
+  }
+
   // Below an infielder's board: his double plays as a scorebook ledger,
-  // then MLB's highlight clips of him, newest first (the latest few, until
-  // asked for all -- a season can run past 30). The ledger has one row per
+  // then MLB's highlight clips of him. The ledger has one row per
   // notation (6-4-3, 4-6-3...) and his part in it, since the same
   // notation can be one he started at one position and finished at
   // another (a utility man's 5-4-3 at third, and at first). Both
@@ -9543,27 +9713,8 @@
   // under every position.
   function renderInfieldPlays() {
     const data = lastProfilePlays;
-    if (data === undefined) {
-      const p = lastProfilePlaysProgress;
-      return `<div class="pp-cb"><div class="mlb-status-msg pp-plays-progress">Loading plays&#8230;${p ? ` ${p.done}/${p.total} games` : ''}</div></div>`;
-    }
-    if (data === null) return `<div class="pp-cb">${apiErrorMsg('plays')}</div>`;
+    if (!data) return renderPlaysStatus(data);
     const inPool = pos => profileDefensePool === 'if' || pos === profileDefensePool;
-    const playRow = (attrs, play, text) => `<button type="button" class="pp-pl-row" ${attrs}>
-        <span>${formatShortDate(play.date)}</span>
-        <span class="pp-pl-opp">${play.opp}</span>
-        <span class="pp-pl-text">${text}</span>
-        <svg class="pp-cb-play" viewBox="0 0 8 10" aria-hidden="true"><path d="M1 1l6 4-6 4z" fill="currentColor"/></svg>
-      </button>`;
-    const highlights = data.highlights.filter(h => !h.pos || inPool(h.pos));
-    const shown = profileHighlightsAll ? highlights : highlights.slice(0, HIGHLIGHTS_SHOWN);
-    const more = highlights.length > shown.length
-      ? `<button type="button" class="pp-pl-more" data-hl-all>All ${highlights.length} highlights</button>`
-      : '';
-    const highlightsHtml = highlights.length
-      ? `<div class="pp-pl-list">${shown.map(h => playRow(`data-hl-index="${data.highlights.indexOf(h)}"`, h, h.headline)).join('')}</div>${more}`
-      : `<div class="pitch-empty">No ${lastProfileSeason} highlights.</div>`;
-
     const dps = data.doublePlays.filter(d => inPool(d.pos));
     const byCode = new Map();
     dps.forEach(d => {
@@ -9573,22 +9724,76 @@
     });
     const roles = ['Started', 'Turned', 'Finished', 'Unassisted'].map(r => [r, dps.filter(d => d.role === r).length]).filter(([, n]) => n);
     const rows = [...byCode.entries()].sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0])).map(([key, plays]) => {
-      const open = profileDpCode === key;
-      const row = `<button type="button" class="pp-cb-row pp-dp-row" data-dp-code="${key}" aria-expanded="${open}">
+      const open = profileOpenRow === key;
+      const row = `<button type="button" class="pp-cb-row pp-dp-row" data-open-row="${key}" aria-expanded="${open}">
         <span class="pp-dp-code">${plays[0].code}</span>
         <span class="pp-dp-role">${plays[0].role}${plays.some(p => p.triple) ? ' &#183; TP' : ''}</span>
         <span class="pp-cb-count">${plays.length}</span>
-        <svg class="pp-cb-chev" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        ${CHEVRON}
       </button>`;
       if (!open) return row;
-      const list = plays.map(p => playRow(`data-dp-play="${p.playId || ''}"`, p, p.batter)).join('');
-      return `${row}<div class="pp-cb-list">${list}</div>`;
+      const head = p => `<span class=&quot;cv-code&quot;>${p.code}</span><span class=&quot;cv-result&quot;>${p.triple ? 'Triple' : 'Double'} Play &#183; ${p.role}</span>`;
+      return `${row}<div class="pp-cb-list">${plays.map(p => renderPlayRow(p, p.batter, head(p))).join('')}</div>`;
     }).join('');
     const dpHtml = dps.length
       ? `<div class="pp-cb-routine pp-dp-roles">${roles.map(([r, n]) => `${r} <span>${n}</span>`).join('')}</div>${rows}`
       : `<div class="pitch-empty">No ${lastProfileSeason} double plays.</div>`;
     return `<div class="pp-cb"><span class="pp-painted pp-cb-title">Double Plays <span class="pp-dp-total">${dps.length || ''}</span></span>${dpHtml}</div>
-      <div class="pp-cb"><span class="pp-painted pp-cb-title">Highlights <span class="pp-dp-total">${highlights.length || ''}</span></span>${highlightsHtml}</div>`;
+      ${renderHighlightsSection(data, inPool)}`;
+  }
+
+  // A lamp board like the outfield catch board, for a catcher's plays:
+  // one row per group, each play a lamp -- lit for his success, a dark
+  // socket for the other side's -- successes first; a row opens to its
+  // plays, successes first, newest first, each opening its clip.
+  function renderLampRows(rows, describe, clipHead) {
+    return rows.map(([key, label, plays, won]) => {
+      const lit = plays.filter(won), dark = plays.filter(p => !won(p));
+      const open = profileOpenRow === key && plays.length > 0;
+      const lamps = [...lit, ...dark].map(p => `<span class="pp-lamp${won(p) ? ' is-lit' : ''}"></span>`).join('');
+      const row = `<button type="button" class="pp-cb-row" data-open-row="${key}" aria-expanded="${open}"${plays.length ? '' : ' disabled'}>
+        <span class="pp-cb-label">${label}</span>
+        <span class="pp-cb-lamps">${lamps}</span>
+        <span class="pp-cb-count">${plays.length ? `${lit.length}/${plays.length}` : ''}</span>
+        ${CHEVRON}
+      </button>`;
+      if (!open) return row;
+      return `${row}<div class="pp-cb-list">${[...lit, ...dark].map(p => renderPlayRow(p, describe(p), clipHead(p))).join('')}</div>`;
+    }).join('');
+  }
+
+  // Below a catcher's board: steals against him by base (a lamp lit for a
+  // runner he threw out), his ABS challenges -- those with two strikes,
+  // where winning one is strike three, apart from the rest -- and MLB's
+  // highlight clips of him. Challenges only exist from 2026, when the
+  // challenge system began; before then that section is left out.
+  function renderCatcherPlays() {
+    const data = lastProfilePlays;
+    if (!data) return renderPlaysStatus(data);
+    const steals = data.steals;
+    const thrownOut = steals.filter(p => p.thrownOut).length;
+    const stealRows = ['2B', '3B', 'Home'].map(base => [`steal-${base}`, base, steals.filter(p => p.base === base), p => p.thrownOut])
+      .filter(([, , plays]) => plays.length);
+    const stealsHtml = steals.length
+      ? renderLampRows(stealRows,
+        p => `${p.runner} &#183; ${p.thrownOut ? 'Thrown out' : 'Stole'}`,
+        p => `<span class=&quot;cv-result&quot;>${p.thrownOut ? 'Caught Stealing' : 'Stolen Base'} ${p.base}</span>`)
+      : `<div class="pitch-empty">No ${lastProfileSeason} stolen base attempts.</div>`;
+    const sections = [`<div class="pp-cb"><span class="pp-painted pp-cb-title">Caught Stealing <span class="pp-dp-total">${steals.length ? `${thrownOut}/${steals.length}` : ''}</span></span>${stealsHtml}</div>`];
+    const challenges = data.challenges;
+    if (challenges.length || Number(lastProfileSeason) >= ABS_FIRST_SEASON) {
+      const won = challenges.filter(p => p.overturned).length;
+      const chalRows = [['abs-2', '2 strikes', challenges.filter(p => p.twoStrikes), p => p.overturned], ['abs-0', 'Earlier', challenges.filter(p => !p.twoStrikes), p => p.overturned]]
+        .filter(([, , plays]) => plays.length);
+      const chalHtml = challenges.length
+        ? renderLampRows(chalRows,
+          p => `${p.batter}${p.count ? ` &#183; ${p.count}` : ''} &#183; ${p.overturned ? (p.twoStrikes ? 'Strike three' : 'Overturned') : 'Confirmed'}`,
+          p => `<span class=&quot;cv-result&quot;>ABS Challenge &#183; ${p.overturned ? 'Overturned' : 'Confirmed'}${p.count ? ` &#183; ${p.count}` : ''}</span>`)
+        : `<div class="pitch-empty">No ${lastProfileSeason} challenges.</div>`;
+      sections.push(`<div class="pp-cb"><span class="pp-painted pp-cb-title">ABS Challenges <span class="pp-dp-total">${challenges.length ? `${won}/${challenges.length}` : ''}</span></span>${chalHtml}</div>`);
+    }
+    sections.push(renderHighlightsSection(data, () => true));
+    return sections.join('');
   }
 
   // ---- Assembly ----
@@ -9723,7 +9928,7 @@
   async function loadProfileDefense(personId, season, requestId) {
     const group = defenseGroupFor(lastProfilePerson);
     if (!group) return;
-    if (group.catches) {
+    if (group.plays === 'catches') {
       getSavantCatches(personId).then(catches => {
         if (requestId !== playerProfileRequestId) return;
         lastProfileCatches = catches;
@@ -9738,7 +9943,7 @@
         const el = playersBody.querySelector('.pp-plays-progress');
         if (el) el.textContent = `Loading plays\u2026 ${done}/${total} games`;
       };
-      getInfieldSeasonPlays(personId, season, onProgress).then(plays => {
+      getSeasonFieldingPlays(personId, season, group.plays, onProgress).then(plays => {
         if (requestId !== playerProfileRequestId) return;
         lastProfilePlays = plays;
         rerenderPlayerProfile();
@@ -9809,7 +10014,7 @@
     profileCatchTier = null;
     lastProfilePlays = undefined;
     lastProfilePlaysProgress = null;
-    profileDpCode = null;
+    profileOpenRow = null;
     profileHighlightsAll = false;
     lastProfileSeason = playerListState.season || defaultListSeason;
     playerSprayState = { personId: person.id, season: null, balls: null, loading: true };
