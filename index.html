@@ -2656,6 +2656,109 @@
   @container (min-width: 700px) { .pp-rank { font-size: 11px; bottom: 7px; right: 9px; } }
   .pp-stat.is-top .pp-slot, .pp-stat.is-top .pp-rank { color: var(--gold); }
 
+  /* Defense tab: the position toggle, a two-slot board, then the catch
+     board -- held to a reading width so a row's count stays near its
+     lamps on a wide sheet. */
+  .pp-def { max-width: 720px; }
+  .pp-def-pools { width: max-content; max-width: 100%; margin: 0 0 16px auto; }
+  .pp-def-pools .view-toggle-btn { flex: none; }
+  @container (min-width: 520px) { .pp-board.pp-board-pair { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  /* Catch board: one row per star rating, each chance a scoreboard lamp
+     (the live panel's count lamps, see .monster-dot) -- lit for a catch,
+     a dark socket for a miss. The stars and counts sit in fixed columns
+     so every row's lamps start and end in line. */
+  .pp-cb { margin-top: 26px; }
+  .pp-cb > .mlb-status-msg, .pp-cb > .pitch-empty { margin-top: 0; }
+  .pp-cb-title { text-align: left; margin-bottom: 8px; }
+  .pp-cb-row {
+    display: grid;
+    grid-template-columns: 62px minmax(0, 1fr) 46px 10px;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 9px 0;
+    background: none;
+    border: 0;
+    border-top: 1px solid var(--paper-line);
+    color: var(--ink);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .pp-cb-row:disabled { cursor: default; }
+  .pp-cb-row:not(:disabled):hover { background: rgba(243, 236, 219, 0.04); }
+  .pp-cb-row:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+  .pp-cb-stars { font-size: 11px; letter-spacing: 1px; color: var(--ink-soft); white-space: nowrap; }
+  .pp-cb-lamps { display: flex; flex-wrap: wrap; gap: 4px; min-height: 11px; }
+  .pp-lamp {
+    flex: none;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6);
+  }
+  .pp-lamp.is-lit { background: var(--ink); border-color: var(--ink); box-shadow: none; }
+  .pp-lamp.is-gold { background: var(--gold); border-color: var(--gold); box-shadow: none; }
+  .pp-cb-count { text-align: right; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 12px; font-variant-numeric: tabular-nums; }
+  .pp-cb-chev { width: 10px; height: 6px; color: var(--ink-soft); transition: transform 0.15s; }
+  .pp-cb-row:disabled .pp-cb-chev { visibility: hidden; }
+  .pp-cb-row[aria-expanded="true"] .pp-cb-chev { transform: rotate(180deg); }
+  .pp-cb-routine {
+    padding: 9px 0 0;
+    border-top: 1px solid var(--paper-line);
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .pp-cb-routine span { margin-left: 8px; font-size: 12px; letter-spacing: 0; color: var(--ink); font-variant-numeric: tabular-nums; }
+  /* A row's catches, hardest first: lamp, catch %, hang time, distance,
+     wall/back tags, play mark -- the same columns for the painted head. */
+  .pp-cb-list { padding: 0 0 10px; }
+  .pp-cb-head, .pp-cb-catch {
+    display: grid;
+    grid-template-columns: 11px 56px 48px 56px minmax(0, 1fr) 8px;
+    align-items: center;
+    gap: 10px;
+    padding: 0 4px;
+  }
+  .pp-cb-head { padding-bottom: 4px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+  .pp-cb-catch {
+    width: 100%;
+    min-height: 34px;
+    background: rgba(0, 0, 0, 0.16);
+    border: 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.25);
+    color: var(--ink);
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    text-align: left;
+    cursor: pointer;
+  }
+  .pp-cb-catch:hover { background: rgba(243, 236, 219, 0.08); }
+  .pp-cb-catch:hover .pp-cb-play { color: var(--gold); }
+  .pp-cb-catch:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+  .pp-cb-tags { display: flex; gap: 4px; justify-content: flex-end; }
+  .pp-cb-tag { padding: 2px 4px 1px; border: 1px solid var(--paper-line); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+  .pp-cb-play { width: 8px; height: 10px; color: var(--ink-soft); }
+
+  /* Catch clip popup: wider than the other popups, for the video. */
+  #catchOverlay .pitch-modal { max-width: 640px; }
+  .cv-head { display: flex; align-items: baseline; gap: 10px; padding-right: 36px; margin-bottom: 12px; }
+  .cv-stars { font-size: 14px; letter-spacing: 2px; color: var(--ink); }
+  .cv-result { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); }
+  .cv-video { display: block; width: 100%; aspect-ratio: 16 / 9; background: #000; }
+  .cv-video-wait { display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.3); }
+  .cv-desc { margin: 12px 0 4px; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 15px; line-height: 1.3; color: var(--ink); }
+  .cv-meta { margin-bottom: 4px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 12px; }
+  .cv-facts { margin: 12px 0 0; }
+
   .pp-table td, .pp-table th { white-space: nowrap; }
   .pp-table td.pp-soft { color: var(--ink-soft); }
   .pp-game-link {
@@ -3148,6 +3251,12 @@
       <div id="gameStripOverlayBody"></div>
     </div>
   </div>
+  <div id="catchOverlay" class="pitch-overlay">
+    <div class="pitch-modal">
+      <button id="catchClose" class="pitch-close" aria-label="Close">&#10005;</button>
+      <div id="catchModalBody"></div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -3282,6 +3391,16 @@
   // just shows its W/L without a score.
   let lastProfileScores = {};
   let profileRecentRequested = false;
+  // The Defense tab's Savant data, loaded only once that tab opens:
+  // OAA by position (buildProfileDefense) and the catch-by-catch list
+  // (getSavantCatches) -- each undefined while loading, null if it
+  // failed. profileDefensePool is the position the board compares
+  // against ('7'/'8'/'9'/'of'), profileCatchTier the expanded star row.
+  let lastProfileDefense;
+  let lastProfileCatches;
+  let profileDefenseRequested = false;
+  let profileDefensePool = null;
+  let profileCatchTier = null;
   // Players tab's browsable list (Batters/Pitchers toggle, sortable current-
   // season stats) -- separate from the search/profile state above since the
   // list and a profile are just two different things playersBody can show.
@@ -6243,6 +6362,7 @@
   }
   function closeOverlay(overlay, { fromHistory = false } = {}) {
     overlay.classList.remove('open');
+    overlay.querySelectorAll('video').forEach(v => v.pause());
     const idx = modalStack.indexOf(overlay.id);
     if (idx < 0 || fromHistory) return;
     // anything opened on top of it goes too
@@ -7804,6 +7924,29 @@
       profileTab = tab.dataset.ppTab;
       rerenderPlayerProfile();
       ensureProfileRecent();
+      ensureProfileDefense();
+      return;
+    }
+    const pool = e.target.closest('[data-def-pool]');
+    if (pool) {
+      profileDefensePool = pool.dataset.defPool;
+      profileCatchTier = null;
+      rerenderPlayerProfile();
+      return;
+    }
+    const tier = e.target.closest('.pp-cb-row');
+    if (tier) {
+      const stars = Number(tier.dataset.cbTier);
+      profileCatchTier = profileCatchTier === stars ? null : stars;
+      rerenderPlayerProfile();
+      const again = playersBody.querySelector(`.pp-cb-row[data-cb-tier="${stars}"]`);
+      if (again) again.focus({ preventScroll: true });
+      return;
+    }
+    const catchBtn = e.target.closest('.pp-cb-catch');
+    if (catchBtn) {
+      const play = lastProfileCatches && lastProfileCatches.plays.find(p => p.playId === catchBtn.dataset.playId);
+      if (play) showCatchModal(play);
       return;
     }
     const gameLink = e.target.closest('.pp-game-link, .pp-game-link-card');
@@ -8905,12 +9048,227 @@
     </div>`;
   }
 
+  // ---- Defense (outfielders, from Baseball Savant) ----
+  // Savant serves its leaderboards and player pages with
+  // Access-Control-Allow-Origin: *, so they're fetched straight from the
+  // browser like the Stats API. Its numbers update overnight, never
+  // mid-game, so a success is kept for the session; a failure isn't.
+  const SAVANT = 'https://baseballsavant.mlb.com';
+  const DEFENSE_POOLS = [['7', 'LF', 'left fielders'], ['8', 'CF', 'center fielders'], ['9', 'RF', 'right fielders'], ['of', 'All OF', 'outfielders']];
+  const STATCAST_FIRST_SEASON = 2016;
+
+  // Savant's CSVs quote every text field, and names carry a comma
+  // ("Crow-Armstrong, Pete"), so a plain split(',') won't do.
+  function parseCsv(text) {
+    const rows = [];
+    let row = [], field = '', quoted = false;
+    const src = text.replace(/^﻿/, '');
+    for (let i = 0; i < src.length; i++) {
+      const c = src[i];
+      if (quoted) {
+        if (c !== '"') field += c;
+        else if (src[i + 1] === '"') { field += '"'; i++; }
+        else quoted = false;
+      } else if (c === '"') quoted = true;
+      else if (c === ',') { row.push(field); field = ''; }
+      else if (c === '\n' || c === '\r') {
+        if (c === '\r' && src[i + 1] === '\n') i++;
+        row.push(field); rows.push(row); row = []; field = '';
+      } else field += c;
+    }
+    if (field || row.length) { row.push(field); rows.push(row); }
+    const [head, ...body] = rows;
+    if (!head) return [];
+    return body.filter(r => r.length === head.length).map(r => Object.fromEntries(head.map((h, i) => [h, r[i]])));
+  }
+
+  // One OAA leaderboard: a position ('7'/'8'/'9', or 'of' for all three
+  // combined) and either Savant's qualified pool ('q') or everyone ('0').
+  // A position's rows hold OAA and runs prevented at that position alone.
+  const savantOaaCache = {};
+  async function getSavantOaa(season, pos, min) {
+    const key = `${season}-${pos}-${min}`;
+    if (savantOaaCache[key]) return savantOaaCache[key];
+    try {
+      const res = await fetch(`${SAVANT}/leaderboard/outs_above_average?type=Fielder&startYear=${season}&endYear=${season}&split=no&team=&range=year&min=${min}&pos=${pos}&roles=&viz=hide&csv=true`);
+      if (!res.ok) return null;
+      const rows = parseCsv(await res.text())
+        .map(r => ({ id: Number(r.player_id), oaa: Number(r.outs_above_average), frp: Number(r.fielding_runs_prevented) }))
+        .filter(r => r.id && Number.isFinite(r.oaa));
+      savantOaaCache[key] = rows;
+      return rows;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Every outfield catch opportunity of the player's most recent season,
+  // each with Statcast's star rating (5 = a catch made 0-25% of the time).
+  // Savant has no API for these; its player page embeds them as one
+  // `rangeLine: [...]` line of JSON, read out here. That page always
+  // shows the latest season (a season parameter is ignored), so the
+  // result says which season it is.
+  const savantCatchCache = {};
+  async function getSavantCatches(personId) {
+    if (savantCatchCache[personId]) return savantCatchCache[personId];
+    try {
+      const res = await fetch(`${SAVANT}/savant-player/${personId}`);
+      if (!res.ok) return null;
+      const html = await res.text();
+      const season = (html.match(/mostRecentSeason:\s*'(\d{4})'/) || [])[1];
+      const start = html.indexOf('rangeLine: ');
+      if (!season || start < 0) return null;
+      const line = html.slice(start + 'rangeLine: '.length, html.indexOf('\n', start)).trim().replace(/,$/, '');
+      const plays = JSON.parse(line)
+        .filter(p => Number(p.player_id) === personId && ['7', '8', '9'].includes(String(p.pos)))
+        .map(p => ({
+          playId: p.play_id,
+          pos: String(p.pos),
+          stars: Number(p.stars),
+          made: Number(p.out) === 1,
+          catchRate: Number(p.catch_rate),
+          hang: Number(p.opportunity_time),
+          distance: Number(p.distance),
+          wall: Number(p.wall) === 1,
+          back: Number(p.back) === 1
+        }));
+      const result = { season: Number(season), plays };
+      savantCatchCache[personId] = result;
+      return result;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // A play's broadcast clip, from Savant's video page for it: the mp4,
+  // the play's description (the page title), and which game it was.
+  const savantClipCache = {};
+  async function getSavantClip(playId) {
+    if (savantClipCache[playId]) return savantClipCache[playId];
+    try {
+      const res = await fetch(`${SAVANT}/sporty-videos?playId=${encodeURIComponent(playId)}`);
+      if (!res.ok) return null;
+      const html = await res.text();
+      const mp4 = (html.match(/https:\/\/sporty-clips\.mlb\.com\/[^"'\s<>]+\.mp4/) || [])[0];
+      if (!mp4) return null;
+      const clip = {
+        mp4,
+        title: ((html.match(/<title>([^<|]*)/) || [])[1] || '').trim(),
+        gamePk: Number((html.match(/gamefeed\?gamePk=(\d+)/) || [])[1]) || null,
+        date: (html.match(/scoreboard\?date=(\d{4}-\d{2}-\d{2})/) || [])[1] || null,
+        matchup: (html.match(/>\s*([A-Z]{2,3} @ [A-Z]{2,3})\s*</) || [])[1] || ''
+      };
+      savantClipCache[playId] = clip;
+      return clip;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // OAA and runs prevented at each outfield position the player covered,
+  // plus all three combined, each ranked against Savant's qualified pool
+  // for that position (unranked if he isn't in it). Positions he never
+  // played are left out.
+  async function buildProfileDefense(personId, season) {
+    const lists = await Promise.all(DEFENSE_POOLS.flatMap(([pos]) => [getSavantOaa(season, pos, '0'), getSavantOaa(season, pos, 'q')]));
+    if (lists.some(l => l === null)) return null;
+    const pools = {};
+    DEFENSE_POOLS.forEach(([pos], i) => {
+      const all = lists[2 * i], qualified = lists[2 * i + 1];
+      const row = all.find(r => r.id === personId);
+      if (!row) return;
+      const inPool = qualified.some(r => r.id === personId);
+      const pool = qualified.map(r => ({ stat: r }));
+      const rank = key => (inPool ? rankInPool({ get: s => s[key] }, { stat: row }, pool, {}) : null);
+      pools[pos] = { row, ranks: { oaa: rank('oaa'), frp: rank('frp') } };
+    });
+    return pools;
+  }
+
+  function formatSigned(n) {
+    if (n > 0) return `+${n}`;
+    if (n < 0) return `&#8722;${-n}`;
+    return '0';
+  }
+
+  const STAR_GLYPHS = n => '&#9733;'.repeat(n);
+
+  function renderProfileDefense() {
+    if (Number(lastProfileSeason) < STATCAST_FIRST_SEASON) return `<div class="pitch-empty">Statcast fielding starts in ${STATCAST_FIRST_SEASON}.</div>`;
+    const def = lastProfileDefense;
+    if (def === undefined) return '<div class="mlb-status-msg">Loading defense&#8230;</div>';
+    if (def === null) return apiErrorMsg('defense stats');
+    const pools = DEFENSE_POOLS.filter(([pos]) => def[pos]);
+    if (!pools.length) return `<div class="pitch-empty">No ${lastProfileSeason} outfield defense.</div>`;
+    if (!def[profileDefensePool]) {
+      const primary = lastProfilePerson.primaryPosition && lastProfilePerson.primaryPosition.code;
+      profileDefensePool = def[primary] ? primary : pools[0][0];
+    }
+    const [, , poolNoun] = DEFENSE_POOLS.find(([pos]) => pos === profileDefensePool);
+    const current = def[profileDefensePool];
+    const toggle = `<div class="view-toggle pp-def-pools" role="group" aria-label="Compare against">${pools.map(([pos, label]) =>
+      `<button type="button" class="view-toggle-btn${pos === profileDefensePool ? ' active' : ''}" data-def-pool="${pos}" aria-pressed="${pos === profileDefensePool}">${label}</button>`).join('')}</div>`;
+    const slot = (label, value, r) => {
+      const top = r && r.rank / r.of <= PROFILE_GOLD_SHARE;
+      const badge = r ? `<span class="pp-rank" title="Rank among ${r.of} qualified ${poolNoun}">${r.tied ? 'T' : ''}${r.rank}/${r.of}</span>` : '';
+      return `<div class="pp-stat${top ? ' is-top' : ''}"><span class="pp-painted">${label}</span><span class="pp-slot">${formatSigned(value)}${badge}</span></div>`;
+    };
+    const board = `<div class="pp-board pp-board-pair">${slot('OAA', current.row.oaa, current.ranks.oaa)}${slot('Runs Prevented', current.row.frp, current.ranks.frp)}</div>`;
+    return `<div class="pp-def">${toggle}${board}${renderCatchBoard()}</div>`;
+  }
+
+  // Each catch chance is a lamp in its star row: lit for a catch, a dark
+  // socket for a miss. Made 5-star catches light gold -- the catch
+  // counterpart of a top-10% stat. A row opens to its catches (made ones
+  // first, hardest first, then the misses), each opening its clip.
+  function renderCatchBoard() {
+    const catches = lastProfileCatches;
+    if (catches === undefined) return '<div class="pp-cb"><div class="mlb-status-msg">Loading catches&#8230;</div></div>';
+    if (catches === null) return `<div class="pp-cb">${apiErrorMsg('catches')}</div>`;
+    if (catches.season !== Number(lastProfileSeason)) return `<div class="pp-cb"><div class="pitch-empty">Catch by catch is only available for ${catches.season}.</div></div>`;
+    const plays = catches.plays.filter(p => profileDefensePool === 'of' || p.pos === profileDefensePool);
+    const tierRow = stars => {
+      const tier = plays.filter(p => p.stars === stars);
+      const made = tier.filter(p => p.made).length;
+      const open = profileCatchTier === stars && tier.length > 0;
+      const lamp = p => `<span class="pp-lamp${p.made ? (stars === 5 ? ' is-gold' : ' is-lit') : ''}"></span>`;
+      const lamps = [...tier.filter(p => p.made), ...tier.filter(p => !p.made)].map(lamp).join('');
+      const row = `<button type="button" class="pp-cb-row" data-cb-tier="${stars}" aria-expanded="${open}"${tier.length ? '' : ' disabled'}>
+        <span class="pp-cb-stars" aria-label="${stars} star">${STAR_GLYPHS(stars)}</span>
+        <span class="pp-cb-lamps">${lamps}</span>
+        <span class="pp-cb-count">${tier.length ? `${made}/${tier.length}` : ''}</span>
+        <svg class="pp-cb-chev" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>`;
+      if (!open) return row;
+      const list = tier.slice().sort((a, b) => b.made - a.made || a.catchRate - b.catchRate || a.hang - b.hang).map(p => {
+        const tags = [p.wall ? 'Wall' : '', p.back ? 'Back' : ''].filter(Boolean).map(t => `<span class="pp-cb-tag">${t}</span>`).join('');
+        return `<button type="button" class="pp-cb-catch" data-play-id="${p.playId}">
+          ${lamp(p)}
+          <span>${Math.round(p.catchRate * 100)}%</span>
+          <span>${p.hang.toFixed(1)}s</span>
+          <span>${p.distance} ft</span>
+          <span class="pp-cb-tags">${tags}</span>
+          <svg class="pp-cb-play" viewBox="0 0 8 10" aria-hidden="true"><path d="M1 1l6 4-6 4z" fill="currentColor"/></svg>
+        </button>`;
+      }).join('');
+      return `${row}<div class="pp-cb-list"><div class="pp-cb-head"><span></span><span>Catch %</span><span>Hang</span><span>Dist</span></div>${list}</div>`;
+    };
+    const routine = plays.filter(p => p.stars === 0);
+    const routineMade = routine.filter(p => p.made).length;
+    return `<div class="pp-cb">
+      <span class="pp-painted pp-cb-title">Catches</span>
+      ${[5, 4, 3, 2, 1].map(tierRow).join('')}
+      ${routine.length ? `<div class="pp-cb-routine">Routine <span>${routineMade}/${routine.length}</span></div>` : ''}
+    </div>`;
+  }
+
   // ---- Assembly ----
-  function profileTabsFor(pitcher, detail) {
+  function profileTabsFor(pitcher, detail, person) {
     const hasStarts = pitcher && detail && detail.gameLog.some(g => g.stat && g.stat.gamesStarted);
+    const outfielder = !pitcher && person && person.primaryPosition && person.primaryPosition.type === 'Outfielder';
     return pitcher
       ? [['ov', 'Overview'], ...(hasStarts ? [['starts', 'Starts']] : []), ['log', 'Game Log'], ['spl', 'Splits'], ['car', 'Career']]
-      : [['ov', 'Overview'], ['log', 'Game Log'], ['spl', 'Splits'], ['car', 'Career']];
+      : [['ov', 'Overview'], ['log', 'Game Log'], ['spl', 'Splits'], ...(outfielder ? [['def', 'Defense']] : []), ['car', 'Career']];
   }
 
   function renderProfileTabBody(tab, pitcher) {
@@ -8922,6 +9280,7 @@
       if (!yearSplits.length) return '<div class="pitch-empty">Career stats not available.</div>';
       return pitcher ? renderPitchingCareerTable(yearSplits) : renderCareerTable(yearSplits, lastProfileLeagueWoba || {});
     }
+    if (tab === 'def') return renderProfileDefense();
     if (detail === undefined) return '<div class="mlb-status-msg">Loading season stats&#8230;</div>';
     if (detail === null) return apiErrorMsg('season stats');
     if (tab === 'ov') {
@@ -8940,7 +9299,7 @@
 
   function renderPlayerProfile(person) {
     const pitcher = isPitcher(person);
-    const tabs = profileTabsFor(pitcher, lastProfileDetail);
+    const tabs = profileTabsFor(pitcher, lastProfileDetail, person);
     if (!tabs.some(([id]) => id === profileTab)) profileTab = 'ov';
     const team = person.currentTeam && person.currentTeam.name;
     const pos = person.primaryPosition && person.primaryPosition.name;
@@ -9024,6 +9383,26 @@
     rerenderPlayerProfile();
   }
 
+  function ensureProfileDefense() {
+    if (profileDefenseRequested || profileTab !== 'def' || !lastProfileSeason) return;
+    profileDefenseRequested = true;
+    loadProfileDefense(Number(lastProfilePerson.id), lastProfileSeason, playerProfileRequestId);
+  }
+
+  // Board and catches arrive separately: the catch list comes from a far
+  // bigger page than the leaderboards, so the board doesn't wait on it.
+  async function loadProfileDefense(personId, season, requestId) {
+    getSavantCatches(personId).then(catches => {
+      if (requestId !== playerProfileRequestId) return;
+      lastProfileCatches = catches;
+      rerenderPlayerProfile();
+    });
+    const def = Number(season) < STATCAST_FIRST_SEASON ? {} : await buildProfileDefense(personId, season);
+    if (requestId !== playerProfileRequestId) return;
+    lastProfileDefense = def;
+    rerenderPlayerProfile();
+  }
+
   function ensureProfileRecent() {
     if (profileRecentRequested || profileTab !== 'log' || !lastProfileDetail) return;
     profileRecentRequested = true;
@@ -9076,6 +9455,11 @@
     lastProfileRecent = undefined;
     lastProfileScores = {};
     profileRecentRequested = false;
+    lastProfileDefense = undefined;
+    lastProfileCatches = undefined;
+    profileDefenseRequested = false;
+    profileDefensePool = null;
+    profileCatchTier = null;
     lastProfileSeason = playerListState.season || defaultListSeason;
     playerSprayState = { personId: person.id, season: null, balls: null, loading: true };
     rerenderPlayerProfile();
@@ -9104,6 +9488,7 @@
     rerenderPlayerProfile();
     if (careerSplits.hitting.length) loadCareerLeagueWoba(careerSplits.hitting, requestId);
     loadProfileSeason(person.id, season, pitcher, requestId);
+    ensureProfileDefense();
   }
 
   // Mirrors jumpToScorecardGame: leave the modal, switch tabs, load the
@@ -9202,6 +9587,55 @@
     const generalPos = (details && details.primaryPosition && details.primaryPosition.abbreviation) || info.pos;
     playerModalBody.innerHTML = renderPlayerModalContent(info, seasonStat, summarizeAwardTags(awards), recentGames, generalPos, leagueWoba);
   }
+  // A catch's clip, opened from the Defense tab's catch board. The clip's
+  // game is only known once its Savant page arrives, so the date and the
+  // link to that game's scorecard fill in with the video.
+  const catchOverlay = document.getElementById('catchOverlay');
+  const catchModalBody = document.getElementById('catchModalBody');
+  let catchClipRequestId = 0;
+  function renderCatchFacts(play) {
+    const facts = [
+      ['Catch %', `${Math.round(play.catchRate * 100)}%`],
+      ['Hang', `${play.hang.toFixed(1)}s`],
+      ['Distance', `${play.distance} ft`],
+      ...(play.wall ? [['At', 'Wall']] : []),
+      ...(play.back ? [['Going', 'Back']] : [])
+    ];
+    return `<dl class="pp-vitals cv-facts">${facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>`;
+  }
+  async function showCatchModal(play) {
+    const requestId = ++catchClipRequestId;
+    const head = `<div class="cv-head"><span class="cv-stars">${STAR_GLYPHS(play.stars)}</span><span class="cv-result${play.made ? '' : ' is-miss'}">${play.made ? 'Caught' : 'Missed'}</span></div>`;
+    catchModalBody.innerHTML = `${head}<div class="cv-video cv-video-wait"><div class="mlb-status-msg">Loading clip&#8230;</div></div>${renderCatchFacts(play)}`;
+    openOverlay(catchOverlay);
+    const clip = await getSavantClip(play.playId);
+    if (requestId !== catchClipRequestId || !catchOverlay.classList.contains('open')) return;
+    if (!clip) {
+      catchModalBody.innerHTML = `${head}<div class="cv-video cv-video-wait">${apiErrorMsg('clip')}</div>${renderCatchFacts(play)}`;
+      return;
+    }
+    const game = clip.date && clip.gamePk
+      ? `<button type="button" class="pp-game-link cv-game" data-date="${clip.date}" data-game-pk="${clip.gamePk}">${formatShortDate(clip.date)}${clip.matchup ? ` &#183; ${clip.matchup}` : ''}</button>`
+      : '';
+    catchModalBody.innerHTML = `${head}
+      <video class="cv-video" src="${clip.mp4}" controls autoplay playsinline preload="auto"></video>
+      ${clip.title ? `<div class="cv-desc">${clip.title}</div>` : ''}
+      ${game ? `<div class="cv-meta">${game}</div>` : ''}
+      ${renderCatchFacts(play)}`;
+  }
+  function hideCatchModal() {
+    closeOverlay(catchOverlay);
+  }
+  document.getElementById('catchClose').addEventListener('click', hideCatchModal);
+  catchOverlay.addEventListener('click', (e) => {
+    if (e.target === catchOverlay) { hideCatchModal(); return; }
+    const game = e.target.closest('.cv-game');
+    if (game) {
+      hideCatchModal();
+      jumpToScorecardGame(game.dataset.date, Number(game.dataset.gamePk));
+    }
+  });
+
   function hidePlayerModal() {
     closeOverlay(playerOverlay);
   }
@@ -9282,7 +9716,7 @@
     if (e.target === teamChartOverlay) hideTeamChartModal();
   });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { hidePitchPopup(); hideRosterModal(); hideSprayModal(); hidePlayerModal(); hideGameSummaryModal(); hideTeamChartModal(); hideGameStripModal(); playerSearchResults.hidden = true; }
+    if (e.key === 'Escape') { hidePitchPopup(); hideRosterModal(); hideSprayModal(); hidePlayerModal(); hideGameSummaryModal(); hideTeamChartModal(); hideGameStripModal(); hideCatchModal(); playerSearchResults.hidden = true; }
   });
 
   // Backgrounding the tab (or the installed PWA) gets setTimeout/setInterval
