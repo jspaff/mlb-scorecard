@@ -150,7 +150,7 @@ A three-layer palette of wall, board and ink, with two spare signal colors.
 - **Monster Green**: the frame. It's the page background behind every sheet and the PWA theme color, matching Fenway's Green Monster. It is binding and never changes. Contrast is solved by what sits on it.
 
 ### Secondary
-- **Pennant Gold**: the one positive signal. Used for the active tab rule, focus rings, award plates, a stat in the top 10% of qualified players, quality starts, RBI dots, hits on the spray chart, and the jersey number.
+- **Pennant Gold**: the one positive signal. Used for the active tab rule, focus rings, award plates, a stat in the top 10% of qualified players, a made 5-star catch, quality starts, RBI dots, hits on the spray chart, and the jersey number.
 
 ### Tertiary
 - **Brick Red**: the out and the run against. It fills strikeout diamonds and out ticks. Its text-only tint, **Brick Red Text**, is lighter for small type on the board, where the fill color is too dark to read (runs allowed, strikes).
@@ -242,6 +242,13 @@ Numbers in recessed scoreboard slots, under a painted label.
 - **Elite:** the number turns Pennant Gold when the player ranks in the top 10% of the season's qualified pool.
 - **Rank:** a small Faded Cream rank in the bottom-right corner ("T12/134"), shrinking to 8px on phones so the number keeps its full slot. Playing-time counts (G, PA, GS) are never ranked.
 
+### Catch Lamps
+The Defense tab's catch board: one row per Statcast star rating (5 down to 1), every catch chance a lamp in that row, like the live scoreboard's count lamps.
+- **Lamps:** 11px circles. A catch is lit cream; a miss is a dark recessed socket. Made catches come first, then misses, so the lit run reads as the count.
+- **Gold:** only a made 5-star catch lights gold, the catch counterpart of a top-10% stat. Other rows stay cream.
+- **Row:** the stars and the made/chances count sit in fixed columns, so every row's lamps start in line. Routine (0-star) chances get a count line, not lamps.
+- **Drill-in:** a row opens its catches (made first, hardest first), and each opens its clip in a popup.
+
 ### Award Plates
 - **Shape:** square, 1px Pennant Gold border, gold uppercase label.
 - **Count:** a repeat award gets a solid gold cell with the count ("9×") before the label.
@@ -279,7 +286,7 @@ Single-series and quiet: Board Rule gridlines, Faded Cream axis labels, thin mar
 - **Do** keep the Monster Green frame (#54796d) exactly. Fix contrast by changing what sits on it.
 - **Do** put numbers in recessed slots and clickable names on pegged nameplates.
 - **Do** leave zero counts blank in logs and tables.
-- **Do** reserve Pennant Gold for top-10% stats, quality starts, awards, RBIs, hits, and active or focus states.
+- **Do** reserve Pennant Gold for top-10% stats, made 5-star catches, quality starts, awards, RBIs, hits, and active or focus states.
 - **Do** use tabular figures for every column of numbers.
 - **Do** size changeable controls to fixed slots so filters never shift the layout.
 - **Do** draw spray charts in the API's own coordinate space (home 125.42, 198.27; 2.495 ft per unit) so fences and batted balls agree.
