@@ -75,11 +75,18 @@
     padding: 18px 18px 16px;
     box-shadow: 0 6px 8px -6px rgba(11, 15, 12, 0.35);
   }
-  .tab-bar {
+  .tab-bar-row {
     display: flex;
-    gap: 6px;
+    align-items: flex-end;
+    gap: 10px;
     margin-bottom: 14px;
     border-bottom: 1px solid rgba(243, 236, 219, 0.15);
+  }
+  .tab-bar {
+    display: flex;
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 6px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
@@ -107,8 +114,35 @@
   .tab-btn:hover { border-bottom-color: rgba(243, 236, 219, 0.35); }
   .tab-btn.active { border-bottom-color: var(--gold); }
   .tab-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+  /* The user's team: a cap in a fixed slot at the end of the tab row, with
+     the platform's own picker laid invisibly over it. */
+  .my-team {
+    position: relative;
+    flex: none;
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .my-team-mark { display: flex; width: 26px; height: 26px; align-items: center; justify-content: center; }
+  .my-team-mark img { width: 26px; height: 26px; object-fit: contain; }
+  .my-team-mark svg { width: 20px; height: 20px; }
+  .my-team select {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    font-size: 16px;
+  }
+  .my-team:hover .my-team-mark { opacity: 0.8; }
+  .my-team:focus-within { outline: 2px solid var(--gold); outline-offset: -2px; }
   .tab-panel[hidden] { display: none; }
   .mlb-controls[hidden] { display: none; }
+  .date-nav[hidden] { display: none; }
   /* One bordered pill instead of three separate boxes (arrow / date / arrow)
      -- overflow:hidden clips the buttons' own corners to the shared
      border-radius, and align-items:stretch makes every segment match
@@ -1614,75 +1648,133 @@
     color: var(--ink-soft);
     border-bottom: 1px solid var(--paper-line);
   }
-  .standings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 32px; }
-  .standings-grid-single { grid-template-columns: 1fr; max-width: 320px; margin: 0 auto; }
-  .lb-grid {
-    display: grid;
-    grid-auto-flow: column;
-    grid-template-columns: 1fr;
-    grid-template-rows: repeat(30, auto);
-    column-gap: 32px;
-    max-width: 320px;
-    margin: 0 auto;
+  .standings-header-row .standings-team { font-size: inherit; }
+  /* Every plate the same width, like the out-of-town board's, with the
+     numbers squared up at the right -- a stretched plate read as a bar. */
+  .standings-row > .standings-team { flex: 0 1 104px; margin-right: auto; }
+  .standings-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 48px; max-width: 920px; margin: 0 auto; }
+  /* The user's own team: the same gold wash as a chosen segment, never a
+     gold value -- picking a team isn't the team earning anything. */
+  .standings-row.is-my-team,
+  .pb-team.is-my-team { background: rgba(217, 169, 26, 0.13); }
+
+  /* Postseason bracket. Each league is a 3-column grid (WC, DS, LCS) of two
+     equal rows, so a DS sits beside the WC that feeds it and the LCS spans
+     both, centered -- which is what puts the connector joints at 25% and
+     75% of its height. */
+  .pb { max-width: 920px; margin: 0 auto; }
+  .pb-ws { display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 4px 0 6px; }
+  .pb-ws .pb-series { width: 100%; max-width: 280px; }
+  .pb-leagues { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 40px; }
+  .pb-league { container-type: inline-size; min-width: 0; }
+  .pb-heads, .pb-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 16px; }
+  .pb-heads {
+    margin-bottom: 6px;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 9px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
   }
-  .lb-rank { width: 24px; font-family: 'Overpass', sans-serif; font-weight: 700; color: var(--ink-soft); }
-  @media (min-width: 700px) {
-    .lb-grid { max-width: 660px; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(15, auto); }
-  }
-  @media (min-width: 1050px) {
-    .lb-grid { max-width: 1000px; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: repeat(10, auto); }
-  }
-  .lb-row { padding: 6px 0; position: relative; }
-  .lb-row-content { display: flex; align-items: center; gap: 6px; flex: 1 1 auto; min-width: 0; position: relative; z-index: 1; }
-  .lb-headshot {
-    width: 40px;
-    height: 50px;
-    flex: none;
-    border-radius: 0;
-    object-fit: cover;
-    background: var(--paper-line);
+  .pb-grid { grid-template-rows: 1fr 1fr; row-gap: 12px; }
+  .pb-cell { position: relative; display: flex; align-items: center; min-width: 0; }
+  .pb-cell.pb-lcs { grid-column: 3; grid-row: 1 / 3; }
+  .pb-series {
+    position: relative;
+    width: 100%;
+    display: block;
+    padding: 0;
+    text-align: left;
+    color: var(--ink);
+    background: rgba(0, 0, 0, 0.18);
     border: 1px solid var(--paper-line);
+    border-radius: 0;
+    cursor: pointer;
   }
-  button.lb-name-btn { display: inline-flex; align-items: center; gap: 5px; }
-  .lb-hr-cell {
-    width: 40px;
+  .pb-series:hover { border-color: var(--ink-soft); }
+  .pb-series:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
+  .pb-series[disabled] { cursor: default; }
+  .pb-series[disabled]:hover { border-color: var(--paper-line); }
+  .pb-team {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 4px 4px 6px;
+    min-height: 30px;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  .pb-team + .pb-team { border-top: 1px dashed var(--paper-line); }
+  .pb-team.is-out .pb-name, .pb-team.is-tbd .pb-name { color: var(--ink-soft); }
+  .pb-team.is-out img { opacity: 0.45; }
+  .pb-team img { width: 16px; height: 16px; flex: none; object-fit: contain; }
+  .pb-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pb-abbr { display: none; }
+  @container (max-width: 400px) {
+    .pb-nick { display: none; }
+    .pb-abbr { display: inline; }
+  }
+  .pb-wins {
     flex: none;
-    height: 34px;
+    width: 20px;
+    height: 22px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 3px;
-  }
-  .lb-hr-watermark {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 64px;
-    height: 64px;
-    transform: translate(-50%, -50%);
-    object-fit: contain;
-    opacity: 0.16;
-    pointer-events: none;
-  }
-  /* Recessed-slot look lifted straight from .monster-box-cell (the Monster
-     scoreboard's own inning/RHE digits) -- same inset box-shadow and dark
-     backing, so the HR count reads as an interchangeable plate slotted into
-     the board rather than plain table text. */
-  .lb-hr {
-    position: relative;
-    z-index: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 17px;
-    height: 24px;
-    font-family: 'Overpass', sans-serif;
-    font-weight: 700;
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
     font-size: 14px;
-    color: var(--ink);
+    font-variant-numeric: tabular-nums;
     border-radius: 2px;
     background: rgba(0, 0, 0, 0.22);
     box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.5), inset 0 -1px 1px rgba(255, 255, 255, 0.05);
+  }
+  .pb-team.is-out .pb-wins { color: var(--ink-soft); }
+  .pb-team.is-champion .pb-name, .pb-team.is-champion .pb-wins { color: var(--gold); }
+  /* Connectors, in board-rule hairlines: WC straight across to its DS,
+     then the two DS joined into the LCS. */
+  .pb-wc .pb-series::after,
+  .pb-ds .pb-series::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 100%;
+    width: 16px;
+    border-top: 1px solid var(--paper-line);
+  }
+  .pb-ds .pb-series::after { width: 8px; }
+  .pb-lcs::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    top: calc((100% - 12px) / 4);
+    bottom: calc((100% - 12px) / 4);
+    border-left: 1px solid var(--paper-line);
+  }
+  .pb-lcs .pb-series::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 100%;
+    width: 8px;
+    border-top: 1px solid var(--paper-line);
+  }
+  .pb-champ { display: flex; justify-content: center; }
+  .pb-round { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px 16px; }
+  /* Six columns and a plate have to fit a 320px phone's sheet without a
+     sideways scroll, so each column narrows to its own longest value
+     ("100", ".605", "19.5", "10-0", "W10"). */
+  @media (max-width: 400px) {
+    .standings-row { gap: 4px; }
+    .standings-num { width: 30px; }
+    .standings-num.sn-w, .standings-num.sn-l { width: 24px; }
+    .standings-num.sn-pct { width: 32px; }
+    .standings-num.sn-strk { width: 27px; }
+    .standings-row > button.standings-team-btn { padding: 3px 5px; }
   }
   .schedule-month-block { margin-bottom: 18px; }
   .schedule-month-block:last-child { margin-bottom: 0; }
@@ -2390,7 +2482,7 @@
     margin-bottom: 2px;
     padding-right: 18px;
   }
-  /* Standings tab headers (Divisional/Wild Card Standings, Home Run Leaders)
+  /* Standings tab headers (Division/Wild Card Standings)
      get extra letter-spacing beyond the shared .pitch-header default. */
   #standingsPanel .pitch-header {
     letter-spacing: 0.12em;
@@ -3111,7 +3203,8 @@
        overflow-x: auto for a sliver of scrollbar. */
     .pitch-overlay { padding: 10px; }
     .pitch-modal { padding: 12px; }
-    .standings-grid { grid-template-columns: 1fr; }
+    .standings-grid { grid-template-columns: minmax(0, 1fr); }
+    .pb-leagues { grid-template-columns: minmax(0, 1fr); }
     .roster-columns { flex-direction: column; gap: 14px 0; }
     .calendar-day { min-height: 42px; padding: 2px 1px; }
     .cal-game-opp { font-size: 16px; margin-top: 2px; }
@@ -3153,6 +3246,7 @@
 <body>
 <div id="mlb-root">
   <div class="tab-header">
+    <div class="tab-bar-row">
     <div class="tab-bar">
       <button type="button" class="tab-btn active" data-tab="scorecard">Scorecard</button>
       <button type="button" class="tab-btn" data-tab="daily">Highlights</button>
@@ -3160,6 +3254,11 @@
       <button type="button" class="tab-btn" data-tab="schedule">Schedule</button>
       <button type="button" class="tab-btn" data-tab="roster">Roster</button>
       <button type="button" class="tab-btn" data-tab="players">Players</button>
+    </div>
+    <label class="my-team" title="Your team">
+      <span class="my-team-mark" id="myTeamMark"></span>
+      <select id="myTeamPick" aria-label="Your team"></select>
+    </label>
     </div>
     <div class="mlb-controls" data-tab-controls="scorecard">
       <div class="date-nav date-nav-stacked">
@@ -3203,7 +3302,7 @@
       <div class="view-toggle" id="standingsViewToggle">
         <button type="button" class="view-toggle-btn active" data-view="division">Division</button>
         <button type="button" class="view-toggle-btn" data-view="wildcard">Wild Card</button>
-        <button type="button" class="view-toggle-btn" data-view="homeruns">Home Runs</button>
+        <button type="button" class="view-toggle-btn" data-view="postseason">Postseason</button>
       </div>
     </div>
     <div class="mlb-controls" data-tab-controls="schedule" hidden>
@@ -3511,7 +3610,6 @@
   // personId alone -- can't collide and overwrite each other.
   const hitterGameLogCache = {};
   const standingsCache = {};
-  const hrLeadersCache = {};
   const venueCache = {};
   // The live-feed's gameData.venue is often just {id, name, link} -- city
   // lives on the dedicated venue endpoint instead. Cached by venue id since
@@ -3741,48 +3839,6 @@
       return standingsCache[key];
     } catch (e) {
       standingsCache[key] = [];
-      return [];
-    }
-  }
-  // The leaders endpoint has no as-of-date filtering of its own (a bare
-  // `date` or `startDate`/`endDate` param is silently ignored, always
-  // returning current season totals) -- so an as-of-date board is built by
-  // hand: pull a wider season-long candidate pool, then hydrate each
-  // candidate's homeRuns as of `date` via a single batched byDateRange
-  // request, and re-rank locally. The pool is capped at 50, so a player
-  // outside this season's top 50 who happened to be leading earlier in the
-  // year wouldn't show up -- an accepted approximation given the endpoint's
-  // limits.
-  async function getHrLeaders(season, date) {
-    const key = `${season}-${date}`;
-    if (hrLeadersCache[key] !== undefined) return hrLeadersCache[key];
-    try {
-      const poolUrl = `https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=homeRuns&season=${season}&sportId=1&limit=50`;
-      const poolRes = await fetch(poolUrl);
-      const poolData = await poolRes.json();
-      const pool = (poolData.leagueLeaders && poolData.leagueLeaders[0] && poolData.leagueLeaders[0].leaders) || [];
-      if (!pool.length) {
-        hrLeadersCache[key] = [];
-        return [];
-      }
-      const ids = pool.map(l => l.person.id).join(',');
-      const statsUrl = `https://statsapi.mlb.com/api/v1/people?personIds=${ids}&hydrate=${encodeURIComponent(`stats(group=[hitting],type=[byDateRange],startDate=${season}-01-01,endDate=${date})`)}`;
-      const statsRes = await fetch(statsUrl);
-      const statsData = await statsRes.json();
-      const hrById = {};
-      (statsData.people || []).forEach(p => {
-        const split = p.stats && p.stats[0] && p.stats[0].splits && p.stats[0].splits[0];
-        hrById[p.id] = (split && split.stat && split.stat.homeRuns) || 0;
-      });
-      const leaders = pool
-        .map(l => ({ ...l, value: hrById[l.person.id] || 0 }))
-        .filter(l => l.value > 0)
-        .sort((a, b) => b.value - a.value)
-        .slice(0, 30)
-        .map((l, i) => ({ ...l, rank: i + 1 }));
-      hrLeadersCache[key] = leaders;
-      return leaders;
-    } catch (e) {
       return [];
     }
   }
@@ -4930,11 +4986,12 @@
   function nlDivisions(divisions) { return divisions.filter(d => DIVISION_INFO[d.division.id].name.startsWith('National League')); }
   const STANDINGS_HEADER_ROW = `<div class="standings-row standings-header-row">
     <span class="standings-team">Team</span>
-    <span class="standings-num">W</span>
-    <span class="standings-num">L</span>
-    <span class="standings-num">PCT</span>
+    <span class="standings-num sn-w">W</span>
+    <span class="standings-num sn-l">L</span>
+    <span class="standings-num sn-pct">PCT</span>
     <span class="standings-num">GB</span>
-    <span class="standings-num">Strk</span>
+    <span class="standings-num">L10</span>
+    <span class="standings-num sn-strk">Strk</span>
   </div>`;
   // gbValue is tr.gamesBack for the division view, tr.wildCardGamesBack for
   // the wild-card view -- the only field that differs between the two.
@@ -4943,20 +5000,29 @@
     const gb = gbValue === '-' || gbValue == null ? '&#8212;' : gbValue;
     const teamId = tr.team && tr.team.id;
     const teamName = (tr.team && tr.team.name) || '';
-    return `<div class="standings-row">
+    const lastTen = ((tr.records && tr.records.splitRecords) || []).find(r => r.type === 'lastTen');
+    const l10 = lastTen ? `${lastTen.wins}-${lastTen.losses}` : '&#8212;';
+    return `<div class="standings-row${teamId === myTeamId() ? ' is-my-team' : ''}">
       <button type="button" class="standings-team standings-team-btn" data-team-id="${teamId}" data-team-name="${teamName}">${teamName}</button>
-      <span class="standings-num">${tr.wins ?? 0}</span>
-      <span class="standings-num">${tr.losses ?? 0}</span>
-      <span class="standings-num">${tr.winningPercentage ?? '.000'}</span>
+      <span class="standings-num sn-w">${tr.wins ?? 0}</span>
+      <span class="standings-num sn-l">${tr.losses ?? 0}</span>
+      <span class="standings-num sn-pct">${tr.winningPercentage ?? '.000'}</span>
       <span class="standings-num">${gb}</span>
-      <span class="standings-num">${streak}</span>
+      <span class="standings-num">${l10}</span>
+      <span class="standings-num sn-strk">${streak}</span>
     </div>`;
   }
 
-  function renderStandingsContent(records) {
+  // finalSeason is the season's year once its standings are final, else false.
+  function standingsTitle(label, finalSeason) {
+    return `<div class="pitch-header">${finalSeason ? `${finalSeason} Final ${label}` : label}</div>`;
+  }
+
+  function renderStandingsContent(records, finalSeason) {
     const divisions = sortedDivisionsWithTeams(records);
+    const title = standingsTitle('Division Standings', finalSeason);
     if (!divisions.length) {
-      return `<div class="pitch-header">Divisional Standings</div><div class="pitch-empty">Standings not available for this date.</div>`;
+      return `${title}<div class="pitch-empty">Standings not available for this date.</div>`;
     }
 
     function renderDivision(div) {
@@ -4973,13 +5039,14 @@
       <div class="standings-col">${alDivisions(divisions).map(renderDivision).join('')}</div>
       <div class="standings-col">${nlDivisions(divisions).map(renderDivision).join('')}</div>
     </div>`;
-    return `<div class="pitch-header">Divisional Standings</div>${grid}`;
+    return `${title}${grid}`;
   }
 
-  function renderWildcardContent(records) {
+  function renderWildcardContent(records, finalSeason) {
     const divisions = sortedDivisionsWithTeams(records);
+    const title = standingsTitle('Wild Card Standings', finalSeason);
     if (!divisions.length) {
-      return `<div class="pitch-header">Wild Card Standings</div><div class="pitch-empty">Standings not available for this date.</div>`;
+      return `${title}<div class="pitch-empty">Standings not available for this date.</div>`;
     }
 
     function renderLeague(leagueDivisions, label) {
@@ -5013,32 +5080,178 @@
       <div class="standings-col">${renderLeague(alDivisions(divisions), 'AL')}</div>
       <div class="standings-col">${renderLeague(nlDivisions(divisions), 'NL')}</div>
     </div>`;
-    return `<div class="pitch-header">Wild Card Standings</div>${grid}`;
+    return `${title}${grid}`;
   }
 
-  function renderHrLeaderboard(leaders, season) {
-    if (!leaders.length) {
-      return `<div class="pitch-header">Home Run Leaders</div><div class="pitch-empty">Home run leaders not available for this date.</div>`;
+  // Every postseason series with all its games (unplayed ones included).
+  // It changes all October, so only a finished postseason is cached, and a
+  // failure is never cached; null means the request failed.
+  const postseasonCache = {};
+  async function getPostseasonSeries(season) {
+    if (postseasonCache[season]) return postseasonCache[season];
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule/postseason/series?season=${season}&sportId=1`);
+      const data = await res.json();
+      const series = data.series || [];
+      const ws = buildPostseasonSeries(series.find(s => s.series && s.series.id === 'W_1'));
+      if (ws && ws.winnerId) postseasonCache[season] = series;
+      return series;
+    } catch (e) {
+      return null;
     }
-    const rows = leaders.map(l => {
-      const id = l.person && l.person.id;
-      const teamId = l.team && l.team.id;
-      const name = (l.person && l.person.fullName) || '';
-      playerStore[id] = { id, name, pos: '', team: teamNickname(l.team), season, todayStats: {} };
-      const headshot = `https://img.mlbstatic.com/mlb-photos/image/upload/w_60,h_84,q_100,f_auto,c_fill,g_face/v1/people/${id}/headshot/67/current`;
-      const logoWatermark = teamId ? `<img class="lb-hr-watermark" src="${capLogoUrl(teamId)}" alt="">` : '';
-      return `<div class="standings-row lb-row">
-        ${logoWatermark}
-        <div class="lb-row-content">
-          <span class="standings-num lb-rank">${l.rank}</span>
-          <img class="lb-headshot" src="${headshot}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
-          <button type="button" class="standings-team lb-name-btn player-name-btn" data-player-id="${id}">${name} <span class="hr-team">${teamAbbr(l.team)}</span></button>
-          <span class="lb-hr-cell">${String(l.value ?? 0).padStart(2, '0').split('').map(d => `<span class="lb-hr">${d}</span>`).join('')}</span>
+  }
+
+  // One series: its two teams, set like a scoreboard's away over home --
+  // game 1's home team, the one with home field, goes on the bottom --
+  // wins counted from finished games, and the winner once someone reaches
+  // the clinching number. A team MLB hasn't set yet comes back as null.
+  function buildPostseasonSeries(raw) {
+    if (!raw) return null;
+    // A postponed game is listed again, under the same gamePk, on the date
+    // it was made up -- only that one counts.
+    const seen = new Set();
+    const games = (raw.games || [])
+      .filter(g => g.status.detailedState !== 'Postponed' && !seen.has(g.gamePk) && seen.add(g.gamePk))
+      .sort((a, b) => (a.seriesGameNumber || 0) - (b.seriesGameNumber || 0));
+    if (!games.length) return null;
+    const first = games[0];
+    const known = t => (t && t.id && TEAM_NICKNAMES[t.id]) ? t : null;
+    const top = known(first.teams.away.team), bottom = known(first.teams.home.team);
+    const wins = {};
+    games.forEach(g => {
+      if (g.status.abstractGameState !== 'Final') return;
+      ['home', 'away'].forEach(side => {
+        const t = g.teams[side];
+        if (t.isWinner && t.team) wins[t.team.id] = (wins[t.team.id] || 0) + 1;
+      });
+    });
+    const toWin = Math.ceil((first.gamesInSeries || 1) / 2);
+    const teams = [top, bottom].map(t => t && { id: t.id, wins: wins[t.id] || 0 });
+    const winner = teams.find(t => t && t.wins >= toWin);
+    return {
+      id: raw.series.id,
+      title: first.seriesDescription || '',
+      games,
+      teams,
+      winnerId: winner ? winner.id : null
+    };
+  }
+
+  // MLB's series ids: F_1-4 the Wild Card Series, D_1-4 the Division Series,
+  // L_1-2 the LCS, W_1 the World Series; 1-2 American League, 3-4 National.
+  // Which WC feeds which DS is read off the teams they share, falling back
+  // to the pairing MLB has used since the 12-team format (F_2 into D_1, etc.).
+  const BRACKET_LEAGUES = [
+    { label: 'American League', lcs: 'L_1', lcsName: 'ALCS', ds: ['D_1', 'D_2'], wc: ['F_2', 'F_1'] },
+    { label: 'National League', lcs: 'L_2', lcsName: 'NLCS', ds: ['D_3', 'D_4'], wc: ['F_4', 'F_3'] }
+  ];
+  function buildPostseasonBracket(rawSeries, season) {
+    const byId = {};
+    (rawSeries || []).forEach(r => {
+      const built = r.series && buildPostseasonSeries(r);
+      // MLB keeps empty placeholder series around in some older years.
+      if (built && built.teams.some(Boolean)) byId[built.id] = built;
+    });
+    if (!Object.keys(byId).length) return null;
+    // The bracket is the 12-team format's, in use since 2022. Earlier ones
+    // (2020's sixteen teams, the one-game Wild Cards) number their series
+    // differently, so they're listed by round instead.
+    if (Number(season) < 2022) {
+      const rounds = [['W', 'World Series'], ['L', 'League Championship Series'], ['D', 'Division Series'], ['F', 'Wild Card']]
+        .map(([prefix, label]) => ({ label, series: Object.values(byId).filter(x => x.id.startsWith(prefix + '_')).sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true })) }))
+        .filter(r => r.series.length);
+      return { rounds, ws: byId.W_1 || null, all: Object.values(byId) };
+    }
+    const teamIds = s => (s ? s.teams.filter(Boolean).map(t => t.id) : []);
+    const leagues = BRACKET_LEAGUES.map(lg => {
+      const wcPool = lg.wc.map(id => byId[id]).filter(Boolean);
+      const rows = lg.ds.map((dsId, i) => {
+        const ds = byId[dsId] || null;
+        const shared = ds && wcPool.find(wc => teamIds(wc).some(id => teamIds(ds).includes(id)));
+        return { ds, wc: shared || byId[lg.wc[i]] || null };
+      });
+      if (rows[0].wc && rows[0].wc === rows[1].wc) rows[1].wc = wcPool.find(wc => wc !== rows[0].wc) || null;
+      return { ...lg, rows, lcsSeries: byId[lg.lcs] || null };
+    });
+    return { leagues, ws: byId.W_1 || null, all: Object.values(byId) };
+  }
+
+  function renderBracketTeam(team, series, isWorldSeries) {
+    if (!team) {
+      return `<div class="pb-team is-tbd"><span class="pb-name">TBD</span><span class="pb-wins"></span></div>`;
+    }
+    const decided = series.winnerId != null;
+    const cls = [
+      decided && series.winnerId !== team.id ? 'is-out' : '',
+      isWorldSeries && series.winnerId === team.id ? 'is-champion' : '',
+      team.id === myTeamId() ? 'is-my-team' : ''
+    ].filter(Boolean).join(' ');
+    const t = { id: team.id };
+    const started = series.games.some(g => g.status.abstractGameState === 'Final');
+    return `<div class="pb-team${cls ? ' ' + cls : ''}">
+      <img src="${capLogoUrl(team.id)}" alt="">
+      <span class="pb-name"><span class="pb-nick">${TEAM_NICKNAMES[team.id]}</span><span class="pb-abbr">${teamAbbr(t)}</span></span>
+      <span class="pb-wins">${started ? team.wins : ''}</span>
+    </div>`;
+  }
+  function renderBracketSeries(series, isWorldSeries) {
+    if (!series) {
+      return `<button type="button" class="pb-series" disabled>${renderBracketTeam(null)}${renderBracketTeam(null)}</button>`;
+    }
+    return `<button type="button" class="pb-series" data-series-id="${series.id}" aria-label="${series.title}">
+      ${renderBracketTeam(series.teams[0], series, isWorldSeries)}${renderBracketTeam(series.teams[1], series, isWorldSeries)}
+    </button>`;
+  }
+
+  let lastBracket = null;
+  function renderPostseasonBracket(bracket, season) {
+    const title = `<div class="pitch-header">${season} Postseason</div>`;
+    if (!bracket) return `${title}<div class="pitch-empty">The ${season} postseason hasn't been set yet.</div>`;
+    const ws = bracket.ws;
+    const champ = ws && ws.winnerId
+      ? `<div class="pb-champ"><span class="player-award"><span class="player-award-label">${season} World Series Champions</span></span></div>`
+      : '';
+    if (bracket.rounds) {
+      return `${title}<div class="pb">${bracket.rounds.map(r => `<div class="roster-section-title">${r.label}</div>
+        <div class="pb-round">${r.series.map(x => renderBracketSeries(x, x.id === 'W_1')).join('')}</div>
+        ${r.series.some(x => x.id === 'W_1') && champ ? `<div class="pb-ws">${champ}</div>` : ''}`).join('')}</div>`;
+    }
+    const leagues = bracket.leagues.map(lg => `<div class="pb-league">
+        <div class="roster-section-title">${lg.label}</div>
+        <div class="pb-heads"><span>Wild Card</span><span>Division</span><span>${lg.lcsName}</span></div>
+        <div class="pb-grid">
+          ${lg.rows.map((r, i) => `<div class="pb-cell pb-wc" style="grid-row:${i + 1};grid-column:1">${renderBracketSeries(r.wc)}</div>
+            <div class="pb-cell pb-ds" style="grid-row:${i + 1};grid-column:2">${renderBracketSeries(r.ds)}</div>`).join('')}
+          <div class="pb-cell pb-lcs">${renderBracketSeries(lg.lcsSeries)}</div>
         </div>
-      </div>`;
-    }).join('');
-    return `<div class="pitch-header">Home Run Leaders</div>
-      <div class="lb-grid">${rows}</div>`;
+      </div>`).join('');
+    return `${title}<div class="pb">
+      <div class="roster-section-title">World Series</div>
+      <div class="pb-ws">${renderBracketSeries(ws, true)}${champ}</div>
+      <div class="pb-leagues">${leagues}</div>
+    </div>`;
+  }
+
+  // A series' games in the game-list popup; each opens its scorecard.
+  function showSeriesGamesModal(seriesId) {
+    const series = lastBracket && lastBracket.all.find(s => s.id === seriesId);
+    if (!series) return;
+    const [a, b] = series.teams;
+    let line = '';
+    if (a && b && series.games.some(g => g.status.abstractGameState === 'Final')) {
+      const lead = a.wins >= b.wins ? a : b, trail = lead === a ? b : a;
+      const verb = series.winnerId ? 'win' : (lead.wins === trail.wins ? 'tied' : 'lead');
+      line = verb === 'tied'
+        ? `Series tied ${lead.wins}-${trail.wins}`
+        : `${TEAM_NICKNAMES[lead.id]} ${verb} ${lead.wins}-${trail.wins}`;
+    }
+    // Games MLB lists "if necessary" that the series never needed aren't shown.
+    const games = series.games.filter(g => !(series.winnerId && g.status.abstractGameState !== 'Final'));
+    gameStripOverlayBody.dataset.mode = 'series';
+    gameStripOverlayBody.innerHTML = `<div class="pitch-header">${series.title}</div>
+      ${line ? `<div class="pitch-subheader">${line}</div>` : ''}
+      <div class="daily-games-grid">${games.map(g => renderDailyGameTile(g.officialDate, scheduleGameToTileGame(g))).join('')}</div>`;
+    openOverlay(gameStripOverlay);
   }
 
   // The player modal's Last 10 Games section: row 1 is always "Today",
@@ -5545,20 +5758,53 @@
   const scheduleTeamSelect = document.getElementById('scheduleTeamPick');
   const scheduleBody = document.getElementById('scheduleBody');
   const scheduleCache = {};
-  const SCHEDULE_TEAM_KEY = 'mlb-schedule-team';
   const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-  // Shared by the Schedule and Roster tabs' team pickers -- both populate
-  // the same 30-team list and fall back the same way to a saved localStorage
-  // pick, differing only in which <select> and which storage key.
-  function populateTeamSelect(selectEl, storageKey) {
-    const teams = Object.keys(TEAM_NICKNAMES)
+  function sortedTeams() {
+    return Object.keys(TEAM_NICKNAMES)
       .map(id => ({ id, name: TEAM_NICKNAMES[id] }))
       .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  // The user's team, picked from the cap at the end of the tab row. It's
+  // where the Schedule and Roster tabs open and the Scorecard's first game,
+  // and it's marked in Standings. A team picked on Schedule or Roster is
+  // just browsing and lasts the session. Before this existed each of those
+  // tabs saved its own pick, so the first load adopts whichever was saved.
+  const MY_TEAM_KEY = 'mlb-my-team';
+  const LEGACY_TEAM_KEYS = ['mlb-schedule-team', 'mlb-roster-tab-team'];
+  let myTeam = null;
+  try {
+    myTeam = localStorage.getItem(MY_TEAM_KEY);
+    if (myTeam === null) {
+      const legacy = LEGACY_TEAM_KEYS.map(k => localStorage.getItem(k)).find(v => v && TEAM_NICKNAMES[v]);
+      myTeam = legacy || '';
+      localStorage.setItem(MY_TEAM_KEY, myTeam);
+    }
+    LEGACY_TEAM_KEYS.forEach(k => localStorage.removeItem(k));
+  } catch (e) {}
+  if (!TEAM_NICKNAMES[myTeam]) myTeam = '';
+  function myTeamId() { return myTeam ? Number(myTeam) : null; }
+
+  const myTeamSelect = document.getElementById('myTeamPick');
+  const myTeamMark = document.getElementById('myTeamMark');
+  // No team yet: a plain stitched ball where the cap will go.
+  const MY_TEAM_EMPTY_MARK = `<svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="10" cy="10" r="8.3"/><path d="M5.2 3.6c1.9 1.6 2.9 3.9 2.9 6.4s-1 4.8-2.9 6.4M14.8 3.6c-1.9 1.6-2.9 3.9-2.9 6.4s1 4.8 2.9 6.4" stroke-width="1.1"/></svg>`;
+  function renderMyTeamMark() {
+    myTeamMark.innerHTML = myTeam ? `<img src="${capLogoUrl(myTeam)}" alt="">` : MY_TEAM_EMPTY_MARK;
+    myTeamSelect.closest('.my-team').title = myTeam ? `Your team: ${TEAM_NICKNAMES[myTeam]}` : 'Pick your team';
+  }
+  myTeamSelect.innerHTML = '<option value="">No team</option>'
+    + sortedTeams().map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+  myTeamSelect.value = myTeam;
+  renderMyTeamMark();
+
+  // Shared by the Schedule and Roster tabs' team pickers: the same 30-team
+  // list, opening on the user's team.
+  function populateTeamSelect(selectEl) {
+    const teams = sortedTeams();
     selectEl.innerHTML = teams.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
-    let saved = null;
-    try { saved = localStorage.getItem(storageKey); } catch (e) {}
-    selectEl.value = (saved && TEAM_NICKNAMES[saved]) ? saved : teams[0].id;
+    selectEl.value = myTeam || teams[0].id;
   }
 
   async function fetchTeamSchedule(teamId, season) {
@@ -6099,7 +6345,6 @@
     renderDailyView();
   });
 
-  const ROSTER_TAB_TEAM_KEY = 'mlb-roster-tab-team';
   const rosterTabTeamSelect = document.getElementById('rosterTabTeamPick');
   const rosterTabBody = document.getElementById('rosterTabBody');
   const rosterTabViewToggle = document.getElementById('rosterTabViewToggle');
@@ -6280,7 +6525,6 @@
 
   rosterTabTeamSelect.addEventListener('change', () => {
     const teamId = rosterTabTeamSelect.value;
-    try { localStorage.setItem(ROSTER_TAB_TEAM_KEY, teamId); } catch (e) {}
     loadRosterTab(teamId);
   });
   rosterTabViewToggle.addEventListener('click', (e) => {
@@ -6695,7 +6939,6 @@
 
   scheduleTeamSelect.addEventListener('change', () => {
     const teamId = scheduleTeamSelect.value;
-    try { localStorage.setItem(SCHEDULE_TEAM_KEY, teamId); } catch (e) {}
     loadTeamSchedule(teamId);
   });
   scheduleBody.addEventListener('click', (e) => {
@@ -6813,6 +7056,7 @@
   }
 
   function showGameStripModal(dateStr, games) {
+    gameStripOverlayBody.dataset.mode = 'date';
     gameStripOverlayBody.innerHTML = `<div class="pitch-header">${formatShortDate(dateStr)} Games</div>
       <div class="daily-games-grid">${games.map(g => renderDailyGameTile(dateStr, scheduleGameToTileGame(g))).join('')}</div>`;
     openOverlay(gameStripOverlay);
@@ -6842,8 +7086,14 @@
       scheduleGames = games;
 
       const preferred = preferredGamePk && games.find(g => String(g.gamePk) === String(preferredGamePk));
+      const mine = myTeamId();
+      const myGames = mine ? games.filter(g => g.teams.away.team.id === mine || g.teams.home.team.id === mine) : [];
+      // Of a doubleheader, the game that's on, else the one still to come, else the nightcap.
+      const myGame = myGames.find(g => g.status.abstractGameState === 'Live')
+        || myGames.find(g => g.status.abstractGameState === 'Preview')
+        || myGames[myGames.length - 1];
       const liveGame = games.find(g => g.status.abstractGameState === 'Live');
-      const chosen = preferred ? preferred.gamePk : (liveGame ? liveGame.gamePk : games[0].gamePk);
+      const chosen = preferred ? preferred.gamePk : (myGame || liveGame || games[0]).gamePk;
       currentGamePk = chosen;
       renderGameStrip(dateStr, games);
       scheduleGameStripPoll(dateStr, games);
@@ -6858,22 +7108,61 @@
     await fetchAndRender(gamePk);
   }
 
+  // The standings endpoint answers only for regular-season dates -- from
+  // the day after the finale until next Opening Day it returns nothing, so
+  // a date outside the season is read as of the last season's final day.
+  // A failed lookup isn't cached and leaves the date as asked.
+  const regularSeasonCache = {};
+  async function getRegularSeason(year) {
+    if (regularSeasonCache[year]) return regularSeasonCache[year];
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/seasons/${year}?sportId=1`);
+      const data = await res.json();
+      const s = data.seasons && data.seasons[0];
+      if (!s || !s.regularSeasonStartDate || !s.regularSeasonEndDate) return null;
+      regularSeasonCache[year] = { start: s.regularSeasonStartDate, end: s.regularSeasonEndDate };
+      return regularSeasonCache[year];
+    } catch (e) {
+      return null;
+    }
+  }
+  async function standingsDateFor(dateStr) {
+    const year = parseInt(dateStr.slice(0, 4), 10);
+    let season = await getRegularSeason(year);
+    if (season && dateStr < season.start) season = await getRegularSeason(year - 1);
+    if (!season) return { date: dateStr, final: false };
+    const date = dateStr > season.end ? season.end : dateStr;
+    return { date, final: date === season.end && todayStr() > season.end };
+  }
+
+  let standingsRequestId = 0;
   async function loadStandings(dateStr) {
+    const requestId = ++standingsRequestId;
     standingsBody.innerHTML = '<div class="mlb-status-msg">Loading standings&#8230;</div>';
     try {
-      const season = dateStr.slice(0, 4);
-      if (standingsView === 'homeruns') {
-        const leaders = await getHrLeaders(season, dateStr);
-        standingsBody.innerHTML = `<div class="sheet">${renderHrLeaderboard(leaders, season)}</div>`;
+      const { date, final } = await standingsDateFor(dateStr);
+      if (requestId !== standingsRequestId) return;
+      // The picker follows the date actually shown, so its arrows step from
+      // the finale rather than from a winter day that would show the same table.
+      if (date !== dateStr) setDateInputValue(standingsDateInput, standingsDateInputText, date);
+      document.getElementById('standingsDateNext').disabled = final;
+      const season = date.slice(0, 4);
+      if (standingsView === 'postseason') {
+        const raw = await getPostseasonSeries(season);
+        if (requestId !== standingsRequestId) return;
+        if (raw === null) { standingsBody.innerHTML = apiErrorMsg('the postseason'); return; }
+        lastBracket = buildPostseasonBracket(raw, season);
+        standingsBody.innerHTML = `<div class="sheet">${renderPostseasonBracket(lastBracket, season)}</div>`;
         return;
       }
-      const records = await getStandings(season, dateStr);
+      const records = await getStandings(season, date);
+      if (requestId !== standingsRequestId) return;
       const content = standingsView === 'wildcard'
-        ? renderWildcardContent(records)
-        : renderStandingsContent(records);
+        ? renderWildcardContent(records, final && season)
+        : renderStandingsContent(records, final && season);
       standingsBody.innerHTML = `<div class="sheet">${content}</div>`;
     } catch (e) {
-      standingsBody.innerHTML = apiErrorMsg('standings');
+      if (requestId === standingsRequestId) standingsBody.innerHTML = apiErrorMsg('standings');
     }
   }
 
@@ -7343,19 +7632,24 @@
     if (tile) e.preventDefault();
     handleGameStripTileActivate(tile);
   });
+  // The popup lists either the Scorecard's own date (switch games in
+  // place) or a postseason series (open that game's scorecard from Standings).
+  function openGameStripTile(tile) {
+    hideGameStripModal();
+    if (gameStripOverlayBody.dataset.mode === 'series') jumpToScorecardGame(tile.dataset.date, tile.dataset.gamePk);
+    else selectGame(tile.dataset.gamePk);
+  }
   gameStripOverlayBody.addEventListener('click', (e) => {
     const tile = e.target.closest('.daily-tile');
     if (!tile) return;
-    selectGame(tile.dataset.gamePk);
-    hideGameStripModal();
+    openGameStripTile(tile);
   });
   gameStripOverlayBody.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
     const tile = e.target.closest('.daily-tile');
     if (!tile) return;
     e.preventDefault();
-    selectGame(tile.dataset.gamePk);
-    hideGameStripModal();
+    openGameStripTile(tile);
   });
   gameStripOverlayClose.addEventListener('click', hideGameStripModal);
   gameStripOverlay.addEventListener('click', (e) => {
@@ -7378,10 +7672,35 @@
   document.getElementById('standingsViewToggle').addEventListener('click', (e) => {
     const btn = e.target.closest('.view-toggle-btn');
     if (!btn || btn.dataset.view === standingsView) return;
-    standingsView = btn.dataset.view;
-    document.querySelectorAll('#standingsViewToggle .view-toggle-btn')
-      .forEach(b => b.classList.toggle('active', b === btn));
+    setStandingsView(btn.dataset.view);
     loadStandings(standingsDateInput.value);
+  });
+  // The bracket is a whole season's, so its view has no date to step.
+  function setStandingsView(view) {
+    standingsView = view;
+    document.querySelectorAll('#standingsViewToggle .view-toggle-btn')
+      .forEach(b => b.classList.toggle('active', b.dataset.view === view));
+    document.querySelector('[data-tab-controls="standings"] .date-nav').hidden = view === 'postseason';
+  }
+  standingsBody.addEventListener('click', (e) => {
+    const series = e.target.closest('.pb-series[data-series-id]');
+    if (series) showSeriesGamesModal(series.dataset.seriesId);
+  });
+
+  myTeamSelect.addEventListener('change', () => {
+    myTeam = myTeamSelect.value;
+    try { localStorage.setItem(MY_TEAM_KEY, myTeam); } catch (e) {}
+    renderMyTeamMark();
+    // Tabs already opened switch to the new team; the rest pick it up when they open.
+    if (myTeam && scheduleTeamSelect.options.length) {
+      scheduleTeamSelect.value = myTeam;
+      loadTeamSchedule(myTeam);
+    }
+    if (myTeam && rosterTabTeamSelect.options.length) {
+      rosterTabTeamSelect.value = myTeam;
+      loadRosterTab(myTeam);
+    }
+    if (standingsBody.querySelector('.sheet')) loadStandings(standingsDateInput.value);
   });
 
   const pitchOverlay = document.getElementById('pitchOverlay');
@@ -8400,8 +8719,8 @@
   // line in this group, unfiltered (the API has no server-side batting-
   // title/ERA-title qualifier param as far as this file uses it). Filtered
   // down to qualified players client-side by renderPlayerListPanel using
-  // getLeagueSeasonInfo's teamGamesPlayed. Cached like standingsCache/
-  // hrLeadersCache (both success and failure) rather than fetchGameStats'
+  // getLeagueSeasonInfo's teamGamesPlayed. Cached like standingsCache
+  // (both success and failure) rather than fetchGameStats'
   // isFinal split -- this is a browse list the user can just re-open the
   // tab to refresh, not a value baked into a stat the rest of the session
   // depends on staying fresh.
@@ -10109,9 +10428,15 @@
       });
     }
   });
-  Tabs.register('standings', { init: () => loadStandings(standingsDateInput.value) });
-  Tabs.register('schedule', { init: () => { populateTeamSelect(scheduleTeamSelect, SCHEDULE_TEAM_KEY); loadTeamSchedule(scheduleTeamSelect.value); } });
-  Tabs.register('roster', { init: () => { populateTeamSelect(rosterTabTeamSelect, ROSTER_TAB_TEAM_KEY); loadRosterTab(rosterTabTeamSelect.value); } });
+  // Once the regular season is over -- through October and the winter --
+  // the tab opens on the bracket.
+  Tabs.register('standings', { init: async () => {
+    const { final } = await standingsDateFor(standingsDateInput.value);
+    if (final && standingsView === 'division') setStandingsView('postseason');
+    loadStandings(standingsDateInput.value);
+  } });
+  Tabs.register('schedule', { init: () => { populateTeamSelect(scheduleTeamSelect); loadTeamSchedule(scheduleTeamSelect.value); } });
+  Tabs.register('roster', { init: () => { populateTeamSelect(rosterTabTeamSelect); loadRosterTab(rosterTabTeamSelect.value); } });
   // onShow keeps --tab-header-h current for this tab's own header height
   // (its controls row differs from the Scorecard's), which the Game Log's
   // sticky recent-games column reads.
