@@ -5101,7 +5101,8 @@
     }
   }
 
-  // One series: its two teams (top is the higher seed, game 1's home team),
+  // One series: its two teams, set like a scoreboard's away over home --
+  // game 1's home team, the one with home field, goes on the bottom --
   // wins counted from finished games, and the winner once someone reaches
   // the clinching number. A team MLB hasn't set yet comes back as null.
   function buildPostseasonSeries(raw) {
@@ -5115,7 +5116,7 @@
     if (!games.length) return null;
     const first = games[0];
     const known = t => (t && t.id && TEAM_NICKNAMES[t.id]) ? t : null;
-    const top = known(first.teams.home.team), bottom = known(first.teams.away.team);
+    const top = known(first.teams.away.team), bottom = known(first.teams.home.team);
     const wins = {};
     games.forEach(g => {
       if (g.status.abstractGameState !== 'Final') return;

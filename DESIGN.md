@@ -286,7 +286,7 @@ The scorebook cell: a 40-unit diamond per plate appearance, drawn in SVG.
 ### Postseason Bracket
 The Standings tab's Postseason view, drawn like a printed bracket.
 - **Layout:** the World Series on top, then each league as three columns (Wild Card, Division, LCS) joined by Board Rule hairlines. A Division Series sits beside the Wild Card that feeds it, and the LCS sits centered across both. Leagues sit side by side on wide sheets and stack on a phone, where team names become abbreviations.
-- **Series:** a square card on a darker board wash, two team rows (higher seed on top) with a cap, the name, and series wins in a recessed slot. The whole card opens that series' games. The names aren't nameplates, because the card is what you tap.
+- **Series:** a square card on a darker board wash, two team rows set away over home, so the team with home field (the higher seed, or the better record in the World Series) sits on the bottom with a cap, the name, and series wins in a recessed slot. The whole card opens that series' games. The names aren't nameplates, because the card is what you tap.
 - **Outcome:** a team that's out fades to Faded Cream. Only the World Series winner turns gold, with an award plate beneath ("2026 World Series Champions"). A series not yet set shows TBD rows.
 - **Older formats:** before 2022 the series are listed by round instead.
 
