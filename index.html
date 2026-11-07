@@ -142,7 +142,6 @@
   .my-team:focus-within { outline: 2px solid var(--gold); outline-offset: -2px; }
   .tab-panel[hidden] { display: none; }
   .mlb-controls[hidden] { display: none; }
-  .date-nav[hidden] { display: none; }
   /* One bordered pill instead of three separate boxes (arrow / date / arrow)
      -- overflow:hidden clips the buttons' own corners to the shared
      border-radius, and align-items:stretch makes every segment match
@@ -3299,12 +3298,12 @@
     </div>
     <div class="mlb-controls" data-tab-controls="standings" hidden>
       <div class="date-nav">
-        <button type="button" class="date-nav-btn" id="standingsDatePrev" aria-label="Previous day">&#8249;</button>
+        <button type="button" class="date-nav-btn" id="standingsYearPrev" aria-label="Previous season">&#8249;</button>
         <div class="date-display">
-          <input type="date" class="date-display-input" id="standingsDatePick" />
-          <span class="date-display-text" id="standingsDatePickText"></span>
+          <select class="date-display-input" id="standingsYearPick" aria-label="Season"></select>
+          <span class="date-display-text" id="standingsYearText"></span>
         </div>
-        <button type="button" class="date-nav-btn" id="standingsDateNext" aria-label="Next day">&#8250;</button>
+        <button type="button" class="date-nav-btn" id="standingsYearNext" aria-label="Next season">&#8250;</button>
       </div>
       <div class="view-toggle" id="standingsViewToggle">
         <button type="button" class="view-toggle-btn active" data-view="division">Division</button>
@@ -3449,8 +3448,8 @@
   const sidebarAtBatEl = document.getElementById('sidebarAtBat');
   const mobileAtBatEl = document.getElementById('mobileAtBat');
   const standingsBody = document.getElementById('standingsBody');
-  const standingsDateInput = document.getElementById('standingsDatePick');
-  const standingsDateInputText = document.getElementById('standingsDatePickText');
+  const standingsYearSelect = document.getElementById('standingsYearPick');
+  const standingsYearText = document.getElementById('standingsYearText');
   const dailyBody = document.getElementById('dailyBody');
   const dailyDateInput = document.getElementById('dailyDatePick');
   const dailyDateInputText = document.getElementById('dailyDatePickText');
@@ -3466,7 +3465,7 @@
   // showPicker() opens it wherever the click lands. It throws without user
   // activation or inside a cross-origin iframe, and older browsers lack it;
   // either way the native click behavior is still there to fall back on.
-  [dateInput, dailyDateInput, standingsDateInput].forEach(input => {
+  [dateInput, dailyDateInput].forEach(input => {
     input.addEventListener('click', () => {
       if (typeof input.showPicker !== 'function') return;
       try { input.showPicker(); } catch (e) {}
@@ -3839,7 +3838,7 @@
     const key = `${season}-${date}`;
     if (standingsCache[key] !== undefined) return standingsCache[key];
     try {
-      const url = `https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=${season}&date=${date}`;
+      const url = `https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=${season}${date ? `&date=${date}` : ''}`;
       const res = await fetch(url);
       const data = await res.json();
       standingsCache[key] = data.records || [];
@@ -3914,7 +3913,6 @@
     return local.toISOString().slice(0, 10);
   }
   setDateInputValue(dateInput, dateInputText, todayStr());
-  setDateInputValue(standingsDateInput, standingsDateInputText, todayStr());
   setDateInputValue(dailyDateInput, dailyDateInputText, todayStr());
 
   async function dateHasStartedGame(dateStr) {
@@ -5049,8 +5047,10 @@
     return `${title}${grid}`;
   }
 
-  function renderWildcardContent(records, finalSeason) {
+  function renderWildcardContent(records, finalSeason, season) {
     const divisions = sortedDivisionsWithTeams(records);
+    // Three wild cards a league since 2022, two from 2012, one before.
+    const wildCardSpots = season >= 2022 ? 3 : season >= 2012 ? 2 : 1;
     const title = standingsTitle('Wild Card Standings', finalSeason);
     if (!divisions.length) {
       return `${title}<div class="pitch-empty">Standings not available for this date.</div>`;
@@ -5074,7 +5074,7 @@
 
       const contenderRows = contenders.map((tr, i) => {
         const html = standingsRow(tr, tr.wildCardGamesBack);
-        return i === 3 ? `<div class="wc-cutoff-line"></div>${html}` : html;
+        return i === wildCardSpots ? `<div class="wc-cutoff-line"></div>${html}` : html;
       }).join('');
 
       return `<div class="roster-section-title">${label} Division Leaders</div>
@@ -7123,10 +7123,10 @@
     await fetchAndRender(gamePk);
   }
 
-  // The standings endpoint answers only for regular-season dates -- from
-  // the day after the finale until next Opening Day it returns nothing, so
-  // a date outside the season is read as of the last season's final day.
-  // A failed lookup isn't cached and leaves the date as asked.
+  // A season's regular-season dates, for the Standings tab: a season still
+  // being played shows today's table, a finished one its final day's (the
+  // standings endpoint answers nothing for a date outside the regular
+  // season). A failed lookup isn't cached.
   const regularSeasonCache = {};
   async function getRegularSeason(year) {
     if (regularSeasonCache[year]) return regularSeasonCache[year];
@@ -7141,27 +7141,32 @@
       return null;
     }
   }
-  async function standingsDateFor(dateStr) {
-    const year = parseInt(dateStr.slice(0, 4), 10);
-    let season = await getRegularSeason(year);
-    if (season && dateStr < season.start) season = await getRegularSeason(year - 1);
-    if (!season) return { date: dateStr, final: false };
-    const date = dateStr > season.end ? season.end : dateStr;
-    return { date, final: date === season.end && todayStr() > season.end };
+  async function standingsSeasonStatus(season) {
+    const info = await getRegularSeason(season);
+    if (!info) return { asOf: null, final: Number(season) < new Date().getFullYear() };
+    const final = todayStr() > info.end;
+    return { asOf: final ? info.end : todayStr(), final };
+  }
+
+  // All three views (Division, Wild Card, Postseason) read the one season
+  // picker, back to the Players list's first season.
+  let standingsSeason = null;
+  let standingsAsOf = null;
+  let latestStandingsSeason = null;
+  function setStandingsSeason(season) {
+    standingsSeason = String(season);
+    standingsYearSelect.value = standingsSeason;
+    standingsYearText.textContent = standingsSeason;
+    document.getElementById('standingsYearPrev').disabled = Number(season) <= PLAYER_LIST_FIRST_SEASON;
+    document.getElementById('standingsYearNext').disabled = Number(season) >= latestStandingsSeason;
   }
 
   let standingsRequestId = 0;
-  async function loadStandings(dateStr) {
+  async function loadStandings() {
     const requestId = ++standingsRequestId;
+    const season = standingsSeason;
     standingsBody.innerHTML = '<div class="mlb-status-msg">Loading standings&#8230;</div>';
     try {
-      const { date, final } = await standingsDateFor(dateStr);
-      if (requestId !== standingsRequestId) return;
-      // The picker follows the date actually shown, so its arrows step from
-      // the finale rather than from a winter day that would show the same table.
-      if (date !== dateStr) setDateInputValue(standingsDateInput, standingsDateInputText, date);
-      document.getElementById('standingsDateNext').disabled = final;
-      const season = date.slice(0, 4);
       if (standingsView === 'postseason') {
         const raw = await getPostseasonSeries(season);
         if (requestId !== standingsRequestId) return;
@@ -7170,10 +7175,13 @@
         standingsBody.innerHTML = `<div class="sheet">${renderPostseasonBracket(lastBracket, season)}</div>`;
         return;
       }
-      const records = await getStandings(season, date);
+      const { asOf, final } = await standingsSeasonStatus(season);
+      if (requestId !== standingsRequestId) return;
+      standingsAsOf = asOf;
+      const records = await getStandings(season, asOf);
       if (requestId !== standingsRequestId) return;
       const content = standingsView === 'wildcard'
-        ? renderWildcardContent(records, final && season)
+        ? renderWildcardContent(records, final && season, Number(season))
         : renderStandingsContent(records, final && season);
       standingsBody.innerHTML = `<div class="sheet">${content}</div>`;
     } catch (e) {
@@ -7671,31 +7679,29 @@
     if (e.target === gameStripOverlay) hideGameStripModal();
   });
 
-  standingsDateInput.addEventListener('change', () => {
-    standingsDateInputText.textContent = formatShortDate(standingsDateInput.value);
-    loadStandings(standingsDateInput.value);
+  standingsYearSelect.addEventListener('change', () => {
+    setStandingsSeason(standingsYearSelect.value);
+    loadStandings();
   });
-  document.getElementById('standingsDatePrev').addEventListener('click', () => {
-    setDateInputValue(standingsDateInput, standingsDateInputText, addDays(standingsDateInput.value, -1));
-    loadStandings(standingsDateInput.value);
+  document.getElementById('standingsYearPrev').addEventListener('click', () => {
+    setStandingsSeason(Number(standingsSeason) - 1);
+    loadStandings();
   });
-  document.getElementById('standingsDateNext').addEventListener('click', () => {
-    setDateInputValue(standingsDateInput, standingsDateInputText, addDays(standingsDateInput.value, 1));
-    loadStandings(standingsDateInput.value);
+  document.getElementById('standingsYearNext').addEventListener('click', () => {
+    setStandingsSeason(Number(standingsSeason) + 1);
+    loadStandings();
   });
 
   document.getElementById('standingsViewToggle').addEventListener('click', (e) => {
     const btn = e.target.closest('.view-toggle-btn');
     if (!btn || btn.dataset.view === standingsView) return;
     setStandingsView(btn.dataset.view);
-    loadStandings(standingsDateInput.value);
+    loadStandings();
   });
-  // The bracket is a whole season's, so its view has no date to step.
   function setStandingsView(view) {
     standingsView = view;
     document.querySelectorAll('#standingsViewToggle .view-toggle-btn')
       .forEach(b => b.classList.toggle('active', b.dataset.view === view));
-    document.querySelector('[data-tab-controls="standings"] .date-nav').hidden = view === 'postseason';
   }
   standingsBody.addEventListener('click', (e) => {
     const series = e.target.closest('.pb-series[data-series-id]');
@@ -7715,7 +7721,7 @@
       rosterTabTeamSelect.value = myTeam;
       loadRosterTab(myTeam);
     }
-    if (standingsBody.querySelector('.sheet')) loadStandings(standingsDateInput.value);
+    if (standingsBody.querySelector('.sheet')) loadStandings();
   });
 
   const pitchOverlay = document.getElementById('pitchOverlay');
@@ -10446,9 +10452,14 @@
   // Once the regular season is over -- through October and the winter --
   // the tab opens on the bracket.
   Tabs.register('standings', { init: async () => {
-    const { final } = await standingsDateFor(standingsDateInput.value);
+    latestStandingsSeason = await getDefaultListSeason();
+    const years = [];
+    for (let y = latestStandingsSeason; y >= PLAYER_LIST_FIRST_SEASON; y--) years.push(y);
+    standingsYearSelect.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+    setStandingsSeason(latestStandingsSeason);
+    const { final } = await standingsSeasonStatus(latestStandingsSeason);
     if (final && standingsView === 'division') setStandingsView('postseason');
-    loadStandings(standingsDateInput.value);
+    loadStandings();
   } });
   Tabs.register('schedule', { init: () => { populateTeamSelect(scheduleTeamSelect); loadTeamSchedule(scheduleTeamSelect.value); } });
   Tabs.register('roster', { init: () => { populateTeamSelect(rosterTabTeamSelect); loadRosterTab(rosterTabTeamSelect.value); } });
@@ -10593,8 +10604,7 @@
         const isCurrent = Number(plateSeason) === new Date().getFullYear();
         showTeamChartModal(teamId, teamName, plateSeason, isCurrent ? todayStr() : undefined);
       } else {
-        const teamSeason = standingsDateInput.value.slice(0, 4);
-        showTeamChartModal(teamId, teamName, teamSeason, standingsDateInput.value);
+        showTeamChartModal(teamId, teamName, standingsSeason, standingsAsOf || undefined);
       }
     }
     if (!e.target.closest('.player-search-wrap')) playerSearchResults.hidden = true;
