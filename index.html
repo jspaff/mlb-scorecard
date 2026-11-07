@@ -3590,6 +3590,7 @@
   let lastProfileSeason = null;
   let lastProfileDetail;
   let lastProfileBoard = null;
+  let profileAwardsReady = Promise.resolve();
   // The Game Log's last-five-games cards (undefined until loaded -- they
   // need each game's play-by-play, so they load only once that tab opens).
   let lastProfileRecent;
@@ -3693,8 +3694,20 @@
   // that hasn't been hydrated with a team may otherwise leave the profile's
   // team/position blank. Cached by id; this doesn't change within a session.
   const playerDetailsCache = {};
+  // One request at a time per key: a second caller while the first is
+  // still in flight (a prefetch, then the real load) shares its promise
+  // instead of fetching again.
+  const inFlight = {};
+  function once(key, fn) {
+    if (!inFlight[key]) inFlight[key] = fn().finally(() => { delete inFlight[key]; });
+    return inFlight[key];
+  }
+
   async function getPlayerDetails(personId) {
     if (playerDetailsCache[personId] !== undefined) return playerDetailsCache[personId];
+    return once(`person-${personId}`, () => getPlayerDetailsNow(personId));
+  }
+  async function getPlayerDetailsNow(personId) {
     try {
       const res = await fetch(`https://statsapi.mlb.com/api/v1/people/${personId}?hydrate=currentTeam`);
       const data = await res.json();
@@ -8337,6 +8350,11 @@
     }, 300);
   });
 
+  playerSearchResults.addEventListener('pointerdown', (e) => {
+    const item = e.target.closest('.player-search-result');
+    const person = item && currentPlayerSearchResults.find(p => String(p.id) === item.getAttribute('data-player-id'));
+    if (person) prefetchProfile(person, playerListState.season || defaultListSeason);
+  });
   playerSearchResults.addEventListener('click', (e) => {
     const item = e.target.closest('.player-search-result');
     if (!item) return;
@@ -8630,9 +8648,18 @@
   // the current season's keep shifting game to game, so a transient
   // failure there isn't cached -- the next call just retries.
   const leagueSeasonInfoCache = {};
+  // The current season's is also kept, but only for a few minutes, so a
+  // run of profile opens doesn't refetch it each time.
+  const LEAGUE_INFO_FRESH_MS = 5 * 60 * 1000;
+  const currentLeagueInfo = {};
   async function getLeagueSeasonInfo(season) {
     const isPastSeason = Number(season) < new Date().getFullYear();
     if (isPastSeason && leagueSeasonInfoCache[season] !== undefined) return leagueSeasonInfoCache[season];
+    const recent = currentLeagueInfo[season];
+    if (!isPastSeason && recent && Date.now() - recent.at < LEAGUE_INFO_FRESH_MS) return recent.info;
+    return once(`league-${season}`, () => getLeagueSeasonInfoNow(season, isPastSeason));
+  }
+  async function getLeagueSeasonInfoNow(season, isPastSeason) {
     try {
       const res = await fetch(`https://statsapi.mlb.com/api/v1/teams/stats?stats=season&group=hitting&season=${season}&sportId=1`);
       const data = await res.json();
@@ -8652,6 +8679,7 @@
       });
       const info = { woba: rawWOBA(totals), teamGamesPlayed };
       if (isPastSeason) leagueSeasonInfoCache[season] = info;
+      else currentLeagueInfo[season] = { info, at: Date.now() };
       return info;
     } catch (e) {
       const info = { woba: null, teamGamesPlayed: 0 };
@@ -9093,6 +9121,14 @@
     return rows.filter(r => (r.stat.plateAppearances || 0) >= paQualifier);
   }
 
+  // Idle time on the list warms the season's Savant CSVs for its group, so
+  // the first profile opened from it doesn't wait on Savant's slow first
+  // answer. Each is fetched once a session (getSavantCsv).
+  function warmProfileSavant(season, pitcher) {
+    const idle = window.requestIdleCallback || (fn => setTimeout(fn, 300));
+    idle(() => getSavantSkillData(season, pitcher, true, true));
+  }
+
   async function showPlayerList() {
     playersView = 'list';
     playerProfileRequestId++;
@@ -9106,6 +9142,7 @@
       if (playerListState.season == null) playerListState.season = season;
     }
     const { type, season, pool } = playerListState;
+    warmProfileSavant(season, type === 'pitching');
     const cached = playerListCache[playerListCacheKey()];
     if (cached) {
       renderPlayerListInto(cached.rows, cached.leagueWoba);
@@ -9147,9 +9184,17 @@
     if (combined) return combined.stat || null;
     return splits.length === 1 ? (splits[0].stat || null) : sumStatLines(splits.map(s => s.stat || {}));
   }
+  const playerSeasonDetailRecent = {};
   async function getPlayerSeasonDetail(personId, season, group) {
     const key = `${personId}-${season}-${group}`;
     if (playerSeasonDetailCache[key]) return playerSeasonDetailCache[key];
+    // A season in progress isn't kept, except for a minute -- long enough
+    // for a prefetch that lands before the profile asks to still count.
+    const recent = playerSeasonDetailRecent[key];
+    if (recent && Date.now() - recent.at < 60 * 1000) return recent.detail;
+    return once(`detail-${key}`, () => getPlayerSeasonDetailNow(personId, season, group, key));
+  }
+  async function getPlayerSeasonDetailNow(personId, season, group, key) {
     try {
       const res = await fetch(`https://statsapi.mlb.com/api/v1/people/${personId}/stats?stats=season,statSplits,gameLog&group=${group}&season=${season}&sitCodes=vl,vr,3,4,5,6,7,8,9`);
       if (!res.ok) return null;
@@ -9170,6 +9215,7 @@
         (b.date || '').localeCompare(a.date || '') || ((b.game && b.game.gameNumber) || 1) - ((a.game && a.game.gameNumber) || 1));
       const detail = { seasonStat: pickCombinedStat(byType('season')), splits, gameLog };
       if (Number(season) < new Date().getFullYear()) playerSeasonDetailCache[key] = detail;
+      else playerSeasonDetailRecent[key] = { detail, at: Date.now() };
       return detail;
     } catch (e) {
       return null;
@@ -9230,6 +9276,9 @@
   const savantCsvCache = {};
   async function getSavantCsv(path) {
     if (savantCsvCache[path]) return savantCsvCache[path];
+    return once(`savant-${path}`, () => getSavantCsvNow(path));
+  }
+  async function getSavantCsvNow(path) {
     try {
       const res = await fetch(`${SAVANT}${path}`);
       if (!res.ok) return null;
@@ -10598,6 +10647,7 @@
     const fielder = type === 'Outfielder' || type === 'Infielder' || type === 'Catcher';
     const savantPromise = getSavantSkillData(season, pitcher, type === 'Catcher', fielder);
     const detail = await getPlayerSeasonDetail(personId, season, pitcher ? 'pitching' : 'hitting');
+    await profileAwardsReady;
     if (requestId !== playerProfileRequestId) return;
     lastProfileDetail = detail;
     rerenderPlayerProfile();
@@ -10611,6 +10661,32 @@
     if (requestId !== playerProfileRequestId) return;
     lastProfileBoard = buildProfileBoard(person, pitcher, detail.seasonStat, poolInfo, savantData);
     rerenderPlayerProfile();
+    // With the Overview done, the Splits tab's spray chart (one ~400 KB
+    // CSV) loads in the background so that tab opens ready.
+    if (!pitcher && Number(season) >= SAVANT_SPRAY_FIRST_SEASON) {
+      const idle = window.requestIdleCallback || (fn => setTimeout(fn, 300));
+      idle(() => getPlayerSeasonBattedBalls(personId, season));
+    }
+  }
+
+  // Whether a profile is a pitcher's is only certain once the full person
+  // record is in, but a search result already carries his position and a
+  // name elsewhere in the app its scorecard position, so the season stats
+  // and Savant CSVs can usually start right away instead of after it.
+  // Everything here is shared with the real load (once()), never fetched
+  // twice.
+  function profileGroupHint(person) {
+    if (person.primaryPosition) return isPitcher(person);
+    if (person.posHint) return person.posHint === 'P';
+    return null;
+  }
+  function prefetchProfile(person, season) {
+    getPlayerDetails(Number(person.id));
+    const pitcher = profileGroupHint(person);
+    if (pitcher == null || !season) return;
+    getPlayerSeasonDetail(Number(person.id), season, pitcher ? 'pitching' : 'hitting');
+    const type = person.primaryPosition && person.primaryPosition.type;
+    getSavantSkillData(season, pitcher, !type || type === 'Catcher', !type || ['Outfielder', 'Infielder', 'Catcher'].includes(type));
   }
 
   // Pushes the profile's history entry (see navPush) unless history:
@@ -10657,32 +10733,43 @@
     profileOpenRow = null;
     profileHighlightsAll = false;
     lastProfileSeason = playerListState.season || defaultListSeason;
+    prefetchProfile(rawPerson, lastProfileSeason);
     playerSprayState = { personId: person.id, season: null, balls: null, loading: true };
     rerenderPlayerProfile();
     // Opened from deep in the list: start at the top of the profile, not
     // at whatever point the list had been scrolled to.
     const profileTop = playersBody.getBoundingClientRect().top + window.scrollY - (playersBody.closest('#mlb-root').querySelector('.tab-header') || {}).offsetHeight - 8;
     if (window.scrollY > profileTop) window.scrollTo(0, Math.max(0, profileTop));
-    const [fullPerson, careerSplits, awards, season] = await Promise.all([
+    // The season load needs only the person record, so it starts as soon as
+    // that's in; career stats and awards follow on their own. The awards
+    // row sits above the board, so the board waits for it to land
+    // (profileAwardsReady) rather than be pushed down once it does.
+    const careerPromise = getPlayerCareerStats(person.id);
+    profileAwardsReady = getPlayerAwards(person.id).then(awards => {
+      if (requestId === playerProfileRequestId) lastProfileAwardTags = summarizeAwardTags(awards);
+    });
+    const [fullPerson, season] = await Promise.all([
       getPlayerDetails(person.id),
-      getPlayerCareerStats(person.id),
-      getPlayerAwards(person.id),
       lastProfileSeason ? Promise.resolve(lastProfileSeason) : getDefaultListSeason()
     ]);
     if (requestId !== playerProfileRequestId) return;
     lastProfilePerson = fullPerson || person;
-    lastProfileCareerSplits = careerSplits;
-    lastProfileAwardTags = summarizeAwardTags(awards);
     lastProfileSeason = season;
     // Position (so which stat group to load) is only certain once the full
     // person record is in -- jumpToPlayerProfile passes just an id/name.
     const pitcher = isPitcher(lastProfilePerson);
     if (!pitcher) playerSprayState.season = season;
-    rerenderPlayerProfile();
-    ensureProfileSpray();
-    if (careerSplits.hitting.length) loadCareerLeagueWoba(careerSplits.hitting, requestId);
     loadProfileSeason(person.id, season, pitcher, requestId);
     ensureProfileDefense();
+    await profileAwardsReady;
+    if (requestId !== playerProfileRequestId) return;
+    rerenderPlayerProfile();
+    ensureProfileSpray();
+    const careerSplits = await careerPromise;
+    if (requestId !== playerProfileRequestId) return;
+    lastProfileCareerSplits = careerSplits;
+    rerenderPlayerProfile();
+    if (careerSplits.hitting.length) loadCareerLeagueWoba(careerSplits.hitting, requestId);
   }
 
   // Mirrors jumpToScorecardGame: leave the modal, switch tabs, load the
@@ -10704,7 +10791,7 @@
     whenModalHistorySettled(() => openProfileFromAnywhere(playerId, info));
   }
   function openProfileFromAnywhere(playerId, info) {
-    const person = { id: playerId, fullName: (info && info.name) || '' };
+    const person = { id: playerId, fullName: (info && info.name) || '', posHint: info && info.pos };
     if (Tabs.current() === 'players') {
       showPlayerProfile(person);
       return;
