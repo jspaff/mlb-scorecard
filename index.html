@@ -1298,6 +1298,11 @@
   }
   .view-toggle-btn + .view-toggle-btn { border-left: 1px solid var(--paper-line); }
   .view-toggle-btn:hover { color: var(--ink); background: rgba(243, 236, 219, 0.08); }
+  /* The Standings row (season, then three views) has to share one line on
+     a 360px phone. */
+  @media (max-width: 400px) {
+    [data-tab-controls="standings"] .view-toggle-btn { padding-left: 8px; padding-right: 8px; }
+  }
   .view-toggle-btn.active { color: var(--ink); background: rgba(217, 169, 26, 0.15); box-shadow: inset 0 -2px 0 var(--gold); }
   .view-toggle-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
   .wc-cutoff-line { border-top: 2px solid var(--ink); margin: 2px 0 0; }
@@ -3297,14 +3302,7 @@
       </div>
     </div>
     <div class="mlb-controls" data-tab-controls="standings" hidden>
-      <div class="date-nav">
-        <button type="button" class="date-nav-btn" id="standingsYearPrev" aria-label="Previous season">&#8249;</button>
-        <div class="date-display">
-          <select class="date-display-input" id="standingsYearPick" aria-label="Season"></select>
-          <span class="date-display-text" id="standingsYearText"></span>
-        </div>
-        <button type="button" class="date-nav-btn" id="standingsYearNext" aria-label="Next season">&#8250;</button>
-      </div>
+      <select id="standingsYearPick" aria-label="Season"></select>
       <div class="view-toggle" id="standingsViewToggle">
         <button type="button" class="view-toggle-btn active" data-view="division">Division</button>
         <button type="button" class="view-toggle-btn" data-view="wildcard">Wild Card</button>
@@ -3449,7 +3447,6 @@
   const mobileAtBatEl = document.getElementById('mobileAtBat');
   const standingsBody = document.getElementById('standingsBody');
   const standingsYearSelect = document.getElementById('standingsYearPick');
-  const standingsYearText = document.getElementById('standingsYearText');
   const dailyBody = document.getElementById('dailyBody');
   const dailyDateInput = document.getElementById('dailyDatePick');
   const dailyDateInputText = document.getElementById('dailyDatePickText');
@@ -7152,13 +7149,9 @@
   // picker, back to the Players list's first season.
   let standingsSeason = null;
   let standingsAsOf = null;
-  let latestStandingsSeason = null;
   function setStandingsSeason(season) {
     standingsSeason = String(season);
     standingsYearSelect.value = standingsSeason;
-    standingsYearText.textContent = standingsSeason;
-    document.getElementById('standingsYearPrev').disabled = Number(season) <= PLAYER_LIST_FIRST_SEASON;
-    document.getElementById('standingsYearNext').disabled = Number(season) >= latestStandingsSeason;
   }
 
   let standingsRequestId = 0;
@@ -7681,14 +7674,6 @@
 
   standingsYearSelect.addEventListener('change', () => {
     setStandingsSeason(standingsYearSelect.value);
-    loadStandings();
-  });
-  document.getElementById('standingsYearPrev').addEventListener('click', () => {
-    setStandingsSeason(Number(standingsSeason) - 1);
-    loadStandings();
-  });
-  document.getElementById('standingsYearNext').addEventListener('click', () => {
-    setStandingsSeason(Number(standingsSeason) + 1);
     loadStandings();
   });
 
@@ -10452,7 +10437,7 @@
   // Once the regular season is over -- through October and the winter --
   // the tab opens on the bracket.
   Tabs.register('standings', { init: async () => {
-    latestStandingsSeason = await getDefaultListSeason();
+    const latestStandingsSeason = await getDefaultListSeason();
     const years = [];
     for (let y = latestStandingsSeason; y >= PLAYER_LIST_FIRST_SEASON; y--) years.push(y);
     standingsYearSelect.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
