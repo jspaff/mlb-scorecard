@@ -2744,6 +2744,8 @@
   /* Short of the pool: placed among it, but quieter and never gold. */
   .pp-sk-score.is-soft { color: var(--ink-soft); }
   .pp-sk-score.is-none { color: var(--ink-soft); opacity: 0.6; }
+  /* Waiting on Savant: an empty slot the score's size, so nothing shifts. */
+  .pp-sk-score.is-wait { width: 1.2em; margin: 0 auto; background: rgba(243, 236, 219, 0.035); border-radius: 2px; }
   .pp-sk-stat { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10px; color: var(--ink-soft); white-space: nowrap; font-variant-numeric: tabular-nums; }
   .pp-totals { margin-top: 18px; }
   @container (min-width: 760px) { .pp-totals { max-width: calc(50% - 20px); } }
@@ -3761,46 +3763,72 @@
   // pixel space diamondSVG/fieldSVG expect, so no transform is needed here.
   // Outs are skipped entirely -- the player profile's season chart is meant
   // to show where a player's hits land, not the outs mixed in with them.
+  // One play as a spray-chart hit, everything the at-bat popup shows
+  // included, or null if it wasn't a hit with a location.
+  function battedBallFromPlay(play) {
+    const batter = play.matchup && play.matchup.batter;
+    if (!batter) return null;
+    const event = (play.result && play.result.event) || '';
+    if (!(play.result && play.result.type === 'atBat') || !event || NON_RESULT_EVENT_RE.test(event)) return null;
+    const hitCoords = extractHitCoordinates(play);
+    if (!hitCoords) return null;
+    const hitType =
+      event === 'Single' ? 'single' :
+      event === 'Double' ? 'double' :
+      event === 'Triple' ? 'triple' :
+      event === 'Home Run' ? 'homerun' : 'out';
+    if (hitType === 'out') return null;
+    return {
+      x: hitCoords.x, y: hitCoords.y, hitType,
+      pitches: extractPitches(play), events: extractEvents(play), ...extractHandedness(play), isComplete: true,
+      batterName: batter.fullName || '',
+      pitcherFullName: (play.matchup && play.matchup.pitcher && play.matchup.pitcher.fullName) || '',
+      playDesc: (play.result && play.result.description) || '',
+      videoUrl: savantVideoUrl(extractPlayId(play))
+    };
+  }
   function extractPlayerBattedBalls(allPlays, personId) {
-    const balls = [];
-    (allPlays || []).forEach(play => {
-      const batter = play.matchup && play.matchup.batter;
-      if (!batter || batter.id !== personId) return;
-      const event = (play.result && play.result.event) || '';
-      if (!(play.result && play.result.type === 'atBat') || !event || NON_RESULT_EVENT_RE.test(event)) return;
-      const hitCoords = extractHitCoordinates(play);
-      if (!hitCoords) return;
-      const hitType =
-        event === 'Single' ? 'single' :
-        event === 'Double' ? 'double' :
-        event === 'Triple' ? 'triple' :
-        event === 'Home Run' ? 'homerun' : 'out';
-      if (hitType === 'out') return;
-      balls.push({
-        x: hitCoords.x, y: hitCoords.y, hitType,
-        pitches: extractPitches(play), events: extractEvents(play), ...extractHandedness(play), isComplete: true,
-        batterName: batter.fullName || '',
-        pitcherFullName: (play.matchup && play.matchup.pitcher && play.matchup.pitcher.fullName) || '',
-        playDesc: (play.result && play.result.description) || '',
-        videoUrl: savantVideoUrl(extractPlayId(play))
-      });
-    });
+    return (allPlays || [])
+      .filter(play => play.matchup && play.matchup.batter && play.matchup.batter.id === personId)
+      .map(battedBallFromPlay)
+      .filter(Boolean);
+  }
+
+  // A hitter's season of hits for his spray chart. Savant's Statcast Search
+  // has them all in one CSV (~400 KB), in the same hit-coordinate space as
+  // the Stats API's hitData. Each hit there is only its spot and its game
+  // and at-bat; the popup's detail (pitches, clip, challenges) is filled in
+  // from that game's play-by-play when its dot is tapped
+  // (hydrateSprayBall). Savant's data lands overnight, so tonight's game
+  // joins the chart tomorrow. A failure isn't cached, so it retries.
+  const SAVANT_HIT_EVENTS = { single: 'single', double: 'double', triple: 'triple', home_run: 'homerun' };
+  const SAVANT_SPRAY_FIRST_SEASON = 2008;
+  async function getPlayerSeasonBattedBalls(personId, season) {
+    if (Number(season) < SAVANT_SPRAY_FIRST_SEASON) return getPlayerSeasonBattedBallsFromFeeds(personId, season);
+    const cacheKey = `${personId}-${season}`;
+    if (playerSeasonSprayCache[cacheKey] !== undefined) return playerSeasonSprayCache[cacheKey];
+    const rows = await getSavantCsv(`/statcast_search/csv?all=true&hfGT=R%7C&hfSea=${season}%7C&player_type=batter&batters_lookup%5B%5D=${personId}&type=details&hfBBT=fly%5C.%5C.ball%7Cground%5C.%5C.ball%7Cline%5C.%5C.drive%7Cpopup%7C`);
+    if (!rows) return [];
+    const balls = rows
+      .filter(r => SAVANT_HIT_EVENTS[r.events] && r.hc_x !== '' && r.hc_y !== '')
+      .map(r => ({
+        x: Number(r.hc_x), y: Number(r.hc_y), hitType: SAVANT_HIT_EVENTS[r.events],
+        gamePk: Number(r.game_pk), atBatIndex: Number(r.at_bat_number) - 1, lazy: true
+      }))
+      .filter(b => Number.isFinite(b.x) && Number.isFinite(b.y));
+    playerSeasonSprayCache[cacheKey] = balls;
     return balls;
   }
 
-  // There's no single MLB Stats API endpoint for a player's season-long
-  // batted-ball locations -- each game's live feed only carries its own
-  // plays. Building this means walking the player's game log for the
-  // season and fetching every game they had an at-bat in, so it's the one
-  // fetcher in the file that can mean 100+ network calls; capped at
-  // CONCURRENCY in flight at once rather than firing them all together.
+  // Before Savant's spray data: walk the player's game log and fetch every
+  // game he had an at-bat in -- 100+ calls, capped at CONCURRENCY in flight.
   // Cached by personId-season once complete (not on a failed game log
   // fetch -- that can be transient, and an empty result would otherwise
   // lock in a blank chart for the rest of the session; a per-game feed
   // fetch failing just drops that one game's balls rather than the batch).
   const playerSeasonSprayCache = {};
   const SPRAY_FETCH_CONCURRENCY = 6;
-  async function getPlayerSeasonBattedBalls(personId, season) {
+  async function getPlayerSeasonBattedBallsFromFeeds(personId, season) {
     const cacheKey = `${personId}-${season}`;
     if (playerSeasonSprayCache[cacheKey] !== undefined) return playerSeasonSprayCache[cacheKey];
     try {
@@ -7993,9 +8021,25 @@
     `;
   }
 
+  // A spray-chart hit from Savant carries only its game and at-bat; the
+  // first tap fills in the rest from that game's play-by-play, then opens
+  // the popup -- unless another dot has been tapped in the meantime.
+  let sprayHydrateToken = 0;
+  async function hydrateSprayBall(pkey) {
+    const ball = pitchStore[pkey];
+    const token = ++sprayHydrateToken;
+    const plays = await getGamePlayByPlay(ball.gamePk, true);
+    const play = plays && plays.find(p => p.about && p.about.atBatIndex === ball.atBatIndex);
+    const full = play && battedBallFromPlay(play);
+    if (!full) return;
+    Object.assign(ball, full, { x: ball.x, y: ball.y, lazy: false });
+    if (token === sprayHydrateToken) showPitchPopup(pkey);
+  }
+
   function showPitchPopup(pkey) {
     const c = pitchStore[pkey];
     if (!c) return;
+    if (c.lazy) { hydrateSprayBall(pkey); return; }
     // A poll refresh re-renders whatever popup is already open by calling
     // this again with the same pkey -- that's the only time a newly-arrived
     // pitch should glow. Opening a pkey fresh (or a different one) shows its
@@ -8369,6 +8413,7 @@
       rerenderPlayerProfile();
       ensureProfileRecent();
       ensureProfileDefense();
+      ensureProfileSpray();
       return;
     }
     const pool = e.target.closest('[data-def-pool]');
@@ -9312,7 +9357,9 @@
     return { pitching, stuff };
   }
 
-  async function getSavantSkillData(season, pitcher, catcher) {
+  // fielder: a hitter with a fielding position (not a DH or two-way
+  // player), who needs the fielding boards as well as sprint speed.
+  async function getSavantSkillData(season, pitcher, catcher, fielder) {
     if (Number(season) < STATCAST_FIRST_SEASON) return null;
     const y = season;
     if (pitcher) {
@@ -9325,28 +9372,28 @@
       ]);
       return { pct: csvById(pct), custom: csvById(custom), ext: csvById(ext) };
     }
+    const none = Promise.resolve([]);
     const [pct, sprint, oaa, frv, arm, pop, catchers] = await Promise.all([
       getSavantCsv(`/leaderboard/percentile-rankings?type=batter&year=${y}&csv=true`),
       getSavantCsv(`/leaderboard/custom?year=${y}&type=batter&min=1&selections=sprint_speed&csv=true`),
-      getSavantCsv(`/leaderboard/outs_above_average?type=Fielder&startYear=${y}&endYear=${y}&split=no&team=&range=year&min=q&pos=&roles=&viz=hide&csv=true`),
-      getSavantCsv(`/leaderboard/fielding-run-value?gameType=Regular&seasonStart=${y}&seasonEnd=${y}&type=fielder&position=&csv=true`),
-      getSavantCsv(`/leaderboard/arm-strength?type=player&year=${y}&minThrows=50&pos=&team=&csv=true`),
-      catcher ? getSavantCsv(`/leaderboard/poptime?year=${y}&team=&min2b=5&min3b=0&csv=true`) : Promise.resolve([]),
-      getSavantFrv(y, '2')
+      !fielder ? none : getSavantCsv(`/leaderboard/outs_above_average?type=Fielder&startYear=${y}&endYear=${y}&split=no&team=&range=year&min=q&pos=&roles=&viz=hide&csv=true`),
+      !fielder ? none : getSavantCsv(`/leaderboard/fielding-run-value?gameType=Regular&seasonStart=${y}&seasonEnd=${y}&type=fielder&position=&csv=true`),
+      !fielder || catcher ? none : getSavantCsv(`/leaderboard/arm-strength?type=player&year=${y}&minThrows=50&pos=&team=&csv=true`),
+      catcher ? getSavantCsv(`/leaderboard/poptime?year=${y}&team=&min2b=5&min3b=0&csv=true`) : none,
+      !fielder ? Promise.resolve({}) : getSavantFrv(y, '2')
     ]);
     return { pct: csvById(pct), sprint: csvById(sprint), oaa: csvById(oaa), frv: csvById(frv, 'id'), arm: csvById(arm), pop: csvById(pop, 'entity_id'), catchers: catchers || {} };
   }
   const NO_SAVANT = { pct: {}, sprint: {}, oaa: {}, frv: {}, arm: {}, pop: {}, catchers: {}, custom: {}, ext: {} };
 
-  async function buildProfileBoard(person, season, pitcher, seasonStat) {
-    const catcher = !pitcher && person.primaryPosition && person.primaryPosition.type === 'Catcher';
+  // Who a player is ranked against for his results stats: the pool, the
+  // heading's note, and whether he's in it.
+  async function getProfileBoardPool(person, season, pitcher, seasonStat) {
     const reliever = pitcher && !isStartingPitcher(seasonStat);
-    const [rows, leagueInfo, savantData] = await Promise.all([
+    const [rows, leagueInfo] = await Promise.all([
       getSeasonPlayerStats(pitcher ? 'pitching' : 'hitting', season, reliever ? 'all' : 'qualified'),
-      getLeagueSeasonInfo(season),
-      getSavantSkillData(season, pitcher, catcher)
+      getLeagueSeasonInfo(season)
     ]);
-    const savant = { ...NO_SAVANT, ...(savantData || {}) };
     const games = leagueInfo.teamGamesPlayed;
     let pool, note;
     if (!pitcher) {
@@ -9365,18 +9412,28 @@
       const short = Math.ceil((minIP * 3 - ipToOuts(seasonStat.inningsPitched)) / 3);
       note = pool.some(r => r.id === person.id) ? `vs ${pool.length} relievers, ${minIP}+ IP` : `${short} IP short of the reliever pool`;
     }
-    const inPool = pool.some(r => r.id === person.id);
+    return { pool, note, reliever, inPool: pool.some(r => r.id === person.id) };
+  }
+
+  // savantData undefined means Savant is still on its way: the Statcast
+  // group's tiles are drawn waiting rather than dashed, so the results
+  // group (Stats API only) can show first.
+  function buildProfileBoard(person, pitcher, seasonStat, poolInfo, savantData) {
+    const pending = savantData === undefined;
+    const savant = { ...NO_SAVANT, ...(savantData || {}) };
+    const { pool, note, reliever, inPool } = poolInfo;
     const s = seasonStat;
+    const wait = skills => (pending ? skills.map(k => ({ name: k.name, pending: true })) : skills);
     if (!pitcher) {
       const { hitting, tools } = hitterSkillFields(person, s, pool, inPool, savant);
       return {
-        groups: [{ title: 'Hitting', note, skills: hitting }, { title: 'Tools', skills: tools }],
+        groups: [{ title: 'Hitting', note, skills: hitting }, { title: 'Tools', skills: wait(tools) }],
         totals: [['G', s.gamesPlayed ?? 0], ['HR', s.homeRuns ?? 0], ['SB', s.stolenBases ?? 0]]
       };
     }
     const { pitching, stuff } = pitcherSkillFields(person.id, s, pool, inPool, savant);
     return {
-      groups: [{ title: 'Pitching', note, skills: pitching }, { title: 'Stuff', skills: stuff }],
+      groups: [{ title: 'Pitching', note, skills: pitching }, { title: 'Stuff', skills: wait(stuff) }],
       totals: reliever
         ? [['G', s.gamesPitched ?? 0], ['IP', s.inningsPitched ?? '0.0'], ['SV', s.saves ?? 0]]
         : [['GS', s.gamesStarted ?? 0], ['IP', s.inningsPitched ?? '0.0'], ['K', s.strikeOuts ?? 0]]
@@ -9385,6 +9442,7 @@
 
   function renderProfileBoard(board) {
     const skill = k => {
+      if (k.pending) return `<div class="pp-sk"><span class="pp-sk-name">${k.name}</span><span class="pp-sk-score is-wait">&#160;</span><span class="pp-sk-stat">&#160;</span></div>`;
       if (k.pct == null) return `<div class="pp-sk"><span class="pp-sk-name">${k.name}</span><span class="pp-sk-score is-none">&#8212;</span><span class="pp-sk-stat">&#160;</span></div>`;
       const cls = k.soft ? ' is-soft' : (k.pct >= SKILL_GOLD_PERCENTILE ? ' is-top' : '');
       return `<div class="pp-sk"><span class="pp-sk-name">${k.name}</span><span class="pp-sk-score${cls}">${k.pct}</span><span class="pp-sk-stat">${k.stat}</span></div>`;
@@ -10516,22 +10574,42 @@
     rerenderPlayerProfile();
   }
 
+  // The spray chart lives on the Splits tab, so it's fetched only once that
+  // tab opens.
+  let profileSprayRequested = false;
+  function ensureProfileSpray() {
+    if (profileSprayRequested || profileTab !== 'spl' || !playerSprayState.season || isPitcher(lastProfilePerson)) return;
+    profileSprayRequested = true;
+    loadPlayerSpray(Number(lastProfilePerson.id), playerSprayState.season);
+  }
+
   function ensureProfileRecent() {
     if (profileRecentRequested || profileTab !== 'log' || !lastProfileDetail) return;
     profileRecentRequested = true;
     loadProfileRecent(Number(lastProfilePerson.id), isPitcher(lastProfilePerson), lastProfileDetail.gameLog, lastProfileSeason, playerProfileRequestId);
   }
 
+  // The Overview's Savant CSVs (the slowest of its requests) start along
+  // with the season stats rather than after them, and the board is drawn
+  // as soon as the results group can be, then again once Savant is in.
   async function loadProfileSeason(personId, season, pitcher, requestId) {
+    const person = lastProfilePerson;
+    const type = person.primaryPosition && person.primaryPosition.type;
+    const fielder = type === 'Outfielder' || type === 'Infielder' || type === 'Catcher';
+    const savantPromise = getSavantSkillData(season, pitcher, type === 'Catcher', fielder);
     const detail = await getPlayerSeasonDetail(personId, season, pitcher ? 'pitching' : 'hitting');
     if (requestId !== playerProfileRequestId) return;
     lastProfileDetail = detail;
     rerenderPlayerProfile();
     ensureProfileRecent();
     if (!detail || !detail.seasonStat) return;
-    const board = await buildProfileBoard(lastProfilePerson, season, pitcher, detail.seasonStat);
+    const poolInfo = await getProfileBoardPool(person, season, pitcher, detail.seasonStat);
     if (requestId !== playerProfileRequestId) return;
-    lastProfileBoard = board;
+    lastProfileBoard = buildProfileBoard(person, pitcher, detail.seasonStat, poolInfo, undefined);
+    rerenderPlayerProfile();
+    const savantData = await savantPromise;
+    if (requestId !== playerProfileRequestId) return;
+    lastProfileBoard = buildProfileBoard(person, pitcher, detail.seasonStat, poolInfo, savantData);
     rerenderPlayerProfile();
   }
 
@@ -10568,6 +10646,7 @@
     lastProfileRecent = undefined;
     lastProfileScores = {};
     profileRecentRequested = false;
+    profileSprayRequested = false;
     lastProfileDefense = undefined;
     lastProfileCatches = undefined;
     profileDefenseRequested = false;
@@ -10598,11 +10677,9 @@
     // Position (so which stat group to load) is only certain once the full
     // person record is in -- jumpToPlayerProfile passes just an id/name.
     const pitcher = isPitcher(lastProfilePerson);
-    if (!pitcher) {
-      playerSprayState.season = season;
-      loadPlayerSpray(person.id, season);
-    }
+    if (!pitcher) playerSprayState.season = season;
     rerenderPlayerProfile();
+    ensureProfileSpray();
     if (careerSplits.hitting.length) loadCareerLeagueWoba(careerSplits.hitting, requestId);
     loadProfileSeason(person.id, season, pitcher, requestId);
     ensureProfileDefense();
