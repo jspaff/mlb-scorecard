@@ -2714,13 +2714,46 @@
   .pp-tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--gold); }
   .pp-tab:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
 
-  /* Overview board: eight numbers in the live scoreboard's recessed slots
-     (same inset shadow as .monster-box-cell). Gold on a number marks the
-     top 10% of the qualified pool; the rank sits small in the corner --
-     shrunk further on a narrow sheet rather than taking a strip of its
-     own, so the number stays centered in its slot. */
-  .pp-board { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 12px; padding: 4px 0 6px; }
-  @container (min-width: 520px) { .pp-board { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px 14px; } }
+  /* Overview board: skill scores (percentiles), each a bold number over
+     the stat behind it, four to a row. The two skill groups stack on a
+     phone and sit side by side on a wide sheet; totals run beneath. */
+  .pp-skills { padding: 2px 0 4px; }
+  .pp-skg-pair { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px 40px; }
+  @container (min-width: 760px) { .pp-skg-pair { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .pp-skg-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 10px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--paper-line);
+    font-family: 'Overpass', sans-serif;
+    font-weight: 800;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  .pp-skg-head em { font-style: normal; font-weight: 700; font-size: 10.5px; letter-spacing: 0.02em; text-transform: none; color: var(--ink-soft); text-align: right; }
+  .pp-skg-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .pp-sk, .pp-tot { display: flex; flex-direction: column; align-items: center; text-align: center; min-width: 0; }
+  .pp-sk-name { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); opacity: 0.85; }
+  .pp-sk-score { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 34px; line-height: 1.15; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .pp-sk-score.is-top { color: var(--gold); }
+  /* Short of the pool: placed among it, but quieter and never gold. */
+  .pp-sk-score.is-soft { color: var(--ink-soft); }
+  .pp-sk-score.is-none { color: var(--ink-soft); opacity: 0.6; }
+  .pp-sk-stat { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10px; color: var(--ink-soft); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .pp-totals { margin-top: 18px; }
+  @container (min-width: 760px) { .pp-totals { max-width: calc(50% - 20px); } }
+  .pp-tot-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .pp-tot-v { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 28px; line-height: 1.15; color: var(--ink); font-variant-numeric: tabular-nums; }
+  @container (min-width: 700px) {
+    .pp-sk-score { font-size: 42px; }
+    .pp-tot-v { font-size: 32px; }
+    .pp-sk-stat { font-size: 10.5px; }
+  }
   .pp-painted {
     display: block;
     text-align: center;
@@ -9121,31 +9154,255 @@
   }
 
   // ---- Overview board ----
-  // get() is the rankable value (null = not ranked, as for playing-time
-  // counts like G/PA/GS); low marks the stats where lower is better, which
-  // still rank 1 = best.
-  const HITTER_BOARD = [
-    { label: 'AVG', show: s => s.avg ?? '&#8212;', get: s => s.avg != null ? Number(s.avg) : null },
-    { label: 'OBP', show: s => s.obp ?? '&#8212;', get: s => s.obp != null ? Number(s.obp) : null },
-    { label: 'SLG', show: s => s.slg ?? '&#8212;', get: s => s.slg != null ? Number(s.slg) : null },
-    { label: 'OPS', show: s => s.ops ?? '&#8212;', get: s => s.ops != null ? Number(s.ops) : null },
-    { label: 'HR', show: s => s.homeRuns ?? 0, get: s => s.homeRuns ?? null },
-    { label: 'G', show: s => s.gamesPlayed ?? 0 },
-    { label: 'PA', show: s => s.plateAppearances ?? 0 },
-    { label: 'wOBA+', show: (s, ctx) => computeWOBAPlus(s, ctx.leagueWoba), get: (s, ctx) => wobaPlusValue(s, ctx.leagueWoba) }
-  ];
-  const PITCHER_BOARD = [
-    { label: 'GS', show: s => s.gamesStarted ?? 0 },
-    { label: 'ERA', show: s => s.era ?? '&#8212;', get: s => s.era != null && s.era !== '-.--' ? Number(s.era) : null, low: true },
-    { label: 'IP', show: s => s.inningsPitched ?? '&#8212;', get: s => ipToOuts(s.inningsPitched) },
-    { label: 'WHIP', show: s => s.whip ?? '&#8212;', get: s => s.whip != null && s.whip !== '-.--' ? Number(s.whip) : null, low: true },
-    { label: 'K', show: s => s.strikeOuts ?? 0, get: s => s.strikeOuts ?? null },
-    { label: 'BB', show: s => s.baseOnBalls ?? 0, get: s => s.baseOnBalls ?? null, low: true },
-    { label: 'K%-BB%', show: s => formatKBB(s.strikeOuts, s.baseOnBalls, s.battersFaced), get: s => rawKBB(s.strikeOuts, s.baseOnBalls, s.battersFaced) },
-    { label: 'Opp AVG', show: s => s.avg ?? '&#8212;', get: s => s.avg != null ? Number(s.avg) : null, low: true }
-  ];
-  // Gold marks the top 10% of that season's qualified pool, the same pool
-  // (and so the same denominator) the Players list shows.
+  // A player's season as skill scores: each is his percentile in one stat
+  // (Power is ISO, Range is OAA, Reach is extension...), the stat itself
+  // written small beneath. Results stats rank against the same pool the
+  // Players list uses -- qualified hitters, ERA-title starters -- or, for a
+  // reliever, relievers with 40+ IP (prorated in a season in progress).
+  // Someone short of his pool still gets a score, placed among that pool,
+  // but in softer type and never gold. Statcast tools rank in Savant's own
+  // percentile pools (or, where Savant publishes no percentile, the same
+  // pool as above), and a player Savant doesn't rank there gets a dash.
+  // Gold is the 90th percentile and up.
+  const SKILL_GOLD_PERCENTILE = 90;
+  const RELIEVER_POOL_IP = 40;
+
+  // Share of the pool he's better than, 1-100. In the pool, the best is 100
+  // and the worst 1; short of it, he's placed among them (his own line
+  // isn't one of the values).
+  function poolPercentile(value, values, { low = false, inPool = true } = {}) {
+    if (value == null || !Number.isFinite(value)) return null;
+    const vals = values.filter(v => v != null && Number.isFinite(v));
+    if (!vals.length) return null;
+    const worse = vals.filter(v => (low ? v > value : v < value)).length;
+    const span = inPool ? vals.length - 1 : vals.length;
+    const pct = span > 0 ? Math.round((100 * worse) / span) : 100;
+    return Math.min(100, Math.max(1, pct));
+  }
+
+  // Any Savant CSV, as rows keyed by the header. Kept for the session like
+  // the other Savant fetches; a failure is null and isn't kept.
+  const savantCsvCache = {};
+  async function getSavantCsv(path) {
+    if (savantCsvCache[path]) return savantCsvCache[path];
+    try {
+      const res = await fetch(`${SAVANT}${path}`);
+      if (!res.ok) return null;
+      const rows = parseCsv(await res.text());
+      savantCsvCache[path] = rows;
+      return rows;
+    } catch (e) {
+      return null;
+    }
+  }
+  function csvById(rows, idKey = 'player_id') {
+    const byId = {};
+    (rows || []).forEach(r => { byId[Number(r[idKey])] = r; });
+    return byId;
+  }
+  function csvNumber(v) {
+    if (v == null || v === '') return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  // The hitters' wOBA (same weights as rawWOBA) of everyone a pitcher faced.
+  function pitchingWOBA(stat) {
+    const bf = stat.battersFaced || 0;
+    if (!bf) return null;
+    const singles = (stat.hits || 0) - (stat.doubles || 0) - (stat.triples || 0) - (stat.homeRuns || 0);
+    return (WOBA_WEIGHTS.bbHbp * ((stat.baseOnBalls || 0) + (stat.hitByPitch || 0)) + WOBA_WEIGHTS.single * singles +
+      WOBA_WEIGHTS.double * (stat.doubles || 0) + WOBA_WEIGHTS.triple * (stat.triples || 0) + WOBA_WEIGHTS.hr * (stat.homeRuns || 0)) / bf;
+  }
+  const perPA = (n, s) => (s.plateAppearances ? (n || 0) / s.plateAppearances * 100 : null);
+  const perBF = (n, s) => (s.battersFaced ? (n || 0) / s.battersFaced * 100 : null);
+  const rate3 = v => v.toFixed(3).replace(/^0/, '');
+  const wholePct = v => `${Math.round(v)}%`;
+  const statNum = v => (v == null || v === '' || v === '-.--' || v === '.---' ? null : Number(v));
+
+  // One stat ranked against a pool of stat lines: get(stat) is the value,
+  // low marks lower-is-better, show(value) how it's written.
+  function poolSkill(name, statLabel, get, show, low, me, pool, inPool) {
+    const value = get(me);
+    if (value == null || !Number.isFinite(value)) return { name, pct: null };
+    return {
+      name,
+      pct: poolPercentile(value, pool.map(r => get(r.stat)), { low, inPool }),
+      soft: !inPool,
+      stat: `${statLabel} ${show(value)}`
+    };
+  }
+  // One stat with a Savant percentile: the percentile from Savant, the
+  // value from wherever Savant lists it, dashed out if he isn't ranked.
+  function savantSkill(name, pct, statLabel, value) {
+    const p = csvNumber(pct);
+    if (p == null) return { name, pct: null };
+    return { name, pct: Math.min(100, Math.max(1, p)), stat: value == null ? statLabel : `${statLabel} ${value}` };
+  }
+
+  function hitterSkillFields(person, seasonStat, pool, inPool, savant) {
+    const me = seasonStat;
+    const iso = s => (s.atBats ? ((s.totalBases || 0) - (s.hits || 0)) / s.atBats : null);
+    const hitting = [
+      poolSkill('Bat', 'wOBA', s => rawWOBA(s), rate3, false, me, pool, inPool),
+      poolSkill('Power', 'ISO', iso, rate3, false, me, pool, inPool),
+      poolSkill('Contact', 'K%', s => perPA(s.strikeOuts, s), wholePct, true, me, pool, inPool),
+      poolSkill('Eye', 'BB%', s => perPA(s.baseOnBalls, s), wholePct, false, me, pool, inPool)
+    ];
+    const id = person.id;
+    const pct = savant.pct[id] || {};
+    const sprint = csvNumber((savant.sprint[id] || {}).sprint_speed);
+    const speed = savantSkill('Speed', pct.sprint_speed, 'Sprint', sprint != null ? `${sprint.toFixed(1)} ft/s` : null);
+    const type = person.primaryPosition && person.primaryPosition.type;
+    if (type !== 'Outfielder' && type !== 'Infielder' && type !== 'Catcher') return { hitting, tools: [speed] };
+    const catcher = type === 'Catcher';
+    const oaa = csvNumber((savant.oaa[id] || {}).outs_above_average);
+    const range = catcher || oaa == null ? { name: 'Range', pct: null } : savantSkill('Range', pct.oaa, 'OAA', formatSigned(oaa));
+    // Fielding Run Value is already relative to the position (a catcher's
+    // counts his framing), so it's one pool: the fielders qualified for
+    // OAA, plus Savant's qualified catchers (who have no OAA). Savant's
+    // all-position list itself takes in part-timers too.
+    const gloveIds = new Set([...Object.keys(savant.oaa), ...Object.keys(savant.catchers)].map(Number));
+    const frvOf = pid => (gloveIds.has(pid) && savant.frv[pid] ? csvNumber(savant.frv[pid].total_runs) : null);
+    const frv = frvOf(id);
+    const glove = frv == null
+      ? { name: 'Glove', pct: null }
+      : { name: 'Glove', pct: poolPercentile(frv, [...gloveIds].map(frvOf)), stat: `FRV ${formatSigned(Math.round(frv))}` };
+    let arm;
+    if (catcher) {
+      // A catcher's arm is his throws to second and third (pop time
+      // board), ranked among catchers.
+      const armOf = r => csvNumber(r.maxeff_arm_2b_3b_sba);
+      const mine = savant.pop[id] ? armOf(savant.pop[id]) : null;
+      arm = mine == null
+        ? { name: 'Arm', pct: null }
+        : { name: 'Arm', pct: poolPercentile(mine, Object.values(savant.pop).map(armOf)), stat: `Arm ${mine.toFixed(1)} mph` };
+    } else {
+      const mph = csvNumber((savant.arm[id] || {}).arm_overall);
+      arm = savantSkill('Arm', pct.arm_strength, 'Arm', mph != null ? `${mph.toFixed(1)} mph` : null);
+    }
+    return { hitting, tools: [speed, range, glove, arm] };
+  }
+
+  function pitcherSkillFields(personId, seasonStat, pool, inPool, savant) {
+    const me = seasonStat;
+    const pitching = [
+      poolSkill('Runs', 'ERA', s => statNum(s.era), v => v.toFixed(2), true, me, pool, inPool),
+      poolSkill('Damage', 'wOBA', pitchingWOBA, rate3, true, me, pool, inPool),
+      poolSkill('Traffic', 'WHIP', s => statNum(s.whip), v => v.toFixed(2), true, me, pool, inPool),
+      poolSkill('Command', 'K-BB%', s => (s.battersFaced ? perBF((s.strikeOuts || 0) - (s.baseOnBalls || 0), s) : null), wholePct, false, me, pool, inPool)
+    ];
+    const pct = savant.pct[personId] || {};
+    const custom = savant.custom[personId] || {};
+    const fb = csvNumber(custom.ff_avg_speed) ?? csvNumber(custom.si_avg_speed);
+    const whiff = csvNumber(custom.whiff_percent);
+    // Savant publishes no percentile for extension or ground-ball rate, so
+    // those rank in the same pool as the results above.
+    const ext = s => csvNumber((savant.ext[s.__id] || {}).release_extension);
+    const gb = s => csvNumber((savant.custom[s.__id] || {}).groundballs_percent);
+    const tag = (stat, id) => ({ ...stat, __id: id });
+    const mine = tag(me, personId);
+    const tagged = pool.map(r => ({ stat: tag(r.stat, r.id) }));
+    const stuff = [
+      savantSkill('Velo', pct.fb_velocity, 'FB', fb != null ? `${fb.toFixed(1)} mph` : null),
+      poolSkill('Reach', 'Ext', ext, v => `${v.toFixed(1)} ft`, false, mine, tagged, inPool),
+      savantSkill('Whiff', pct.whiff_percent, 'Whiff', whiff != null ? wholePct(whiff) : null),
+      poolSkill('Grounders', 'GB%', gb, wholePct, false, mine, tagged, inPool)
+    ];
+    return { pitching, stuff };
+  }
+
+  async function getSavantSkillData(season, pitcher, catcher) {
+    if (Number(season) < STATCAST_FIRST_SEASON) return null;
+    const y = season;
+    if (pitcher) {
+      const [pct, custom, ext] = await Promise.all([
+        getSavantCsv(`/leaderboard/percentile-rankings?type=pitcher&year=${y}&csv=true`),
+        getSavantCsv(`/leaderboard/custom?year=${y}&type=pitcher&min=1&selections=ff_avg_speed,si_avg_speed,whiff_percent,groundballs_percent&csv=true`),
+        // Statcast Search grouped by pitcher is the one place extension
+        // comes as a season average (pitchers with 500+ pitches).
+        getSavantCsv(`/statcast_search/csv?all=true&hfGT=R%7C&hfSea=${y}%7C&player_type=pitcher&group_by=name&min_pitches=500&min_results=0&min_pas=0&sort_col=pitches&player_event_sort=api_p_release_speed&sort_order=desc`)
+      ]);
+      return { pct: csvById(pct), custom: csvById(custom), ext: csvById(ext) };
+    }
+    const [pct, sprint, oaa, frv, arm, pop, catchers] = await Promise.all([
+      getSavantCsv(`/leaderboard/percentile-rankings?type=batter&year=${y}&csv=true`),
+      getSavantCsv(`/leaderboard/custom?year=${y}&type=batter&min=1&selections=sprint_speed&csv=true`),
+      getSavantCsv(`/leaderboard/outs_above_average?type=Fielder&startYear=${y}&endYear=${y}&split=no&team=&range=year&min=q&pos=&roles=&viz=hide&csv=true`),
+      getSavantCsv(`/leaderboard/fielding-run-value?gameType=Regular&seasonStart=${y}&seasonEnd=${y}&type=fielder&position=&csv=true`),
+      getSavantCsv(`/leaderboard/arm-strength?type=player&year=${y}&minThrows=50&pos=&team=&csv=true`),
+      catcher ? getSavantCsv(`/leaderboard/poptime?year=${y}&team=&min2b=5&min3b=0&csv=true`) : Promise.resolve([]),
+      getSavantFrv(y, '2')
+    ]);
+    return { pct: csvById(pct), sprint: csvById(sprint), oaa: csvById(oaa), frv: csvById(frv, 'id'), arm: csvById(arm), pop: csvById(pop, 'entity_id'), catchers: catchers || {} };
+  }
+  const NO_SAVANT = { pct: {}, sprint: {}, oaa: {}, frv: {}, arm: {}, pop: {}, catchers: {}, custom: {}, ext: {} };
+
+  async function buildProfileBoard(person, season, pitcher, seasonStat) {
+    const catcher = !pitcher && person.primaryPosition && person.primaryPosition.type === 'Catcher';
+    const reliever = pitcher && !isStartingPitcher(seasonStat);
+    const [rows, leagueInfo, savantData] = await Promise.all([
+      getSeasonPlayerStats(pitcher ? 'pitching' : 'hitting', season, reliever ? 'all' : 'qualified'),
+      getLeagueSeasonInfo(season),
+      getSavantSkillData(season, pitcher, catcher)
+    ]);
+    const savant = { ...NO_SAVANT, ...(savantData || {}) };
+    const games = leagueInfo.teamGamesPlayed;
+    let pool, note;
+    if (!pitcher) {
+      pool = rows ? filterQualifiedPlayers('batting', rows, games) : [];
+      const short = Math.ceil(games * 3.1 - (seasonStat.plateAppearances || 0));
+      note = pool.some(r => r.id === person.id) ? `vs ${pool.length} qualified hitters` : (games ? `${short} PA short of qualifying` : 'Not qualified');
+    } else if (!reliever) {
+      pool = rows ? filterQualifiedPlayers('pitching', rows, games).filter(r => isStartingPitcher(r.stat)) : [];
+      const short = Math.ceil((games * 3 - ipToOuts(seasonStat.inningsPitched)) / 3);
+      note = pool.some(r => r.id === person.id) ? `vs ${pool.length} qualified starters` : (games ? `${short} IP short of qualifying` : 'Not qualified');
+    } else {
+      // Relievers never reach the ERA title's 1 IP a team game, so they're
+      // ranked among relievers, prorated to the games played so far.
+      const minIP = games ? Math.max(1, Math.round(RELIEVER_POOL_IP * Math.min(games, 162) / 162)) : RELIEVER_POOL_IP;
+      pool = rows ? rows.filter(r => !isStartingPitcher(r.stat) && ipToOuts(r.stat.inningsPitched) >= minIP * 3) : [];
+      const short = Math.ceil((minIP * 3 - ipToOuts(seasonStat.inningsPitched)) / 3);
+      note = pool.some(r => r.id === person.id) ? `vs ${pool.length} relievers, ${minIP}+ IP` : `${short} IP short of the reliever pool`;
+    }
+    const inPool = pool.some(r => r.id === person.id);
+    const s = seasonStat;
+    if (!pitcher) {
+      const { hitting, tools } = hitterSkillFields(person, s, pool, inPool, savant);
+      return {
+        groups: [{ title: 'Hitting', note, skills: hitting }, { title: 'Tools', skills: tools }],
+        totals: [['G', s.gamesPlayed ?? 0], ['HR', s.homeRuns ?? 0], ['SB', s.stolenBases ?? 0]]
+      };
+    }
+    const { pitching, stuff } = pitcherSkillFields(person.id, s, pool, inPool, savant);
+    return {
+      groups: [{ title: 'Pitching', note, skills: pitching }, { title: 'Stuff', skills: stuff }],
+      totals: reliever
+        ? [['G', s.gamesPitched ?? 0], ['IP', s.inningsPitched ?? '0.0'], ['SV', s.saves ?? 0]]
+        : [['GS', s.gamesStarted ?? 0], ['IP', s.inningsPitched ?? '0.0'], ['K', s.strikeOuts ?? 0]]
+    };
+  }
+
+  function renderProfileBoard(board) {
+    const skill = k => {
+      if (k.pct == null) return `<div class="pp-sk"><span class="pp-sk-name">${k.name}</span><span class="pp-sk-score is-none">&#8212;</span><span class="pp-sk-stat">&#160;</span></div>`;
+      const cls = k.soft ? ' is-soft' : (k.pct >= SKILL_GOLD_PERCENTILE ? ' is-top' : '');
+      return `<div class="pp-sk"><span class="pp-sk-name">${k.name}</span><span class="pp-sk-score${cls}">${k.pct}</span><span class="pp-sk-stat">${k.stat}</span></div>`;
+    };
+    const group = g => `<section class="pp-skg">
+      <div class="pp-skg-head"><span>${g.title}</span>${g.note ? `<em>${g.note}</em>` : ''}</div>
+      <div class="pp-skg-row">${g.skills.map(skill).join('')}</div>
+    </section>`;
+    return `<div class="pp-skills">
+      <div class="pp-skg-pair">${board.groups.map(group).join('')}</div>
+      <section class="pp-skg pp-totals">
+        <div class="pp-skg-head"><span>Totals</span></div>
+        <div class="pp-tot-row">${board.totals.map(([k, v]) => `<div class="pp-tot"><span class="pp-sk-name">${k}</span><span class="pp-tot-v">${v}</span></div>`).join('')}</div>
+      </section>
+    </div>`;
+  }
+
+  // The Defense tab's slots: gold marks the top 10% of the qualified pool.
   const PROFILE_GOLD_SHARE = 0.10;
 
   // Standard competition ranking (1, 2, 2, 4) against the qualified pool;
@@ -9159,33 +9416,6 @@
     const better = values.filter(v => column.low ? v < mine : v > mine).length;
     const tied = values.filter(v => v === mine).length > 1;
     return { rank: better + 1, tied, of: pool.length };
-  }
-
-  async function buildProfileBoard(personId, season, pitcher, seasonStat) {
-    const type = pitcher ? 'pitching' : 'batting';
-    const [allRows, leagueInfo] = await Promise.all([
-      getSeasonPlayerStats(pitcher ? 'pitching' : 'hitting', season, 'qualified'),
-      getLeagueSeasonInfo(season)
-    ]);
-    const pool = allRows ? filterQualifiedPlayers(type, allRows, leagueInfo.teamGamesPlayed) : [];
-    const me = pool.find(r => r.id === personId);
-    const ctx = { leagueWoba: leagueInfo.woba };
-    const columns = pitcher ? PITCHER_BOARD : HITTER_BOARD;
-    return {
-      ctx,
-      stat: (me && me.stat) || seasonStat,
-      ranks: columns.map(c => (me && c.get ? rankInPool(c, me, pool, ctx) : null))
-    };
-  }
-
-  function renderProfileBoard(board, pitcher) {
-    const columns = pitcher ? PITCHER_BOARD : HITTER_BOARD;
-    return `<div class="pp-board">${columns.map((c, i) => {
-      const r = board.ranks[i];
-      const top = r && r.rank / r.of <= PROFILE_GOLD_SHARE;
-      const badge = r ? `<span class="pp-rank" title="Rank among ${r.of} qualified ${pitcher ? 'pitchers' : 'hitters'}">${r.tied ? 'T' : ''}${r.rank}/${r.of}</span>` : '';
-      return `<div class="pp-stat${top ? ' is-top' : ''}"><span class="pp-painted">${c.label}</span><span class="pp-slot">${c.show(board.stat, board.ctx)}${badge}</span></div>`;
-    }).join('')}</div>`;
   }
 
   // ---- Game Log ----
@@ -10150,7 +10380,7 @@
     if (detail === null) return apiErrorMsg('season stats');
     if (tab === 'ov') {
       if (!detail.seasonStat) return `<div class="pitch-empty">No ${lastProfileSeason} stats.</div>`;
-      return lastProfileBoard ? renderProfileBoard(lastProfileBoard, pitcher) : '<div class="mlb-status-msg">Loading season stats&#8230;</div>';
+      return lastProfileBoard ? renderProfileBoard(lastProfileBoard) : '<div class="mlb-status-msg">Loading season stats&#8230;</div>';
     }
     if (tab === 'starts') return renderStartsChart(profileStarts(detail.gameLog));
     if (tab === 'log') return renderProfileGameLog(detail.gameLog, pitcher);
@@ -10299,7 +10529,7 @@
     rerenderPlayerProfile();
     ensureProfileRecent();
     if (!detail || !detail.seasonStat) return;
-    const board = await buildProfileBoard(personId, season, pitcher, detail.seasonStat);
+    const board = await buildProfileBoard(lastProfilePerson, season, pitcher, detail.seasonStat);
     if (requestId !== playerProfileRequestId) return;
     lastProfileBoard = board;
     rerenderPlayerProfile();

@@ -150,7 +150,7 @@ A three-layer palette of wall, board and ink, with two spare signal colors.
 - **Monster Green**: the frame. It's the page background behind every sheet and the PWA theme color, matching Fenway's Green Monster. It is binding and never changes. Contrast is solved by what sits on it.
 
 ### Secondary
-- **Pennant Gold**: the scheme's accent and its one positive signal. As trim it paints section titles, the active tab and segment rules, focus rings and the jersey number. In the data it marks award plates, a stat in the top 10% of qualified players, a made 5-star catch, quality starts, RBI dots and hits on the spray chart.
+- **Pennant Gold**: the scheme's accent and its one positive signal. As trim it paints section titles, the active tab and segment rules, focus rings and the jersey number. In the data it marks award plates, a skill score of 90 or more (or a Defense-tab stat in the top 10% of qualified players), a made 5-star catch, quality starts, RBI dots and hits on the spray chart.
 
 ### Tertiary
 - **Brick Red**: the out and the run against. It fills strikeout diamonds and out ticks. Its text-only tint, **Brick Red Text**, is lighter for small type on the board, where the fill color is too dark to read (runs allowed, strikes).
@@ -181,7 +181,7 @@ A three-layer palette of wall, board and ink, with two spare signal colors.
 
 ### Hierarchy
 - **Display** (Oswald 600, 42px on wide sheets, 26px on narrow, 1.05): player names on the profile.
-- **Stat** (Oswald 600, 46px / 34px narrow, tabular figures): numbers in recessed slots on the Overview board.
+- **Stat** (Oswald 600, 46px / 34px narrow, tabular figures): numbers in recessed slots on the Defense tab; the Overview's skill scores (42px / 34px narrow).
 - **Headline** (Oswald 500, 20px / 16px narrow): team and position line under a name. The position is a step softer than the team.
 - **Title** (Oswald 500, 15px): vitals values, select values, card summaries.
 - **Data** (Overpass 700, 12px, tabular figures): table cells, game-log rows, splits.
@@ -236,8 +236,17 @@ Clickable names (players and teams) hang like scoreboard plates.
 - **Hover / Focus:** fills Pennant Gold with Scorebook Board text, and the shadow deepens. Long names ellipsize inside the plate.
 - **Use:** only for things you can click into. Identity that isn't a link (a profile's own team and position) is plain type.
 
+### Skill Scores (signature)
+The Overview board: a player's season as percentile scores, one per skill, so his strengths read at a glance.
+- **Score:** a bold Oswald number, 1–100, his percentile in that skill's stat. No suffix, no rank. Gold from 90 up.
+- **Under it:** the skill's name painted above, the stat behind it written small below ("ISO .290").
+- **Groups:** hitters get Hitting (Bat, Power, Contact, Eye) and Tools (Speed, Range, Glove, Arm); pitchers Pitching (Runs, Damage, Traffic, Command) and Stuff (Velo, Reach, Whiff, Grounders). Four to a row; the two groups stack on a phone and sit side by side on a wide sheet. The first group's heading names the pool ("vs 135 qualified hitters") or how far short he is.
+- **Short of the pool:** still scored, placed among the pool, but in Faded Cream and never gold.
+- **Not ranked:** a tile that doesn't apply, or a pool he isn't in, keeps its name and shows a dash.
+- **Totals:** a few plain counts below (G, HR, SB; GS, IP, K) in Oswald 600 at 28px (32px wide), a step under the scores, never ranked or gold.
+
 ### Stat Slots (signature)
-Numbers in recessed scoreboard slots, under a painted label.
+Numbers in recessed scoreboard slots, under a painted label: the Defense tab's board.
 - **Shape:** 2px corners, recessed slot shadow, centered Oswald numerals.
 - **Elite:** the number turns Pennant Gold when the player ranks in the top 10% of the season's qualified pool.
 - **Rank:** a small Faded Cream rank in the bottom-right corner ("T12/134"), shrinking to 8px on phones so the number keeps its full slot. Playing-time counts (G, PA, GS) are never ranked.
