@@ -1701,7 +1701,8 @@
     align-items: center;
     gap: 5px;
     padding: 4px 4px 4px 6px;
-    min-height: 30px;
+    height: 30px;
+    position: relative;
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
     font-size: 11px;
@@ -1735,8 +1736,13 @@
   }
   .pb-team.is-out .pb-wins { color: var(--ink-soft); }
   .pb-team.is-champion .pb-name, .pb-team.is-champion .pb-wins { color: var(--gold); }
-  /* Connectors, in board-rule hairlines: WC straight across to its DS,
-     then the two DS joined into the LCS. */
+  /* Connectors, in board-rule hairlines, each running into the slot the
+     winner takes next. Rows are a fixed 30px, so a card's top and bottom
+     rows sit 15px either side of its middle. A Wild Card card is lifted
+     15px (its bottom margin, in a centered cell) so its middle lines up
+     with the away row of the DS beside it -- the DS's home row is the bye.
+     Each DS then steps down (or up) into its own LCS row. */
+  .pb-wc .pb-series { margin-bottom: 30px; }
   .pb-wc .pb-series::after,
   .pb-ds .pb-series::after {
     content: '';
@@ -1747,20 +1753,21 @@
     border-top: 1px solid var(--paper-line);
   }
   .pb-ds .pb-series::after { width: 8px; }
-  .pb-lcs::before {
+  .pb-lcs::before,
+  .pb-lcs::after {
     content: '';
     position: absolute;
     left: -8px;
-    top: calc((100% - 12px) / 4);
-    bottom: calc((100% - 12px) / 4);
     border-left: 1px solid var(--paper-line);
   }
-  .pb-lcs .pb-series::before {
+  .pb-lcs::before { top: calc((100% - 12px) / 4); bottom: calc(50% + 15px); }
+  .pb-lcs::after { top: calc(50% + 15px); bottom: calc((100% - 12px) / 4); }
+  .pb-lcs .pb-team::before {
     content: '';
     position: absolute;
     top: 50%;
     right: 100%;
-    width: 8px;
+    width: 9px;
     border-top: 1px solid var(--paper-line);
   }
   .pb-champ { display: flex; justify-content: center; }
@@ -5142,8 +5149,8 @@
   // Which WC feeds which DS is read off the teams they share, falling back
   // to the pairing MLB has used since the 12-team format (F_2 into D_1, etc.).
   const BRACKET_LEAGUES = [
-    { label: 'American League', lcs: 'L_1', lcsName: 'ALCS', ds: ['D_1', 'D_2'], wc: ['F_2', 'F_1'] },
-    { label: 'National League', lcs: 'L_2', lcsName: 'NLCS', ds: ['D_3', 'D_4'], wc: ['F_4', 'F_3'] }
+    { label: 'American League', lcs: 'L_1', lcsName: 'ALCS', ds: ['D_2', 'D_1'], wc: ['F_1', 'F_2'] },
+    { label: 'National League', lcs: 'L_2', lcsName: 'NLCS', ds: ['D_4', 'D_3'], wc: ['F_3', 'F_4'] }
   ];
   function buildPostseasonBracket(rawSeries, season) {
     const byId = {};
@@ -5171,7 +5178,15 @@
         return { ds, wc: shared || byId[lg.wc[i]] || null };
       });
       if (rows[0].wc && rows[0].wc === rows[1].wc) rows[1].wc = wcPool.find(wc => wc !== rows[0].wc) || null;
-      return { ...lg, rows, lcsSeries: byId[lg.lcs] || null };
+      // Higher seeds sit on the bottom, like the home team in a series:
+      // D_1/D_3 hold each league's top seed. Each DS feeds the LCS row on
+      // its own side, so once the LCS is set, the DS whose winner has home
+      // field there takes the bottom -- after an upset that can be the
+      // other one, and the connectors would otherwise cross.
+      const lcsSeries = byId[lg.lcs] || null;
+      const lcsHome = lcsSeries && lcsSeries.teams[1];
+      if (lcsHome && teamIds(rows[0].ds).includes(lcsHome.id)) rows.reverse();
+      return { ...lg, rows, lcsSeries };
     });
     return { leagues, ws: byId.W_1 || null, all: Object.values(byId) };
   }
@@ -5190,7 +5205,7 @@
     const started = series.games.some(g => g.status.abstractGameState === 'Final');
     return `<div class="pb-team${cls ? ' ' + cls : ''}">
       <img src="${capLogoUrl(team.id)}" alt="">
-      <span class="pb-name"><span class="pb-nick">${TEAM_NICKNAMES[team.id]}</span><span class="pb-abbr">${teamAbbr(t)}</span></span>
+      <span class="pb-name"><span class="pb-nick">${team.id === 109 ? 'D-backs' : TEAM_NICKNAMES[team.id]}</span><span class="pb-abbr">${teamAbbr(t)}</span></span>
       <span class="pb-wins">${started ? team.wins : ''}</span>
     </div>`;
   }
