@@ -1615,23 +1615,19 @@
     border-bottom: 1px solid var(--paper-line);
   }
   .standings-header-row .standings-team { font-size: inherit; }
-  .standings-row > .standings-team { flex: 0 1 104px; }
   /* Every plate the same width, like the out-of-town board's, with the
      numbers squared up at the right -- a stretched plate read as a bar. */
-  .standings-clinch {
-    flex: 1 0 14px;
-    font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 10px;
-    color: var(--ink-soft);
-  }
+  .standings-row > .standings-team { flex: 0 1 104px; margin-right: auto; }
   .standings-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 48px; max-width: 920px; margin: 0 auto; }
   /* Six columns and a plate have to fit a 320px phone's sheet without a
-     sideways scroll. */
+     sideways scroll, so each column narrows to its own longest value
+     ("100", ".605", "19.5", "10-0", "W10"). */
   @media (max-width: 400px) {
     .standings-row { gap: 4px; }
     .standings-num { width: 30px; }
-    .standings-clinch { flex-basis: 8px; }
+    .standings-num.sn-w, .standings-num.sn-l { width: 24px; }
+    .standings-num.sn-pct { width: 32px; }
+    .standings-num.sn-strk { width: 27px; }
     .standings-row > button.standings-team-btn { padding: 3px 5px; }
   }
   .schedule-month-block { margin-bottom: 18px; }
@@ -4836,12 +4832,12 @@
   function nlDivisions(divisions) { return divisions.filter(d => DIVISION_INFO[d.division.id].name.startsWith('National League')); }
   const STANDINGS_HEADER_ROW = `<div class="standings-row standings-header-row">
     <span class="standings-team">Team</span>
-    <span class="standings-clinch"></span>
-    <span class="standings-num">W</span>
-    <span class="standings-num">L</span>
-    <span class="standings-num">PCT</span>
+    <span class="standings-num sn-w">W</span>
+    <span class="standings-num sn-l">L</span>
+    <span class="standings-num sn-pct">PCT</span>
     <span class="standings-num">GB</span>
-    <span class="standings-num">Strk</span>
+    <span class="standings-num">L10</span>
+    <span class="standings-num sn-strk">Strk</span>
   </div>`;
   // gbValue is tr.gamesBack for the division view, tr.wildCardGamesBack for
   // the wild-card view -- the only field that differs between the two.
@@ -4850,14 +4846,16 @@
     const gb = gbValue === '-' || gbValue == null ? '&#8212;' : gbValue;
     const teamId = tr.team && tr.team.id;
     const teamName = (tr.team && tr.team.name) || '';
+    const lastTen = ((tr.records && tr.records.splitRecords) || []).find(r => r.type === 'lastTen');
+    const l10 = lastTen ? `${lastTen.wins}-${lastTen.losses}` : '&#8212;';
     return `<div class="standings-row">
       <button type="button" class="standings-team standings-team-btn" data-team-id="${teamId}" data-team-name="${teamName}">${teamName}</button>
-      <span class="standings-clinch">${tr.clinchIndicator || ''}</span>
-      <span class="standings-num">${tr.wins ?? 0}</span>
-      <span class="standings-num">${tr.losses ?? 0}</span>
-      <span class="standings-num">${tr.winningPercentage ?? '.000'}</span>
+      <span class="standings-num sn-w">${tr.wins ?? 0}</span>
+      <span class="standings-num sn-l">${tr.losses ?? 0}</span>
+      <span class="standings-num sn-pct">${tr.winningPercentage ?? '.000'}</span>
       <span class="standings-num">${gb}</span>
-      <span class="standings-num">${streak}</span>
+      <span class="standings-num">${l10}</span>
+      <span class="standings-num sn-strk">${streak}</span>
     </div>`;
   }
 

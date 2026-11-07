@@ -131,7 +131,7 @@ components:
 
 A fan's paper scorebook, kept under the Green Monster. Every surface is either the Monster-green wall (the frame around everything), the dark board pages laid on it (sheets), or the cream ink a scorekeeper writes with. The game is told in scorebook notation: diamonds per plate appearance, play codes like 6-3 and F8, and fielder sequences. The rest of the app, from leaderboards to profiles and game logs, is kept with the same pencil.
 
-The mood is precise, spare and scorekeeper-like. The old-ballpark character lives in the type, the notation and a few physical scoreboard parts, not in ornament. Numbers carry the page; captions, legends and helper text are left out because these readers know baseball. Color is rationed: cream for everything that is simply true, gold only for what is excellent, and brick red only for outs and runs against.
+The mood is precise, spare and scorekeeper-like. The old-ballpark character lives in the type, the notation and a few physical scoreboard parts, not in ornament. Numbers carry the page; captions, legends and helper text are left out because these readers know baseball. Color is rationed: cream for everything that is simply true, gold for the scoreboard's trim and for what is excellent, and brick red only for outs and runs against.
 
 Components split by role. Data and identity get physical scoreboard parts: recessed number slots, pegged nameplates and award plates. Controls and navigation stay quiet: thin rules, soft labels and square segments that recede until touched.
 
@@ -139,7 +139,7 @@ Components split by role. Data and identity get physical scoreboard parts: reces
 - Monster-green frame, dark board sheets, cream ink. Three layers, always in that order.
 - Square corners everywhere except the 2px recessed slot and round data dots.
 - Condensed Oswald for names and numbers; small-caps Overpass for every label.
-- Gold is earned (elite rank, quality start, award); it is never decoration.
+- Gold does two jobs: trim in the scheme (section titles, active and focus rules), and earned in the data (elite rank, quality start, award).
 - Zeros left blank in tables, so the cells that carry ink are the ones that happened.
 
 ## Colors
@@ -150,7 +150,7 @@ A three-layer palette of wall, board and ink, with two spare signal colors.
 - **Monster Green**: the frame. It's the page background behind every sheet and the PWA theme color, matching Fenway's Green Monster. It is binding and never changes. Contrast is solved by what sits on it.
 
 ### Secondary
-- **Pennant Gold**: the one positive signal. Used for the active tab rule, focus rings, award plates, a stat in the top 10% of qualified players, a made 5-star catch, quality starts, RBI dots, hits on the spray chart, and the jersey number.
+- **Pennant Gold**: the scheme's accent and its one positive signal. As trim it paints section titles, the active tab and segment rules, focus rings and the jersey number. In the data it marks award plates, a stat in the top 10% of qualified players, a made 5-star catch, quality starts, RBI dots and hits on the spray chart.
 
 ### Tertiary
 - **Brick Red**: the out and the run against. It fills strikeout diamonds and out ticks. Its text-only tint, **Brick Red Text**, is lighter for small type on the board, where the fill color is too dark to read (runs allowed, strikes).
@@ -166,7 +166,7 @@ A three-layer palette of wall, board and ink, with two spare signal colors.
 ### Named Rules
 **The Monster Stays Rule.** The frame is Monster Green and never darkens or shifts. Text on the frame is full Scorekeeper Cream. Small or secondary text belongs on a board plate, not directly on the wall.
 
-**The Gold Is Earned Rule.** Gold marks excellence or the user's own focus (active tab, focus ring), nothing else. A stat turns gold only in the top 10% of that season's qualified pool. A "lead stat" or decorative highlight is never gold.
+**The Two Golds Rule.** Gold has two jobs, and they don't mix. As trim it is simply part of the scheme, like the paint on a scoreboard: section titles, the active tab and segment rules, focus rings, the jersey number. In the data it is earned: a number, dot, lamp or mark turns gold only for excellence or a positive event (top 10% of that season's qualified pool, a quality start, an award, a hit, an RBI, a made 5-star catch). Trim never reaches into the data: a value is never gold just to lead the eye, so a "lead stat" stays cream.
 
 **The Blank Zero Rule.** In game logs and tables, a zero count is left blank, never written as 0. The exceptions are pairs read aloud ("0-4" H-AB, an inning pitched) and a linescore or big-number summary, where a blank would read as missing.
 
@@ -292,7 +292,7 @@ Single-series and quiet: Board Rule gridlines, Faded Cream axis labels, thin mar
 - **Do** keep the Monster Green frame (#54796d) exactly. Fix contrast by changing what sits on it.
 - **Do** put numbers in recessed slots and clickable names on pegged nameplates.
 - **Do** leave zero counts blank in logs and tables.
-- **Do** reserve Pennant Gold for top-10% stats, made 5-star catches, quality starts, awards, RBIs, hits, and active or focus states.
+- **Do** use Pennant Gold as trim (section titles, active and focus rules) and, within the data, only for top-10% stats, made 5-star catches, quality starts, awards, RBIs and hits.
 - **Do** use tabular figures for every column of numbers.
 - **Do** size changeable controls to fixed slots so filters never shift the layout.
 - **Do** draw spray charts in the API's own coordinate space (home 125.42, 198.27; 2.495 ft per unit) so fences and batted balls agree.
@@ -301,6 +301,6 @@ Single-series and quiet: Board Rule gridlines, Faded Cream axis labels, thin mar
 - **Don't** round corners on plates, cards, buttons or selects. Only slots (2px), bar ends (3px) and dots are rounded.
 - **Don't** use Faded Cream for text on the green frame. It fails contrast there.
 - **Don't** add helper captions, legends or tutorial text. These users know baseball.
-- **Don't** make a "lead stat" or decorative accent gold.
+- **Don't** make a value gold that hasn't earned it, such as a "lead stat"; trim stays out of the data.
 - **Don't** use nameplates for identity that isn't a link, such as a profile's own team and position.
 - **Don't** let a zero-based scale waste half a bar. Start the axis near the data and label both ends.

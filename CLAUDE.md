@@ -20,7 +20,7 @@ Whenever a Claude Code session edits `index.html` (or `sw.js`/`manifest.json`), 
 
 ## Product and design context
 
-`PRODUCT.md` records who the app is for, how it's used, and its binding commitments (the Green Monster green frame among them). `DESIGN.md` records the visual system — tokens in its YAML frontmatter, then the rules for applying them (gold is earned, blank zeros, square corners, slots vs. nameplates), with `.impeccable/design.json` as its machine-readable companion. Read both before any visual or UX change, and update `DESIGN.md` when a change establishes or retires a design rule.
+`PRODUCT.md` records who the app is for, how it's used, and its binding commitments (the Green Monster green frame among them). `DESIGN.md` records the visual system — tokens in its YAML frontmatter, then the rules for applying them (gold as trim vs. earned gold, blank zeros, square corners, slots vs. nameplates), with `.impeccable/design.json` as its machine-readable companion. Read both before any visual or UX change, and update `DESIGN.md` when a change establishes or retires a design rule.
 
 ## Structure
 
@@ -50,7 +50,7 @@ When adding a new drill-in, push an entry for it with `navPush` and teach the `p
 
 The Highlights tab is `daily` internally (`data-tab="daily"`, `dailyBody`, `dailyPollTimer`, etc.) — it used to be called "Daily" and show a grid of the day's games before that moved to the Scorecard tab's own game strip (see below), leaving Highlights with just its Home Runs/Strikeouts views. The user-facing rename wasn't pushed through the internal identifiers; match that if you touch this code.
 
-The Standings tab is team standings only (Division / Wild Card), as of the picked date. `/v1/standings` returns nothing for a date outside the regular season, so `loadStandings` reads such a date as of the last finished season's final day (`standingsDateFor`, from `/v1/seasons/{year}`), moves the picker to that day, and titles the sheet "{year} Final" once the season is over.
+The Standings tab is team standings only (Division / Wild Card), as of the picked date; L10 comes from each team record's `splitRecords` (`type: 'lastTen'`). `/v1/standings` returns nothing for a date outside the regular season, so `loadStandings` reads such a date as of the last finished season's final day (`standingsDateFor`, from `/v1/seasons/{year}`), moves the picker to that day, and titles the sheet "{year} Final" once the season is over.
 
 ### Overlays / modals
 
