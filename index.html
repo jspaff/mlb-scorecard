@@ -5178,14 +5178,14 @@
         return { ds, wc: shared || byId[lg.wc[i]] || null };
       });
       if (rows[0].wc && rows[0].wc === rows[1].wc) rows[1].wc = wcPool.find(wc => wc !== rows[0].wc) || null;
-      // Higher seeds sit on the bottom, like the home team in a series:
-      // D_1/D_3 hold each league's top seed. Each DS feeds the LCS row on
-      // its own side, so once the LCS is set, the DS whose winner has home
-      // field there takes the bottom -- after an upset that can be the
-      // other one, and the connectors would otherwise cross.
+      // The bracket keeps its seeding: D_1/D_3 (each league's top seed)
+      // always on the bottom, and each DS winner takes the LCS row on its
+      // own side. So the LCS card is set by bracket position, not home
+      // field -- after an upset the home team can be on top there, but the
+      // connectors never cross.
       const lcsSeries = byId[lg.lcs] || null;
-      const lcsHome = lcsSeries && lcsSeries.teams[1];
-      if (lcsHome && teamIds(rows[0].ds).includes(lcsHome.id)) rows.reverse();
+      const lcsBottom = lcsSeries && lcsSeries.teams[1];
+      if (lcsBottom && teamIds(rows[0].ds).includes(lcsBottom.id)) lcsSeries.teams.reverse();
       return { ...lg, rows, lcsSeries };
     });
     return { leagues, ws: byId.W_1 || null, all: Object.values(byId) };
