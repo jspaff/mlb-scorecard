@@ -1303,6 +1303,10 @@
   @media (max-width: 400px) {
     [data-tab-controls="standings"] .view-toggle-btn { padding-left: 8px; padding-right: 8px; }
   }
+  @media (max-width: 340px) {
+    [data-tab-controls="standings"] .view-toggle-btn { padding-left: 6px; padding-right: 6px; letter-spacing: 0.02em; }
+    #standingsYearPick { padding-left: 8px; padding-right: 22px; background-position: right 8px center; }
+  }
   .view-toggle-btn.active { color: var(--ink); background: rgba(217, 169, 26, 0.15); box-shadow: inset 0 -2px 0 var(--gold); }
   .view-toggle-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
   .wc-cutoff-line { border-top: 2px solid var(--ink); margin: 2px 0 0; }
@@ -3306,7 +3310,7 @@
       <div class="view-toggle" id="standingsViewToggle">
         <button type="button" class="view-toggle-btn active" data-view="division">Division</button>
         <button type="button" class="view-toggle-btn" data-view="wildcard">Wild Card</button>
-        <button type="button" class="view-toggle-btn" data-view="postseason">Postseason</button>
+        <button type="button" class="view-toggle-btn" data-view="postseason">Playoffs</button>
       </div>
     </div>
     <div class="mlb-controls" data-tab-controls="schedule" hidden>
@@ -5217,8 +5221,8 @@
 
   let lastBracket = null;
   function renderPostseasonBracket(bracket, season) {
-    const title = `<div class="pitch-header">${season} Postseason</div>`;
-    if (!bracket) return `${title}<div class="pitch-empty">The ${season} postseason hasn't been set yet.</div>`;
+    const title = `<div class="pitch-header">${season} Playoffs</div>`;
+    if (!bracket) return `${title}<div class="pitch-empty">The ${season} playoffs haven't been set yet.</div>`;
     const ws = bracket.ws;
     const champ = ws && ws.winnerId
       ? `<div class="pb-champ"><span class="player-award"><span class="player-award-label">${season} World Series Champions</span></span></div>`
