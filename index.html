@@ -1614,75 +1614,25 @@
     color: var(--ink-soft);
     border-bottom: 1px solid var(--paper-line);
   }
-  .standings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 32px; }
-  .standings-grid-single { grid-template-columns: 1fr; max-width: 320px; margin: 0 auto; }
-  .lb-grid {
-    display: grid;
-    grid-auto-flow: column;
-    grid-template-columns: 1fr;
-    grid-template-rows: repeat(30, auto);
-    column-gap: 32px;
-    max-width: 320px;
-    margin: 0 auto;
-  }
-  .lb-rank { width: 24px; font-family: 'Overpass', sans-serif; font-weight: 700; color: var(--ink-soft); }
-  @media (min-width: 700px) {
-    .lb-grid { max-width: 660px; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(15, auto); }
-  }
-  @media (min-width: 1050px) {
-    .lb-grid { max-width: 1000px; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: repeat(10, auto); }
-  }
-  .lb-row { padding: 6px 0; position: relative; }
-  .lb-row-content { display: flex; align-items: center; gap: 6px; flex: 1 1 auto; min-width: 0; position: relative; z-index: 1; }
-  .lb-headshot {
-    width: 40px;
-    height: 50px;
-    flex: none;
-    border-radius: 0;
-    object-fit: cover;
-    background: var(--paper-line);
-    border: 1px solid var(--paper-line);
-  }
-  button.lb-name-btn { display: inline-flex; align-items: center; gap: 5px; }
-  .lb-hr-cell {
-    width: 40px;
-    flex: none;
-    height: 34px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 3px;
-  }
-  .lb-hr-watermark {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 64px;
-    height: 64px;
-    transform: translate(-50%, -50%);
-    object-fit: contain;
-    opacity: 0.16;
-    pointer-events: none;
-  }
-  /* Recessed-slot look lifted straight from .monster-box-cell (the Monster
-     scoreboard's own inning/RHE digits) -- same inset box-shadow and dark
-     backing, so the HR count reads as an interchangeable plate slotted into
-     the board rather than plain table text. */
-  .lb-hr {
-    position: relative;
-    z-index: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 17px;
-    height: 24px;
+  .standings-header-row .standings-team { font-size: inherit; }
+  .standings-row > .standings-team { flex: 0 1 104px; }
+  /* Every plate the same width, like the out-of-town board's, with the
+     numbers squared up at the right -- a stretched plate read as a bar. */
+  .standings-clinch {
+    flex: 1 0 14px;
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
-    font-size: 14px;
-    color: var(--ink);
-    border-radius: 2px;
-    background: rgba(0, 0, 0, 0.22);
-    box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.5), inset 0 -1px 1px rgba(255, 255, 255, 0.05);
+    font-size: 10px;
+    color: var(--ink-soft);
+  }
+  .standings-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 48px; max-width: 920px; margin: 0 auto; }
+  /* Six columns and a plate have to fit a 320px phone's sheet without a
+     sideways scroll. */
+  @media (max-width: 400px) {
+    .standings-row { gap: 4px; }
+    .standings-num { width: 30px; }
+    .standings-clinch { flex-basis: 8px; }
+    .standings-row > button.standings-team-btn { padding: 3px 5px; }
   }
   .schedule-month-block { margin-bottom: 18px; }
   .schedule-month-block:last-child { margin-bottom: 0; }
@@ -2390,7 +2340,7 @@
     margin-bottom: 2px;
     padding-right: 18px;
   }
-  /* Standings tab headers (Divisional/Wild Card Standings, Home Run Leaders)
+  /* Standings tab headers (Division/Wild Card Standings)
      get extra letter-spacing beyond the shared .pitch-header default. */
   #standingsPanel .pitch-header {
     letter-spacing: 0.12em;
@@ -3111,7 +3061,7 @@
        overflow-x: auto for a sliver of scrollbar. */
     .pitch-overlay { padding: 10px; }
     .pitch-modal { padding: 12px; }
-    .standings-grid { grid-template-columns: 1fr; }
+    .standings-grid { grid-template-columns: minmax(0, 1fr); }
     .roster-columns { flex-direction: column; gap: 14px 0; }
     .calendar-day { min-height: 42px; padding: 2px 1px; }
     .cal-game-opp { font-size: 16px; margin-top: 2px; }
@@ -3203,7 +3153,6 @@
       <div class="view-toggle" id="standingsViewToggle">
         <button type="button" class="view-toggle-btn active" data-view="division">Division</button>
         <button type="button" class="view-toggle-btn" data-view="wildcard">Wild Card</button>
-        <button type="button" class="view-toggle-btn" data-view="homeruns">Home Runs</button>
       </div>
     </div>
     <div class="mlb-controls" data-tab-controls="schedule" hidden>
@@ -3511,7 +3460,6 @@
   // personId alone -- can't collide and overwrite each other.
   const hitterGameLogCache = {};
   const standingsCache = {};
-  const hrLeadersCache = {};
   const venueCache = {};
   // The live-feed's gameData.venue is often just {id, name, link} -- city
   // lives on the dedicated venue endpoint instead. Cached by venue id since
@@ -3741,48 +3689,6 @@
       return standingsCache[key];
     } catch (e) {
       standingsCache[key] = [];
-      return [];
-    }
-  }
-  // The leaders endpoint has no as-of-date filtering of its own (a bare
-  // `date` or `startDate`/`endDate` param is silently ignored, always
-  // returning current season totals) -- so an as-of-date board is built by
-  // hand: pull a wider season-long candidate pool, then hydrate each
-  // candidate's homeRuns as of `date` via a single batched byDateRange
-  // request, and re-rank locally. The pool is capped at 50, so a player
-  // outside this season's top 50 who happened to be leading earlier in the
-  // year wouldn't show up -- an accepted approximation given the endpoint's
-  // limits.
-  async function getHrLeaders(season, date) {
-    const key = `${season}-${date}`;
-    if (hrLeadersCache[key] !== undefined) return hrLeadersCache[key];
-    try {
-      const poolUrl = `https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=homeRuns&season=${season}&sportId=1&limit=50`;
-      const poolRes = await fetch(poolUrl);
-      const poolData = await poolRes.json();
-      const pool = (poolData.leagueLeaders && poolData.leagueLeaders[0] && poolData.leagueLeaders[0].leaders) || [];
-      if (!pool.length) {
-        hrLeadersCache[key] = [];
-        return [];
-      }
-      const ids = pool.map(l => l.person.id).join(',');
-      const statsUrl = `https://statsapi.mlb.com/api/v1/people?personIds=${ids}&hydrate=${encodeURIComponent(`stats(group=[hitting],type=[byDateRange],startDate=${season}-01-01,endDate=${date})`)}`;
-      const statsRes = await fetch(statsUrl);
-      const statsData = await statsRes.json();
-      const hrById = {};
-      (statsData.people || []).forEach(p => {
-        const split = p.stats && p.stats[0] && p.stats[0].splits && p.stats[0].splits[0];
-        hrById[p.id] = (split && split.stat && split.stat.homeRuns) || 0;
-      });
-      const leaders = pool
-        .map(l => ({ ...l, value: hrById[l.person.id] || 0 }))
-        .filter(l => l.value > 0)
-        .sort((a, b) => b.value - a.value)
-        .slice(0, 30)
-        .map((l, i) => ({ ...l, rank: i + 1 }));
-      hrLeadersCache[key] = leaders;
-      return leaders;
-    } catch (e) {
       return [];
     }
   }
@@ -4930,6 +4836,7 @@
   function nlDivisions(divisions) { return divisions.filter(d => DIVISION_INFO[d.division.id].name.startsWith('National League')); }
   const STANDINGS_HEADER_ROW = `<div class="standings-row standings-header-row">
     <span class="standings-team">Team</span>
+    <span class="standings-clinch"></span>
     <span class="standings-num">W</span>
     <span class="standings-num">L</span>
     <span class="standings-num">PCT</span>
@@ -4945,6 +4852,7 @@
     const teamName = (tr.team && tr.team.name) || '';
     return `<div class="standings-row">
       <button type="button" class="standings-team standings-team-btn" data-team-id="${teamId}" data-team-name="${teamName}">${teamName}</button>
+      <span class="standings-clinch">${tr.clinchIndicator || ''}</span>
       <span class="standings-num">${tr.wins ?? 0}</span>
       <span class="standings-num">${tr.losses ?? 0}</span>
       <span class="standings-num">${tr.winningPercentage ?? '.000'}</span>
@@ -4953,10 +4861,16 @@
     </div>`;
   }
 
-  function renderStandingsContent(records) {
+  // finalSeason is the season's year once its standings are final, else false.
+  function standingsTitle(label, finalSeason) {
+    return `<div class="pitch-header">${finalSeason ? `${finalSeason} Final ${label}` : label}</div>`;
+  }
+
+  function renderStandingsContent(records, finalSeason) {
     const divisions = sortedDivisionsWithTeams(records);
+    const title = standingsTitle('Division Standings', finalSeason);
     if (!divisions.length) {
-      return `<div class="pitch-header">Divisional Standings</div><div class="pitch-empty">Standings not available for this date.</div>`;
+      return `${title}<div class="pitch-empty">Standings not available for this date.</div>`;
     }
 
     function renderDivision(div) {
@@ -4973,13 +4887,14 @@
       <div class="standings-col">${alDivisions(divisions).map(renderDivision).join('')}</div>
       <div class="standings-col">${nlDivisions(divisions).map(renderDivision).join('')}</div>
     </div>`;
-    return `<div class="pitch-header">Divisional Standings</div>${grid}`;
+    return `${title}${grid}`;
   }
 
-  function renderWildcardContent(records) {
+  function renderWildcardContent(records, finalSeason) {
     const divisions = sortedDivisionsWithTeams(records);
+    const title = standingsTitle('Wild Card Standings', finalSeason);
     if (!divisions.length) {
-      return `<div class="pitch-header">Wild Card Standings</div><div class="pitch-empty">Standings not available for this date.</div>`;
+      return `${title}<div class="pitch-empty">Standings not available for this date.</div>`;
     }
 
     function renderLeague(leagueDivisions, label) {
@@ -5013,32 +4928,7 @@
       <div class="standings-col">${renderLeague(alDivisions(divisions), 'AL')}</div>
       <div class="standings-col">${renderLeague(nlDivisions(divisions), 'NL')}</div>
     </div>`;
-    return `<div class="pitch-header">Wild Card Standings</div>${grid}`;
-  }
-
-  function renderHrLeaderboard(leaders, season) {
-    if (!leaders.length) {
-      return `<div class="pitch-header">Home Run Leaders</div><div class="pitch-empty">Home run leaders not available for this date.</div>`;
-    }
-    const rows = leaders.map(l => {
-      const id = l.person && l.person.id;
-      const teamId = l.team && l.team.id;
-      const name = (l.person && l.person.fullName) || '';
-      playerStore[id] = { id, name, pos: '', team: teamNickname(l.team), season, todayStats: {} };
-      const headshot = `https://img.mlbstatic.com/mlb-photos/image/upload/w_60,h_84,q_100,f_auto,c_fill,g_face/v1/people/${id}/headshot/67/current`;
-      const logoWatermark = teamId ? `<img class="lb-hr-watermark" src="${capLogoUrl(teamId)}" alt="">` : '';
-      return `<div class="standings-row lb-row">
-        ${logoWatermark}
-        <div class="lb-row-content">
-          <span class="standings-num lb-rank">${l.rank}</span>
-          <img class="lb-headshot" src="${headshot}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
-          <button type="button" class="standings-team lb-name-btn player-name-btn" data-player-id="${id}">${name} <span class="hr-team">${teamAbbr(l.team)}</span></button>
-          <span class="lb-hr-cell">${String(l.value ?? 0).padStart(2, '0').split('').map(d => `<span class="lb-hr">${d}</span>`).join('')}</span>
-        </div>
-      </div>`;
-    }).join('');
-    return `<div class="pitch-header">Home Run Leaders</div>
-      <div class="lb-grid">${rows}</div>`;
+    return `${title}${grid}`;
   }
 
   // The player modal's Last 10 Games section: row 1 is always "Today",
@@ -6858,22 +6748,53 @@
     await fetchAndRender(gamePk);
   }
 
+  // The standings endpoint answers only for regular-season dates -- from
+  // the day after the finale until next Opening Day it returns nothing, so
+  // a date outside the season is read as of the last season's final day.
+  // A failed lookup isn't cached and leaves the date as asked.
+  const regularSeasonCache = {};
+  async function getRegularSeason(year) {
+    if (regularSeasonCache[year]) return regularSeasonCache[year];
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/seasons/${year}?sportId=1`);
+      const data = await res.json();
+      const s = data.seasons && data.seasons[0];
+      if (!s || !s.regularSeasonStartDate || !s.regularSeasonEndDate) return null;
+      regularSeasonCache[year] = { start: s.regularSeasonStartDate, end: s.regularSeasonEndDate };
+      return regularSeasonCache[year];
+    } catch (e) {
+      return null;
+    }
+  }
+  async function standingsDateFor(dateStr) {
+    const year = parseInt(dateStr.slice(0, 4), 10);
+    let season = await getRegularSeason(year);
+    if (season && dateStr < season.start) season = await getRegularSeason(year - 1);
+    if (!season) return { date: dateStr, final: false };
+    const date = dateStr > season.end ? season.end : dateStr;
+    return { date, final: date === season.end && todayStr() > season.end };
+  }
+
+  let standingsRequestId = 0;
   async function loadStandings(dateStr) {
+    const requestId = ++standingsRequestId;
     standingsBody.innerHTML = '<div class="mlb-status-msg">Loading standings&#8230;</div>';
     try {
-      const season = dateStr.slice(0, 4);
-      if (standingsView === 'homeruns') {
-        const leaders = await getHrLeaders(season, dateStr);
-        standingsBody.innerHTML = `<div class="sheet">${renderHrLeaderboard(leaders, season)}</div>`;
-        return;
-      }
-      const records = await getStandings(season, dateStr);
+      const { date, final } = await standingsDateFor(dateStr);
+      if (requestId !== standingsRequestId) return;
+      // The picker follows the date actually shown, so its arrows step from
+      // the finale rather than from a winter day that would show the same table.
+      if (date !== dateStr) setDateInputValue(standingsDateInput, standingsDateInputText, date);
+      document.getElementById('standingsDateNext').disabled = final;
+      const season = date.slice(0, 4);
+      const records = await getStandings(season, date);
+      if (requestId !== standingsRequestId) return;
       const content = standingsView === 'wildcard'
-        ? renderWildcardContent(records)
-        : renderStandingsContent(records);
+        ? renderWildcardContent(records, final && season)
+        : renderStandingsContent(records, final && season);
       standingsBody.innerHTML = `<div class="sheet">${content}</div>`;
     } catch (e) {
-      standingsBody.innerHTML = apiErrorMsg('standings');
+      if (requestId === standingsRequestId) standingsBody.innerHTML = apiErrorMsg('standings');
     }
   }
 
@@ -8400,8 +8321,8 @@
   // line in this group, unfiltered (the API has no server-side batting-
   // title/ERA-title qualifier param as far as this file uses it). Filtered
   // down to qualified players client-side by renderPlayerListPanel using
-  // getLeagueSeasonInfo's teamGamesPlayed. Cached like standingsCache/
-  // hrLeadersCache (both success and failure) rather than fetchGameStats'
+  // getLeagueSeasonInfo's teamGamesPlayed. Cached like standingsCache
+  // (both success and failure) rather than fetchGameStats'
   // isFinal split -- this is a browse list the user can just re-open the
   // tab to refresh, not a value baked into a stat the rest of the session
   // depends on staying fresh.
