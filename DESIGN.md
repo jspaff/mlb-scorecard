@@ -166,7 +166,7 @@ A three-layer palette of wall, board and ink, with two spare signal colors.
 ### Named Rules
 **The Monster Stays Rule.** The frame is Monster Green and never darkens or shifts. Text on the frame is full Scorekeeper Cream. Small or secondary text belongs on a board plate, not directly on the wall.
 
-**The Two Golds Rule.** Gold has two jobs, and they don't mix. As trim it is simply part of the scheme, like the paint on a scoreboard: section titles, the active tab and segment rules, focus rings, the jersey number. In the data it is earned: a number, dot, lamp or mark turns gold only for excellence or a positive event (top 10% of that season's qualified pool, a quality start, an award, a hit, an RBI, a made 5-star catch). Trim never reaches into the data: a value is never gold just to lead the eye, so a "lead stat" stays cream.
+**The Two Golds Rule.** Gold has two jobs, and they don't mix. As trim it is simply part of the scheme, like the paint on a scoreboard: section titles, the active tab and segment rules, focus rings, the jersey number, the wash on the user's own team. In the data it is earned: a number, dot, lamp or mark turns gold only for excellence or a positive event (top 10% of that season's qualified pool, a quality start, an award, a hit, an RBI, a made 5-star catch). Trim never reaches into the data: a value is never gold just to lead the eye, so a "lead stat" stays cream.
 
 **The Blank Zero Rule.** In game logs and tables, a zero count is left blank, never written as 0. The exceptions are pairs read aloud ("0-4" H-AB, an inning pitched) and a linescore or big-number summary, where a blank would read as missing.
 
@@ -282,6 +282,16 @@ The scorebook cell: a 40-unit diamond per plate appearance, drawn in SVG.
 - **Sheets:** square, Scorebook Board, 2px cream border, 18px padding, sheet shadow.
 - **Recent-game cards:** square, darker board wash, 1px rule. The header row carries date · opponent · result · stat line, and the body is diamonds or a row of number slots. The whole card links to the game.
 - **Status plates:** loading, empty and error messages sit on a small board plate when on the frame, and as plain Faded Cream text inside a sheet.
+
+### Postseason Bracket
+The Standings tab's Postseason view, drawn like a printed bracket.
+- **Layout:** the World Series on top, then each league as three columns (Wild Card, Division, LCS) joined by Board Rule hairlines. A Division Series sits beside the Wild Card that feeds it, and the LCS sits centered across both. Leagues sit side by side on wide sheets and stack on a phone, where team names become abbreviations.
+- **Series:** a square card on a darker board wash, two team rows (higher seed on top) with a cap, the name, and series wins in a recessed slot. The whole card opens that series' games. The names aren't nameplates, because the card is what you tap.
+- **Outcome:** a team that's out fades to Faded Cream. Only the World Series winner turns gold, with an award plate beneath ("2026 World Series Champions"). A series not yet set shows TBD rows.
+- **Older formats:** before 2022 the series are listed by round instead.
+
+### Your Team
+The user's team is a cap in a fixed slot at the end of the tab row (a stitched ball when none is picked). Its rows in standings and the bracket get the chosen-segment gold wash (`rgba(217,169,26,0.13)`): trim marking the user's own focus, never a gold value.
 
 ### Charts
 Single-series and quiet: Board Rule gridlines, Faded Cream axis labels, thin marks with 3px data-end corners, gold for the meaningful category (a quality start), and Weathered Sage or Faded Cream for the rest. Axis titles are labelled, a bar scale that doesn't start at zero has both ends labelled, and readouts appear on hover or tap. There are no legends where the page already explains the color.
