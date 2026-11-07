@@ -283,9 +283,9 @@ The scorebook cell: a 40-unit diamond per plate appearance, drawn in SVG.
 - **Recent-game cards:** square, darker board wash, 1px rule. The header row carries date · opponent · result · stat line, and the body is diamonds or a row of number slots. The whole card links to the game.
 - **Status plates:** loading, empty and error messages sit on a small board plate when on the frame, and as plain Faded Cream text inside a sheet.
 
-### Postseason Bracket
-The Standings tab's Postseason view, drawn like a printed bracket.
-- **Layout:** the World Series on top, then each league as three columns (Wild Card, Division, LCS) joined by Board Rule hairlines. A Division Series sits beside the Wild Card that feeds it, and the LCS sits centered across both. Leagues sit side by side on wide sheets and stack on a phone, where team names become abbreviations.
+### Playoff Bracket
+The Standings tab's Playoffs view, drawn like a printed bracket.
+- **Layout:** the World Series on top, then each league as three columns (Wild Card, Division, LCS) joined by Board Rule hairlines. Higher seeds sit on the bottom, as the home team does within a series: the top seed's Division Series is always the lower one, and the seeding holds through every round. Each line runs into the row the winner takes next: a Wild Card lines up with the away row of its Division Series (the bye team is the home row beneath), and each Division Series steps into its own LCS row. The LCS card follows bracket position, so after an upset its home team can sit on top, but lines never cross. Leagues sit side by side on wide sheets and stack on a phone, where team names become abbreviations.
 - **Series:** a square card on a darker board wash, two team rows set away over home, so the team with home field (the higher seed, or the better record in the World Series) sits on the bottom with a cap, the name, and series wins in a recessed slot. The whole card opens that series' games. The names aren't nameplates, because the card is what you tap.
 - **Outcome:** a team that's out fades to Faded Cream. Only the World Series winner turns gold, with an award plate beneath ("2026 World Series Champions"). A series not yet set shows TBD rows.
 - **Older formats:** before 2022 the series are listed by round instead.
