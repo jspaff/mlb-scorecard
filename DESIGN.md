@@ -312,7 +312,9 @@ The Team tab's Overview reads like the front page of a team's media guide.
 - **Record:** W, L, RD, Home, Away and L10 as plain totals (the Overview board's Totals type), never gold. Three across a phone, six across a wide sheet.
 - **Games over .500:** the win/loss chart, full width, drawn in its own wide proportions on a wide sheet rather than scaled up.
 - **Recent / Up Next:** one line per game, like a pocket schedule: date, vs/@ with the opponent's cap and nickname, then W or L and the score (or first pitch). W and L are both cream; a loss is just softer. The line opens the scorecard.
-- **Leaders:** three deep per stat, the leader's number at full size and the two behind it smaller and softer. Names are short ("C. Rafaela") so three boards fit across a phone two-wide. A leader is never gold: leading the team isn't excellence.
+
+### Team Stats
+Every player's line for the team, hitters then pitchers, in the Players list's table: nameplates, sortable heads (gold when sorted), and a "Team" totals row under a cream rule. Zero counts are blank. Stat columns keep a fixed compact width, so on a wide sheet they read as one block beside the names; on a phone the name column stays put while the stats scroll sideways.
 
 ### Roster and Depth Chart
 - **Rows:** jersey number in gold trim, the nameplate, then B/T, season age and position in fixed right-aligned slots under painted heads. Pitchers split into Rotation (in order) and Bullpen (closer first, "CL").
