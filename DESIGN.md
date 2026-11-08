@@ -306,6 +306,18 @@ The Standings tab's Playoffs view, drawn like a printed bracket.
 - **Outcome:** a team that's out fades to Faded Cream. Only the World Series winner turns gold, with an award plate beneath ("2026 World Series Champions"). A series not yet set shows TBD rows.
 - **Older formats:** before 2022 the series are listed by round instead.
 
+### Team Overview
+The Team tab's Overview reads like the front page of a team's media guide.
+- **Head:** the cap, the nickname in Oswald, and one line under it: the season ("2026 Final"), the division place and games back, the streak while the season runs, and how October went ("Lost NLCS"). A champion gets an award plate ("2004 World Series Champions"), the one gold on the head.
+- **Record:** W, L, RD, Home, Away and L10 as plain totals (the Overview board's Totals type), never gold. Three across a phone, six across a wide sheet.
+- **Games over .500:** the win/loss chart, full width, drawn in its own wide proportions on a wide sheet rather than scaled up.
+- **Recent / Up Next:** one line per game, like a pocket schedule: date, vs/@ with the opponent's cap and nickname, then W or L and the score (or first pitch). W and L are both cream; a loss is just softer. The line opens the scorecard.
+- **Leaders:** three deep per stat, the leader's number at full size and the two behind it smaller and softer. Names are short ("C. Rafaela") so three boards fit across a phone two-wide. A leader is never gold: leading the team isn't excellence.
+
+### Roster and Depth Chart
+- **Rows:** jersey number in gold trim, the nameplate, then B/T, season age and position in fixed right-aligned slots under painted heads. Pitchers split into Rotation (in order) and Bullpen (closer first, "CL").
+- **Depth chart:** laid out on the field, outfield across the top, the middle infield, the corners, then DH and catcher; the starter's plate first and his backups' smaller, unshadowed plates beneath. Rotation and bullpen follow as rows.
+
 ### Your Team
 The user's team is a cap in a fixed slot at the end of the tab row (a stitched ball when none is picked). Its rows in standings and the bracket get the chosen-segment gold wash (`rgba(217,169,26,0.13)`): trim marking the user's own focus, never a gold value.
 
