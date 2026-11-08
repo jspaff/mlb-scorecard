@@ -245,6 +245,13 @@ The Overview board: a player's season as percentile scores, one per skill, so hi
 - **Not ranked:** a tile that doesn't apply, or a pool he isn't in, keeps its name and shows a dash.
 - **Totals:** a few plain counts below (G, HR, SB; GS, IP, K) in Oswald 600 at 28px (32px wide), a step under the scores, never ranked or gold.
 
+### Pitch Arsenal
+A pitcher's Arsenal tab answers how he gets hitters out, in four sections on the same scores as the Overview (percentiles against every pitch of the same type, gold from 90).
+- **Fastball velo:** a Skill Score tile for each fastball type he throws 10%+ of the time (4-seam, sinker, cutter), each ranked against its own type.
+- **Movement:** induced rise against horizontal break in inches, in the catcher's view and true to his hand (a righty's arm-side pitches break toward "3B SIDE"). Dots are sized by usage and labeled with the pitch's short code in Overpass, never Special Elite.
+- **Pitches:** one row per pitch, its name down the middle, usage bars running outward (vs LHB to the left, vs RHB to the right) with the share at the bar's end, and that side's run-value score beside the name. A bar turns gold where its score is 90+. No raw run value is shown.
+- **With two strikes:** its own vs LHB / vs RHB toggle (the only toggle on the tab). Each row is the setup pitch as a boxed short code, an arrow, the pitch, its share of his two-strike pitches and its put-away score. Then a short full-count block, the usual finisher and the biggest riser as "before → full", the riser's full-count share underlined in gold trim. Shares are plain numbers, never bars.
+
 ### Stat Slots (signature)
 Numbers in recessed scoreboard slots, under a painted label: the Defense tab's board.
 - **Shape:** 2px corners, recessed slot shadow, centered Oswald numerals.
