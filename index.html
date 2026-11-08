@@ -9121,12 +9121,16 @@
     return rows.filter(r => (r.stat.plateAppearances || 0) >= paQualifier);
   }
 
-  // Idle time on the list warms the season's Savant CSVs for its group, so
-  // the first profile opened from it doesn't wait on Savant's slow first
-  // answer. Each is fetched once a session (getSavantCsv).
+  // Idle time on the list warms what a profile's Overview needs for its
+  // group -- the season's Savant CSVs (slow to answer the first time) and
+  // the full player pool -- so the first profile opened doesn't wait.
+  // Each is fetched once a session.
   function warmProfileSavant(season, pitcher) {
     const idle = window.requestIdleCallback || (fn => setTimeout(fn, 300));
-    idle(() => getSavantSkillData(season, pitcher, true, true));
+    idle(() => {
+      getSavantSkillData(season, pitcher, true, true);
+      getSeasonPlayerStats(pitcher ? 'pitching' : 'hitting', season, 'all');
+    });
   }
 
   async function showPlayerList() {
@@ -9247,16 +9251,19 @@
   // ---- Overview board ----
   // A player's season as skill scores: each is his percentile in one stat
   // (Power is ISO, Range is OAA, Reach is extension...), the stat itself
-  // written small beneath. Results stats rank against the same pool the
-  // Players list uses -- qualified hitters, ERA-title starters -- or, for a
-  // reliever, relievers with 40+ IP (prorated in a season in progress).
-  // Someone short of his pool still gets a score, placed among that pool,
+  // written small beneath. Results stats rank against Savant's bar for its
+  // percentiles -- 2.1 PA per team game for a hitter, 1.25 batters faced
+  // for a pitcher -- so a regular who falls short of a batting or ERA title
+  // still ranks, and his scores agree with the Statcast ones beside them.
+  // Pitchers rank by role: starters among starters, relievers among
+  // relievers. Someone short of his pool still gets a score, placed among it,
   // but in softer type and never gold. Statcast tools rank in Savant's own
   // percentile pools (or, where Savant publishes no percentile, the same
   // pool as above), and a player Savant doesn't rank there gets a dash.
   // Gold is the 90th percentile and up.
   const SKILL_GOLD_PERCENTILE = 90;
-  const RELIEVER_POOL_IP = 40;
+  const SKILL_POOL_PA_PER_GAME = 2.1;
+  const SKILL_POOL_BF_PER_GAME = 1.25;
 
   // Share of the pool he's better than, 1-100. In the pool, the best is 100
   // and the worst 1; short of it, he's placed among them (his own line
@@ -9440,28 +9447,18 @@
   async function getProfileBoardPool(person, season, pitcher, seasonStat) {
     const reliever = pitcher && !isStartingPitcher(seasonStat);
     const [rows, leagueInfo] = await Promise.all([
-      getSeasonPlayerStats(pitcher ? 'pitching' : 'hitting', season, reliever ? 'all' : 'qualified'),
+      getSeasonPlayerStats(pitcher ? 'pitching' : 'hitting', season, 'all'),
       getLeagueSeasonInfo(season)
     ]);
     const games = leagueInfo.teamGamesPlayed;
-    let pool, note;
-    if (!pitcher) {
-      pool = rows ? filterQualifiedPlayers('batting', rows, games) : [];
-      const short = Math.ceil(games * 3.1 - (seasonStat.plateAppearances || 0));
-      note = pool.some(r => r.id === person.id) ? `vs ${pool.length} qualified hitters` : (games ? `${short} PA short of qualifying` : 'Not qualified');
-    } else if (!reliever) {
-      pool = rows ? filterQualifiedPlayers('pitching', rows, games).filter(r => isStartingPitcher(r.stat)) : [];
-      const short = Math.ceil((games * 3 - ipToOuts(seasonStat.inningsPitched)) / 3);
-      note = pool.some(r => r.id === person.id) ? `vs ${pool.length} qualified starters` : (games ? `${short} IP short of qualifying` : 'Not qualified');
-    } else {
-      // Relievers never reach the ERA title's 1 IP a team game, so they're
-      // ranked among relievers, prorated to the games played so far.
-      const minIP = games ? Math.max(1, Math.round(RELIEVER_POOL_IP * Math.min(games, 162) / 162)) : RELIEVER_POOL_IP;
-      pool = rows ? rows.filter(r => !isStartingPitcher(r.stat) && ipToOuts(r.stat.inningsPitched) >= minIP * 3) : [];
-      const short = Math.ceil((minIP * 3 - ipToOuts(seasonStat.inningsPitched)) / 3);
-      note = pool.some(r => r.id === person.id) ? `vs ${pool.length} relievers, ${minIP}+ IP` : `${short} IP short of the reliever pool`;
-    }
-    return { pool, note, reliever, inPool: pool.some(r => r.id === person.id) };
+    const sample = s => (pitcher ? s.battersFaced : s.plateAppearances) || 0;
+    const need = games * (pitcher ? SKILL_POOL_BF_PER_GAME : SKILL_POOL_PA_PER_GAME);
+    const pool = (rows || []).filter(r => sample(r.stat) >= need && (!pitcher || isStartingPitcher(r.stat) !== reliever));
+    const inPool = pool.some(r => r.id === person.id);
+    const who = !pitcher ? 'hitters' : reliever ? 'relievers' : 'starters';
+    const short = Math.ceil(need - sample(seasonStat));
+    const note = inPool ? `vs ${pool.length} ${who}` : (games ? `${short} ${pitcher ? 'batters faced' : 'PA'} short of the pool` : 'Not ranked');
+    return { pool, note, reliever, inPool };
   }
 
   // savantData undefined means Savant is still on its way: the Statcast
