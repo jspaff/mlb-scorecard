@@ -2756,6 +2756,51 @@
     .pp-tot-v { font-size: 32px; }
     .pp-sk-stat { font-size: 10.5px; }
   }
+
+  /* Arsenal: velo and movement, then the mix and two-strike sections --
+     stacked on a phone, side by side on a wide sheet. */
+  .ars { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px 40px; padding: 2px 0 4px; }
+  @container (min-width: 760px) { .ars { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .ars-col { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+  .ars-plot { display: block; width: 100%; max-width: 320px; margin: 0 auto; }
+  .ars-ring { fill: none; stroke: var(--paper-line); stroke-width: 1; }
+  .ars-ax { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8px; letter-spacing: 0.1em; fill: var(--ink-soft); }
+  .ars-dot { fill: var(--paper); stroke: var(--ink); stroke-width: 1.5; }
+  .ars-code { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10.5px; fill: var(--ink); }
+  .ars-sc, .ars-ts-sc { font-family: 'Oswald', sans-serif; font-weight: 600; line-height: 1.1; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .ars-sc { font-size: 19px; text-align: center; }
+  .ars-sc.is-top, .ars-ts-sc.is-top { color: var(--gold); }
+  .ars-sc.is-none, .ars-ts-sc.is-none { color: var(--ink-soft); opacity: 0.6; }
+  .ars-mx { display: grid; grid-template-columns: minmax(0, 1fr) 28px 76px 28px minmax(0, 1fr); align-items: center; gap: 5px; padding: 5px 0; border-bottom: 1px dashed var(--paper-line); }
+  .ars-mx-h { padding: 0 0 4px; border-bottom: 1px solid var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); }
+  .ars-mx-l, .ars-mx-r { display: flex; align-items: center; min-width: 0; }
+  .ars-mx-h .ars-mx-r { justify-content: flex-end; }
+  .ars-trk { flex: 1; display: flex; align-items: center; gap: 4px; min-width: 0; }
+  .ars-mx-l .ars-trk { justify-content: flex-end; }
+  .ars-mx i { display: block; flex: none; height: 11px; background: var(--ink); opacity: 0.75; }
+  .ars-mx i.is-top { background: var(--gold); opacity: 1; }
+  .ars-mx em { flex: none; font-style: normal; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10.5px; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .ars-mx-n { text-align: center; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 14px; line-height: 1.1; color: var(--ink); }
+  .ars-tg { display: inline-flex; margin: 0 0 10px; border: 1px solid var(--paper-line); background: var(--paper); }
+  .ars-tg button { background: none; border: 0; padding: 6px 12px 5px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); cursor: pointer; }
+  .ars-tg button + button { border-left: 1px solid var(--paper-line); }
+  .ars-tg button[aria-pressed="true"] { color: var(--ink); background: rgba(217, 169, 26, 0.15); box-shadow: inset 0 -2px 0 var(--gold); }
+  .ars-tg button:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+  .ars-ts { display: grid; grid-template-columns: 34px 14px minmax(0, 1fr) 52px 56px; align-items: center; gap: 6px; padding: 7px 0; border-bottom: 1px dashed var(--paper-line); }
+  .ars-ts-h, .ars-fc-h { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+  .ars-ts-h { padding: 0 0 4px; border-bottom: 1px solid var(--paper-line); }
+  .ars-ts-h span:nth-child(n+4) { text-align: right; }
+  .ars-chip { display: inline-flex; align-items: center; justify-content: center; min-width: 30px; height: 22px; padding: 0 4px; border: 1px solid var(--ink-soft); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10.5px; letter-spacing: 0.04em; color: var(--ink); }
+  .ars-arrow { font-family: 'Overpass', sans-serif; color: var(--ink-soft); text-align: center; }
+  .ars-ts-n { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 17px; color: var(--ink); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ars-ts-v, .ars-fc-v { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 21px; color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; }
+  .ars-ts-sc { font-size: 21px; text-align: right; }
+  .ars-fc-h { display: flex; justify-content: space-between; align-items: baseline; margin-top: 14px; padding-bottom: 4px; border-bottom: 1px solid var(--paper-line); }
+  .ars-fc-cols { display: grid; grid-template-columns: 44px 14px 52px; gap: 6px; text-align: right; }
+  .ars-fc { display: grid; grid-template-columns: minmax(0, 1fr) 44px 14px 52px; align-items: center; gap: 6px; padding: 6px 0; border-bottom: 1px dashed var(--paper-line); }
+  .ars-fc-pre { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 16px; color: var(--ink-soft); text-align: right; font-variant-numeric: tabular-nums; }
+  .ars-fc-v.is-up { box-shadow: inset 0 -2px 0 var(--gold); }
+  .ars-foot { margin-top: 6px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10px; color: var(--ink-soft); }
   .pp-painted {
     display: block;
     text-align: center;
@@ -3617,6 +3662,14 @@
   let lastProfilePlaysProgress = null;
   let profileOpenRow = null;
   let profileHighlightsAll = false;
+  // A pitcher's Arsenal tab, loaded only once it opens: the league
+  // leaderboards (velo, movement, pools) and his own pitch log arrive
+  // separately, so lastProfileArsenal is rebuilt as each lands
+  // (buildProfileArsenal). profileArsenalSide is the two-strike section's
+  // vs LHB / vs RHB toggle.
+  let lastProfileArsenal;
+  let profileArsenalRequested = false;
+  let profileArsenalSide = null;
   // Players tab's browsable list (Batters/Pitchers toggle, sortable current-
   // season stats) -- separate from the search/profile state above since the
   // list and a profile are just two different things playersBody can show.
@@ -8432,6 +8485,13 @@
       ensureProfileRecent();
       ensureProfileDefense();
       ensureProfileSpray();
+      ensureProfileArsenal();
+      return;
+    }
+    const arsSide = e.target.closest('[data-ars-side]');
+    if (arsSide) {
+      profileArsenalSide = arsSide.dataset.arsSide;
+      rerenderPlayerProfile();
       return;
     }
     const pool = e.target.closest('[data-def-pool]');
@@ -9522,6 +9582,269 @@
     return { rank: better + 1, tied, of: pool.length };
   }
 
+  // ---- Arsenal ----
+  // A pitcher's pitches: fastball velo, how each pitch moves, how often he
+  // throws each to lefties and righties and how well it plays there, and
+  // what he goes to with two strikes. Scores are percentiles against every
+  // pitch of the same type thrown ARSENAL_POOL_PITCHES+ times that season.
+  const ARSENAL_FIRST_SEASON = 2017;
+  const ARSENAL_POOL_PITCHES = 100;
+  // Fewer pitches than this to one side and its run value isn't ranked.
+  const ARSENAL_SIDE_MIN = 50;
+  // Fewer two-strike pitches than this and a put-away rate isn't ranked.
+  const ARSENAL_PUTAWAY_MIN = 25;
+  const ARSENAL_FULL_COUNT_MIN = 10;
+  // A pitch whose full-count share is up this many points is called out.
+  const ARSENAL_FULL_RISE = 8;
+  const ARSENAL_FASTBALLS = ['FF', 'SI', 'FC'];
+  const PITCH_NAMES = {
+    FF: '4-Seam', SI: 'Sinker', FC: 'Cutter', SL: 'Slider', ST: 'Sweeper', CU: 'Curveball', KC: 'Knuckle Curve',
+    CH: 'Changeup', FS: 'Splitter', SV: 'Slurve', KN: 'Knuckleball', FO: 'Forkball', SC: 'Screwball', CS: 'Slow Curve', EP: 'Eephus', FA: 'Fastball'
+  };
+  const PITCH_SHORT = { FF: '4S', SI: 'SI', FC: 'CT', SL: 'SL', ST: 'SW', CU: 'CB', KC: 'KC', CH: 'CH', FS: 'SPL', SV: 'SV', KN: 'KN', FO: 'FO', SC: 'SC', CS: 'CS', EP: 'EP', FA: 'FB' };
+  const pitchName = t => PITCH_NAMES[t] || t;
+  const pitchShort = t => PITCH_SHORT[t] || t;
+  const KEY_STRIKEOUT_EVENTS = ['strikeout', 'strikeout_double_play'];
+
+  // The league's pitch-by-pitch-type leaderboards: results (usage, run
+  // value, put-away rate) and movement (velo, break). Both are the whole
+  // league, ~300 KB together, and also the pools every score ranks in.
+  async function getSavantArsenalLeague(season) {
+    const [stats, movement] = await Promise.all([
+      getSavantCsv(`/leaderboard/pitch-arsenal-stats?type=pitcher&pitchType=&year=${season}&team=&min=1&csv=true`),
+      getSavantCsv(`/leaderboard/pitch-movement?year=${season}&team=&min=1&pitch_type=ALL&hand=&x=pitcher_break_x_hidden&z=pitcher_break_z_hidden&csv=true`)
+    ]);
+    if (!stats || !movement) return null;
+    return { stats, movement };
+  }
+
+  // Every pitch he threw in the regular season (Statcast Search, ~1-2 MB,
+  // the one place a pitch's batter side, count and run value come
+  // together), kept as only the fields the tab reads. Savant's data lands
+  // overnight. A failure isn't cached, so it retries.
+  const pitcherPitchLogCache = {};
+  async function getPitcherPitchLog(personId, season) {
+    const key = `${personId}-${season}`;
+    if (pitcherPitchLogCache[key]) return pitcherPitchLogCache[key];
+    return once(`pitchlog-${key}`, async () => {
+      try {
+        const res = await fetch(`${SAVANT}/statcast_search/csv?all=true&hfGT=R%7C&hfSea=${season}%7C&player_type=pitcher&pitchers_lookup%5B%5D=${personId}&type=details`);
+        if (!res.ok) return null;
+        const pitches = parseCsv(await res.text())
+          .filter(r => r.pitch_type && r.pitch_type !== 'PO' && r.pitch_type !== 'IN')
+          .map(r => ({
+            t: r.pitch_type, side: r.stand, balls: Number(r.balls), strikes: Number(r.strikes),
+            pa: `${r.game_pk}-${r.at_bat_number}`, n: Number(r.pitch_number),
+            k: KEY_STRIKEOUT_EVENTS.includes(r.events), rv: csvNumber(r.delta_pitcher_run_exp) || 0
+          }));
+        pitcherPitchLogCache[key] = pitches;
+        return pitches;
+      } catch (e) {
+        return null;
+      }
+    });
+  }
+
+  // Per season, the league's values by pitch type -- run value per 100,
+  // put-away rate and velo -- for every pitch thrown enough to rank.
+  const arsenalPoolCache = {};
+  function arsenalPools(season, league) {
+    if (arsenalPoolCache[season]) return arsenalPoolCache[season];
+    const velo = {};
+    league.movement.forEach(r => { velo[`${r.pitcher_id}-${r.pitch_type}`] = csvNumber(r.avg_speed); });
+    const pools = {};
+    league.stats.forEach(r => {
+      if (Number(r.pitches) < ARSENAL_POOL_PITCHES) return;
+      const p = pools[r.pitch_type] || (pools[r.pitch_type] = { rv: [], putAway: [], velo: [] });
+      p.rv.push(csvNumber(r.run_value_per_100));
+      p.putAway.push(csvNumber(r.put_away));
+      p.velo.push(velo[`${r.player_id}-${r.pitch_type}`]);
+    });
+    arsenalPoolCache[season] = pools;
+    return pools;
+  }
+
+  function mostCommon(items) {
+    const counts = {};
+    items.forEach(x => { counts[x] = (counts[x] || 0) + 1; });
+    return Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+  }
+
+  // With two strikes, to one side: each pitch's share of his two-strike
+  // pitches, its put-away rate (two-strike pitches that end in a
+  // strikeout, as Savant counts it) ranked against its type, and the pitch
+  // before his first two-strike pitch of the at-bat as its setup -- the
+  // first only, so a foul ball's repeat doesn't count as one. Then the
+  // full count against every two-strike count before it.
+  function buildTwoStrikes(log, side, pools) {
+    const byPa = {};
+    log.forEach(p => { if (p.side === side) (byPa[p.pa] || (byPa[p.pa] = [])).push(p); });
+    const two = [];
+    Object.values(byPa).forEach(pa => {
+      pa.sort((a, b) => a.n - b.n);
+      let first = true;
+      pa.forEach((p, i) => {
+        if (p.strikes !== 2) return;
+        two.push({ t: p.t, full: p.balls === 3, k: p.k, setup: first && i ? pa[i - 1].t : null });
+        first = false;
+      });
+    });
+    const n = two.length;
+    const pays = mostCommon(two.map(p => p.t)).slice(0, 4).map(t => {
+      const mine = two.filter(p => p.t === t);
+      const putAway = (100 * mine.filter(p => p.k).length) / mine.length;
+      const pool = pools[t];
+      return {
+        code: t, share: (100 * mine.length) / n,
+        score: pool && mine.length >= ARSENAL_PUTAWAY_MIN ? poolPercentile(putAway, pool.putAway, { inPool: false }) : null,
+        putAway, setup: mostCommon(mine.map(p => p.setup).filter(Boolean))[0] || null
+      };
+    }).filter(p => p.share >= 5);
+    const before = two.filter(p => !p.full), fullCount = two.filter(p => p.full);
+    const shares = list => {
+      const out = {};
+      list.forEach(p => { out[p.t] = (out[p.t] || 0) + 100 / list.length; });
+      return out;
+    };
+    let full = null;
+    if (fullCount.length >= ARSENAL_FULL_COUNT_MIN) {
+      const a = shares(before), b = shares(fullCount);
+      const top = Object.keys(b).sort((x, y) => b[y] - b[x])[0];
+      const riser = Object.keys(b).filter(t => t !== top).map(t => [t, b[t] - (a[t] || 0)]).sort((x, y) => y[1] - x[1])[0];
+      full = { n: fullCount.length, rows: [{ code: top, before: a[top] || 0, full: b[top], up: false }] };
+      if (riser && riser[1] >= ARSENAL_FULL_RISE) full.rows.push({ code: riser[0], before: a[riser[0]] || 0, full: b[riser[0]], up: true });
+    }
+    return { n, k: two.filter(p => p.k).length, pays, full };
+  }
+
+  // league undefined/log undefined: still loading; null: failed.
+  function buildProfileArsenal(personId, hand, season, league, log) {
+    const out = { hand, league, log };
+    if (league) {
+      const pools = arsenalPools(season, league);
+      const stats = league.stats.filter(r => Number(r.player_id) === personId);
+      const moves = league.movement.filter(r => Number(r.pitcher_id) === personId);
+      const usage = {};
+      stats.forEach(r => { usage[r.pitch_type] = csvNumber(r.pitch_usage) || 0; });
+      out.fastballs = moves
+        .filter(r => ARSENAL_FASTBALLS.includes(r.pitch_type) && (usage[r.pitch_type] || 0) >= 10 && csvNumber(r.avg_speed) != null)
+        .sort((a, b) => usage[b.pitch_type] - usage[a.pitch_type])
+        .map(r => {
+          const mph = csvNumber(r.avg_speed);
+          const pool = pools[r.pitch_type];
+          return { code: r.pitch_type, mph, pct: pool ? poolPercentile(mph, pool.velo, { inPool: false }) : null };
+        });
+      // Savant gives horizontal break as a size; its direction is the pitch
+      // type's league-average direction (negative = arm side).
+      out.movement = moves
+        .filter(r => (usage[r.pitch_type] || 0) >= 2 && csvNumber(r.pitcher_break_z_induced) != null && csvNumber(r.pitcher_break_x) != null)
+        .map(r => ({ code: r.pitch_type, usage: usage[r.pitch_type], ivb: csvNumber(r.pitcher_break_z_induced), hb: csvNumber(r.pitcher_break_x), arm: csvNumber(r.league_break_x) < 0 }))
+        .sort((a, b) => b.usage - a.usage);
+      if (log) {
+        const total = { L: 0, R: 0 };
+        const per = {};
+        log.forEach(p => {
+          if (p.side !== 'L' && p.side !== 'R') return;
+          total[p.side]++;
+          const x = per[p.t] || (per[p.t] = { n: 0, L: { n: 0, rv: 0 }, R: { n: 0, rv: 0 } });
+          x.n++; x[p.side].n++; x[p.side].rv += p.rv;
+        });
+        out.pitches = Object.keys(per).sort((a, b) => per[b].n - per[a].n).map(t => {
+          const sides = {};
+          ['L', 'R'].forEach(h => {
+            const s = per[t][h];
+            const pool = pools[t];
+            sides[h] = {
+              use: total[h] ? (100 * s.n) / total[h] : 0,
+              pct: pool && s.n >= ARSENAL_SIDE_MIN ? poolPercentile((100 * s.rv) / s.n, pool.rv, { inPool: false }) : null
+            };
+          });
+          return { code: t, sides };
+        }).filter(x => Math.max(x.sides.L.use, x.sides.R.use) >= 1);
+        out.twoStrikes = { L: buildTwoStrikes(log, 'L', pools), R: buildTwoStrikes(log, 'R', pools) };
+        out.faced = total;
+      }
+    }
+    return out;
+  }
+
+  function arsenalScore(pct, cls) {
+    if (pct == null) return `<span class="${cls} is-none">&#8212;</span>`;
+    return `<span class="${cls}${pct >= SKILL_GOLD_PERCENTILE ? ' is-top' : ''}">${pct}</span>`;
+  }
+  const pitchChip = t => `<span class="ars-chip">${pitchShort(t)}</span>`;
+
+  // Catcher's view, true to the pitcher's hand: a righty's arm-side pitches
+  // break toward third base (left), a lefty's toward first. Rings every 6
+  // inches of break.
+  function renderArsenalMovement(points, hand) {
+    const size = 300, c = size / 2, R = 24, k = (size / 2 - 30) / R;
+    const righty = hand !== 'L';
+    const rings = [6, 12, 18, 24].map(r => `<circle cx="${c}" cy="${c}" r="${r * k}" class="ars-ring"/>`).join('');
+    const axes = `<line x1="${c}" y1="22" x2="${c}" y2="${size - 22}" class="ars-ring"/><line x1="22" y1="${c}" x2="${size - 22}" y2="${c}" class="ars-ring"/>`;
+    const labels = `<text x="4" y="${size - 6}" class="ars-ax">3B SIDE</text><text x="${size - 4}" y="${size - 6}" text-anchor="end" class="ars-ax">1B SIDE</text>
+      <text x="4" y="12" class="ars-ax">RISE &#8593;</text><text x="${size - 4}" y="12" text-anchor="end" class="ars-ax">CATCHER&#8217;S VIEW</text>`;
+    const clamp = v => Math.max(-R - 2, Math.min(R + 2, v));
+    const dots = points.map(p => {
+      const towardThird = p.arm === righty;
+      const x = c + clamp(towardThird ? -p.hb : p.hb) * k;
+      const y = c - clamp(p.ivb) * k;
+      const r = 10 + Math.sqrt(p.usage) * 1.5;
+      return `<g><title>${pitchName(p.code)}: ${p.ivb.toFixed(1)} in rise, ${p.hb.toFixed(1)} in break</title><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" class="ars-dot"/><text x="${x.toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="middle" class="ars-code">${pitchShort(p.code)}</text></g>`;
+    }).join('');
+    return `<svg viewBox="0 0 ${size} ${size}" class="ars-plot" role="img" aria-label="Pitch movement">${rings}${axes}${labels}${dots}</svg>`;
+  }
+
+  // Usage bars run outward from the pitch name, lefties to the left and
+  // righties to the right, each side's run-value score beside the name; a
+  // bar turns gold where its score does.
+  function renderArsenalMix(pitches) {
+    const top = Math.max(...pitches.map(x => Math.max(x.sides.L.use, x.sides.R.use)));
+    const bar = (s, left) => {
+      if (Math.round(s.use) === 0) return `<span class="ars-mx-${left ? 'l' : 'r'}"></span>`;
+      const gold = s.pct != null && s.pct >= SKILL_GOLD_PERCENTILE ? ' is-top' : '';
+      const i = `<i class="${gold.trim()}" style="width:calc((100% - 32px) * ${(s.use / top).toFixed(3)})"></i>`;
+      const em = `<em>${Math.round(s.use)}%</em>`;
+      return `<span class="ars-mx-${left ? 'l' : 'r'}"><span class="ars-trk">${left ? em + i : i + em}</span></span>`;
+    };
+    const rows = pitches.map(x => `<div class="ars-mx">${bar(x.sides.L, true)}${arsenalScore(x.sides.L.pct, 'ars-sc')}<span class="ars-mx-n">${pitchName(x.code)}</span>${arsenalScore(x.sides.R.pct, 'ars-sc')}${bar(x.sides.R, false)}</div>`).join('');
+    return `<div class="ars-mx ars-mx-h"><span class="ars-mx-l">vs LHB</span><span></span><span></span><span></span><span class="ars-mx-r">vs RHB</span></div>${rows}`;
+  }
+
+  function renderArsenalTwoStrikes(ts, side) {
+    const toggle = `<div class="ars-tg" role="group" aria-label="Batter side">${[['L', 'vs LHB'], ['R', 'vs RHB']].map(([h, label]) =>
+      `<button type="button" data-ars-side="${h}" aria-pressed="${h === side}">${label}</button>`).join('')}</div>`;
+    if (!ts.n) return `${toggle}<div class="pitch-empty">No two-strike pitches ${side === 'L' ? 'to lefties' : 'to righties'}.</div>`;
+    const rows = ts.pays.map(p => `<div class="ars-ts">${p.setup ? pitchChip(p.setup) : '<span></span>'}<span class="ars-arrow">&#8594;</span><span class="ars-ts-n">${pitchName(p.code)}</span><span class="ars-ts-v">${Math.round(p.share)}%</span>${arsenalScore(p.score, 'ars-ts-sc')}</div>`).join('');
+    const full = ts.full ? `<div class="ars-fc-h"><span>Full count</span><span class="ars-fc-cols"><span>Before</span><span></span><span>Full</span></span></div>
+      ${ts.full.rows.map(r => `<div class="ars-fc"><span class="ars-ts-n">${pitchName(r.code)}</span><span class="ars-fc-pre">${Math.round(r.before)}%</span><span class="ars-arrow">&#8594;</span><span class="ars-fc-v${r.up ? ' is-up' : ''}">${Math.round(r.full)}%</span></div>`).join('')}
+      <div class="ars-foot">${ts.full.n} full-count pitches</div>` : '';
+    return `${toggle}<div class="ars-ts ars-ts-h"><span>Setup</span><span></span><span>Pitch</span><span>Thrown</span><span>Put away</span></div>${rows}${full}`;
+  }
+
+  function renderProfileArsenal() {
+    if (Number(lastProfileSeason) < ARSENAL_FIRST_SEASON) return `<div class="pitch-empty">Pitch-by-pitch data starts in ${ARSENAL_FIRST_SEASON}.</div>`;
+    const a = lastProfileArsenal;
+    if (!a || a.league === undefined) return '<div class="mlb-status-msg">Loading pitches&#8230;</div>';
+    if (a.league === null) return apiErrorMsg('pitch data');
+    if (!a.movement.length) return `<div class="pitch-empty">No ${lastProfileSeason} pitch data.</div>`;
+    const head = (title, note) => `<div class="pp-skg-head"><span>${title}</span>${note ? `<em>${note}</em>` : ''}</div>`;
+    const velo = a.fastballs.length ? `<section class="pp-skg ars-velo">${head('Fastball velo', 'vs pitches of the same type')}
+      <div class="pp-skg-row" style="grid-template-columns:repeat(${Math.max(3, a.fastballs.length)},minmax(0,1fr))">${a.fastballs.map(f =>
+        `<div class="pp-sk"><span class="pp-sk-name">${pitchName(f.code)}</span>${f.pct == null ? '<span class="pp-sk-score is-none">&#8212;</span>' : `<span class="pp-sk-score${f.pct >= SKILL_GOLD_PERCENTILE ? ' is-top' : ''}">${f.pct}</span>`}<span class="pp-sk-stat">${f.mph.toFixed(1)} mph</span></div>`).join('')}</div></section>` : '';
+    const movement = `<section class="pp-skg">${head('Movement', 'inches of break')}${renderArsenalMovement(a.movement, a.hand)}</section>`;
+    let right;
+    if (a.log === undefined) right = '<div class="mlb-status-msg">Loading his pitches&#8230;</div>';
+    else if (a.log === null) right = apiErrorMsg('pitch-by-pitch data');
+    else {
+      const side = profileArsenalSide || (a.faced.L > a.faced.R ? 'L' : 'R');
+      const ts = a.twoStrikes[side];
+      right = `<section class="pp-skg">${head('Pitches', 'score: run value vs same type')}${renderArsenalMix(a.pitches)}</section>
+        <section class="pp-skg">${head('With two strikes', ts.n ? `${ts.n} pitches &#183; ${ts.k} K` : '')}${renderArsenalTwoStrikes(ts, side)}</section>`;
+    }
+    return `<div class="ars"><div class="ars-col">${velo}${movement}</div><div class="ars-col">${right}</div></div>`;
+  }
+
   // ---- Game Log ----
   // The tab leads with the last five games in scorecard terms, then the
   // full season grouped by month. Zeros are left blank throughout, so the
@@ -10466,7 +10789,7 @@
     const hasStarts = pitcher && detail && detail.gameLog.some(g => g.stat && g.stat.gamesStarted);
     const fielder = !pitcher && defenseGroupFor(person);
     return pitcher
-      ? [['ov', 'Overview'], ...(hasStarts ? [['starts', 'Starts']] : []), ['log', 'Game Log'], ['spl', 'Splits'], ['car', 'Career']]
+      ? [['ov', 'Overview'], ...(hasStarts ? [['starts', 'Starts']] : []), ...(Number(lastProfileSeason) >= ARSENAL_FIRST_SEASON ? [['ars', 'Arsenal']] : []), ['log', 'Game Log'], ['spl', 'Splits'], ['car', 'Career']]
       : [['ov', 'Overview'], ['log', 'Game Log'], ['spl', 'Splits'], ...(fielder ? [['def', 'Defense']] : []), ['car', 'Career']];
   }
 
@@ -10480,6 +10803,7 @@
       return pitcher ? renderPitchingCareerTable(yearSplits) : renderCareerTable(yearSplits, lastProfileLeagueWoba || {});
     }
     if (tab === 'def') return renderProfileDefense();
+    if (tab === 'ars') return renderProfileArsenal();
     if (detail === undefined) return '<div class="mlb-status-msg">Loading season stats&#8230;</div>';
     if (detail === null) return apiErrorMsg('season stats');
     if (tab === 'ov') {
@@ -10629,6 +10953,29 @@
     loadPlayerSpray(Number(lastProfilePerson.id), playerSprayState.season);
   }
 
+  function ensureProfileArsenal() {
+    if (profileArsenalRequested || profileTab !== 'ars' || !lastProfileSeason || !isPitcher(lastProfilePerson)) return;
+    profileArsenalRequested = true;
+    loadProfileArsenal(Number(lastProfilePerson.id), lastProfileSeason, playerProfileRequestId);
+  }
+
+  // The leaderboards are small and draw the velo and movement first; his
+  // own pitch log (1-2 MB) fills in the mix and two-strike sections.
+  async function loadProfileArsenal(personId, season, requestId) {
+    const hand = (lastProfilePerson.pitchHand && lastProfilePerson.pitchHand.code) || 'R';
+    const leaguePromise = getSavantArsenalLeague(season);
+    const logPromise = getPitcherPitchLog(personId, season);
+    const league = await leaguePromise;
+    if (requestId !== playerProfileRequestId) return;
+    lastProfileArsenal = buildProfileArsenal(personId, hand, season, league, undefined);
+    rerenderPlayerProfile();
+    if (!league) return;
+    const log = await logPromise;
+    if (requestId !== playerProfileRequestId) return;
+    lastProfileArsenal = buildProfileArsenal(personId, hand, season, league, log);
+    rerenderPlayerProfile();
+  }
+
   function ensureProfileRecent() {
     if (profileRecentRequested || profileTab !== 'log' || !lastProfileDetail) return;
     profileRecentRequested = true;
@@ -10663,6 +11010,12 @@
     if (!pitcher && Number(season) >= SAVANT_SPRAY_FIRST_SEASON) {
       const idle = window.requestIdleCallback || (fn => setTimeout(fn, 300));
       idle(() => getPlayerSeasonBattedBalls(personId, season));
+    }
+    // A pitcher's Arsenal leaderboards (~300 KB) likewise, so that tab
+    // can draw its velo and movement at once.
+    if (pitcher && Number(season) >= ARSENAL_FIRST_SEASON) {
+      const idle = window.requestIdleCallback || (fn => setTimeout(fn, 300));
+      idle(() => getSavantArsenalLeague(season));
     }
   }
 
@@ -10729,6 +11082,9 @@
     lastProfilePlaysProgress = null;
     profileOpenRow = null;
     profileHighlightsAll = false;
+    lastProfileArsenal = undefined;
+    profileArsenalRequested = false;
+    profileArsenalSide = null;
     lastProfileSeason = playerListState.season || defaultListSeason;
     prefetchProfile(rawPerson, lastProfileSeason);
     playerSprayState = { personId: person.id, season: null, balls: null, loading: true };
