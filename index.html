@@ -1702,21 +1702,31 @@
   .dcf-rotation { display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: 12px 8px; }
   .dcf-rot { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
   .dcf-rot .dcf-print { width: 52px; }
-  /* Tap: a position with backups wears a "+N"; tapped, its spot lights
-     with gold trim and the tray opens beside (or under) the field. */
-  .dcf-pos-btn { display: inline-flex; align-items: baseline; gap: 3px; background: none; border: 1px solid var(--paper-line); padding: 2px 4px 1px; cursor: pointer; line-height: 1; }
-  .dcf-pos-n { font-weight: 700; font-size: 8.5px; letter-spacing: 0.02em; color: var(--ink-soft); }
-  .dcf-pos-btn:hover, .dcf-pos-btn:focus-visible, .dcf-pos-btn.is-open { border-color: var(--gold); outline: none; }
-  .dcf-pos-btn.is-open { background: rgba(217, 169, 26, 0.15); }
-  .dcf-spot.is-open .dcf-print { border-color: var(--gold); }
-  .dcf-tray .pp-skg-head { align-items: center; }
-  .dcf-tray-close { background: none; border: 0; color: var(--ink-soft); font-size: 12px; cursor: pointer; padding: 0 2px; }
-  .dcf-tray-close:hover, .dcf-tray-close:focus-visible { color: var(--gold); outline: none; }
-  /* Stacked: the backups as small prints in a row under the plate. */
-  .dcf-minis { display: flex; gap: 3px; margin-top: 2px; }
-  .dcf-photo.is-mini .dcf-print { width: 20px; border-width: 1.5px; box-shadow: 0 2px 3px rgba(0, 0, 0, 0.45); }
-  .dcf-stack { margin-bottom: 44px; }
-  @container (min-width: 520px) { .dcf-photo.is-mini .dcf-print { width: 26px; } }
+  .dcf-photo.is-mini .dcf-print { width: 22px; border-width: 1.5px; box-shadow: 0 2px 3px rgba(0, 0, 0, 0.45); }
+  .dcf-tg-row { display: flex; align-items: center; gap: 10px; margin: -4px 0 14px; }
+  .dcf-tg-row .dc-style-tg { margin: 0; }
+  .dcf-tg-label { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
+  /* On Field: where a starter also backs up, a soft line under his plate. */
+  .dcf-tag { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 8.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; line-height: 1.1; }
+  @container (min-width: 520px) { .dcf-tag { font-size: 9.5px; } }
+  /* Cards: the Alsos follow the bench, a size down and softer, so the
+     bench proper still reads first. */
+  .dcf-rot.is-also .dcf-print { width: 40px; opacity: 0.85; }
+  .dcf-rot.is-also .dcf-pos { color: var(--ink-soft); }
+  .dcf-rot.is-also .player-name-btn { color: var(--ink-soft); box-shadow: none; }
+  .dcf-rot.is-also .player-name-btn:hover, .dcf-rot.is-also .player-name-btn:focus-visible { color: var(--paper); }
+  /* Grid: a coverage chart -- each man's row across the positions, a
+     solid square where he starts, a ring where he backs up. */
+  .dcg-row { display: grid; grid-template-columns: minmax(0, 1fr) repeat(9, 22px); align-items: center; gap: 0 2px; padding: 4px 0; border-bottom: 1px dashed var(--paper-line); }
+  .dcg-head { padding: 0 0 4px; border-bottom: 1px solid var(--paper-line); }
+  .dcg-head .dcg-cell { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8.5px; letter-spacing: 0.04em; color: var(--gold); }
+  .dcg-row:not(.is-starter) + .dcg-row.is-starter { border-top: 1px solid var(--paper-line); margin-top: 4px; }
+  .dcg-who { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .dcg-who .player-name-btn { min-width: 0; }
+  .dcg-cell { display: flex; justify-content: center; align-items: center; }
+  .dcg-start { display: block; width: 9px; height: 9px; background: var(--ink); }
+  .dcg-cover { display: block; width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--ink); box-sizing: border-box; }
+  @container (min-width: 520px) { .dcg-row { grid-template-columns: minmax(0, 1fr) repeat(9, 28px); } }
   .dcf-also { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 8px; margin-top: 14px; align-items: start; }
   .dcf-also-list { display: flex; flex-wrap: wrap; gap: 6px 14px; }
   .dcf-also-item { display: inline-flex; align-items: center; gap: 6px; }
@@ -6640,7 +6650,7 @@
   const teamYearSelect = document.getElementById('teamYearPick');
   const teamViewToggle = document.getElementById('teamViewToggle');
   const teamBody = document.getElementById('teamBody');
-  const teamTab = { teamId: null, season: null, latestSeason: null, view: 'overview', rosterView: 'depth', depthStyle: 'tap', depthOpen: null };
+  const teamTab = { teamId: null, season: null, latestSeason: null, view: 'overview', rosterView: 'depth', depthStyle: 'tags' };
   let teamRequestId = 0;
   const teamRosterCache = {};
   const teamInjuryCache = {};
@@ -6986,11 +6996,13 @@
   }
 
   // The depth chart: the starters on a drawn diamond with their photos,
-  // then the staff. Everyone on it gets a photo. MOCKUP: three ways to show
-  // the backups, switched by teamTab.depthStyle until one is picked --
-  // 'tap' (a position's backups open in a tray when its label is tapped),
-  // 'bench' (the bench as players, each with the spots he covers) and
-  // 'stack' (small photos of the backups under each starter).
+  // the bench as players with the spots each covers, then the staff.
+  // Everyone on it gets a photo. MOCKUP: four ways to show the starters
+  // who also back up elsewhere (the "Also"s), switched by
+  // teamTab.depthStyle until one is picked -- 'tags' (a line under the
+  // starter on the field), 'cards' (smaller photo cards after the bench),
+  // 'line' (a row of plates under the bench) and 'grid' (the bench and
+  // Alsos as a coverage chart, a column per position).
   // [position, scoring number, x%, y%] -- spots on the drawn field, the
   // photo's center, in the field SVG's 0-100 box.
   const DEPTH_SPOTS = [
@@ -6999,7 +7011,7 @@
     ['C', 2, 50, 84], ['DH', '', 11, 90]
   ];
   const DEPTH_CARD_ORDER = [['C', 2], ['1B', 3], ['2B', 4], ['3B', 5], ['SS', 6], ['LF', 7], ['CF', 8], ['RF', 9], ['DH', '']];
-  const DEPTH_STYLES = [['tap', 'Tap'], ['bench', 'Bench'], ['stack', 'Stacked']];
+  const DEPTH_STYLES = [['tags', 'On Field'], ['cards', 'Cards'], ['line', 'Line'], ['grid', 'Grid']];
 
   // Chalk on the board: the fence, the foul lines, the infield's cut and
   // the bases, home at (50, 80) and 90 feet = 19 units.
@@ -7050,44 +7062,51 @@
     return { bench: all.filter(c => !starterIds.has(c.p.id)), starters: all.filter(c => starterIds.has(c.p.id)) };
   }
 
-  function renderDepthField(depth, style, openPos) {
+  function renderDepthField(depth, style) {
+    const { bench, starters: also } = buildDepthCoverage(depth);
+    const alsoById = new Map(also.map(c => [c.p.id, c.spots]));
     const spots = DEPTH_SPOTS.map(([pos, , x, y]) => {
-      const [starter, ...behind] = depthAt(depth, pos);
-      const label = style === 'tap' && behind.length
-        ? `<button type="button" class="dcf-pos dcf-pos-btn${openPos === pos ? ' is-open' : ''}" data-depth-pos="${pos}" aria-expanded="${openPos === pos}">${pos}<span class="dcf-pos-n">+${behind.length}</span></button>`
-        : `<span class="dcf-pos">${pos}</span>`;
-      const stack = style === 'stack' && behind.length
-        ? `<span class="dcf-minis">${behind.map(p => depthPrint(p, 'is-mini')).join('')}</span>`
-        : '';
-      return `<div class="dcf-spot${openPos === pos && style === 'tap' ? ' is-open' : ''}" style="left:${x}%; top:${y}%">
+      const starter = depthAt(depth, pos)[0];
+      const covers = style === 'tags' && starter && alsoById.get(starter.id);
+      return `<div class="dcf-spot" style="left:${x}%; top:${y}%">
           ${starter ? depthPrint(starter) : '<span class="dcf-print is-empty"></span>'}
-          ${label}
-          ${starter ? depthPlate(starter) : ''}${stack}
+          <span class="dcf-pos">${pos}</span>
+          ${starter ? depthPlate(starter) : ''}
+          ${covers ? `<span class="dcf-tag">also ${covers.join(' &#183; ')}</span>` : ''}
         </div>`;
     }).join('');
 
-    let backupHtml = '';
-    if (style === 'tap') {
-      const behind = openPos ? depthAt(depth, openPos).slice(1) : [];
-      const starter = openPos ? depthAt(depth, openPos)[0] : null;
-      backupHtml = openPos && behind.length ? `<section class="tm-sec dcf-tray">
-        <div class="pp-skg-head"><span>${openPos} &#183; Behind ${starter ? shortPlayerName(starter.name) : ''}</span><button type="button" class="dcf-tray-close" data-depth-pos="${openPos}" aria-label="Close">&#10005;</button></div>
-        ${depthCards(behind.map((p, i) => depthCard(p, i + 1)))}
-      </section>` : '';
-    } else if (style === 'bench') {
-      const { bench, starters } = buildDepthCoverage(depth);
-      backupHtml = `<section class="tm-sec">
-        <div class="pp-skg-head"><span>Bench</span></div>
-        ${depthCards(bench.map(({ p, spots: s }) => depthCard(p, s.join(' &#183; '))))}
-        ${starters.length ? `<div class="dcf-also"><span class="dcf-bk-pos">Also</span><span class="dcf-also-list">${starters.map(({ p, spots: s }) => `<span class="dcf-also-item">${depthPlate(p)}<span class="dcf-also-pos">${s.join(' &#183; ')}</span></span>`).join('')}</span></div>` : ''}
-      </section>`;
+    const benchCards = bench.map(({ p, spots: s }) => depthCard(p, s.join(' &#183; ')));
+    let benchHtml;
+    if (style === 'grid') {
+      // One row per man who backs up anywhere, a column per position: a
+      // solid square where he starts, a dot where he backs up.
+      const starterAt = new Map(DEPTH_CARD_ORDER.map(([pos]) => [pos, (depthAt(depth, pos)[0] || {}).id]));
+      const rows = [...bench, ...also].map(({ p, spots: s }) => `<div class="dcg-row${alsoById.has(p.id) ? ' is-starter' : ''}">
+          <span class="dcg-who">${depthPrint(p, 'is-mini')}${depthPlate(p)}</span>
+          ${DEPTH_CARD_ORDER.map(([pos]) => `<span class="dcg-cell">${starterAt.get(pos) === p.id ? '<i class="dcg-start"></i>' : s.includes(pos) ? '<i class="dcg-cover"></i>' : ''}</span>`).join('')}
+        </div>`).join('');
+      benchHtml = `<div class="dcg">
+          <div class="dcg-row dcg-head"><span></span>${DEPTH_CARD_ORDER.map(([pos]) => `<span class="dcg-cell">${pos}</span>`).join('')}</div>
+          ${rows}
+        </div>`;
+    } else if (style === 'cards') {
+      benchHtml = depthCards([...benchCards,
+        ...also.map(({ p, spots: s }) => `<div class="dcf-rot is-also">${depthPrint(p)}<span class="dcf-pos">also ${s.join(' &#183; ')}</span>${depthPlate(p)}</div>`)]);
+    } else {
+      benchHtml = depthCards(benchCards) + (style === 'line' && also.length
+        ? `<div class="dcf-also"><span class="dcf-bk-pos">Also</span><span class="dcf-also-list">${also.map(({ p, spots: s }) => `<span class="dcf-also-item">${depthPlate(p)}<span class="dcf-also-pos">${s.join(' &#183; ')}</span></span>`).join('')}</span></div>`
+        : '');
     }
 
     const { rotation, closers, pen } = depthStaff(depth);
-    const toggle = `<div class="ars-tg dc-style-tg">${DEPTH_STYLES.map(([id, label]) =>
-      `<button type="button" data-depth-style="${id}" aria-pressed="${id === style}">${label}</button>`).join('')}</div>`;
-    return `<div class="dcf-layout"><div>${toggle}<div class="dcf dcf-${style}">${DEPTH_FIELD_SVG}${spots}</div></div><div class="dcf-side">
-      ${backupHtml}
+    const toggle = `<div class="dcf-tg-row"><span class="dcf-tg-label">Also</span><div class="ars-tg dc-style-tg">${DEPTH_STYLES.map(([id, label]) =>
+      `<button type="button" data-depth-style="${id}" aria-pressed="${id === style}">${label}</button>`).join('')}</div></div>`;
+    return `<div class="dcf-layout"><div>${toggle}<div class="dcf">${DEPTH_FIELD_SVG}${spots}</div></div><div class="dcf-side">
+      <section class="tm-sec">
+        <div class="pp-skg-head"><span>Bench</span></div>
+        ${benchHtml}
+      </section>
       <section class="tm-sec">
         <div class="pp-skg-head"><span>Rotation</span></div>
         ${depthCards(rotation.map((p, i) => depthCard(p, i + 1)))}
@@ -7098,13 +7117,13 @@
       </section></div></div>`;
   }
 
-  // Kept so a style switch or a tapped position redraws in place, without
-  // refetching or flashing the loading message.
+  // Kept so a style switch redraws in place, without refetching or
+  // flashing the loading message.
   let lastDepthChart = null;
   function renderDepthChart(depth) {
     lastDepthChart = depth;
     if (!depth.length) return '<div class="roster-empty">No depth chart available.</div>';
-    return `<div class="dc-body">${renderDepthField(depth, teamTab.depthStyle, teamTab.depthOpen)}</div>`;
+    return `<div class="dc-body">${renderDepthField(depth, teamTab.depthStyle)}</div>`;
   }
   function rerenderDepthChart() {
     const el = teamBody.querySelector('.dc-body');
@@ -7339,7 +7358,6 @@
 
   teamTabSelect.addEventListener('change', () => {
     teamTab.teamId = teamTabSelect.value;
-    teamTab.depthOpen = null;
     loadTeamTab();
   });
   teamYearSelect.addEventListener('change', () => {
@@ -7373,12 +7391,6 @@
     const depthStyle = e.target.closest('[data-depth-style]');
     if (depthStyle) {
       teamTab.depthStyle = depthStyle.dataset.depthStyle;
-      rerenderDepthChart();
-      return;
-    }
-    const depthPos = e.target.closest('[data-depth-pos]');
-    if (depthPos) {
-      teamTab.depthOpen = teamTab.depthOpen === depthPos.dataset.depthPos ? null : depthPos.dataset.depthPos;
       rerenderDepthChart();
       return;
     }
@@ -8541,7 +8553,6 @@
     if (myTeam && teamTab.season) {
       teamTabSelect.value = myTeam;
       teamTab.teamId = myTeam;
-      teamTab.depthOpen = null;
       loadTeamTab();
     }
     if (standingsBody.querySelector('.sheet')) loadStandings();
