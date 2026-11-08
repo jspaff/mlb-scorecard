@@ -1658,28 +1658,72 @@
   }
   .roster-column .rr-head + .roster-subgroup-title { margin-top: 8px; }
 
-  /* Depth chart on the field: outfield across the top, the middle
-     infield, then the corners, then catcher and DH. */
-  .dc-field {
-    display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    grid-template-areas:
-      "lf lf cf cf rf rf"
-      ". ss ss b2 b2 ."
-      "b3 b3 . . b1 b1"
-      "dh dh c c . .";
-    gap: 16px 8px;
-    max-width: 640px;
-    margin: 0 auto;
-    padding: 4px 0 6px;
-  }
-  .dc-pos { min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
-  .dc-label { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.1em; color: var(--gold); padding-bottom: 2px; }
-  .dc-p { max-width: 100%; }
-  .dc-p.is-backup .player-name-btn { font-size: 9.5px; color: var(--ink-soft); box-shadow: none; }
-  .dc-p.is-backup .player-name-btn:hover, .dc-p.is-backup .player-name-btn:focus-visible { color: var(--paper); }
   .dc-none { color: var(--ink-soft); }
-  .dc-staff { margin-top: 22px; }
+  .dc-style-tg { margin: -4px 0 18px; }
+
+  /* MOCKUP (Field): the starters on a chalk-drawn field, each a small
+     pinned print over his position and plate. The field keeps one shape
+     at every width, capped so it doesn't swallow a wide sheet. */
+  .dcf { position: relative; width: 100%; max-width: 560px; aspect-ratio: 1 / 1; margin: 0 auto 64px; }
+  .dcf-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0 36px; }
+  .dcf-side { min-width: 0; }
+  .dcf-side .tm-sec:first-child { margin-top: 0; }
+  @container (min-width: 900px) {
+    .dcf-layout { grid-template-columns: minmax(0, 560px) minmax(0, 1fr); align-items: start; }
+    .dcf-side .dcf-backups { grid-template-columns: minmax(0, 1fr); }
+  }
+  .dcf-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .dcf-grass { fill: rgba(84, 121, 109, 0.16); }
+  .dcf-dirt { fill: rgba(243, 236, 219, 0.05); }
+  .dcf-fence { fill: none; stroke: var(--ink-soft); stroke-width: 0.5; vector-effect: non-scaling-stroke; opacity: 0.6; }
+  .dcf-line { fill: none; stroke: var(--ink); stroke-width: 1; vector-effect: non-scaling-stroke; opacity: 0.35; }
+  .dcf-mound { fill: rgba(243, 236, 219, 0.12); }
+  .dcf-base { fill: var(--ink); opacity: 0.7; }
+  .dcf-spot { position: absolute; transform: translate(-50%, -28%); display: flex; flex-direction: column; align-items: center; gap: 3px; width: 92px; }
+  .dcf-photo { padding: 0; border: 0; background: none; cursor: pointer; display: block; }
+  .dcf-print { display: block; width: 40px; aspect-ratio: 4 / 5; overflow: hidden; background: var(--paper-line); border: 2px solid var(--ink); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.45); }
+  .dcf-print img { width: 100%; height: 100%; object-fit: cover; object-position: center 18%; display: block; }
+  .dcf-print.is-empty { opacity: 0.35; box-shadow: none; }
+  .dcf-photo:hover .dcf-print, .dcf-photo:focus-visible .dcf-print { border-color: var(--gold); }
+  .dcf-photo:focus-visible { outline: none; }
+  .dcf-pos { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.1em; color: var(--gold); line-height: 1; margin-top: 1px; }
+  .dcf-spot .player-name-btn, .dcf-rot .player-name-btn { font-size: 9.5px; padding: 1px 5px; }
+  @container (min-width: 520px) {
+    .dcf-spot { width: 120px; }
+    .dcf-print { width: 58px; }
+    .dcf-spot .player-name-btn { font-size: 10.5px; padding: 2px 7px; }
+  }
+  .dcf-backups { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px 24px; }
+  @container (min-width: 700px) { .dcf-backups { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .dcf-bk { display: grid; grid-template-columns: 26px minmax(0, 1fr); align-items: start; gap: 8px; padding: 3px 0; }
+  .dcf-bk-pos { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.08em; color: var(--gold); padding-top: 4px; }
+  .dcf-bk-names { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+  .dcf-rotation { display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: 12px 8px; }
+  .dcf-rot { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
+  .dcf-rot .dcf-print { width: 52px; }
+
+  /* MOCKUP (Card): a scorebook lineup card -- the scoring number in
+     Special Elite, the position, the starter's plate and B/T, then his
+     backups as smaller unshadowed plates. */
+  .dcc + .dcc { margin-top: 22px; }
+  .dcc-row { display: grid; grid-template-columns: 22px 34px minmax(0, 1.1fr) minmax(0, 1fr); align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px dashed var(--paper-line); }
+  .dcc-head { padding: 0 0 4px; border-bottom: 1px solid var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+  .dcc-num { font-family: 'Special Elite', monospace; font-size: 18px; line-height: 1; color: var(--ink); text-align: center; }
+  .dcc-pos { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10.5px; letter-spacing: 0.06em; color: var(--gold); }
+  .dcc-starter { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .dcc-starter .player-name-btn { flex: 0 1 auto; min-width: 0; }
+  .dcc-bt { flex: none; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10.5px; color: var(--ink-soft); }
+  .dcc-backups { display: flex; flex-wrap: wrap; gap: 5px; min-width: 0; }
+  .dcc-pen { grid-column: 3 / -1; display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+  @container (min-width: 700px) { .dcc-row { grid-template-columns: 22px 40px 280px minmax(0, 1fr); } }
+  .dcc-backups .player-name-btn, .dcf-bk-names .player-name-btn { font-size: 9.5px; color: var(--ink-soft); box-shadow: none; }
+  .dcc-backups .player-name-btn:hover, .dcc-backups .player-name-btn:focus-visible,
+  .dcf-bk-names .player-name-btn:hover, .dcf-bk-names .player-name-btn:focus-visible { color: var(--paper); }
+  @container (max-width: 459px) {
+    .dcc-row { grid-template-columns: 20px 30px minmax(0, 1fr); }
+    .dcc-backups { grid-column: 3; }
+    .dcc-head span:nth-child(4) { display: none; }
+  }
   .il-head { margin-top: 4px; }
   .il-head ~ .il-head { margin-top: 18px; }
   table.il-table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
@@ -6598,7 +6642,7 @@
   const teamYearSelect = document.getElementById('teamYearPick');
   const teamViewToggle = document.getElementById('teamViewToggle');
   const teamBody = document.getElementById('teamBody');
-  const teamTab = { teamId: null, season: null, latestSeason: null, view: 'overview', rosterView: 'active' };
+  const teamTab = { teamId: null, season: null, latestSeason: null, view: 'overview', rosterView: 'active', depthStyle: 'field' };
   let teamRequestId = 0;
   const teamRosterCache = {};
   const teamInjuryCache = {};
@@ -6943,33 +6987,110 @@
     return `<div class="roster-columns">${col('Pitchers', pitchers.length, renderRosterSubgroups(pitcherSubgroups(pitchers, opts.depth), opts))}${col('Position Players', hitters.length, renderRosterSubgroups(hitterGroups, opts))}</div>`;
   }
 
-  // The depth chart laid out on the field: outfield across the top, middle
-  // infield, the corners, then catcher and DH -- starter first at each.
-  const DEPTH_FIELD = [
-    ['LF', 'lf'], ['CF', 'cf'], ['RF', 'rf'], ['SS', 'ss'], ['2B', 'b2'], ['3B', 'b3'], ['1B', 'b1'], ['C', 'c'], ['DH', 'dh']
+  // MOCKUP: two takes on the depth chart, switched by teamTab.depthStyle
+  // until one is picked. 'field' puts the starters on a drawn diamond with
+  // their photos, backups listed beneath; 'card' is a scorebook lineup
+  // card, one row per position by its scoring number.
+  // [position, scoring number, x%, y%] -- spots on the drawn field, the
+  // photo's center, in the field SVG's 0-100 box.
+  const DEPTH_SPOTS = [
+    ['CF', 8, 50, 9], ['LF', 7, 17, 24], ['RF', 9, 83, 24],
+    ['SS', 6, 35, 38], ['2B', 4, 65, 38], ['3B', 5, 20, 58], ['1B', 3, 80, 58],
+    ['C', 2, 50, 84], ['DH', '', 12, 84]
   ];
-  function renderDepthChart(depth) {
-    if (!depth.length) return '<div class="roster-empty">No depth chart available.</div>';
-    const at = pos => depth.filter(d => d.posAbbr === pos);
-    const plates = list => list.map((p, i) => `<div class="dc-p${i ? ' is-backup' : ''}"><button type="button" class="player-name-btn" data-player-id="${p.id}" title="${p.name}">${shortPlayerName(p.name)}</button></div>`).join('');
-    const field = DEPTH_FIELD.map(([pos, area]) => `<div class="dc-pos" style="grid-area:${area}">
-        <div class="dc-label">${pos}</div>${plates(at(pos)) || '<div class="dc-none">&#8212;</div>'}
+  const DEPTH_CARD_ORDER = [['C', 2], ['1B', 3], ['2B', 4], ['3B', 5], ['SS', 6], ['LF', 7], ['CF', 8], ['RF', 9], ['DH', '']];
+
+  // Chalk on the board: the fence, the foul lines, the infield's cut and
+  // the bases, home at (50, 80) and 90 feet = 19 units.
+  const DEPTH_FIELD_SVG = `<svg class="dcf-svg" viewBox="0 0 100 100" aria-hidden="true">
+      <path class="dcf-grass" d="M50 80 L2 32 Q50 -24 98 32 Z"/>
+      <path class="dcf-fence" d="M2 32 Q50 -24 98 32"/>
+      <path class="dcf-dirt" d="M50 80 L25 55 Q50 20 75 55 Z"/>
+      <path class="dcf-line" d="M50 80 L2 32 M50 80 L98 32"/>
+      <path class="dcf-line" d="M50 80 L69 61 L50 42 L31 61 Z"/>
+      <circle class="dcf-mound" cx="50" cy="62" r="2.4"/>
+      <rect class="dcf-base" x="67.4" y="59.4" width="3.2" height="3.2" transform="rotate(45 69 61)"/>
+      <rect class="dcf-base" x="48.4" y="40.4" width="3.2" height="3.2" transform="rotate(45 50 42)"/>
+      <rect class="dcf-base" x="29.4" y="59.4" width="3.2" height="3.2" transform="rotate(45 31 61)"/>
+      <path class="dcf-base" d="M48.3 79 h3.4 v1.5 l-1.7 1.7 l-1.7 -1.7 Z"/>
+    </svg>`;
+
+  function depthAt(depth, pos) { return depth.filter(d => d.posAbbr === pos); }
+  function depthStaff(depth) {
+    const rotation = depthAt(depth, 'SP');
+    const closers = depthAt(depth, 'CP');
+    const pen = depthAt(depth, 'P').filter(p => !closers.some(c => c.id === p.id) && !rotation.some(s => s.id === p.id));
+    return { rotation, closers, pen };
+  }
+  function depthPlate(p, cls) {
+    return `<button type="button" class="player-name-btn${cls ? ' ' + cls : ''}" data-player-id="${p.id}" title="${p.name}">${shortPlayerName(p.name)}</button>`;
+  }
+  function depthPrint(p) {
+    return `<span class="dcf-print"><img src="${headshotUrl(p.id, 120)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'"></span>`;
+  }
+
+  function renderDepthField(depth) {
+    const spots = DEPTH_SPOTS.map(([pos, , x, y]) => {
+      const starter = depthAt(depth, pos)[0];
+      return `<div class="dcf-spot" style="left:${x}%; top:${y}%">
+          ${starter ? `<button type="button" class="dcf-photo" data-player-id="${starter.id}" aria-label="${starter.name}">${depthPrint(starter)}</button>` : '<span class="dcf-print is-empty"></span>'}
+          <span class="dcf-pos">${pos}</span>
+          ${starter ? depthPlate(starter) : ''}
+        </div>`;
+    }).join('');
+    const backups = DEPTH_CARD_ORDER.map(([pos]) => [pos, depthAt(depth, pos).slice(1)]).filter(([, list]) => list.length);
+    const { rotation, closers, pen } = depthStaff(depth);
+    const rotationCards = rotation.map((p, i) => `<div class="dcf-rot">
+        <button type="button" class="dcf-photo" data-player-id="${p.id}" aria-label="${p.name}">${depthPrint(p)}</button>
+        <span class="dcf-pos">${i + 1}</span>${depthPlate(p)}
       </div>`).join('');
-    const rotation = at('SP');
-    const closers = at('CP');
-    const pen = at('P').filter(p => !closers.some(c => c.id === p.id) && !rotation.some(s => s.id === p.id));
-    const staffRow = (p, label) => `<div class="rr rr-staff"><span class="rr-num">${label}</span><span class="rr-name"><button type="button" class="player-name-btn" data-player-id="${p.id}">${p.name}</button></span><span class="rr-d">${p.throws ? p.throws + 'HP' : ''}</span></div>`;
-    return `<div class="dc-field">${field}</div>
-      <div class="roster-columns dc-staff">
-        <div class="roster-column">
-          <div class="pp-skg-head"><span>Rotation</span></div>
-          ${rotation.map((p, i) => staffRow(p, i + 1)).join('') || '<div class="roster-empty">None</div>'}
-        </div>
-        <div class="roster-column">
-          <div class="pp-skg-head"><span>Bullpen</span></div>
-          ${closers.map(p => staffRow(p, 'CL')).join('')}${pen.map(p => staffRow(p, '')).join('')}
-        </div>
+    return `<div class="dcf-layout"><div class="dcf">${DEPTH_FIELD_SVG}${spots}</div><div class="dcf-side">
+      ${backups.length ? `<section class="tm-sec">
+        <div class="pp-skg-head"><span>Behind Them</span></div>
+        <div class="dcf-backups">${backups.map(([pos, list]) => `<div class="dcf-bk"><span class="dcf-bk-pos">${pos}</span><span class="dcf-bk-names">${list.map(p => depthPlate(p)).join('')}</span></div>`).join('')}</div>
+      </section>` : ''}
+      <section class="tm-sec">
+        <div class="pp-skg-head"><span>Rotation</span></div>
+        <div class="dcf-rotation">${rotationCards || '<div class="roster-empty">None</div>'}</div>
+      </section>
+      <section class="tm-sec">
+        <div class="pp-skg-head"><span>Bullpen</span></div>
+        <div class="dcf-backups">${closers.map(p => `<div class="dcf-bk"><span class="dcf-bk-pos">CL</span><span class="dcf-bk-names">${depthPlate(p)}</span></div>`).join('')}
+        <div class="dcf-bk"><span class="dcf-bk-pos">RP</span><span class="dcf-bk-names">${pen.map(p => depthPlate(p)).join('')}</span></div></div>
+      </section></div></div>`;
+  }
+
+  // The lineup card: scoring number in the scorekeeper's hand, the
+  // starter's plate with B/T, then the men behind him in order.
+  function renderDepthCard(depth) {
+    const row = (num, pos, list) => {
+      const [starter, ...rest] = list;
+      return `<div class="dcc-row">
+          <span class="dcc-num">${num}</span>
+          <span class="dcc-pos">${pos}</span>
+          <span class="dcc-starter">${starter ? `<button type="button" class="player-name-btn" data-player-id="${starter.id}">${starter.name}</button><span class="dcc-bt">${starter.bats || '&#8211;'}/${starter.throws || '&#8211;'}</span>` : '<span class="dc-none">&#8212;</span>'}</span>
+          <span class="dcc-backups">${rest.map(p => depthPlate(p, 'dcc-backup')).join('')}</span>
+        </div>`;
+    };
+    const head = `<div class="dcc-row dcc-head"><span></span><span>Pos</span><span>Starter</span><span>Behind him</span></div>`;
+    const { rotation, closers, pen } = depthStaff(depth);
+    return `<div class="dcc">
+        <div class="pp-skg-head"><span>Lineup Card</span></div>
+        ${head}${DEPTH_CARD_ORDER.map(([pos, num]) => row(num, pos, depthAt(depth, pos))).join('')}
+      </div>
+      <div class="dcc dcc-staff">
+        <div class="pp-skg-head"><span>Pitching</span></div>
+        ${rotation.map((p, i) => row(i ? '' : 1, `SP${i + 1}`, [p])).join('')}
+        ${closers.map(p => row('', 'CL', [p])).join('')}
+        <div class="dcc-row"><span class="dcc-num"></span><span class="dcc-pos">RP</span><span class="dcc-pen">${pen.map(p => depthPlate(p)).join('')}</span></div>
       </div>`;
+  }
+
+  function renderDepthChart(depth, style) {
+    if (!depth.length) return '<div class="roster-empty">No depth chart available.</div>';
+    const toggle = `<div class="ars-tg dc-style-tg">${[['field', 'Field'], ['card', 'Card']].map(([id, label]) =>
+      `<button type="button" data-depth-style="${id}" aria-pressed="${id === style}">${label}</button>`).join('')}</div>`;
+    return toggle + (style === 'card' ? renderDepthCard(depth) : renderDepthField(depth));
   }
 
   function renderInjuredListRows(list, injuryMap) {
@@ -7047,7 +7168,7 @@
       if (requestId !== teamRequestId) return;
       if (!list) { teamBody.innerHTML = apiErrorMsg('the roster'); return; }
       list.forEach(p => storeTeamPlayer(p.id, p.name, p.posType === 'Pitcher' || /^(SP|CP)$/.test(p.posAbbr) ? 'P' : p.posAbbr, teamId, season));
-      if (view === 'depth') inner = renderDepthChart(list);
+      if (view === 'depth') inner = renderDepthChart(list, teamTab.depthStyle);
       else if (view === 'il') inner = renderInjuredList(list, injuryMap);
       else inner = renderRosterGroups(list, { ...opts, depth, badges: view === '40man' });
     }
@@ -7237,6 +7358,16 @@
       teamBody.innerHTML = renderTeamStats(lastTeamStats);
       return;
     }
+    const depthStyle = e.target.closest('[data-depth-style]');
+    if (depthStyle) {
+      if (depthStyle.dataset.depthStyle !== teamTab.depthStyle) {
+        teamTab.depthStyle = depthStyle.dataset.depthStyle;
+        loadTeamTab();
+      }
+      return;
+    }
+    const photo = e.target.closest('.dcf-photo[data-player-id]');
+    if (photo) { showPlayerModal(photo.dataset.playerId); return; }
     const rosterTab = e.target.closest('[data-roster-view]');
     if (rosterTab) {
       if (rosterTab.dataset.rosterView === teamTab.rosterView) return;
