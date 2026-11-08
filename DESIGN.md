@@ -317,7 +317,7 @@ The Team tab's Overview reads like the front page of a team's media guide.
 Every player's line for the team, hitters then pitchers, in the Players list's table: nameplates, sortable heads (gold when sorted), and a "Team" totals row under a cream rule. Zero counts are blank. Stat columns keep a fixed compact width, so on a wide sheet they read as one block beside the names; on a phone the name column stays put while the stats scroll sideways.
 
 ### Roster and Depth Chart
-- **Rows:** jersey number in gold trim, the nameplate, then B/T, season age and position in fixed right-aligned slots under painted heads. Pitchers split into Rotation (in order) and Bullpen (closer first, "CL").
+- **Rows:** jersey number in gold trim, the nameplate, then B/T, season age and position in fixed right-aligned slots under painted heads. Pitchers split into Rotation (in order) and Bullpen (closer first, "CL"). Subgroup titles (Rotation, Catchers) start in line with the names, not the numbers.
 - **Depth chart:** laid out on the field, outfield across the top, the middle infield, the corners, then DH and catcher; the starter's plate first and his backups' smaller, unshadowed plates beneath. Rotation and bullpen follow as rows.
 
 ### Your Team

@@ -1657,6 +1657,7 @@
     .tm .roster-columns { flex-direction: row; align-items: flex-start; gap: 0 36px; }
   }
   .roster-column .rr-head + .roster-subgroup-title { margin-top: 8px; }
+  .roster-column .roster-subgroup-title { padding-left: 30px; }
 
   .dc-none { color: var(--ink-soft); }
   .dc-style-tg { margin: -4px 0 18px; }
@@ -1701,6 +1702,30 @@
   .dcf-rotation { display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: 12px 8px; }
   .dcf-rot { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
   .dcf-rot .dcf-print { width: 52px; }
+  .dcf-closer { margin-bottom: 10px; justify-content: start; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); }
+  .dcf-tg-row { display: flex; align-items: center; gap: 10px; margin: -6px 0 6px; }
+  .dcf-tg-row .dc-style-tg { margin: 0; }
+  .dcf-tg-label { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
+  /* On Field: backups as plain last names under the starter's plate. */
+  .dcf-under { display: flex; flex-direction: column; align-items: center; gap: 0; margin-top: 1px; }
+  .dcf-under-name { background: none; border: 0; padding: 1px 2px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 9px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-soft); cursor: pointer; line-height: 1.15; white-space: nowrap; }
+  .dcf-under-name:hover, .dcf-under-name:focus-visible { color: var(--gold); outline: none; }
+  .dcf.has-under { margin-bottom: 40px; }
+  /* A phone's field has room for one name under each starter; the rest
+     are a count. */
+  .dcf-under { flex-direction: row; gap: 3px; }
+  .dcf-under-name ~ .dcf-under-name { display: none; }
+  .dcf-under-more { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 9px; color: var(--ink-soft); line-height: 1.15; padding: 1px 0; }
+  @container (min-width: 520px) {
+    .dcf-under { flex-direction: column; gap: 0; }
+    .dcf-under-name ~ .dcf-under-name { display: inline; }
+    .dcf-under-more { display: none; }
+    .dcf.has-under { margin-bottom: 88px; }
+  }
+  .dcf-also { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 8px; margin-top: 14px; align-items: start; }
+  .dcf-also-list { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+  .dcf-also-item { display: inline-flex; align-items: center; gap: 6px; }
+  .dcf-also-pos { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; color: var(--gold); }
 
   /* MOCKUP (Card): a scorebook lineup card -- the scoring number in
      Special Elite, the position, the starter's plate and B/T, then his
@@ -6642,7 +6667,7 @@
   const teamYearSelect = document.getElementById('teamYearPick');
   const teamViewToggle = document.getElementById('teamViewToggle');
   const teamBody = document.getElementById('teamBody');
-  const teamTab = { teamId: null, season: null, latestSeason: null, view: 'overview', rosterView: 'active', depthStyle: 'field' };
+  const teamTab = { teamId: null, season: null, latestSeason: null, view: 'overview', rosterView: 'active', depthStyle: 'field', backupStyle: 'list' };
   let teamRequestId = 0;
   const teamRosterCache = {};
   const teamInjuryCache = {};
@@ -6995,8 +7020,8 @@
   // photo's center, in the field SVG's 0-100 box.
   const DEPTH_SPOTS = [
     ['CF', 8, 50, 9], ['LF', 7, 17, 24], ['RF', 9, 83, 24],
-    ['SS', 6, 35, 38], ['2B', 4, 65, 38], ['3B', 5, 20, 58], ['1B', 3, 80, 58],
-    ['C', 2, 50, 84], ['DH', '', 12, 84]
+    ['SS', 6, 35, 36], ['2B', 4, 65, 36], ['3B', 5, 19, 55], ['1B', 3, 81, 55],
+    ['C', 2, 50, 84], ['DH', '', 11, 90]
   ];
   const DEPTH_CARD_ORDER = [['C', 2], ['1B', 3], ['2B', 4], ['3B', 5], ['SS', 6], ['LF', 7], ['CF', 8], ['RF', 9], ['DH', '']];
 
@@ -7029,34 +7054,69 @@
     return `<span class="dcf-print"><img src="${headshotUrl(p.id, 120)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'"></span>`;
   }
 
-  function renderDepthField(depth) {
+  // MOCKUP: three ways to show the backups around the Field diamond,
+  // switched by teamTab.backupStyle -- 'list' (by position, beside the
+  // field), 'field' (under each starter, on the field itself) and 'bench'
+  // (the bench as players with photos, each with the spots he covers).
+  function renderDepthField(depth, backupStyle) {
+    const lastName = p => p.name.split(' ').slice(1).join(' ') || p.name;
     const spots = DEPTH_SPOTS.map(([pos, , x, y]) => {
-      const starter = depthAt(depth, pos)[0];
+      const [starter, ...behind] = depthAt(depth, pos);
+      const under = backupStyle === 'field' && behind.length
+        ? `<span class="dcf-under">${behind.map(p => `<button type="button" class="dcf-under-name" data-player-id="${p.id}" title="${p.name}">${lastName(p)}</button>`).join('')}${behind.length > 1 ? `<span class="dcf-under-more">+${behind.length - 1}</span>` : ''}</span>`
+        : '';
       return `<div class="dcf-spot" style="left:${x}%; top:${y}%">
           ${starter ? `<button type="button" class="dcf-photo" data-player-id="${starter.id}" aria-label="${starter.name}">${depthPrint(starter)}</button>` : '<span class="dcf-print is-empty"></span>'}
           <span class="dcf-pos">${pos}</span>
-          ${starter ? depthPlate(starter) : ''}
+          ${starter ? depthPlate(starter) : ''}${under}
         </div>`;
     }).join('');
-    const backups = DEPTH_CARD_ORDER.map(([pos]) => [pos, depthAt(depth, pos).slice(1)]).filter(([, list]) => list.length);
-    const { rotation, closers, pen } = depthStaff(depth);
-    const rotationCards = rotation.map((p, i) => `<div class="dcf-rot">
-        <button type="button" class="dcf-photo" data-player-id="${p.id}" aria-label="${p.name}">${depthPrint(p)}</button>
-        <span class="dcf-pos">${i + 1}</span>${depthPlate(p)}
-      </div>`).join('');
-    return `<div class="dcf-layout"><div class="dcf">${DEPTH_FIELD_SVG}${spots}</div><div class="dcf-side">
-      ${backups.length ? `<section class="tm-sec">
+
+    let backupHtml = '';
+    if (backupStyle === 'list') {
+      const backups = DEPTH_CARD_ORDER.map(([pos]) => [pos, depthAt(depth, pos).slice(1)]).filter(([, list]) => list.length);
+      backupHtml = backups.length ? `<section class="tm-sec">
         <div class="pp-skg-head"><span>Behind Them</span></div>
         <div class="dcf-backups">${backups.map(([pos, list]) => `<div class="dcf-bk"><span class="dcf-bk-pos">${pos}</span><span class="dcf-bk-names">${list.map(p => depthPlate(p)).join('')}</span></div>`).join('')}</div>
-      </section>` : ''}
+      </section>` : '';
+    } else if (backupStyle === 'bench') {
+      // A man who starts somewhere isn't on the bench; the other spots he
+      // covers go in a line of their own beneath it.
+      const starterIds = new Set(DEPTH_CARD_ORDER.map(([pos]) => (depthAt(depth, pos)[0] || {}).id).filter(Boolean));
+      const covers = new Map();
+      DEPTH_CARD_ORDER.forEach(([pos]) => depthAt(depth, pos).slice(1).forEach(p => {
+        if (!covers.has(p.id)) covers.set(p.id, { p, spots: [] });
+        covers.get(p.id).spots.push(pos);
+      }));
+      const bench = [...covers.values()].filter(c => !starterIds.has(c.p.id));
+      const also = [...covers.values()].filter(c => starterIds.has(c.p.id));
+      backupHtml = `<section class="tm-sec">
+        <div class="pp-skg-head"><span>Bench</span></div>
+        <div class="dcf-rotation">${bench.map(({ p, spots: s }) => `<div class="dcf-rot">
+            <button type="button" class="dcf-photo" data-player-id="${p.id}" aria-label="${p.name}">${depthPrint(p)}</button>
+            <span class="dcf-pos">${s.join(' &#183; ')}</span>${depthPlate(p)}
+          </div>`).join('') || '<div class="roster-empty">None</div>'}</div>
+        ${also.length ? `<div class="dcf-also"><span class="dcf-bk-pos">Also</span><span class="dcf-also-list">${also.map(({ p, spots: s }) => `<span class="dcf-also-item">${depthPlate(p)}<span class="dcf-also-pos">${s.join(' &#183; ')}</span></span>`).join('')}</span></div>` : ''}
+      </section>`;
+    }
+
+    const { rotation, closers, pen } = depthStaff(depth);
+    const card = (p, label) => `<div class="dcf-rot">
+        <button type="button" class="dcf-photo" data-player-id="${p.id}" aria-label="${p.name}">${depthPrint(p)}</button>
+        <span class="dcf-pos">${label}</span>${depthPlate(p)}
+      </div>`;
+    const toggle = `<div class="ars-tg dc-style-tg">${[['list', 'List'], ['field', 'On Field'], ['bench', 'Bench']].map(([id, label]) =>
+      `<button type="button" data-backup-style="${id}" aria-pressed="${id === backupStyle}">${label}</button>`).join('')}</div>`;
+    return `<div class="dcf-layout"><div><div class="dcf-tg-row"><span class="dcf-tg-label">Backups</span>${toggle}</div><div class="dcf${backupStyle === 'field' ? ' has-under' : ''}">${DEPTH_FIELD_SVG}${spots}</div></div><div class="dcf-side">
+      ${backupHtml}
       <section class="tm-sec">
         <div class="pp-skg-head"><span>Rotation</span></div>
-        <div class="dcf-rotation">${rotationCards || '<div class="roster-empty">None</div>'}</div>
+        <div class="dcf-rotation">${rotation.map((p, i) => card(p, i + 1)).join('') || '<div class="roster-empty">None</div>'}</div>
       </section>
       <section class="tm-sec">
         <div class="pp-skg-head"><span>Bullpen</span></div>
-        <div class="dcf-backups">${closers.map(p => `<div class="dcf-bk"><span class="dcf-bk-pos">CL</span><span class="dcf-bk-names">${depthPlate(p)}</span></div>`).join('')}
-        <div class="dcf-bk"><span class="dcf-bk-pos">RP</span><span class="dcf-bk-names">${pen.map(p => depthPlate(p)).join('')}</span></div></div>
+        ${closers.length ? `<div class="dcf-rotation dcf-closer">${closers.map(p => card(p, 'CL')).join('')}</div>` : ''}
+        <div class="dcf-backups"><div class="dcf-bk"><span class="dcf-bk-pos">RP</span><span class="dcf-bk-names">${pen.map(p => depthPlate(p)).join('')}</span></div></div>
       </section></div></div>`;
   }
 
@@ -7090,7 +7150,7 @@
     if (!depth.length) return '<div class="roster-empty">No depth chart available.</div>';
     const toggle = `<div class="ars-tg dc-style-tg">${[['field', 'Field'], ['card', 'Card']].map(([id, label]) =>
       `<button type="button" data-depth-style="${id}" aria-pressed="${id === style}">${label}</button>`).join('')}</div>`;
-    return toggle + (style === 'card' ? renderDepthCard(depth) : renderDepthField(depth));
+    return toggle + (style === 'card' ? renderDepthCard(depth) : renderDepthField(depth, teamTab.backupStyle));
   }
 
   function renderInjuredListRows(list, injuryMap) {
@@ -7366,7 +7426,15 @@
       }
       return;
     }
-    const photo = e.target.closest('.dcf-photo[data-player-id]');
+    const backupStyle = e.target.closest('[data-backup-style]');
+    if (backupStyle) {
+      if (backupStyle.dataset.backupStyle !== teamTab.backupStyle) {
+        teamTab.backupStyle = backupStyle.dataset.backupStyle;
+        loadTeamTab();
+      }
+      return;
+    }
+    const photo = e.target.closest('.dcf-photo[data-player-id], .dcf-under-name[data-player-id]');
     if (photo) { showPlayerModal(photo.dataset.playerId); return; }
     const rosterTab = e.target.closest('[data-roster-view]');
     if (rosterTab) {
