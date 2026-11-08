@@ -240,7 +240,7 @@ Clickable names (players and teams) hang like scoreboard plates.
 The Overview board: a player's season as percentile scores, one per skill, so his strengths read at a glance.
 - **Score:** a bold Oswald number, 1–100, his percentile in that skill's stat. No suffix, no rank. Gold from 90 up.
 - **Under it:** the skill's name painted above, the stat behind it written small below ("ISO .290").
-- **Groups:** hitters get Hitting (Bat, Power, Contact, Eye) and Tools (Speed, Range, Glove, Arm); pitchers Pitching (Runs, Damage, Traffic, Command) and Stuff (Velo, Reach, Whiff, Grounders). Four to a row; the two groups stack on a phone and sit side by side on a wide sheet. The first group's heading names the pool ("vs 135 qualified hitters") or how far short he is.
+- **Groups:** hitters get Hitting (Bat, Power, Contact, Eye) and Tools (Speed, Range, Glove, Arm); pitchers Pitching (Runs, Damage, Traffic, Command) and Stuff (Velo, Reach, Whiff, Grounders). Four to a row; the two groups stack on a phone and sit side by side on a wide sheet. The first group's heading names the pool ("vs 246 hitters", "vs 176 starters") or how far short he is ("56 PA short of the pool").
 - **Short of the pool:** still scored, placed among the pool, but in Faded Cream and never gold.
 - **Not ranked:** a tile that doesn't apply, or a pool he isn't in, keeps its name and shows a dash.
 - **Totals:** a few plain counts below (G, HR, SB; GS, IP, K) in Oswald 600 at 28px (32px wide), a step under the scores, never ranked or gold.
