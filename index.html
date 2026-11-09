@@ -1116,27 +1116,33 @@
   .dy-pair { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0 36px; }
   .dy-side { min-width: 0; }
 
-  /* Scores: two lines a game, like a paper's agate -- the line score,
-     then the recap headline. One column on a phone, more on a wide sheet. */
-  .dg-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0 28px; }
-  .dg { min-width: 0; padding: 5px 4px 6px; margin: 0 -4px; border-bottom: 1px dashed var(--paper-line); cursor: pointer; }
-  .dg:hover { background: rgba(243, 236, 219, 0.05); }
+  /* Scores: a small box a game -- two across a phone, more on a wide
+     sheet. The teams stack with their runs in a fixed column; the state
+     and the recap's play mark sit beside them. */
+  .dg-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .dg { min-width: 0; padding: 6px 7px 7px; background: rgba(0, 0, 0, 0.14); border: 1px solid var(--paper-line); cursor: pointer; }
+  .dg:hover { border-color: var(--ink-soft); }
   .dg:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
-  .dg-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
   .dg.is-my-team { background: rgba(217, 169, 26, 0.13); }
-  .dg-abbr { width: 30px; }
-  .dg-side { display: inline-flex; align-items: center; gap: 5px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11.5px; color: var(--ink); white-space: nowrap; }
-  .dg-side img { width: 16px; height: 16px; }
-  .dg-side b { width: 20px; margin-left: 0; font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 16px; text-align: right; font-variant-numeric: tabular-nums; }
-  .dg-side.is-lost { color: var(--ink-soft); }
-  .dg-side.is-lost b { font-weight: 400; }
-  .dg-at { width: 14px; text-align: center; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 9.5px; color: var(--ink-soft); }
-  .dg-state { margin-left: auto; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; }
+  .dg.is-live { border-color: #3fae56; }
+  .dg-box { display: flex; gap: 6px; }
+  .dg-teams { flex: 1; min-width: 0; }
+  .dg-team { display: grid; grid-template-columns: 16px minmax(0, 1fr) 22px; align-items: center; gap: 5px; height: 21px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11.5px; color: var(--ink); }
+  .dg-team img { width: 16px; height: 16px; }
+  .dg-team b { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 16px; text-align: right; font-variant-numeric: tabular-nums; }
+  .dg-team.is-lost { color: var(--ink-soft); }
+  .dg-team.is-lost b { font-weight: 400; }
+  .dg-aside { display: flex; flex-direction: column; align-items: flex-end; justify-content: space-between; width: 42px; flex: none; }
+  .dg-state { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; line-height: 21px; }
   .dg.is-live .dg-state { color: #3fae56; }
-  .dg-recap { flex: none; width: 24px; height: 20px; padding: 0; background: rgba(0, 0, 0, 0.22); border: 1px solid var(--paper-line); font-size: 9px; line-height: 1; color: var(--gold); cursor: pointer; }
+  .dg-recap { width: 24px; height: 18px; padding: 0; background: rgba(0, 0, 0, 0.22); border: 1px solid var(--paper-line); font-size: 9px; line-height: 1; color: var(--gold); cursor: pointer; }
   .dg-recap:hover, .dg-recap:focus-visible { border-color: var(--gold); }
-  .dg-recap.is-none { background: none; border-color: transparent; }
-  .dg-story { margin-top: 2px; padding-left: 21px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: 'Inter', sans-serif; font-size: 11.5px; line-height: 1.35; color: var(--ink-soft); }
+  .dg-story { margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(84, 94, 77, 0.6); font-family: 'Inter', sans-serif; font-size: 10.5px; line-height: 1.35; color: var(--ink-soft); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  /* On a phone the box is just the score; the recap's headline joins it
+     once there's room. */
+  .dg-story { display: none; }
+  @container (min-width: 620px) { .dg-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .dg-story { display: -webkit-box; } }
+  @container (min-width: 940px) { .dg-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); } .dy-title { font-size: 30px; } }
   .dh-watch, .dy-more {
     align-self: flex-end;
     margin-top: 2px;
@@ -1153,8 +1159,6 @@
     cursor: pointer;
   }
   .dh-watch:hover { text-decoration: underline; }
-  @container (min-width: 620px) { .dg-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-  @container (min-width: 940px) { .dg-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .dy-title { font-size: 30px; } }
 
   /* Home runs, longest first */
   .dh { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; border-bottom: 1px dashed var(--paper-line); }
@@ -1201,6 +1205,7 @@
   .dp:focus-visible { outline: none; }
   .dp-title { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 13.5px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .dp-meta { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 9.5px; color: var(--ink-soft); }
+  .dp-meta b { font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; font-size: 9px; color: var(--ink); }
   @container (min-width: 940px) {
     .dy-pair { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
     .dp-row { grid-auto-flow: row; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-columns: auto; overflow: visible; }
@@ -6471,6 +6476,32 @@
 
   const gameStatsCache = {};
 
+  // What a scoring play did to the game, from the score after it less the
+  // runs that crossed on it.
+  function playImpact(p) {
+    const isTop = p.about && p.about.isTopInning;
+    const inning = (p.about && p.about.inning) || 0;
+    const scored = (p.runners || []).filter(r => r.movement && r.movement.end === 'score').length;
+    const runs = scored || (p.result && p.result.rbi) || 0;
+    if (!runs) return { kind: null, inning, runs };
+    const after = isTop ? p.result.awayScore : p.result.homeScore;
+    const opp = isTop ? p.result.homeScore : p.result.awayScore;
+    const before = after - runs;
+    let kind = null;
+    if (!isTop && inning >= 9 && after > opp && before <= opp) kind = 'walkoff';
+    else if (before <= opp && after > opp) kind = 'goahead';
+    else if (before < opp && after === opp) kind = 'tying';
+    return { kind, inning, runs };
+  }
+  // A highlight's id is its play's description as a slug ("justin-crawford-
+  // triples-5-on-a-line-drive-..."), which is how a hitting clip finds its
+  // play in the feed.
+  const DAY_SLUG_LEN = 32;
+  function slugify(text) {
+    return (text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, DAY_SLUG_LEN);
+  }
+
   async function fetchGameStats(gamePk, awayTeam, homeTeam, isFinal) {
     const awayAbbr = teamAbbr(awayTeam);
     const homeAbbr = teamAbbr(homeTeam);
@@ -6489,18 +6520,10 @@
         const distance = hitData && hitData.totalDistance != null ? hitData.totalDistance : null;
         const coords = hitData && hitData.coordinates;
         const pitch = events.slice().reverse().find(e => e.isPitch);
-        // What it did to the game, from the score after the play less the
-        // runs it drove in. Go-ahead and tying only count late -- a 2-1
-        // lead in the 2nd isn't a story.
-        const runs = p.result.rbi || 1;
-        const after = isTop ? p.result.awayScore : p.result.homeScore;
-        const opp = isTop ? p.result.homeScore : p.result.awayScore;
-        const before = after - runs;
-        const inning = (p.about && p.about.inning) || null;
-        let impact = null;
-        if (!isTop && inning >= 9 && after > opp && before <= opp) impact = 'walkoff';
-        else if (inning >= 7 && before <= opp && after > opp) impact = 'goahead';
-        else if (inning >= 7 && before < opp && after === opp) impact = 'tying';
+        // Go-ahead and tying only count late -- a 2-1 lead in the 2nd
+        // isn't a story.
+        const { kind, inning, runs } = playImpact(p);
+        const impact = kind === 'walkoff' || inning >= 7 ? kind : null;
         const lastEvent = events[events.length - 1];
         const playId = lastEvent && lastEvent.playId;
         // The description carries his count the way a broadcast does:
@@ -6546,11 +6569,15 @@
           gameScore: 40 + 2 * st.outs + st.strikeOuts - 2 * st.baseOnBalls - 2 * st.hits - 3 * st.runs - 6 * st.homeRuns
         };
       }).filter(Boolean);
-      const result = { homeRuns, starts };
+      // The other scoring plays and triples, for matching hitting clips.
+      const keyPlays = allPlays.filter(p => p.result && p.result.event !== 'Home Run' && p.result.type === 'atBat')
+        .map(p => ({ slug: slugify(p.result.description), event: p.result.event, batterId: p.matchup && p.matchup.batter && p.matchup.batter.id, ...playImpact(p) }))
+        .filter(k => k.runs || k.event === 'Triple');
+      const result = { homeRuns, starts, keyPlays };
       if (isFinal) gameStatsCache[gamePk] = result;
       return result;
     } catch (e) {
-      return { homeRuns: [], starts: [] };
+      return { homeRuns: [], starts: [], keyPlays: [] };
     }
   }
 
@@ -6590,15 +6617,52 @@
       return mp4 ? { mp4, title: item.headline || '', date: g.officialDate, gamePk: g.gamePk, matchup, thumb: highlightThumb(item), duration: item.duration || '' } : null;
     };
     const recapItem = items.find(item => tags(item).includes('game-recap'));
+    // Hitting clips carry no "wow"; they're weighed later, against their
+    // play in the feed (weighDayPlays).
     const plays = items.map(item => {
       const t = tags(item);
       if (!t.includes('highlight') || t.includes('home-run')) return null;
-      const weight = (t.includes('wow') ? 2 : 0) + (t.includes('defense') ? 2 : 0);
-      if (!weight) return null;
       const c = clip(item);
-      return c ? { ...c, weight } : null;
+      if (!c) return null;
+      if (t.includes('defense')) return { ...c, weight: t.includes('wow') ? 4 : 2, tag: 'Defense' };
+      if (t.includes('wow')) return { ...c, weight: 2, tag: t.includes('pitching') ? 'Pitching' : '' };
+      if (t.includes('hitting')) {
+        const playerIds = (item.keywordsAll || []).filter(k => k.type === 'player_id').map(k => Number(k.value));
+        return { ...c, weight: 0, slug: (item.id || '').slice(0, DAY_SLUG_LEN), playerIds };
+      }
+      return null;
     }).filter(Boolean);
     return { recap: recapItem ? clip(recapItem) : null, plays };
+  }
+
+  // A hitting clip counts by what its play did: a walk-off above all,
+  // then a late go-ahead or tying hit, then a big early one; an RBI single
+  // in a blowout doesn't make the row.
+  const DAY_HIT_LABELS = { walkoff: 'Walk-off', goahead: 'Go-ahead', tying: 'Game-tying' };
+  function weighDayPlays(plays, keyPlays) {
+    return plays.map(c => {
+      if (!c.slug) return c;
+      // Its slug when that's the play's description; otherwise ("pitcher-in-
+      // play-run-s-to-batter") the batter among its players, and when he
+      // drove in runs more than once, the play its headline names.
+      let play = keyPlays.find(k => k.slug && k.slug === c.slug);
+      if (!play) {
+        const his = keyPlays.filter(k => c.playerIds.includes(k.batterId));
+        const headline = c.title.toLowerCase();
+        play = his.find(k => headline.includes((k.event || '').toLowerCase())) || (his.length === 1 ? his[0] : null);
+      }
+      if (!play) return null;
+      const late = play.inning >= 7;
+      let weight = 0;
+      if (play.kind === 'walkoff') weight = 6;
+      else if (play.kind === 'goahead') weight = late ? 5 : 2;
+      else if (play.kind === 'tying') weight = late ? 4 : 1;
+      if (play.runs >= 3) weight += 2;
+      if (play.event === 'Triple') weight += 1;
+      if (weight < 2) return null;
+      const tag = play.kind ? DAY_HIT_LABELS[play.kind] : play.runs >= 3 ? `${play.runs}-run ${play.event.toLowerCase()}` : play.event;
+      return { ...c, weight, tag };
+    }).filter(Boolean);
   }
 
   function dayClipKey(clip) {
@@ -6623,23 +6687,26 @@
     return { label: formatGameTime(t.gameDate), started: false };
   }
 
-  // One game in two lines: the score and its state, then MLB's recap
-  // headline, whose video the play mark at the end of the row runs.
+  // One game as a small box: the two teams stacked with their runs, the
+  // state and a play mark for MLB's recap video beside them, and the
+  // recap's headline under them.
   function renderDayGame(g, media) {
     const st = dayGameState(g);
     const a = g.teams.away, h = g.teams.home;
-    const side = (t, other) => {
+    const team = (t, other) => {
       const lost = st.final && t.score < other.score;
-      return `<span class="dg-side${lost ? ' is-lost' : ''}"><img src="${capLogoUrl(t.team.id)}" alt=""><span class="dg-abbr">${teamAbbr(t.team)}</span><b>${st.started ? (t.score ?? 0) : ''}</b></span>`;
+      return `<div class="dg-team${lost ? ' is-lost' : ''}"><img src="${capLogoUrl(t.team.id)}" alt=""><span>${teamAbbr(t.team)}</span><b>${st.started ? (t.score ?? 0) : ''}</b></div>`;
     };
     const recap = media && media.recap;
     const mine = myTeamId() && (a.team.id === myTeamId() || h.team.id === myTeamId());
     return `
       <div class="dg${st.live ? ' is-live' : ''}${mine ? ' is-my-team' : ''}" data-date="${g.officialDate}" data-game-pk="${g.gamePk}" tabindex="0" role="button">
-        <div class="dg-line">
-          ${side(a, h)}<span class="dg-at">@</span>${side(h, a)}
-          <span class="dg-state">${st.label}</span>
-          ${recap ? `<button type="button" class="dg-recap" data-day-clip="${dayClipKey(recap)}" aria-label="Recap video" title="Recap">&#9654;</button>` : '<span class="dg-recap is-none"></span>'}
+        <div class="dg-box">
+          <div class="dg-teams">${team(a, h)}${team(h, a)}</div>
+          <div class="dg-aside">
+            <span class="dg-state">${st.label}</span>
+            ${recap ? `<button type="button" class="dg-recap" data-day-clip="${dayClipKey(recap)}" aria-label="Recap video" title="Recap">&#9654;</button>` : ''}
+          </div>
         </div>
         ${recap ? `<div class="dg-story">${recap.title}</div>` : ''}
       </div>`;
@@ -6713,7 +6780,7 @@
           <button type="button" class="dp" data-day-clip="${dayClipKey(c)}">
             <span class="dp-thumb"><img src="${c.thumb}" alt="" loading="lazy"><span class="dp-play">&#9654;</span></span>
             <span class="dp-title">${c.title}</span>
-            <span class="dp-meta">${c.matchup}</span>
+            <span class="dp-meta">${c.matchup}${c.tag ? ` &#183; <b>${c.tag}</b>` : ''}</span>
           </button>`).join('')}
         </div>
       </div>`;
@@ -6721,13 +6788,13 @@
 
   function renderDay() {
     if (!dayData) return '';
-    const { dateStr, games, media, stats, season } = dayData;
+    const { dateStr, games, media, stats, statsByPk, season } = dayData;
     dayClips = {};
     const homeRuns = stats.flatMap(s => s.homeRuns);
     const starts = stats.flatMap(s => s.starts);
     // At most two clips a game, so one wild game can't fill the row.
     const perGame = {};
-    const plays = games.flatMap(g => (media[g.gamePk] ? media[g.gamePk].plays : []))
+    const plays = games.flatMap(g => (media[g.gamePk] ? weighDayPlays(media[g.gamePk].plays, (statsByPk[g.gamePk] || {}).keyPlays || []) : []))
       .sort((a, b) => b.weight - a.weight)
       .filter(c => (perGame[c.gamePk] = (perGame[c.gamePk] || 0) + 1) <= 2)
       .slice(0, DAY_PLAYS_SHOWN);
@@ -6787,7 +6854,9 @@
       } else if (dayData && dayData.dateStr === dateStr) {
         media = dayData.media;
       }
-      dayData = { dateStr, games, media, stats, season: Number(dateStr.slice(0, 4)) };
+      const statsByPk = {};
+      startedGames.forEach((g, i) => { statsByPk[g.gamePk] = stats[i]; });
+      dayData = { dateStr, games, media, stats, statsByPk, season: Number(dateStr.slice(0, 4)) };
       const openLists = isPoll ? [...dailyBody.querySelectorAll('.dy-hr.is-open')].length > 0 : false;
       dailyBody.innerHTML = renderDay();
       if (openLists) {
