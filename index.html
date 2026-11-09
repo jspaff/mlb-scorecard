@@ -1158,7 +1158,7 @@
   }
   .dh-watch:hover { text-decoration: underline; }
 
-  /* Home runs, longest first */
+  /* Home runs, the biggest swing first */
   .dh { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; border-bottom: 1px dashed var(--paper-line); }
   .dh.is-extra { display: none; }
   .dy-hr.is-open .dh.is-extra { display: flex; }
@@ -1197,14 +1197,12 @@
   .ds-gs { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 15px; }
   @media (max-width: 420px) { .ds-row { grid-template-columns: minmax(0, 1fr) repeat(6, 26px); } }
 
-  /* Videos. A card is a framed still -- MLB's photo, or for a play only
-     Savant has, a scorebook card (the player's print, the notation, his
-     cap) -- under a kicker saying why it's here. */
+  /* Videos. A card is a framed scorebook still -- the player's print
+     beside the play's diamond -- over a kicker saying why it's here. */
   .vc { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 6px 6px 8px; background: rgba(0, 0, 0, 0.18); border: 1px solid var(--paper-line); text-align: left; color: var(--ink); cursor: pointer; scroll-snap-align: start; }
   .vc:hover, .vc:focus-visible { border-color: var(--gold); }
   .vc:focus-visible { outline: none; }
   .vc-thumb { position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden; margin-bottom: 2px; background: var(--paper-line); border: 1px solid var(--paper-line); }
-  .vc-thumb > img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .vc { container-type: inline-size; }
   .vc-card { position: absolute; inset: 0; display: grid; grid-template-columns: 40% minmax(0, 1fr); background: var(--paper); }
   /* The photo is a pinned print, as on the profile and the depth chart:
@@ -1225,7 +1223,6 @@
     .vc-where img { width: 12px; height: 12px; }
     .vc-play { right: 4px; bottom: 4px; transform: scale(0.85); transform-origin: bottom right; }
   }
-  .dp-play { position: absolute; right: 6px; bottom: 6px; padding: 2px 6px 1px; background: rgba(27, 32, 25, 0.82); font-size: 10px; color: var(--ink); }
   .vc-kicker { padding: 0 2px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); }
   .vc-kicker em { font-style: normal; font-weight: 700; letter-spacing: 0.02em; color: var(--ink-soft); }
   .vc-title { padding: 0 2px; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 13.5px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -1239,7 +1236,6 @@
      the starts at a box score's width on a wide sheet. */
   @container (min-width: 940px) {
     .dy-hr-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 36px; }
-    .dy-hr.is-open .dh.is-extra { display: flex; }
     .ds-table { max-width: 640px; }
   }
   @container (min-width: 940px) {
@@ -6677,9 +6673,9 @@
   const HR_IMPACT_LABELS = { walkoff: 'Walk-off', goahead: 'Go-ahead', tying: 'Game-tying' };
 
   // ---- Highlights: the day in one page ----
-  // Scores (with MLB's recap headline and video), the day's home runs on
-  // one field, the best starts, and MLB's top defensive and "wow" clips.
-  // Videos play in the clip popup from dayClips, keyed per render.
+  // Scores (with MLB's recap headline and video), then Big Moments, Home
+  // Runs, On the Mound and Defense -- see "What to watch" below. Videos
+  // play in the clip popup from dayClips, keyed per render.
   let dayClips = {};
   let dayData = null;
   const DAY_HR_SHOWN = 6;
@@ -6689,11 +6685,6 @@
     const pbs = item.playbacks || [];
     const pb = pbs.find(b => b.name === 'mp4Avc') || pbs.find(b => /\.mp4$/.test(b.url || ''));
     return pb ? pb.url : null;
-  }
-  function highlightThumb(item) {
-    const cuts = (item.image && item.image.cuts) || [];
-    const cut = cuts.find(c => c.width === 640) || cuts.find(c => c.width <= 720) || cuts[0];
-    return cut ? cut.src : '';
   }
 
   // From the schedule's own highlights hydrate: the game's recap video
@@ -6706,7 +6697,7 @@
     const matchup = `${teamAbbr(g.teams.away.team)} @ ${teamAbbr(g.teams.home.team)}`;
     const clip = item => {
       const mp4 = highlightMp4(item);
-      return mp4 ? { mp4, title: (item.headline || '').trim(), date: g.officialDate, gamePk: g.gamePk, matchup, thumb: highlightThumb(item), duration: item.duration || '' } : null;
+      return mp4 ? { mp4, title: (item.headline || '').trim(), date: g.officialDate, gamePk: g.gamePk, matchup } : null;
     };
     const recapItem = items.find(item => tags(item).includes('game-recap'));
     // Matched to their plays in the feed later (buildClipIndex).
@@ -6777,12 +6768,6 @@
     const play = candidates.sort((a, b) => (wpa[b.atBatIndex] || 0) - (wpa[a.atBatIndex] || 0))[0];
     return play ? { play, exact } : { play: null, exact: false };
   }
-  function dayClipKey(clip) {
-    const key = `c${Object.keys(dayClips).length}`;
-    dayClips[key] = clip;
-    return key;
-  }
-
   function dayGameState(g) {
     const t = scheduleGameToTileGame(g);
     const isRealDelay = t.detailedState && /delay|suspend/i.test(t.detailedState);
@@ -6817,7 +6802,7 @@
           <div class="dg-teams">${team(a, h)}${team(h, a)}</div>
           <div class="dg-aside">
             <span class="dg-state">${st.label}</span>
-            ${recap ? `<button type="button" class="dg-recap" data-day-clip="${dayClipKey(recap)}" aria-label="Recap video" title="Recap">&#9654;</button>` : ''}
+            ${recap ? `<button type="button" class="dg-recap" data-day-clip="${dayVideoKey({ clip: recap })}" aria-label="Recap video" title="Recap">&#9654;</button>` : ''}
           </div>
         </div>
         ${recap ? `<div class="dg-story">${recap.title}</div>` : ''}
@@ -7009,14 +6994,6 @@
     return key;
   }
 
-  // A video card: MLB's photo when the clip is MLB's; otherwise a
-  // scorebook card -- the player's print, his cap, and the play's
-  // notation -- for Savant's clip of the pitch. The kicker says why it's
-  // here; it keeps its line even when empty, so a row's titles line up.
-  // Experiment: every card is a scorebook card unless ?thumbs=photo asks
-  // for MLB's photos where it has them.
-  const DAY_PHOTO_THUMBS = new URLSearchParams(location.search).get('thumbs') === 'photo';
-
   // The still: his photo pinned as a print on the left, and the
   // play's diamond as the scorecard draws it (an RBI dot a run), under a
   // quiet line of his team and the inning. A clip with no play gets an
@@ -7043,14 +7020,15 @@
       </span>`;
   }
 
+  // A video card: the scorebook still, then a kicker saying why it's here
+  // (it keeps its line even when empty, so a row's titles line up), the
+  // title and the game. Every card draws its own still -- MLB's photos
+  // never show -- so a Savant-only play looks like any other.
   function renderVideoCard(item) {
     const matchup = item.clip ? item.clip.matchup : matchupOf(item.g);
-    const still = DAY_PHOTO_THUMBS && item.clip && item.clip.thumb
-      ? `<img src="${item.clip.thumb}" alt="" loading="lazy">`
-      : renderScorebookStill(item);
     return `
       <button type="button" class="vc" data-day-clip="${dayVideoKey(item)}">
-        <span class="vc-thumb">${still}${DAY_PHOTO_THUMBS && item.clip && item.clip.thumb ? '<span class="dp-play">&#9654;</span>' : ''}</span>
+        <span class="vc-thumb">${renderScorebookStill(item)}</span>
         <span class="vc-kicker">${item.label || '&nbsp;'}${item.why ? ` <em>${item.why}</em>` : ''}</span>
         <span class="vc-title">${item.title}</span>
         <span class="dp-meta">${matchup}</span>
