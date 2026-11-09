@@ -1205,8 +1205,6 @@
   .dp:focus-visible { outline: none; }
   .dp-title { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 13.5px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .dp-meta { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 9.5px; color: var(--ink-soft); }
-  .dp-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 4px; }
-  .dp-wpa { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--ink); }
   .dp-meta b { font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; font-size: 9px; color: var(--ink); }
   @container (min-width: 940px) {
     .dy-pair { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
@@ -6635,9 +6633,8 @@
   }
 
   // From the schedule's own highlights hydrate: the game's recap video
-  // (its headline is the game's story) and its clips worth a look --
-  // MLB's defensive and "wow" tags, less home runs, which have their own
-  // section.
+  // (its headline is the game's story) and its clips worth a look:
+  // defense, MLB's "wow" tag, and hitting (home runs included).
   function buildGameMedia(g) {
     const items = (g.content && g.content.highlights && g.content.highlights.highlights && g.content.highlights.highlights.items) || [];
     const tags = item => (item.keywordsAll || []).filter(k => k.type === 'taxonomy').map(k => k.value);
@@ -6650,7 +6647,7 @@
     // Weighed later against their plays in the feed (weighDayPlays).
     const plays = items.map(item => {
       const t = tags(item);
-      if (!t.includes('highlight') || t.includes('home-run')) return null;
+      if (!t.includes('highlight')) return null;
       const c = clip(item);
       if (!c) return null;
       const base = { ...c, id: item.id || '', slug: (item.id || '').slice(0, DAY_SLUG_LEN), wow: t.includes('wow'), defense: t.includes('defense') };
@@ -6678,13 +6675,14 @@
   const DAY_HIT_MIN_WPA = 0.1;
   function findClipPlay(c, keyPlays, wpa) {
     const bySlug = keyPlays.find(k => k.slug && k.slug === c.slug);
-    if (bySlug) return bySlug;
+    if (bySlug) return { play: bySlug, exact: true };
     const inPlay = /-in-play-(run|out|no-out)/.exec(c.id || '');
     let candidates = [];
     if (inPlay) {
       candidates = keyPlays.filter(k => c.id.startsWith(`${k.pitcherSlug}-in-play-`) && c.id.includes(`-to-${k.batterSlug}`)
         && (inPlay[1] === 'run' ? k.runs > 0 : !k.runs));
     }
+    const exact = candidates.length > 0;
     // A clip's id doesn't always name the pitcher who gave up the hit.
     if (c.hitting) {
       keyPlays.forEach(k => {
@@ -6696,21 +6694,46 @@
     const headline = c.title.toLowerCase();
     const named = candidates.filter(k => k.event && headline.includes(k.event.toLowerCase()));
     if (named.length) candidates = named;
-    return candidates.sort((a, b) => (wpa[b.atBatIndex] || 0) - (wpa[a.atBatIndex] || 0))[0] || null;
+    const play = candidates.sort((a, b) => (wpa[b.atBatIndex] || 0) - (wpa[a.atBatIndex] || 0))[0];
+    return play ? { play, exact } : { play: null, exact: false };
   }
   function weighDayPlays(plays, keyPlays, wpa) {
     return plays.map(c => {
-      const play = findClipPlay(c, keyPlays, wpa);
-      // Home runs have their own section, whether or not MLB tagged the
-      // clip as one.
-      if (play && play.event === 'Home Run') return null;
+      const { play, exact } = findClipPlay(c, keyPlays, wpa);
       const swing = play ? (wpa[play.atBatIndex] || 0) : 0;
       if (c.hitting && (!play || swing < DAY_HIT_MIN_WPA)) return null;
       let tag = c.tag;
       if (c.hitting) tag = play.kind ? DAY_HIT_LABELS[play.kind] : play.runs >= 2 ? `${play.runs}-run` : '';
       const weight = swing + (c.wow ? DAY_WOW_BONUS : 0) + (c.defense ? DAY_DEFENSE_BONUS : 0);
-      return { ...c, weight, tag, wpa: swing };
+      return { ...c, weight, tag, exact, playKey: play ? `${c.gamePk}-${play.atBatIndex}` : null };
     }).filter(Boolean);
+  }
+
+  // The row: the best defensive plays hold DAY_DEFENSE_SLOTS of it, since
+  // a great catch rarely swings the game the way a go-ahead homer does,
+  // and the rest goes by weight. One clip a play (a "two-homer game" reel
+  // and the homer itself are one moment), at most two a game.
+  const DAY_DEFENSE_SLOTS = 2;
+  function pickDayPlays(clips) {
+    const seen = new Set();
+    // Of two clips of one play, the one named for it beats a reel that
+    // merely includes it.
+    const sorted = clips.slice().sort((a, b) => b.weight - a.weight || b.exact - a.exact).filter(c => {
+      if (!c.playKey) return true;
+      if (seen.has(c.playKey)) return false;
+      seen.add(c.playKey);
+      return true;
+    });
+    const perGame = {};
+    const picked = [];
+    const take = c => {
+      if (picked.includes(c) || (perGame[c.gamePk] || 0) >= 2) return;
+      perGame[c.gamePk] = (perGame[c.gamePk] || 0) + 1;
+      picked.push(c);
+    };
+    sorted.filter(c => c.defense).forEach(c => { if (picked.length < DAY_DEFENSE_SLOTS) take(c); });
+    sorted.forEach(c => { if (picked.length < DAY_PLAYS_SHOWN) take(c); });
+    return picked.sort((a, b) => b.weight - a.weight);
   }
 
   function dayClipKey(clip) {
@@ -6828,7 +6851,7 @@
           <button type="button" class="dp" data-day-clip="${dayClipKey(c)}">
             <span class="dp-thumb"><img src="${c.thumb}" alt="" loading="lazy"><span class="dp-play">&#9654;</span></span>
             <span class="dp-title">${c.title}</span>
-            <span class="dp-meta">${c.matchup}${c.tag ? ` &#183; <b>${c.tag}</b>` : ''}${c.wpa >= 0.01 ? `<span class="dp-wpa">${c.wpa.toFixed(2).replace(/^0/, '')} WPA</span>` : ''}</span>
+            <span class="dp-meta">${c.matchup}${c.tag ? ` &#183; <b>${c.tag}</b>` : ''}</span>
           </button>`).join('')}
         </div>
       </div>`;
@@ -6841,11 +6864,9 @@
     const homeRuns = stats.flatMap(s => s.homeRuns);
     const starts = stats.flatMap(s => s.starts);
     // At most two clips a game, so one wild game can't fill the row.
-    const perGame = {};
-    const plays = games.flatMap(g => (media[g.gamePk] ? weighDayPlays(media[g.gamePk].plays, (statsByPk[g.gamePk] || {}).keyPlays || [], (wpaByPk && wpaByPk[g.gamePk]) || {}) : []))
-      .sort((a, b) => b.weight - a.weight)
-      .filter(c => (perGame[c.gamePk] = (perGame[c.gamePk] || 0) + 1) <= 2)
-      .slice(0, DAY_PLAYS_SHOWN);
+    const plays = pickDayPlays(games.flatMap(g => (media[g.gamePk]
+      ? weighDayPlays(media[g.gamePk].plays, (statsByPk[g.gamePk] || {}).keyPlays || [], (wpaByPk && wpaByPk[g.gamePk]) || {})
+      : [])));
     const finals = games.filter(g => g.status.abstractGameState === 'Final').length;
     const when = new Date(`${dateStr}T12:00:00`).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
     const meta = [`${games.length} game${games.length === 1 ? '' : 's'}`, finals && finals < games.length ? `${finals} final` : '', homeRuns.length ? `${homeRuns.length} HR` : ''].filter(Boolean).join(' &#183; ');
