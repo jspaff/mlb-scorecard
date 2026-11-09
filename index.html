@@ -1207,10 +1207,10 @@
   .vc-thumb > img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .vc { container-type: inline-size; }
   .vc-card { position: absolute; inset: 0; display: grid; grid-template-columns: 40% minmax(0, 1fr); background: var(--paper); }
-  /* The photo is a print set into the still: flush to its side, closed
-     by the sheet's own 2px cream rule against the board. */
-  .vc-who { min-width: 0; overflow: hidden; border-right: 2px solid var(--ink); }
-  .vc-photo { width: 100%; height: 100%; object-fit: cover; object-position: center 20%; display: block; }
+  /* The photo is a pinned print, as on the profile and the depth chart:
+     a cream border all round and the print's shadow, set into the board. */
+  .vc-who { display: flex; align-items: center; justify-content: center; min-width: 0; padding: 9% 0 9% 14%; }
+  .vc-photo { height: 100%; aspect-ratio: 4 / 5; width: auto; max-width: 100%; object-fit: cover; object-position: center 18%; display: block; border: 2px solid var(--ink); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45); background: var(--paper-line); }
   .vc-play-side { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4%; min-width: 0; padding: 4% 0; }
   .vc-where { display: flex; align-items: center; gap: 5px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; }
   .vc-where img { width: 14px; height: 14px; }
@@ -7017,7 +7017,7 @@
   // for MLB's photos where it has them.
   const DAY_PHOTO_THUMBS = new URLSearchParams(location.search).get('thumbs') === 'photo';
 
-  // The still: his photo on the left, ruled off from the board, and the
+  // The still: his photo pinned as a print on the left, and the
   // play's diamond as the scorecard draws it (an RBI dot a run), under a
   // quiet line of his team and the inning. A clip with no play gets an
   // empty diamond.
