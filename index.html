@@ -1224,12 +1224,13 @@
   /* RBI dots in the Game Log's proportion to the diamond (5px on 46px). */
   .vc-dia .pp-rc-rbi { top: 4%; left: 2%; gap: 3%; width: 100%; }
   .vc-dia .pp-rc-rbi i { width: 11%; height: auto; aspect-ratio: 1; }
-  .vc-play { position: absolute; right: 6px; bottom: 6px; display: flex; align-items: center; justify-content: center; }
+  .vc-play { position: absolute; right: 8px; bottom: 8px; display: flex; align-items: center; justify-content: center; width: 36px; height: 27px; font-size: 13px; }
   .vc:hover .vc-play, .vc:focus-visible .vc-play { border-color: var(--gold); }
   @container (max-width: 250px) {
     .vc-where { font-size: 10px; gap: 4px; }
     .vc-where img { width: 15px; height: 15px; }
-    .vc-play { right: 4px; bottom: 4px; transform: scale(0.85); transform-origin: bottom right; }
+    .vc-play { right: 6px; bottom: 6px; width: 30px; height: 23px; font-size: 11px; }
+    .vc-dia { height: 58%; }
   }
   .vc-kicker { padding: 0 2px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); }
   .vc-kicker em { font-style: normal; font-weight: 700; letter-spacing: 0.02em; color: var(--ink-soft); }
@@ -6878,8 +6879,8 @@
   }
 
   // ---- What to watch ----
-  // In the Clutch (the plays that swung games most, by WPA) and Flashing
-  // the Leather (MLB's own defense clips, its "wow" ones first) are rows
+  // Clutch Plays (the plays that swung games most, by WPA) and Web Gems
+  // (MLB's own defense clips, its "wow" ones first) are rows
   // of videos; Out of the Park (home runs) and On the Mound are tables
   // with a Watch link a row, side by side on a wide sheet.
   // A play plays MLB's clip of it when there is one (photo, headline);
@@ -7071,12 +7072,12 @@
           <div class="pp-skg-head"><span>Scores</span></div>
           <div class="dg-grid">${games.map(g => renderDayGame(g, media[g.gamePk])).join('')}</div>
         </div>
-        ${renderVideoSection('In the Clutch', sec.moments)}
+        ${renderVideoSection('Clutch Plays', sec.moments)}
         <div class="dy-pair">
           ${renderVideoSection('Out of the Park', [], { note: homeRuns.length || '', body: renderDayHomeRuns(homeRuns, season, dayData.wpaByPk) })}
           ${renderVideoSection('On the Mound', [], { body: renderDayStarts(starts, season, sec.reels) })}
         </div>
-        ${renderVideoSection('Flashing the Leather', sec.defense)}
+        ${renderVideoSection('Web Gems', sec.defense)}
       </div>`;
   }
 
