@@ -1157,6 +1157,50 @@
   }
   .hr-watch:hover, .hr-watch:focus-visible { text-decoration: underline; }
   .hr-side { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+
+  /* Home Runs: the day's homers on one field, then each game's homers.
+     Field above the list on a phone; beside it, sticky, on a wide sheet. */
+  #dailyViewSection { container-type: inline-size; }
+  .hrd { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px 36px; }
+  .hrd-field { min-width: 0; }
+  .hrf { max-width: 460px; margin: 0 auto; }
+  .hrf svg { overflow: visible; }
+  .hrf-dot { cursor: pointer; }
+  .hrf-halo { fill: #c98a12; opacity: 0.22; transition: opacity 0.15s; }
+  .hrf-core { fill: #fff8ea; stroke: #c98a12; stroke-width: 1.1; }
+  .hrf-dot.is-gold .hrf-core { fill: var(--gold); stroke: var(--gold); }
+  .hrf-dot:hover .hrf-halo { opacity: 0.45; }
+  .hrf-dots:has(.is-picked) .hrf-dot:not(.is-picked) { opacity: 0.3; }
+  .hrf-dot.is-picked .hrf-halo { opacity: 0.6; }
+  .hrf-dot.is-picked .hrf-core { stroke: var(--ink); stroke-width: 1.4; }
+  .hrd-tots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--paper-line); }
+  .hrd-tots .pp-sk-name { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
+  .hrd-tots .pp-tot-v { font-size: 26px; }
+  @container (min-width: 760px) {
+    .hrd { grid-template-columns: minmax(0, 420px) minmax(0, 620px); align-items: start; }
+    .hrd-field { position: sticky; top: calc(var(--tab-header-h, 0px) + 12px); }
+  }
+  .hrg + .hrg { margin-top: 14px; }
+  .hrg-head { display: flex; align-items: center; gap: 8px; padding: 0 0 5px; border-bottom: 1px solid var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); }
+  .hrg-team { display: inline-flex; align-items: center; gap: 4px; }
+  .hrg-team img { width: 16px; height: 16px; }
+  .hrg-team b { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 14px; color: var(--ink); margin-left: 2px; }
+  .hrg-at { font-size: 10px; }
+  .hrg-state { margin-left: auto; font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .hr-row-v2 { align-items: flex-start; padding: 9px 6px; margin: 0 -6px; cursor: pointer; }
+  .hr-row-v2.is-picked { background: rgba(217, 169, 26, 0.13); }
+  .hr-row-v2.is-gold { border-left: 3px solid var(--gold); padding-left: 8px; }
+  .hr-tags { display: flex; gap: 6px; margin-bottom: 4px; }
+  .hr-tag { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+  .hr-tag.is-gold { color: var(--gold); }
+  .hr-who { display: flex; align-items: center; gap: 8px; min-width: 0; margin-bottom: 3px; }
+  .hr-who .hr-batter { margin-bottom: 0; min-width: 0; }
+  .hr-who .hr-season { flex: none; }
+  .hr-context { margin-top: 2px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10.5px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .hr-nums { flex: none; text-align: right; }
+  .hr-dist { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 24px; line-height: 1.1; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .hr-dist small, .hr-ev small { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); margin-left: 2px; }
+  .hr-ev { margin-top: 2px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); white-space: nowrap; font-variant-numeric: tabular-nums; }
   .hr-season { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; font-variant-numeric: tabular-nums; }
 
 
@@ -6438,12 +6482,26 @@
       const allPlays = (data.liveData && data.liveData.plays && data.liveData.plays.allPlays) || [];
       const homeRuns = allPlays.filter(p => p.result && p.result.event === 'Home Run').map(p => {
         const isTop = p.about && p.about.isTopInning;
-        let distance = null;
         const events = p.playEvents || [];
+        let hitData = null;
         for (let i = events.length - 1; i >= 0; i--) {
-          const hd = events[i].hitData;
-          if (hd && hd.totalDistance != null) { distance = hd.totalDistance; break; }
+          if (events[i].hitData) { hitData = events[i].hitData; break; }
         }
+        const distance = hitData && hitData.totalDistance != null ? hitData.totalDistance : null;
+        const coords = hitData && hitData.coordinates;
+        const pitch = events.slice().reverse().find(e => e.isPitch);
+        // What it did to the game, from the score after the play less the
+        // runs it drove in. Go-ahead and tying only count late -- a 2-1
+        // lead in the 2nd isn't a story.
+        const runs = p.result.rbi || 1;
+        const after = isTop ? p.result.awayScore : p.result.homeScore;
+        const opp = isTop ? p.result.homeScore : p.result.awayScore;
+        const before = after - runs;
+        const inning = (p.about && p.about.inning) || null;
+        let impact = null;
+        if (!isTop && inning >= 9 && after > opp && before <= opp) impact = 'walkoff';
+        else if (inning >= 7 && before <= opp && after > opp) impact = 'goahead';
+        else if (inning >= 7 && before < opp && after === opp) impact = 'tying';
         const lastEvent = events[events.length - 1];
         const playId = lastEvent && lastEvent.playId;
         // The description carries his count the way a broadcast does:
@@ -6458,6 +6516,16 @@
           battingAbbr: isTop ? awayAbbr : homeAbbr,
           pitchingAbbr: isTop ? homeAbbr : awayAbbr,
           isGrandSlam: p.result.rbi === 4,
+          runs,
+          impact,
+          inning,
+          isTop,
+          exitVelo: hitData && hitData.launchSpeed != null ? hitData.launchSpeed : null,
+          launchAngle: hitData && hitData.launchAngle != null ? hitData.launchAngle : null,
+          x: coords && coords.coordX != null ? coords.coordX : null,
+          y: coords && coords.coordY != null ? coords.coordY : null,
+          pitchType: (pitch && pitch.details && pitch.details.type && pitch.details.type.code) || '',
+          pitchSpeed: pitch && pitch.pitchData && pitch.pitchData.startSpeed ? Math.round(pitch.pitchData.startSpeed) : null,
           distance,
           videoUrl: savantVideoUrl(playId)
         };
@@ -6480,23 +6548,86 @@
     }
   }
 
+  const HR_IMPACT_LABELS = { walkoff: 'Walk-off', goahead: 'Go-ahead', tying: 'Game-tying' };
+
   // The quick-look popup reads a name from playerStore, which only a game
   // opened on the Scorecard would otherwise have filled in.
-  function renderHomeRunRow(hr, season) {
+  function renderHomeRunRow(hr, season, index) {
     storeTeamPlayer(hr.batterId, hr.batterName, '', hr.battingTeamId, season);
-    const grandSlamLabel = hr.isGrandSlam ? '<div class="hr-grand-slam-label">Grand Slam</div>' : '';
-    const distanceHtml = hr.distance != null ? `<div class="hr-distance">${Math.round(hr.distance)} ft</div>` : '';
-    const countHtml = hr.seasonCount ? `<div class="hr-season">No. ${hr.seasonCount}</div>` : '';
+    const kind = hr.isGrandSlam ? 'Grand slam' : hr.runs === 1 ? 'Solo' : `${hr.runs}-run`;
+    const tags = [];
+    if (hr.impact) tags.push(`<span class="hr-tag${hr.impact === 'walkoff' || hr.isGrandSlam ? ' is-gold' : ''}">${HR_IMPACT_LABELS[hr.impact]}</span>`);
+    if (hr.isGrandSlam) tags.push('<span class="hr-tag is-gold">Grand slam</span>');
+    const inning = hr.inning ? `${hr.isTop ? 'T' : 'B'}${hr.inning}` : '';
+    const pitch = hr.pitchType ? `${hr.pitchSpeed ? hr.pitchSpeed + ' ' : ''}${pitchName(hr.pitchType)}` : '';
+    const context = [inning, hr.isGrandSlam ? '' : kind, pitch].filter(Boolean).join(' &#183; ');
     const watchHtml = hr.videoUrl ? `<a class="hr-watch" ${clipWatchAttrs(hr.videoUrl, `Home Run &#183; ${hr.batterName}`)}>Watch &#9654;</a>` : '';
+    const distance = hr.distance != null ? `${Math.round(hr.distance)}<small>ft</small>` : '&#8212;';
+    const ev = hr.exitVelo != null ? `${hr.exitVelo.toFixed(1)}<small>mph</small>` : '';
+    const la = hr.launchAngle != null ? `${Math.round(hr.launchAngle)}&#176;` : '';
     return `
-      <div class="hr-row${hr.isGrandSlam ? ' is-grand-slam' : ''}">
+      <div class="hr-row hr-row-v2${hr.isGrandSlam || hr.impact === 'walkoff' ? ' is-gold' : ''}" data-hr="${index}">
         <div class="hr-main">
-          ${grandSlamLabel}
-          <button type="button" class="player-name-btn hr-batter" data-player-id="${hr.batterId || ''}">${hr.batterName} <span class="hr-team">${hr.battingAbbr}</span></button>
+          ${tags.length ? `<div class="hr-tags">${tags.join('')}</div>` : ''}
+          <div class="hr-who">
+            <button type="button" class="player-name-btn hr-batter" data-player-id="${hr.batterId || ''}">${hr.batterName}</button>
+            ${hr.seasonCount ? `<span class="hr-season">No. ${hr.seasonCount}</span>` : ''}
+          </div>
           <div class="hr-pitcher">vs ${hr.pitcherName} <span class="hr-team">${hr.pitchingAbbr}</span></div>
+          <div class="hr-context">${context}</div>
           ${watchHtml}
         </div>
-        <div class="hr-side">${distanceHtml}${countHtml}</div>
+        <div class="hr-nums">
+          <div class="hr-dist">${distance}</div>
+          <div class="hr-ev">${ev}${ev && la ? ' &#183; ' : ''}${la}</div>
+        </div>
+      </div>`;
+  }
+
+  // The day's home runs on one field, in the spray chart's own space, so
+  // a 420-ft shot lands just past a 400-ft fence. Each dot is numbered by
+  // data-hr to its row below.
+  function renderHomeRunField(homeRuns) {
+    const field = renderBattedBallFieldSVG([], { viewBox: '-4 0 259 206' });
+    const dots = homeRuns.map((hr, i) => {
+      if (hr.x == null || hr.y == null) return '';
+      return `<g class="hrf-dot${hr.isGrandSlam || hr.impact === 'walkoff' ? ' is-gold' : ''}" data-hr="${i}"><circle class="hrf-halo" cx="${hr.x}" cy="${hr.y}" r="6"/><circle class="hrf-core" cx="${hr.x}" cy="${hr.y}" r="2.6"/></g>`;
+    }).join('');
+    return field.replace('</svg>', `<g class="hrf-dots">${dots}</g></svg>`);
+  }
+
+  function renderHomeRunGameHead(game) {
+    const a = game.teams.away, h = game.teams.home;
+    const final = game.status.abstractGameState === 'Final';
+    const score = (t) => `<span class="hrg-team"><img src="${capLogoUrl(t.team.id)}" alt="">${teamAbbr(t.team)}<b>${t.score ?? 0}</b></span>`;
+    return `<div class="hrg-head">${score(a)}<span class="hrg-at">@</span>${score(h)}<span class="hrg-state">${final ? 'Final' : (game.linescore && game.linescore.currentInningOrdinal) || 'Live'}</span></div>`;
+  }
+
+  function renderHomeRunsView() {
+    const groups = dailyStatsData.gameGroups || [];
+    const all = groups.flatMap(gr => gr.homeRuns);
+    if (!all.length) return '<div class="roster-empty">No home runs on this date.</div>';
+    let n = 0;
+    const list = groups.filter(gr => gr.homeRuns.length).map(gr => `
+      <div class="hrg">
+        ${renderHomeRunGameHead(gr.game)}
+        ${gr.homeRuns.map(hr => renderHomeRunRow(hr, dailyStatsData.season, n++)).join('')}
+      </div>`).join('');
+    const longest = all.reduce((m, hr) => (hr.distance || 0) > (m.distance || 0) ? hr : m, all[0]);
+    const hardest = all.reduce((m, hr) => (hr.exitVelo || 0) > (m.exitVelo || 0) ? hr : m, all[0]);
+    const tot = (label, value) => `<div class="pp-tot"><div class="pp-sk-name">${label}</div><div class="pp-tot-v">${value}</div></div>`;
+    return `
+      <div class="hrd">
+        <div class="hrd-field">
+          <div class="pp-skg-head"><span>${all.length} Home Run${all.length === 1 ? '' : 's'}</span></div>
+          <div class="hrf">${renderHomeRunField(all)}</div>
+          <div class="hrd-tots">
+            ${tot('Longest', longest.distance ? Math.round(longest.distance) : '&#8212;')}
+            ${tot('Hardest', hardest.exitVelo ? hardest.exitVelo.toFixed(1) : '&#8212;')}
+            ${tot('Slams', all.filter(hr => hr.isGrandSlam).length || '&#8212;')}
+          </div>
+        </div>
+        <div class="hrd-list">${list}</div>
       </div>`;
   }
 
@@ -6512,7 +6643,7 @@
   }
 
   let dailyView = 'homeruns';
-  let dailyStatsData = { homeRuns: [], strikeoutLeaders: [], season: null };
+  let dailyStatsData = { homeRuns: [], gameGroups: [], strikeoutLeaders: [], season: null };
 
   function renderDailyView() {
     const section = document.getElementById('dailyViewSection');
@@ -6523,10 +6654,7 @@
         ? `<div class="hr-list">${leaders.map(k => renderStrikeoutRow(k, dailyStatsData.season)).join('')}</div>`
         : '<div class="roster-empty">No strikeouts on this date.</div>';
     } else {
-      const homeRuns = dailyStatsData.homeRuns;
-      section.innerHTML = homeRuns.length
-        ? `<div class="hr-list">${homeRuns.map(hr => renderHomeRunRow(hr, dailyStatsData.season)).join('')}</div>`
-        : '<div class="roster-empty">No home runs on this date.</div>';
+      section.innerHTML = renderHomeRunsView();
     }
   }
 
@@ -6568,7 +6696,8 @@
         else strikeoutTotals[k.id] = { ...k };
       }));
       const strikeoutLeaders = Object.values(strikeoutTotals).sort((a, b) => b.count - a.count).slice(0, 10);
-      dailyStatsData = { homeRuns, strikeoutLeaders, season: Number(dateStr.slice(0, 4)) };
+      const gameGroups = startedGames.map((game, i) => ({ game, homeRuns: gameStats[i].homeRuns }));
+      dailyStatsData = { homeRuns, gameGroups, strikeoutLeaders, season: Number(dateStr.slice(0, 4)) };
       renderDailyView();
 
       // Keep polling as long as anything on this date could still change --
@@ -6606,6 +6735,23 @@
       }
     }
   }
+
+  // A dot picks its row and a row its dot; the row scrolls into view only
+  // when it's off screen (on a phone the list runs below the field).
+  dailyBody.addEventListener('click', (e) => {
+    if (e.target.closest('a, button')) return;
+    const hit = e.target.closest('[data-hr]');
+    if (!hit) return;
+    const idx = hit.dataset.hr;
+    const already = hit.classList.contains('is-picked');
+    dailyBody.querySelectorAll('[data-hr].is-picked').forEach(el => el.classList.remove('is-picked'));
+    if (already) return;
+    dailyBody.querySelectorAll(`[data-hr="${idx}"]`).forEach(el => el.classList.add('is-picked'));
+    if (hit.classList.contains('hrf-dot')) {
+      const row = dailyBody.querySelector(`.hr-row[data-hr="${idx}"]`);
+      if (row) row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  });
 
   dailyDateInput.addEventListener('change', () => {
     dailyDateInputText.textContent = formatShortDate(dailyDateInput.value);
