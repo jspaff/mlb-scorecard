@@ -141,7 +141,7 @@
   .my-team:hover .my-team-mark { opacity: 0.8; }
   .my-team:focus-within { outline: 2px solid var(--gold); outline-offset: -2px; }
   .tab-panel[hidden] { display: none; }
-  .mlb-controls[hidden] { display: none; }
+  .mlb-controls[hidden], .date-nav[hidden], select[hidden] { display: none; }
   /* One bordered pill instead of three separate boxes (arrow / date / arrow)
      -- overflow:hidden clips the buttons' own corners to the shared
      border-radius, and align-items:stretch makes every segment match
@@ -1156,6 +1156,71 @@
     text-decoration: none;
   }
   .hr-watch:hover, .hr-watch:focus-visible { text-decoration: underline; }
+  .hr-side { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+  .hr-season { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+  /* Season leaders: a card per category, the leader pinned as a print
+     beside his number in a slot, the rest of the top five ranked beneath
+     and the top ten a tap away. */
+  .ld { container-type: inline-size; }
+  .ld-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+  .ld-title { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 24px; line-height: 1.1; text-transform: uppercase; color: var(--ink); }
+  .ld-group + .ld-group { margin-top: 24px; }
+  .ld-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px 32px; }
+  .ld-card { min-width: 0; }
+  .ld-cat { margin-bottom: 8px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
+  .ld-lead { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 0 0 8px; border-bottom: 1px solid var(--paper-line); }
+  .ld-lead .dcf-print { width: 46px; }
+  .ld-lead-id { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; min-width: 0; }
+  .ld-lead-id .player-name-btn { max-width: 100%; }
+  .ld-lead-v {
+    min-width: 2.4em;
+    padding: 0 8px;
+    text-align: center;
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: 30px;
+    line-height: 1.3;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    background: rgba(0, 0, 0, 0.22);
+    border-radius: 2px;
+    box-shadow: inset 0 2px 3px rgba(0,0,0,0.5), inset 0 -1px 1px rgba(255,255,255,0.05);
+  }
+  .ld-team { display: inline-flex; align-items: center; gap: 4px; min-width: 0; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10px; color: var(--ink-soft); white-space: nowrap; }
+  .ld-team img { width: 14px; height: 14px; flex: none; }
+  .ld-row { display: grid; grid-template-columns: 24px minmax(0, 1fr) 44px auto; align-items: center; gap: 6px; padding: 4px 0; border-bottom: 1px dashed var(--paper-line); }
+  .ld-row.ld-extra { display: none; }
+  .ld-card.is-open .ld-row.ld-extra { display: grid; }
+  .ld-rank { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .ld-name { display: flex; min-width: 0; }
+  .ld-name .player-name-btn { max-width: 100%; }
+  .ld-v { min-width: 44px; text-align: right; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 16px; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .ld-lead.is-my-team, .ld-row.is-my-team { background: rgba(217, 169, 26, 0.13); }
+  .ld-more {
+    margin-top: 4px;
+    padding: 5px 0;
+    background: none;
+    border: 0;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 800;
+    font-size: 9.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+  .ld-more:hover { color: var(--ink); }
+  .ld-more:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
+  .ld-none { padding: 8px 0; color: var(--ink-soft); font-family: 'Oswald', sans-serif; font-size: 18px; }
+  .ld-head .view-toggle { flex: none; }
+  @container (min-width: 560px) { .ld-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @container (min-width: 900px) {
+    .ld-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .ld-title { font-size: 30px; }
+    .ld-lead .dcf-print { width: 54px; }
+    .ld-lead-v { font-size: 34px; }
+  }
 
   .team-block { margin-bottom: 20px; }
   .team-block:last-child { margin-bottom: 8px; }
@@ -1302,10 +1367,13 @@
      a 360px phone. */
   @media (max-width: 400px) {
     [data-tab-controls="standings"] .view-toggle-btn { padding-left: 8px; padding-right: 8px; }
+    /* Highlights: the date and three views on one line down to 360px. */
+    [data-tab-controls="daily"] .view-toggle-btn { padding-left: 6px; padding-right: 6px; letter-spacing: 0.02em; }
   }
   @media (max-width: 340px) {
-    [data-tab-controls="standings"] .view-toggle-btn { padding-left: 6px; padding-right: 6px; letter-spacing: 0.02em; }
-    #standingsYearPick { padding-left: 8px; padding-right: 22px; background-position: right 8px center; }
+    [data-tab-controls="standings"] .view-toggle-btn,
+    [data-tab-controls="daily"] .view-toggle-btn { padding-left: 6px; padding-right: 6px; letter-spacing: 0.02em; }
+    #standingsYearPick, #leadersYearPick { padding-left: 8px; padding-right: 22px; background-position: right 8px center; }
   }
   .view-toggle-btn.active { color: var(--ink); background: rgba(217, 169, 26, 0.15); box-shadow: inset 0 -2px 0 var(--gold); }
   .view-toggle-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
@@ -3491,7 +3559,8 @@
       <button type="button" class="box-score-link" id="gameSummaryTopBtn" hidden>Game Summary</button>
     </div>
     <div class="mlb-controls" data-tab-controls="daily" hidden>
-      <div class="date-nav">
+      <select id="leadersYearPick" aria-label="Season" hidden></select>
+      <div class="date-nav" id="dailyDateNav">
         <button type="button" class="date-nav-btn" id="dailyDatePrev" aria-label="Previous day">&#8249;</button>
         <div class="date-display">
           <input type="date" class="date-display-input" id="dailyDatePick" />
@@ -3502,6 +3571,7 @@
       <div class="view-toggle" id="dailyViewToggle">
         <button type="button" class="view-toggle-btn active" data-view="homeruns">Home Runs</button>
         <button type="button" class="view-toggle-btn" data-view="strikeouts">Strikeouts</button>
+        <button type="button" class="view-toggle-btn" data-view="leaders">Leaders</button>
       </div>
     </div>
     <div class="mlb-controls" data-tab-controls="standings" hidden>
@@ -6425,7 +6495,9 @@
 
   const gameStatsCache = {};
 
-  async function fetchGameStats(gamePk, awayAbbr, homeAbbr, isFinal) {
+  async function fetchGameStats(gamePk, awayTeam, homeTeam, isFinal) {
+    const awayAbbr = teamAbbr(awayTeam);
+    const homeAbbr = teamAbbr(homeTeam);
     if (isFinal && gameStatsCache[gamePk] !== undefined) return gameStatsCache[gamePk];
     try {
       const res = await fetch(`https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live`);
@@ -6441,8 +6513,13 @@
         }
         const lastEvent = events[events.length - 1];
         const playId = lastEvent && lastEvent.playId;
+        // The description carries his count the way a broadcast does:
+        // "Bo Bichette homers (17) on a fly ball ...".
+        const countMatch = /\((\d+)\)/.exec(p.result.description || '');
         return {
           batterId: p.matchup && p.matchup.batter && p.matchup.batter.id,
+          battingTeamId: isTop ? awayTeam.id : homeTeam.id,
+          seasonCount: countMatch ? Number(countMatch[1]) : null,
           batterName: (p.matchup && p.matchup.batter && p.matchup.batter.fullName) || '',
           pitcherName: (p.matchup && p.matchup.pitcher && p.matchup.pitcher.fullName) || '',
           battingAbbr: isTop ? awayAbbr : homeAbbr,
@@ -6460,7 +6537,7 @@
         const isTop = p.about && p.about.isTopInning;
         const existing = strikeoutTotals[pitcher.id];
         if (existing) existing.count++;
-        else strikeoutTotals[pitcher.id] = { id: pitcher.id, name: pitcher.fullName || '', teamAbbr: isTop ? homeAbbr : awayAbbr, count: 1 };
+        else strikeoutTotals[pitcher.id] = { id: pitcher.id, name: pitcher.fullName || '', teamId: isTop ? homeTeam.id : awayTeam.id, teamAbbr: isTop ? homeAbbr : awayAbbr, count: 1 };
       });
       const result = { homeRuns, strikeouts: Object.values(strikeoutTotals) };
       if (isFinal) gameStatsCache[gamePk] = result;
@@ -6470,9 +6547,13 @@
     }
   }
 
-  function renderHomeRunRow(hr) {
+  // The quick-look popup reads a name from playerStore, which only a game
+  // opened on the Scorecard would otherwise have filled in.
+  function renderHomeRunRow(hr, season) {
+    storeTeamPlayer(hr.batterId, hr.batterName, '', hr.battingTeamId, season);
     const grandSlamLabel = hr.isGrandSlam ? '<div class="hr-grand-slam-label">Grand Slam</div>' : '';
     const distanceHtml = hr.distance != null ? `<div class="hr-distance">${Math.round(hr.distance)} ft</div>` : '';
+    const countHtml = hr.seasonCount ? `<div class="hr-season">No. ${hr.seasonCount}</div>` : '';
     const watchHtml = hr.videoUrl ? `<a class="hr-watch" ${clipWatchAttrs(hr.videoUrl, `Home Run &#183; ${hr.batterName}`)}>Watch &#9654;</a>` : '';
     return `
       <div class="hr-row${hr.isGrandSlam ? ' is-grand-slam' : ''}">
@@ -6482,11 +6563,12 @@
           <div class="hr-pitcher">vs ${hr.pitcherName} <span class="hr-team">${hr.pitchingAbbr}</span></div>
           ${watchHtml}
         </div>
-        ${distanceHtml}
+        <div class="hr-side">${distanceHtml}${countHtml}</div>
       </div>`;
   }
 
-  function renderStrikeoutRow(k) {
+  function renderStrikeoutRow(k, season) {
+    storeTeamPlayer(k.id, k.name, 'P', k.teamId, season);
     return `
       <div class="hr-row">
         <div class="hr-main">
@@ -6497,7 +6579,7 @@
   }
 
   let dailyView = 'homeruns';
-  let dailyStatsData = { homeRuns: [], strikeoutLeaders: [] };
+  let dailyStatsData = { homeRuns: [], strikeoutLeaders: [], season: null };
 
   function renderDailyView() {
     const section = document.getElementById('dailyViewSection');
@@ -6505,12 +6587,12 @@
     if (dailyView === 'strikeouts') {
       const leaders = dailyStatsData.strikeoutLeaders;
       section.innerHTML = leaders.length
-        ? `<div class="hr-list">${leaders.map(renderStrikeoutRow).join('')}</div>`
+        ? `<div class="hr-list">${leaders.map(k => renderStrikeoutRow(k, dailyStatsData.season)).join('')}</div>`
         : '<div class="roster-empty">No strikeouts on this date.</div>';
     } else {
       const homeRuns = dailyStatsData.homeRuns;
       section.innerHTML = homeRuns.length
-        ? `<div class="hr-list">${homeRuns.map(renderHomeRunRow).join('')}</div>`
+        ? `<div class="hr-list">${homeRuns.map(hr => renderHomeRunRow(hr, dailyStatsData.season)).join('')}</div>`
         : '<div class="roster-empty">No home runs on this date.</div>';
     }
   }
@@ -6530,6 +6612,9 @@
       const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}&hydrate=linescore`);
       const data = await res.json();
       const games = (data.dates && data.dates[0] && data.dates[0].games) || [];
+      // The Leaders view shares dailyBody, so a day still loading when it
+      // opens has to stand down before it writes anything.
+      if (requestId !== dailyRequestId) return;
       if (!games.length) {
         if (!isPoll) dailyBody.innerHTML = '<div class="mlb-status-msg">No MLB games scheduled on this date.</div>';
         return;
@@ -6540,7 +6625,7 @@
 
       const startedGames = games.filter(g => g.status.abstractGameState === 'Live' || g.status.abstractGameState === 'Final');
       const gameStats = await Promise.all(startedGames.map(g =>
-        fetchGameStats(g.gamePk, teamAbbr(g.teams.away.team), teamAbbr(g.teams.home.team), g.status.abstractGameState === 'Final')
+        fetchGameStats(g.gamePk, g.teams.away.team, g.teams.home.team, g.status.abstractGameState === 'Final')
       ));
       if (requestId !== dailyRequestId) return;
       const homeRuns = gameStats.map(s => s.homeRuns).flat();
@@ -6551,7 +6636,7 @@
         else strikeoutTotals[k.id] = { ...k };
       }));
       const strikeoutLeaders = Object.values(strikeoutTotals).sort((a, b) => b.count - a.count).slice(0, 10);
-      dailyStatsData = { homeRuns, strikeoutLeaders };
+      dailyStatsData = { homeRuns, strikeoutLeaders, season: Number(dateStr.slice(0, 4)) };
       renderDailyView();
 
       // Keep polling as long as anything on this date could still change --
@@ -6572,6 +6657,7 @@
         dailyPollTimer = setTimeout(() => loadDailySummary(dateStr, true), stillLive ? 15000 : 60000);
       }
     } catch (e) {
+      if (requestId !== dailyRequestId) return;
       if (!isPoll) {
         dailyBody.innerHTML = apiErrorMsg("today's highlights");
         return;
@@ -6604,9 +6690,186 @@
   document.getElementById('dailyViewToggle').addEventListener('click', (e) => {
     const btn = e.target.closest('.view-toggle-btn');
     if (!btn || btn.dataset.view === dailyView) return;
-    dailyView = btn.dataset.view;
-    document.querySelectorAll('#dailyViewToggle .view-toggle-btn').forEach(b => b.classList.toggle('active', b === btn));
-    renderDailyView();
+    setDailyView(btn.dataset.view);
+  });
+
+  // ---- Leaders ----
+  // The season's race beside the day's highlights: a card per category,
+  // for the season picked in the controls row (in place of the date) and
+  // MLB, AL or NL from the sheet's own toggle.
+  const leadersYearSelect = document.getElementById('leadersYearPick');
+  const dailyDateNav = document.getElementById('dailyDateNav');
+  const LEADER_CATEGORIES = {
+    hitting: [
+      ['homeRuns', 'Home Runs'], ['battingAverage', 'Average'], ['runsBattedIn', 'RBI'],
+      ['onBasePlusSlugging', 'OPS'], ['stolenBases', 'Stolen Bases'], ['hits', 'Hits']
+    ],
+    pitching: [
+      ['strikeouts', 'Strikeouts'], ['earnedRunAverage', 'ERA'], ['wins', 'Wins'],
+      ['saves', 'Saves'], ['walksAndHitsPerInningPitched', 'WHIP'], ['inningsPitched', 'Innings']
+    ]
+  };
+  const LEADERS_SHOWN = 5;
+  let leadersSeason = null;
+  let leadersLeague = '';
+  let leadersRequestId = 0;
+  const leadersCache = {};
+
+  // A season still being played is refetched after five minutes; a
+  // failure isn't cached, since the race is still moving.
+  async function getLeagueLeaders(season, group, leagueId) {
+    const key = `${season}-${group}-${leagueId || 'mlb'}`;
+    const hit = leadersCache[key];
+    if (hit && (hit.final || Date.now() - hit.at < SCHEDULE_LIVE_TTL_MS)) return hit.data;
+    try {
+      const cats = LEADER_CATEGORIES[group].map(c => c[0]).join(',');
+      const league = leagueId ? `&leagueId=${leagueId}` : '';
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=${cats}&statGroup=${group}&season=${season}&sportId=1&limit=10${league}`);
+      if (!res.ok) throw new Error(res.status);
+      const data = await res.json();
+      const byCategory = {};
+      (data.leagueLeaders || []).forEach(c => {
+        byCategory[c.leaderCategory] = (c.leaders || [])
+          .filter(l => l.person && l.person.id)
+          .map(l => ({ rank: l.rank, value: l.value, id: l.person.id, name: l.person.fullName || '', teamId: l.team && l.team.id }));
+      });
+      leadersCache[key] = { data: byCategory, at: Date.now(), final: season < new Date().getFullYear() };
+      return byCategory;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function leaderRank(list, i) {
+    const r = list[i].rank;
+    const tied = (list[i - 1] && list[i - 1].rank === r) || (list[i + 1] && list[i + 1].rank === r);
+    return `${tied ? 'T' : ''}${r}`;
+  }
+
+  function renderLeaderTeam(teamId) {
+    if (!TEAM_ABBR[teamId]) return '<span class="ld-team"></span>';
+    return `<span class="ld-team"><img src="${capLogoUrl(teamId)}" alt="">${TEAM_ABBR[teamId]}</span>`;
+  }
+
+  // Names open the full profile, as the Players list's do; a pitcher's
+  // entry says so, so his profile starts on the pitching side.
+  function renderLeaderCard(label, list, season, group) {
+    if (!list || !list.length) return `<div class="ld-card"><div class="ld-cat">${label}</div><div class="ld-none">&#8212;</div></div>`;
+    const mine = myTeamId();
+    const mineClass = l => (mine && l.teamId === mine ? ' is-my-team' : '');
+    const nameplate = l => {
+      playerStore[l.id] = { id: l.id, name: l.name, pos: group === 'pitching' ? 'P' : '', team: TEAM_NICKNAMES[l.teamId] || '', season, todayStats: {} };
+      return `<button type="button" class="player-name-btn potg-player-name" data-player-id="${l.id}">${l.name}</button>`;
+    };
+    const [lead, ...rest] = list;
+    const rows = rest.map((l, j) => `
+      <div class="ld-row${mineClass(l)}${j >= LEADERS_SHOWN - 1 ? ' ld-extra' : ''}">
+        <span class="ld-rank">${leaderRank(list, j + 1)}</span>
+        <span class="ld-name">${nameplate(l)}</span>
+        ${renderLeaderTeam(l.teamId)}
+        <span class="ld-v">${l.value}</span>
+      </div>`).join('');
+    const more = list.length > LEADERS_SHOWN
+      ? `<button type="button" class="ld-more" data-more="Top ${list.length}" data-less="Top ${LEADERS_SHOWN}">Top ${list.length}</button>`
+      : '';
+    return `
+      <div class="ld-card">
+        <div class="ld-cat">${label}</div>
+        <div class="ld-lead${mineClass(lead)}">
+          <button type="button" class="dcf-photo ld-photo" data-player-id="${lead.id}" aria-label="${lead.name}" title="${lead.name}"><span class="dcf-print"><img src="${headshotUrl(lead.id, 120)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'"></span></button>
+          <div class="ld-lead-id">${nameplate(lead)}${renderLeaderTeam(lead.teamId)}</div>
+          <span class="ld-lead-v">${lead.value}</span>
+        </div>
+        ${rows}
+        ${more}
+      </div>`;
+  }
+
+  function renderLeaderGroup(title, group, byCategory, season) {
+    return `
+      <div class="ld-group">
+        <div class="pp-skg-head"><span>${title}</span></div>
+        <div class="ld-grid">${LEADER_CATEGORIES[group].map(([cat, label]) => renderLeaderCard(label, byCategory[cat], season, group)).join('')}</div>
+      </div>`;
+  }
+
+  function renderLeadersHead(season) {
+    const leagues = [['', 'MLB'], [String(AL_LEAGUE_ID), 'AL'], [String(NL_LEAGUE_ID), 'NL']];
+    const toggle = leagues.map(([id, label]) =>
+      `<button type="button" class="view-toggle-btn${id === leadersLeague ? ' active' : ''}" data-league="${id}">${label}</button>`).join('');
+    return `<div class="ld-head"><div class="ld-title">${season} Leaders</div><div class="view-toggle ld-league">${toggle}</div></div>`;
+  }
+
+  async function loadLeaders() {
+    const requestId = ++leadersRequestId;
+    if (!leadersSeason) {
+      const latest = await getDefaultListSeason();
+      if (requestId !== leadersRequestId) return;
+      const years = [];
+      for (let y = latest; y >= PLAYER_LIST_FIRST_SEASON; y--) years.push(y);
+      leadersYearSelect.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+      leadersSeason = latest;
+      leadersYearSelect.value = String(latest);
+    }
+    const season = leadersSeason;
+    dailyBody.innerHTML = `<div class="sheet ld">${renderLeadersHead(season)}<div id="leadersBoard"><div class="mlb-status-msg">Loading leaders&#8230;</div></div></div>`;
+    const [hitting, pitching] = await Promise.all([
+      getLeagueLeaders(season, 'hitting', leadersLeague),
+      getLeagueLeaders(season, 'pitching', leadersLeague)
+    ]);
+    if (requestId !== leadersRequestId || dailyView !== 'leaders') return;
+    const board = document.getElementById('leadersBoard');
+    if (!board) return;
+    if (!hitting && !pitching) {
+      board.innerHTML = apiErrorMsg('the leaders');
+      return;
+    }
+    board.innerHTML = renderLeaderGroup('Hitting', 'hitting', hitting || {}, season)
+      + renderLeaderGroup('Pitching', 'pitching', pitching || {}, season);
+  }
+
+  // Day views and Leaders share dailyBody: leaving the day stops its poll
+  // and strands any load still in flight, and coming back reloads it.
+  function setDailyView(view) {
+    const wasLeaders = dailyView === 'leaders';
+    dailyView = view;
+    document.querySelectorAll('#dailyViewToggle .view-toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+    dailyDateNav.hidden = view === 'leaders';
+    leadersYearSelect.hidden = view !== 'leaders';
+    if (view === 'leaders') {
+      ++dailyRequestId;
+      clearTimeout(dailyPollTimer);
+      dailyPollTimer = null;
+      loadLeaders();
+    } else if (wasLeaders) {
+      ++leadersRequestId;
+      loadDailySummary(dailyDateInput.value);
+    } else {
+      renderDailyView();
+    }
+  }
+
+  leadersYearSelect.addEventListener('change', () => {
+    leadersSeason = Number(leadersYearSelect.value);
+    loadLeaders();
+  });
+  dailyBody.addEventListener('click', (e) => {
+    const leagueBtn = e.target.closest('.ld-league .view-toggle-btn');
+    if (leagueBtn) {
+      if (leagueBtn.dataset.league === leadersLeague) return;
+      leadersLeague = leagueBtn.dataset.league;
+      loadLeaders();
+      return;
+    }
+    const more = e.target.closest('.ld-more');
+    if (more) {
+      const card = more.closest('.ld-card');
+      const open = card.classList.toggle('is-open');
+      more.textContent = open ? more.dataset.less : more.dataset.more;
+      return;
+    }
+    const photo = e.target.closest('.ld-photo');
+    if (photo) jumpToPlayerProfile(photo.dataset.playerId);
   });
 
   // ---- Team tab ----
@@ -11819,7 +12082,7 @@
     init: () => {
       findLastStartedDate().then(dateStr => {
         setDateInputValue(dailyDateInput, dailyDateInputText, dateStr);
-        loadDailySummary(dateStr);
+        if (dailyView !== 'leaders') loadDailySummary(dateStr);
       });
     }
   });

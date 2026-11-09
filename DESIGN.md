@@ -306,6 +306,13 @@ The Standings tab's Playoffs view, drawn like a printed bracket.
 - **Outcome:** a team that's out fades to Faded Cream. Only the World Series winner turns gold, with an award plate beneath ("2026 World Series Champions"). A series not yet set shows TBD rows.
 - **Older formats:** before 2022 the series are listed by round instead.
 
+### Season Leaders
+The Highlights tab's Leaders view: the season's race, one card per category (Hitting: Home Runs, Average, RBI, OPS, Stolen Bases, Hits; Pitching: Strikeouts, ERA, Wins, Saves, WHIP, Innings), one column on a phone, two then three across a wide sheet.
+- **Leader:** a pinned print (the depth chart's), his nameplate and team, and his number in a recessed slot. The number stays cream; leading isn't a gold value.
+- **The rest:** ranked rows beneath (rank, nameplate, team, value), ties marked "T4"; the top five show, the top ten (with ties) behind a painted toggle.
+- **Your team:** its rows get the gold wash, as in Standings.
+- A day's home run carries his season count ("No. 17") under the distance.
+
 ### Team Overview
 The Team tab's Overview reads like the front page of a team's media guide.
 - **Head:** the cap, the nickname in Oswald, and one line under it: the season ("2026 Final"), the division place and games back, the streak while the season runs, and how October went ("Lost NLCS"). A champion gets an award plate ("2004 World Series Champions"), the one gold on the head.
