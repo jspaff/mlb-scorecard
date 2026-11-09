@@ -318,7 +318,11 @@ Every player's line for the team, hitters then pitchers, in the Players list's t
 
 ### Roster and Depth Chart
 - **Rows:** jersey number in gold trim, the nameplate, then B/T, season age and position in fixed right-aligned slots under painted heads. Pitchers split into Rotation (in order) and Bullpen (closer first, "CL"). Subgroup titles (Rotation, Catchers) start in line with the names, not the numbers.
-- **Depth chart:** laid out on the field, outfield across the top, the middle infield, the corners, then DH and catcher; the starter's plate first and his backups' smaller, unshadowed plates beneath. Rotation and bullpen follow as rows.
+- **Depth chart:** the roster's first view, standing in for the 26-man. Everyone on it gets a photo, a small pinned print (2px cream border, the profile photo's 4:5), or nobody does.
+  - **Field:** the starters on a chalk-drawn field (faint fence, foul lines, infield cut and bases on the board), each a print over his position in gold trim and his nameplate. Any other spot he backs up follows his position in Faded Cream ("LF · CF"), so his own spot still leads. DH stands off the field by home. The field keeps one square shape, capped at 560px.
+  - **Bench:** players who start nowhere, as photo cards labelled with every spot they cover in scoring order ("1B · 2B · 3B · SS").
+  - **Staff:** the rotation numbered in order, then the bullpen with the closer first ("CL"), the rest "RP", all as photo cards.
+  - On a wide sheet the field sits left and bench, rotation and bullpen run down the right.
 
 ### Your Team
 The user's team is a cap in a fixed slot at the end of the tab row (a stitched ball when none is picked). Its rows in standings and the bracket get the chosen-segment gold wash (`rgba(217,169,26,0.13)`): trim marking the user's own focus, never a gold value.
