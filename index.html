@@ -1206,41 +1206,24 @@
   .vc-thumb { position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden; margin-bottom: 2px; background: var(--paper-line); border: 1px solid var(--paper-line); }
   .vc-thumb > img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .vc { container-type: inline-size; }
-  /* One ruled grid: the gap is the rule, so every line is the same
-     hairline, as on the scorecard. */
-  .vc-card {
-    position: absolute; inset: 0;
-    display: grid; grid-template-columns: 30% minmax(0, 1fr) 30%; grid-template-rows: 20% minmax(0, 1fr);
-    gap: 1px; background: var(--paper-line);
-  }
-  .vc-c { display: flex; align-items: center; justify-content: center; min-width: 0; min-height: 0; overflow: hidden; background: var(--paper); }
-  .vc-h { gap: 5px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); white-space: nowrap; }
-  .vc-h i { font-style: normal; color: var(--ink-soft); }
-  .vc-team img { width: 15px; height: 15px; }
-  .vc-who { align-items: flex-end; }
-  .vc-photo { width: 100%; height: 100%; object-fit: cover; object-position: center 20%; display: block; }
-  .vc-cell { background: #343b30; }
-  .vc-dia { position: relative; height: 84%; aspect-ratio: 1; }
+  .vc-card { position: absolute; inset: 0; display: grid; grid-template-columns: 40% minmax(0, 1fr); background: var(--paper); }
+  .vc-who { min-width: 0; overflow: hidden; }
+  /* The photo fades into the board rather than ending on an edge. */
+  .vc-photo { width: 100%; height: 100%; object-fit: cover; object-position: center 20%; display: block;
+    -webkit-mask-image: linear-gradient(90deg, #000 70%, transparent); mask-image: linear-gradient(90deg, #000 70%, transparent); }
+  .vc-play-side { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4%; min-width: 0; padding: 4% 0; }
+  .vc-where { display: flex; align-items: center; gap: 5px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; }
+  .vc-where img { width: 14px; height: 14px; }
+  .vc-where b { font-weight: inherit; opacity: 0.6; }
+  .vc-dia { position: relative; height: 66%; aspect-ratio: 1; }
   .vc-dia svg { width: 100%; height: 100%; display: block; }
   .vc-dia .pp-rc-rbi { top: 2%; left: 0; }
-  .vc-pitchcell { position: relative; flex-direction: column; gap: 2px; }
-  .vc-mph { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 30px; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
-  .vc-pitch { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; }
-  .vc-pitch b { font-weight: inherit; }
-  .vc-pitch-code { display: none; }
   .vc-play { position: absolute; right: 6px; bottom: 6px; display: flex; align-items: center; justify-content: center; }
   .vc:hover .vc-play, .vc:focus-visible .vc-play { border-color: var(--gold); }
   @container (max-width: 250px) {
-    .vc-h { font-size: 8px; gap: 3px; letter-spacing: 0.05em; }
-    .vc-team img { width: 12px; height: 12px; }
-    .vc-mph { font-size: 22px; }
-    .vc-pitch { font-size: 7.5px; }
+    .vc-where { font-size: 8px; gap: 3px; }
+    .vc-where img { width: 12px; height: 12px; }
     .vc-play { right: 4px; bottom: 4px; transform: scale(0.85); transform-origin: bottom right; }
-  }
-  /* Where "Sweeper" won't fit, the pitch's short code. */
-  @container (max-width: 260px) {
-    .vc-pitch-name { display: none; }
-    .vc-pitch-code { display: inline; }
   }
   .dp-play { position: absolute; right: 6px; bottom: 6px; padding: 2px 6px 1px; background: rgba(27, 32, 25, 0.82); font-size: 10px; color: var(--ink); }
   .vc-kicker { padding: 0 2px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); }
@@ -7034,35 +7017,29 @@
   // for MLB's photos where it has them.
   const DAY_PHOTO_THUMBS = new URLSearchParams(location.search).get('thumbs') === 'photo';
 
-  // The still is a piece of the scorecard itself: one ruled grid, a head
-  // row over a body row. Heads: his team | the inning | the count. Body:
-  // his photo filling its cell | the play's diamond (an RBI dot a run) |
-  // the pitch -- speed big, its name painted under -- and the play mark,
-  // the same recessed square the score boxes use. A clip with no play
-  // keeps the grid with an empty cell.
+  // The still: his photo on the left, fading into the board, and the
+  // play's diamond as the scorecard draws it (an RBI dot a run), under a
+  // quiet line of his team and the inning. A clip with no play gets an
+  // empty diamond.
   function renderScorebookStill(item) {
     const k = item.k;
-    const team = item.teamId
-      ? `<img src="${capLogoUrl(item.teamId)}" alt="">${TEAM_ABBR[item.teamId] || ''}`
-      : '';
     const photo = item.personId
       ? `<img class="vc-photo" src="${headshotUrl(item.personId, 240)}" alt="" onerror="this.style.visibility='hidden'">`
       : '';
+    const team = item.teamId ? `<img src="${capLogoUrl(item.teamId)}" alt="">${TEAM_ABBR[item.teamId] || ''}` : '';
+    const where = [team, k ? inningTag(k) : ''].filter(Boolean).join('<b>&#183;</b>');
     const dots = k && k.rbi ? `<span class="pp-rc-rbi">${'<i></i>'.repeat(k.rbi)}</span>` : '';
     const diamond = k
       ? diamondSVG(k.reached, k.reached === 4, k.code, k.isOut, k.outEdge, null, false, k.calledLooking)
       : diamondSVG(0, false, '', false, null, null, false);
-    const pitch = k && k.pitchType
-      ? `<span class="vc-mph">${k.pitchSpeed || ''}</span><span class="vc-pitch"><b class="vc-pitch-name">${pitchName(k.pitchType)}</b><b class="vc-pitch-code">${pitchShort(k.pitchType)}</b></span>`
-      : '';
     return `
       <span class="vc-card">
-        <span class="vc-c vc-h vc-team">${team}</span>
-        <span class="vc-c vc-h">${k ? inningTag(k) : ''}</span>
-        <span class="vc-c vc-h">${k ? `<i>Count</i>${k.count}` : ''}</span>
-        <span class="vc-c vc-who">${photo}</span>
-        <span class="vc-c vc-cell"><span class="vc-dia">${dots}${diamond}</span></span>
-        <span class="vc-c vc-pitchcell">${pitch}<span class="dg-recap vc-play">&#9654;</span></span>
+        <span class="vc-who">${photo}</span>
+        <span class="vc-play-side">
+          <span class="vc-where">${where}</span>
+          <span class="vc-dia">${dots}${diamond}</span>
+        </span>
+        <span class="dg-recap vc-play">&#9654;</span>
       </span>`;
   }
 
