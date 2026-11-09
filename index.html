@@ -1113,8 +1113,6 @@
   .dy-sec { min-width: 0; margin-top: 24px; }
   .dy-head + .dy-sec { margin-top: 0; }
   .dy-empty { color: var(--ink-soft); font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; padding: 6px 0; }
-  .dy-pair { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0 36px; }
-  .dy-side { min-width: 0; }
 
   /* Scores: a small box a game -- two across a phone, more on a wide
      sheet. The teams stack with their runs in a fixed column; the state
@@ -1185,13 +1183,12 @@
   .dy-more:hover { color: var(--ink); }
 
   /* Best starts: a box-score line under painted heads, zeros blank */
-  .ds-row { display: grid; grid-template-columns: minmax(0, 1fr) 24px repeat(6, 30px); align-items: center; gap: 4px; padding: 5px 0; border-bottom: 1px dashed var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 12px; color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; }
+  .ds-row { display: grid; grid-template-columns: minmax(0, 1fr) repeat(6, 30px); align-items: center; gap: 4px; padding: 5px 0; border-bottom: 1px dashed var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 12px; color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; }
   .ds-head { padding: 0 0 3px; border-bottom: 1px solid var(--paper-line); font-weight: 800; font-size: 8.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
   .ds-name { display: flex; align-items: center; min-width: 0; text-align: left; }
   .ds-name .player-name-btn { min-width: 0; }
   .ds-gs { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 15px; }
-  @media (max-width: 420px) { .ds-name .dh-team { display: none; } .ds-row { grid-template-columns: minmax(0, 1fr) 24px repeat(6, 26px); } }
-  .ds-reel { justify-self: center; }
+  @media (max-width: 420px) { .ds-name .dh-team { display: none; } .ds-row { grid-template-columns: minmax(0, 1fr) repeat(6, 26px); } }
 
   /* Videos. A card is a framed still -- MLB's photo, or for a play only
      Savant has, a scorebook card (the player's print, the notation, his
@@ -1211,25 +1208,19 @@
   .vc-title { padding: 0 2px; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 13.5px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .dp-meta { padding: 0 2px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 9.5px; color: var(--ink-soft); }
 
-  /* The reel: the lead clip full width on a phone with the rest two
-     across; on a wide sheet the lead takes a 2x2 block of a 4-wide grid. */
-  .vr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-  .vr .vc.is-feature { grid-column: 1 / -1; }
-  .vr .vc.is-feature .vc-title { font-size: 17px; }
-  .vr .vc:not(.is-feature) .vc-code { font-size: 22px; }
 
   /* A row of videos in a section: swiped on a phone, a grid when wide. */
   .dp-row { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(200px, 62%); gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; }
-  .dy-sec.is-bare { margin-top: 10px; }
-  .dy-col { min-width: 0; }
+  .dp-row + .dy-hr, .dp-row + .ds-table { margin-top: 10px; }
+  /* The section's list under its videos: the homers two columns wide and
+     the starts at a box score's width on a wide sheet. */
   @container (min-width: 940px) {
-    .dy-pair { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
-    .vr { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-    .vr .vc.is-feature { grid-column: span 2; grid-row: span 2; }
-    .vr .vc.is-feature .vc-title { font-size: 22px; }
-    .vr .vc.is-feature .vc-code { font-size: 48px; }
+    .dy-hr-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 36px; }
+    .dy-hr.is-open .dh.is-extra { display: flex; }
+    .ds-table { max-width: 640px; }
+  }
+  @container (min-width: 940px) {
     .dp-row { grid-auto-flow: row; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-columns: auto; overflow: visible; }
-    .dy-pair .dp-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
 
 
@@ -6647,7 +6638,7 @@
   // Videos play in the clip popup from dayClips, keyed per render.
   let dayClips = {};
   let dayData = null;
-  const DAY_HR_SHOWN = 8;
+  const DAY_HR_SHOWN = 6;
   const DAY_STARTS_SHOWN = 5;
 
   function highlightMp4(item) {
@@ -6664,6 +6655,7 @@
   // From the schedule's own highlights hydrate: the game's recap video
   // (its headline is the game's story) and its clips worth a look:
   // defense, MLB's "wow" tag, and hitting (home runs included).
+  const DAY_PITCHING_WORDS = /\bstrikes? out\b|\bstrands\b|\bescapes\b|\bfans\b|K['’]s\b|\bwhiffs\b|\bsets down\b|\bretires\b|\bsecures\b|\bjam\b/i;
   function buildGameMedia(g) {
     const items = (g.content && g.content.highlights && g.content.highlights.highlights && g.content.highlights.highlights.items) || [];
     const tags = item => (item.keywordsAll || []).filter(k => k.type === 'taxonomy').map(k => k.value);
@@ -6681,7 +6673,9 @@
       if (!c) return null;
       const playerIds = (item.keywordsAll || []).filter(k => k.type === 'player_id').map(k => Number(k.value));
       const base = { ...c, id: item.id || '', slug: (item.id || '').slice(0, DAY_SLUG_LEN), wow: t.includes('wow'), defense: t.includes('defense'), playerIds };
-      // A defensive gem is defense even when it ends a pitcher's jam.
+      // "Escapes bases-loaded jam with groundout" is the pitcher's moment
+      // even when MLB tags it defense.
+      if (DAY_PITCHING_WORDS.test(item.headline || '')) return { ...base, cat: 'pitching' };
       if (base.defense) return { ...base, cat: 'defense' };
       if (t.includes('pitching')) return { ...base, cat: 'pitching' };
       if (t.includes('hitting')) return { ...base, cat: 'hitting', hitting: true };
@@ -6791,20 +6785,16 @@
       </div>`;
   }
 
-  // bare: the list alone, under a section's own video row and head.
-  function renderDayHomeRuns(homeRuns, season, { bare = false } = {}) {
-    if (!homeRuns.length) return bare ? '' : `<div class="dy-sec"><div class="pp-skg-head"><span>Home Runs</span></div><div class="dy-empty">None yet.</div></div>`;
+  // The list of the day's homers, longest first, under the section's own
+  // video row and head.
+  function renderDayHomeRuns(homeRuns, season) {
+    if (!homeRuns.length) return '<div class="dy-empty">None yet.</div>';
     const sorted = homeRuns.slice().sort((a, b) => (b.distance || 0) - (a.distance || 0));
     const more = sorted.length > DAY_HR_SHOWN ? `<button type="button" class="dy-more" data-more="All ${sorted.length}" data-less="Top ${DAY_HR_SHOWN}">All ${sorted.length}</button>` : '';
-    return `
-      <div class="dy-sec dy-hr${bare ? ' is-bare' : ''}">
-        ${bare ? '' : `<div class="pp-skg-head"><span>Home Runs</span><em>${sorted.length}</em></div>`}
-        <div class="dy-hr-list">${sorted.map((hr, i) => renderDayHomeRun(hr, i, season)).join('')}${more}</div>
-      </div>`;
+    return `<div class="dy-hr"><div class="dy-hr-list">${sorted.map((hr, i) => renderDayHomeRun(hr, i, season)).join('')}</div>${more}</div>`;
   }
 
-  // A start with a reel of the outing gets a play mark beside its line.
-  function renderDayStarts(starts, season, reels = {}, { bare = false } = {}) {
+  function renderDayStarts(starts, season) {
     if (!starts.length) return '';
     const top = starts.slice().sort((a, b) => b.gameScore - a.gameScore).slice(0, DAY_STARTS_SHOWN);
     const blank = v => (v ? v : '');
@@ -6815,44 +6805,40 @@
       return `
         <div class="ds-row">
           <span class="ds-name"><img class="dh-cap" src="${capLogoUrl(p.teamId)}" alt=""><button type="button" class="player-name-btn" data-player-id="${p.id}">${p.name}</button><span class="dh-team">${p.isHome ? 'vs' : '@'} ${p.oppAbbr}</span></span>
-          ${reels[p.id] ? `<button type="button" class="dg-recap ds-reel" data-day-clip="${dayVideoKey({ clip: reels[p.id] })}" aria-label="Watch" title="Watch">&#9654;</button>` : '<span></span>'}
           <span>${p.ip}</span><span>${blank(p.h)}</span><span${p.er ? '' : ' class="is-zero"'}>${p.er}</span><span${p.bb ? '' : ' class="is-zero"'}>${p.bb}</span><span>${blank(p.k)}</span><span class="ds-gs">${p.gameScore}</span>
         </div>`;
     }).join('');
     return `
-      <div class="dy-sec${bare ? ' is-bare' : ''}">
-        ${bare ? '' : '<div class="pp-skg-head"><span>On the Mound</span><em>Best starts</em></div>'}
-        <div class="ds-row ds-head"><span></span><span></span><span>IP</span><span>H</span><span>ER</span><span>BB</span><span>K</span><span>GSc</span></div>
+      <div class="ds-table">
+        <div class="ds-row ds-head"><span class="ds-name">Best starts</span><span>IP</span><span>H</span><span>ER</span><span>BB</span><span>K</span><span>GSc</span></div>
         ${rows}
       </div>`;
   }
 
   // ---- What to watch ----
-  // The day's handful of videos, built from four kinds of moment:
-  //   big moments -- the plays that swung the game most (WPA), any kind;
-  //   home runs   -- the longest and hardest hit;
-  //   pitching    -- the best starters' outing reels (by Game Score);
-  //   defense     -- MLB's own defense clips, its "wow" ones first.
+  // Four sections, each a row of videos over its own list:
+  //   Big Moments -- the plays that swung games most (WPA), any kind;
+  //   Home Runs   -- a walk-off or slam, the longest, the hardest hit;
+  //   On the Mound -- the best starts' reels, then big relief moments;
+  //   Defense     -- MLB's own defense clips, its "wow" ones first.
   // A play plays MLB's clip of it when there is one (photo, headline);
   // otherwise Savant's clip of that pitch, on a scorebook card instead of
   // a photo -- MLB keeps only ten clips a game, and a big double can miss
-  // the cut.
+  // the cut. No play shows twice on the page.
   const DAY_MOMENT_MIN_WPA = 0.1;
   const DAY_DEFENSE_BONUS = 0.06;
   const DAY_WOW_BONUS = 0.1;
   const DAY_GOOD_START = 60;
-  // The lead plus eight: two rows of four beside the lead's 2x2 block on a
-  // wide sheet, four rows of two under it on a phone.
-  const DAY_REEL_SIZE = 9;
-  // Mockup switch while the two layouts are compared: ?layout=sections
-  // gives each kind its own section; otherwise one reel up top.
-  const DAY_LAYOUT_SECTIONS = new URLSearchParams(location.search).get('layout') === 'sections';
+  const DAY_ROW = 4;
 
   function inningTag(k) {
     return k.inning ? `${k.isTop ? 'T' : 'B'}${k.inning}` : '';
   }
-  // "Jonah Heim's 2-run double"; an out keeps its own words ("Juan Soto
-  // strikes out swinging").
+  function matchupOf(g) {
+    return g ? `${teamAbbr(g.teams.away.team)} @ ${teamAbbr(g.teams.home.team)}` : '';
+  }
+  // "Jonah Heim's 2-run double"; a strikeout names both men; any other
+  // out keeps the feed's own words ("Juan Soto grounds into a double play").
   const DAY_HIT_WORDS = { 'Single': 'single', 'Double': 'double', 'Triple': 'triple', 'Home Run': 'home run' };
   function momentTitle(k) {
     const hit = DAY_HIT_WORDS[k.event];
@@ -6886,102 +6872,106 @@
     return { byPlay, loose };
   }
 
-  function buildDayReel({ games, media, stats, statsByPk, wpaByPk }) {
+  function buildDaySections({ games, media, stats, statsByPk, wpaByPk }) {
     const { byPlay, loose } = buildClipIndex(games, media, statsByPk, wpaByPk);
     const used = new Set();
-    const take = item => { if (item.key) used.add(item.key); return item; };
+    const fill = (candidates, n) => {
+      const out = [];
+      candidates.forEach(c => {
+        if (!c || out.length >= n || used.has(c.key)) return;
+        used.add(c.key);
+        out.push(c);
+      });
+      return out;
+    };
+    const gameOf = pk => games.find(x => x.gamePk === pk);
 
-    // Big moments: every at-bat of the day by its WPA.
-    const moments = games.flatMap(g => {
+    // Big Moments: every at-bat of the day by WPA, at most two of them
+    // homers (they have a row of their own), and the biggest that isn't a
+    // homer second, where a phone shows it before any swipe.
+    const all = games.flatMap(g => {
       const wpa = (wpaByPk && wpaByPk[g.gamePk]) || {};
       return ((statsByPk[g.gamePk] || {}).keyPlays || []).map(k => ({ k, g, wpa: wpa[k.atBatIndex] || 0 }));
     }).filter(m => m.wpa >= DAY_MOMENT_MIN_WPA).sort((a, b) => b.wpa - a.wpa).map(({ k, g, wpa }) => {
       const key = `${g.gamePk}-${k.atBatIndex}`;
       const clip = byPlay[key];
-      const label = k.kind ? HR_IMPACT_LABELS[k.kind] : k.event === 'Home Run' ? 'Home run' : k.isOut ? 'Big out' : 'Big hit';
       return {
-        key, kind: 'moment', g, k, wpa, clip, playId: k.playId,
+        key, g, k, wpa, clip, playId: k.playId,
         title: clip ? clip.title : momentTitle(k),
-        label, why: [inningTag(k), k.runs > 1 ? `${k.runs} runs` : ''].filter(Boolean).join(' &#183; '),
+        label: k.kind ? HR_IMPACT_LABELS[k.kind] : k.event === 'Home Run' ? 'Home run' : k.isOut ? 'Big out' : 'Big hit',
+        why: [inningTag(k), k.runs > 1 ? `${k.runs} runs` : ''].filter(Boolean).join(' &#183; '),
         teamId: k.isOut ? k.fieldingTeamId : k.battingTeamId, personId: k.isOut ? k.pitcherId : k.batterId
       };
     }).filter(m => m.clip || m.playId);
+    let homers = 0;
+    const capped = all.filter(m => m.k.event !== 'Home Run' || ++homers <= 2);
+    const firstNonHr = capped.find(m => m.k.event !== 'Home Run');
+    const moments = fill([capped[0], firstNonHr, ...capped], DAY_ROW);
+    moments.sort((a, b) => (a === capped[0] ? -1 : b === capped[0] ? 1 : a === firstNonHr ? -1 : b === firstNonHr ? 1 : b.wpa - a.wpa));
 
-    // Home runs: the longest and the hardest hit, plus any grand slam or
-    // walk-off.
+    // Home Runs: a walk-off or grand slam, the longest, the hardest hit,
+    // then the ones that swung their games most. Each card says which.
     const hrs = stats.flatMap(s => s.homeRuns).map(hr => {
       const key = `${hr.gamePk}-${hr.atBatIndex}`;
       const clip = byPlay[key];
-      const g = games.find(x => x.gamePk === hr.gamePk);
       return {
-        key, kind: 'hr', g, hr, clip, playId: hr.videoUrl ? new URL(hr.videoUrl).searchParams.get('playId') : null,
+        key, g: gameOf(hr.gamePk), hr, clip, playId: hr.videoUrl ? new URL(hr.videoUrl).searchParams.get('playId') : null,
         title: clip ? clip.title : `${hr.batterName}'s ${hr.isGrandSlam ? 'grand slam' : 'home run'}`,
-        label: hr.impact === 'walkoff' ? 'Walk-off' : hr.isGrandSlam ? 'Grand slam' : 'Home run',
         why: [hr.distance ? `${Math.round(hr.distance)} ft` : '', hr.exitVelo ? `${hr.exitVelo.toFixed(1)} mph` : ''].filter(Boolean).join(' &#183; '),
-        teamId: hr.battingTeamId, personId: hr.batterId
+        teamId: hr.battingTeamId, personId: hr.batterId, wpa: (wpaByPk[hr.gamePk] || {})[hr.atBatIndex] || 0
       };
     }).filter(h => h.clip || h.playId);
-    const longest = hrs.slice().sort((a, b) => (b.hr.distance || 0) - (a.hr.distance || 0));
-    const hardest = hrs.slice().sort((a, b) => (b.hr.exitVelo || 0) - (a.hr.exitVelo || 0));
-    const special = hrs.filter(h => h.hr.isGrandSlam || h.hr.impact === 'walkoff');
+    const as = (h, label) => h && { ...h, label };
+    const by = f => hrs.slice().sort((a, b) => f(b) - f(a));
+    const hrCards = fill([
+      as(hrs.find(h => h.hr.impact === 'walkoff'), 'Walk-off'),
+      as(hrs.find(h => h.hr.isGrandSlam), 'Grand slam'),
+      as(by(h => h.hr.distance || 0)[0], 'Longest'),
+      as(by(h => h.hr.exitVelo || 0)[0], 'Hardest hit'),
+      ...by(h => h.wpa).map(h => as(h, h.hr.impact ? HR_IMPACT_LABELS[h.hr.impact] : 'Home run'))
+    ], DAY_ROW);
 
-    // Pitching: the best starts that have a reel of the outing.
+    // On the Mound: the best starts with a reel of the outing, then the
+    // biggest pitching moments (an escape, a big strikeout, a save).
     const starts = stats.flatMap(s => s.starts).sort((a, b) => b.gameScore - a.gameScore);
     const reels = {};
     loose.filter(c => c.cat === 'pitching').forEach(c => {
       const sp = starts.find(p => c.playerIds.includes(p.id));
       if (sp && !reels[sp.id]) reels[sp.id] = c;
     });
-    const pitching = starts.filter(p => reels[p.id] && p.gameScore >= DAY_GOOD_START).map(p => ({
-      key: `sp-${p.id}`, kind: 'pitching', clip: reels[p.id], sp: p,
-      title: reels[p.id].title, label: 'Pitching',
-      why: `${p.ip} IP &#183; ${p.er} ER &#183; ${p.k} K`, teamId: p.teamId, personId: p.id
+    const outings = starts.filter(p => reels[p.id] && p.gameScore >= DAY_GOOD_START).map(p => ({
+      key: `sp-${p.id}`, clip: reels[p.id], title: reels[p.id].title,
+      label: 'Start', why: `${p.ip} IP &#183; ${p.er} ER &#183; ${p.k} K`
     }));
+    const relief = Object.values(byPlay).filter(c => c.cat === 'pitching')
+      .sort((a, b) => (b.wpa + (b.wow ? DAY_WOW_BONUS : 0)) - (a.wpa + (a.wow ? DAY_WOW_BONUS : 0)))
+      .map(c => ({ key: `${c.gamePk}-${c.play.atBatIndex}`, clip: c, title: c.title, label: inningTag(c.play), why: '' }));
+    const pitching = fill([...outings, ...relief], DAY_ROW);
 
     // Defense: MLB's defense clips, "wow" first, then by the play's WPA.
-    const defense = [...Object.values(byPlay), ...loose].filter(c => c.cat === 'defense')
+    const defense = fill([...Object.values(byPlay), ...loose].filter(c => c.cat === 'defense')
       .map(c => ({ c, weight: c.wpa + DAY_DEFENSE_BONUS + (c.wow ? DAY_WOW_BONUS : 0) }))
       .sort((a, b) => b.weight - a.weight)
       .map(({ c }) => ({
-        key: c.play ? `${c.gamePk}-${c.play.atBatIndex}` : `d-${c.mp4}`, kind: 'defense', clip: c,
-        title: c.title, label: 'Defense', why: c.play ? inningTag(c.play) : ''
-      }));
+        key: c.play ? `${c.gamePk}-${c.play.atBatIndex}` : `d-${c.mp4}`, clip: c,
+        title: c.title, label: c.play ? inningTag(c.play) : '', why: ''
+      })), DAY_ROW);
 
-    return { moments, longest, hardest, special, pitching, defense, reels, used, take };
-  }
-
-  // The reel: the day's biggest moment leads, then the two biggest that
-  // aren't homers, two homers (a slam or walk-off, else the longest and
-  // hardest hit), the best outing and the best two defensive plays --
-  // one of each play, DAY_REEL_SIZE at most; any room left goes to big
-  // moments.
-  function pickReel(r) {
-    const out = [];
-    const add = (item) => { if (item && !r.used.has(item.key) && out.length < DAY_REEL_SIZE) out.push(r.take(item)); };
-    const firstUnused = list => list.find(i => !r.used.has(i.key));
-    // The lead can be anything; the next moments are the big plays that
-    // aren't homers, which have spots of their own.
-    add(r.moments[0]);
-    r.moments.filter(m => m.k.event !== 'Home Run').slice(0, 2).forEach(add);
-    const hrStart = out.length;
-    [r.special[0], firstUnused(r.longest), firstUnused(r.hardest)].forEach(h => { if (out.length - hrStart < 2) add(h); });
-    add(r.pitching[0]);
-    r.defense.slice(0, 2).forEach(add);
-    r.moments.forEach(add);
-    return out;
+    return { moments, hrCards, pitching, defense };
   }
 
   function dayVideoKey(item) {
     const key = `c${Object.keys(dayClips).length}`;
-    dayClips[key] = item.clip ? item.clip : { playId: item.playId, matchup: item.g ? `${teamAbbr(item.g.teams.away.team)} @ ${teamAbbr(item.g.teams.home.team)}` : '', title: item.title };
+    dayClips[key] = item.clip ? item.clip : { playId: item.playId, matchup: matchupOf(item.g), title: item.title };
     return key;
   }
 
   // A video card: MLB's photo when the clip is MLB's; otherwise a
   // scorebook card -- the player's print, his cap, and the play's
-  // notation -- for Savant's clip of the pitch.
-  function renderVideoCard(item, opts = {}) {
-    const matchup = item.clip ? item.clip.matchup : item.g ? `${teamAbbr(item.g.teams.away.team)} @ ${teamAbbr(item.g.teams.home.team)}` : '';
+  // notation -- for Savant's clip of the pitch. The kicker says why it's
+  // here; it keeps its line even when empty, so a row's titles line up.
+  function renderVideoCard(item) {
+    const matchup = item.clip ? item.clip.matchup : matchupOf(item.g);
     const still = item.clip && item.clip.thumb
       ? `<img src="${item.clip.thumb}" alt="" loading="lazy">`
       : `<span class="vc-card">
@@ -6990,33 +6980,21 @@
            ${item.teamId ? `<img class="vc-cap" src="${capLogoUrl(item.teamId)}" alt="">` : ''}
          </span>`;
     return `
-      <button type="button" class="vc${opts.feature ? ' is-feature' : ''}" data-day-clip="${dayVideoKey(item)}">
+      <button type="button" class="vc" data-day-clip="${dayVideoKey(item)}">
         <span class="vc-thumb">${still}<span class="dp-play">&#9654;</span></span>
-        <span class="vc-kicker">${item.label}${item.why ? ` <em>${item.why}</em>` : ''}</span>
+        <span class="vc-kicker">${item.label || '&nbsp;'}${item.why ? ` <em>${item.why}</em>` : ''}</span>
         <span class="vc-title">${item.title}</span>
         <span class="dp-meta">${matchup}</span>
       </button>`;
   }
 
-  function renderReel(items) {
-    if (!items.length) return '';
-    const [lead, ...rest] = items;
-    return `
-      <div class="dy-sec">
-        <div class="pp-skg-head"><span>Watch</span></div>
-        <div class="vr">
-          ${renderVideoCard(lead, { feature: true })}
-          ${rest.map(i => renderVideoCard(i)).join('')}
-        </div>
-      </div>`;
-  }
-
-  function renderVideoRow(title, items, note) {
-    if (!items.length) return '';
+  function renderVideoSection(title, items, { note = '', body = '' } = {}) {
+    if (!items.length && !body) return '';
     return `
       <div class="dy-sec">
         <div class="pp-skg-head"><span>${title}</span>${note ? `<em>${note}</em>` : ''}</div>
-        <div class="dp-row">${items.map(i => renderVideoCard(i)).join('')}</div>
+        ${items.length ? `<div class="dp-row">${items.map(renderVideoCard).join('')}</div>` : ''}
+        ${body}
       </div>`;
   }
 
@@ -7026,51 +7004,21 @@
     dayClips = {};
     const homeRuns = stats.flatMap(s => s.homeRuns);
     const starts = stats.flatMap(s => s.starts);
-    const r = buildDayReel(dayData);
+    const sec = buildDaySections(dayData);
     const finals = games.filter(g => g.status.abstractGameState === 'Final').length;
     const when = new Date(`${dateStr}T12:00:00`).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
     const meta = [`${games.length} game${games.length === 1 ? '' : 's'}`, finals && finals < games.length ? `${finals} final` : '', homeRuns.length ? `${homeRuns.length} HR` : ''].filter(Boolean).join(' &#183; ');
-    const scores = `
+    return `
+      <div class="sheet dy">
         <div class="dy-head"><div class="dy-title">${when}</div><div class="dy-meta">${meta}</div></div>
         <div class="dy-sec">
           <div class="pp-skg-head"><span>Scores</span></div>
           <div class="dg-grid">${games.map(g => renderDayGame(g, media[g.gamePk])).join('')}</div>
-        </div>`;
-    if (DAY_LAYOUT_SECTIONS) {
-      // At most two homers among the big moments; the rest have a row of
-      // their own.
-      let hrMoments = 0;
-      const moments = r.moments.filter(m => m.k.event !== 'Home Run' || ++hrMoments <= 2).slice(0, 4).map(r.take);
-      const firstUnused = list => list.find(i => !r.used.has(i.key));
-      const hrCards = [r.special[0], firstUnused(r.longest), firstUnused(r.hardest)].filter(Boolean)
-        .filter((h, i, a) => a.findIndex(x => x.key === h.key) === i && !r.used.has(h.key)).slice(0, 2).map(r.take);
-      const pitchCards = r.pitching.slice(0, 2);
-      const defCards = r.defense.filter(d => !r.used.has(d.key)).slice(0, 4);
-      return `
-        <div class="sheet dy">
-          ${scores}
-          ${renderVideoRow('Big Moments', moments)}
-          <div class="dy-pair">
-            <div class="dy-col">
-              ${renderVideoRow('Home Runs', hrCards, homeRuns.length)}
-              ${renderDayHomeRuns(homeRuns, season, { bare: true })}
-            </div>
-            <div class="dy-side">
-              ${renderVideoRow('On the Mound', pitchCards, 'Best starts')}
-              ${renderDayStarts(starts, season, r.reels, { bare: true })}
-            </div>
-          </div>
-          ${renderVideoRow('Defense', defCards)}
-        </div>`;
-    }
-    return `
-      <div class="sheet dy">
-        ${scores}
-        ${renderReel(pickReel(r))}
-        <div class="dy-pair">
-          ${renderDayHomeRuns(homeRuns, season)}
-          <div class="dy-side">${renderDayStarts(starts, season, r.reels)}</div>
         </div>
+        ${renderVideoSection('Big Moments', sec.moments)}
+        ${renderVideoSection('Home Runs', sec.hrCards, { note: homeRuns.length || '', body: renderDayHomeRuns(homeRuns, season) })}
+        ${renderVideoSection('On the Mound', sec.pitching, { body: renderDayStarts(starts, season) })}
+        ${renderVideoSection('Defense', sec.defense)}
       </div>`;
   }
 
