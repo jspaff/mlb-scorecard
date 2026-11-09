@@ -1205,6 +1205,10 @@
   .dp:focus-visible { outline: none; }
   .dp-title { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 13.5px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .dp-meta { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 9.5px; color: var(--ink-soft); }
+  .dp-group + .dp-group { margin-top: 16px; }
+  .dp-group-name { margin-bottom: 8px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); }
+  .dp-head { align-items: center; padding-bottom: 6px; }
+  .dp-head .view-toggle-btn { padding: 5px 9px; font-size: 10px; }
   .dp-meta b { font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; font-size: 9px; color: var(--ink); }
   @container (min-width: 940px) {
     .dy-pair { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
@@ -6618,7 +6622,6 @@
   let dayClips = {};
   let dayData = null;
   const DAY_HR_SHOWN = 8;
-  const DAY_PLAYS_SHOWN = 8;
   const DAY_STARTS_SHOWN = 5;
 
   function highlightMp4(item) {
@@ -6650,13 +6653,12 @@
       if (!t.includes('highlight')) return null;
       const c = clip(item);
       if (!c) return null;
-      const base = { ...c, id: item.id || '', slug: (item.id || '').slice(0, DAY_SLUG_LEN), wow: t.includes('wow'), defense: t.includes('defense') };
-      if (base.defense) return { ...base, tag: 'Defense' };
-      if (base.wow) return { ...base, tag: t.includes('pitching') ? 'Pitching' : '' };
-      if (t.includes('hitting')) {
-        const playerIds = (item.keywordsAll || []).filter(k => k.type === 'player_id').map(k => Number(k.value));
-        return { ...base, hitting: true, playerIds };
-      }
+      const playerIds = (item.keywordsAll || []).filter(k => k.type === 'player_id').map(k => Number(k.value));
+      const base = { ...c, id: item.id || '', slug: (item.id || '').slice(0, DAY_SLUG_LEN), wow: t.includes('wow'), defense: t.includes('defense'), playerIds };
+      // A defensive gem is defense even when it ends a pitcher's jam.
+      if (base.defense) return { ...base, cat: 'defense' };
+      if (t.includes('pitching')) return { ...base, cat: 'pitching' };
+      if (t.includes('hitting')) return { ...base, cat: 'hitting', hitting: true };
       return null;
     }).filter(Boolean);
     return { recap: recapItem ? clip(recapItem) : null, plays };
@@ -6697,43 +6699,42 @@
     const play = candidates.sort((a, b) => (wpa[b.atBatIndex] || 0) - (wpa[a.atBatIndex] || 0))[0];
     return play ? { play, exact } : { play: null, exact: false };
   }
-  function weighDayPlays(plays, keyPlays, wpa) {
+  // A pitching reel ("Gavin Williams K's nine") has no one play; it rides
+  // on its pitcher's Game Score that day instead.
+  function weighDayPlays(plays, keyPlays, wpa, starts) {
     return plays.map(c => {
       const { play, exact } = findClipPlay(c, keyPlays, wpa);
       const swing = play ? (wpa[play.atBatIndex] || 0) : 0;
       if (c.hitting && (!play || swing < DAY_HIT_MIN_WPA)) return null;
-      let tag = c.tag;
+      let tag = '';
       if (c.hitting) tag = play.kind ? DAY_HIT_LABELS[play.kind] : play.runs >= 2 ? `${play.runs}-run` : '';
-      const weight = swing + (c.wow ? DAY_WOW_BONUS : 0) + (c.defense ? DAY_DEFENSE_BONUS : 0);
+      const start = c.cat === 'pitching' && !play && starts.find(p => c.playerIds.includes(p.id));
+      const outing = start ? Math.max(0, start.gameScore - 50) / 200 : 0;
+      const weight = swing + outing + (c.wow ? DAY_WOW_BONUS : 0) + (c.defense ? DAY_DEFENSE_BONUS : 0);
       return { ...c, weight, tag, exact, playKey: play ? `${c.gamePk}-${play.atBatIndex}` : null };
     }).filter(Boolean);
   }
 
-  // The row: the best defensive plays hold DAY_DEFENSE_SLOTS of it, since
-  // a great catch rarely swings the game the way a go-ahead homer does,
-  // and the rest goes by weight. One clip a play (a "two-homer game" reel
-  // and the homer itself are one moment), at most two a game.
-  const DAY_DEFENSE_SLOTS = 2;
-  function pickDayPlays(clips) {
+  // Top Plays in three groups -- hitting, pitching, defense -- each its
+  // own best-first list, so a great catch never has to out-swing a
+  // go-ahead homer. One clip a play (a "two-homer game" reel and the
+  // homer itself are one moment; the clip named for the play wins), at
+  // most two a game in a group.
+  const DAY_PLAY_GROUPS = [['hitting', 'Hitting'], ['pitching', 'Pitching'], ['defense', 'Defense']];
+  function pickDayPlays(clips, cat, n) {
     const seen = new Set();
-    // Of two clips of one play, the one named for it beats a reel that
-    // merely includes it.
-    const sorted = clips.slice().sort((a, b) => b.weight - a.weight || b.exact - a.exact).filter(c => {
-      if (!c.playKey) return true;
-      if (seen.has(c.playKey)) return false;
-      seen.add(c.playKey);
-      return true;
-    });
     const perGame = {};
-    const picked = [];
-    const take = c => {
-      if (picked.includes(c) || (perGame[c.gamePk] || 0) >= 2) return;
-      perGame[c.gamePk] = (perGame[c.gamePk] || 0) + 1;
-      picked.push(c);
-    };
-    sorted.filter(c => c.defense).forEach(c => { if (picked.length < DAY_DEFENSE_SLOTS) take(c); });
-    sorted.forEach(c => { if (picked.length < DAY_PLAYS_SHOWN) take(c); });
-    return picked.sort((a, b) => b.weight - a.weight);
+    return clips.filter(c => c.cat === cat)
+      .sort((a, b) => b.weight - a.weight || b.exact - a.exact)
+      .filter(c => {
+        if (c.playKey) {
+          if (seen.has(c.playKey)) return false;
+          seen.add(c.playKey);
+        }
+        perGame[c.gamePk] = (perGame[c.gamePk] || 0) + 1;
+        return perGame[c.gamePk] <= 2;
+      })
+      .slice(0, n);
   }
 
   function dayClipKey(clip) {
@@ -6842,18 +6843,48 @@
       </div>`;
   }
 
-  function renderDayPlays(plays) {
-    if (!plays.length) return '';
+  // Mockup switch while the two layouts are compared: ?plays=tabs shows
+  // one row with a group toggle, otherwise a row per group.
+  const DAY_PLAYS_TABS = new URLSearchParams(location.search).get('plays') === 'tabs';
+  const DAY_PLAYS_PER_ROW = 4;
+  let dayPlayGroups = {};
+  let dayPlaysCat = 'hitting';
+
+  function renderDayPlayCards(plays) {
+    return `<div class="dp-row">${plays.map(c => `
+      <button type="button" class="dp" data-day-clip="${dayClipKey(c)}">
+        <span class="dp-thumb"><img src="${c.thumb}" alt="" loading="lazy"><span class="dp-play">&#9654;</span></span>
+        <span class="dp-title">${c.title}</span>
+        <span class="dp-meta">${c.matchup}${c.tag ? ` &#183; <b>${c.tag}</b>` : ''}</span>
+      </button>`).join('')}
+    </div>`;
+  }
+
+  function renderDayPlaysTabs() {
+    const groups = DAY_PLAY_GROUPS.filter(([cat]) => dayPlayGroups[cat] && dayPlayGroups[cat].length);
+    if (!groups.length) return '';
+    if (!groups.some(([cat]) => cat === dayPlaysCat)) dayPlaysCat = groups[0][0];
+    const toggle = groups.map(([cat, label]) =>
+      `<button type="button" class="view-toggle-btn dp-cat${cat === dayPlaysCat ? ' active' : ''}" data-cat="${cat}">${label}</button>`).join('');
+    return `
+      <div class="dy-sec dy-plays">
+        <div class="pp-skg-head dp-head"><span>Top Plays</span><div class="view-toggle">${toggle}</div></div>
+        ${renderDayPlayCards(dayPlayGroups[dayPlaysCat])}
+      </div>`;
+  }
+
+  function renderDayPlays() {
+    if (DAY_PLAYS_TABS) return renderDayPlaysTabs();
+    const groups = DAY_PLAY_GROUPS.filter(([cat]) => dayPlayGroups[cat] && dayPlayGroups[cat].length);
+    if (!groups.length) return '';
     return `
       <div class="dy-sec">
         <div class="pp-skg-head"><span>Top Plays</span></div>
-        <div class="dp-row">${plays.map(c => `
-          <button type="button" class="dp" data-day-clip="${dayClipKey(c)}">
-            <span class="dp-thumb"><img src="${c.thumb}" alt="" loading="lazy"><span class="dp-play">&#9654;</span></span>
-            <span class="dp-title">${c.title}</span>
-            <span class="dp-meta">${c.matchup}${c.tag ? ` &#183; <b>${c.tag}</b>` : ''}</span>
-          </button>`).join('')}
-        </div>
+        ${groups.map(([cat, label]) => `
+          <div class="dp-group">
+            <div class="dp-group-name">${label}</div>
+            ${renderDayPlayCards(dayPlayGroups[cat])}
+          </div>`).join('')}
       </div>`;
   }
 
@@ -6864,9 +6895,11 @@
     const homeRuns = stats.flatMap(s => s.homeRuns);
     const starts = stats.flatMap(s => s.starts);
     // At most two clips a game, so one wild game can't fill the row.
-    const plays = pickDayPlays(games.flatMap(g => (media[g.gamePk]
-      ? weighDayPlays(media[g.gamePk].plays, (statsByPk[g.gamePk] || {}).keyPlays || [], (wpaByPk && wpaByPk[g.gamePk]) || {})
-      : [])));
+    const clips = games.flatMap(g => (media[g.gamePk]
+      ? weighDayPlays(media[g.gamePk].plays, (statsByPk[g.gamePk] || {}).keyPlays || [], (wpaByPk && wpaByPk[g.gamePk]) || {}, starts)
+      : []));
+    dayPlayGroups = {};
+    DAY_PLAY_GROUPS.forEach(([cat]) => { dayPlayGroups[cat] = pickDayPlays(clips, cat, DAY_PLAYS_TABS ? DAY_PLAYS_PER_ROW * 2 : DAY_PLAYS_PER_ROW); });
     const finals = games.filter(g => g.status.abstractGameState === 'Final').length;
     const when = new Date(`${dateStr}T12:00:00`).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
     const meta = [`${games.length} game${games.length === 1 ? '' : 's'}`, finals && finals < games.length ? `${finals} final` : '', homeRuns.length ? `${homeRuns.length} HR` : ''].filter(Boolean).join(' &#183; ');
@@ -6881,7 +6914,7 @@
           ${renderDayHomeRuns(homeRuns, season)}
           <div class="dy-side">${renderDayStarts(starts, season)}</div>
         </div>
-        ${renderDayPlays(plays)}
+        ${renderDayPlays()}
       </div>`;
   }
 
@@ -6968,6 +7001,14 @@
     if (clipBtn) {
       const clip = dayClips[clipBtn.dataset.dayClip];
       if (clip) showClipModal(null, { head: `<div class="cv-head"><span class="cv-result">${clip.matchup}</span></div>`, clip });
+      return;
+    }
+    const catBtn = e.target.closest('.dp-cat');
+    if (catBtn) {
+      if (catBtn.dataset.cat === dayPlaysCat) return;
+      dayPlaysCat = catBtn.dataset.cat;
+      const sec = dailyBody.querySelector('.dy-plays');
+      if (sec) sec.outerHTML = renderDayPlaysTabs();
       return;
     }
     const more = e.target.closest('.dy-more');
