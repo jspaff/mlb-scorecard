@@ -1706,9 +1706,10 @@
   .dcf-tg-row { display: flex; align-items: center; gap: 10px; margin: -4px 0 14px; }
   .dcf-tg-row .dc-style-tg { margin: 0; }
   .dcf-tg-label { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
-  /* On Field: where a starter also backs up, a soft line under his plate. */
-  .dcf-tag { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 8.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; line-height: 1.1; }
-  @container (min-width: 520px) { .dcf-tag { font-size: 9.5px; } }
+  /* On Field: the other spots a starter backs up follow his own position,
+     in Faded Cream so his own spot still leads in gold trim. */
+  .dcf-pos { white-space: nowrap; }
+  .dcf-pos-also { color: var(--ink-soft); font-weight: 700; }
   /* Cards: the Alsos follow the bench, a size down and softer, so the
      bench proper still reads first. */
   .dcf-rot.is-also .dcf-print { width: 40px; opacity: 0.85; }
@@ -6999,8 +7000,8 @@
   // the bench as players with the spots each covers, then the staff.
   // Everyone on it gets a photo. MOCKUP: four ways to show the starters
   // who also back up elsewhere (the "Also"s), switched by
-  // teamTab.depthStyle until one is picked -- 'tags' (a line under the
-  // starter on the field), 'cards' (smaller photo cards after the bench),
+  // teamTab.depthStyle until one is picked -- 'tags' (his other spots
+  // beside his position on the field), 'cards' (smaller photo cards after the bench),
   // 'line' (a row of plates under the bench) and 'grid' (the bench and
   // Alsos as a coverage chart, a column per position).
   // [position, scoring number, x%, y%] -- spots on the drawn field, the
@@ -7070,9 +7071,8 @@
       const covers = style === 'tags' && starter && alsoById.get(starter.id);
       return `<div class="dcf-spot" style="left:${x}%; top:${y}%">
           ${starter ? depthPrint(starter) : '<span class="dcf-print is-empty"></span>'}
-          <span class="dcf-pos">${pos}</span>
+          <span class="dcf-pos">${pos}${covers ? `<span class="dcf-pos-also">${covers.map(c => ` &#183; ${c}`).join('')}</span>` : ''}</span>
           ${starter ? depthPlate(starter) : ''}
-          ${covers ? `<span class="dcf-tag">also ${covers.join(' &#183; ')}</span>` : ''}
         </div>`;
     }).join('');
 
