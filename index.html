@@ -1174,7 +1174,13 @@
   .ds-who { display: flex; align-items: center; min-width: 0; max-width: 100%; }
   .ds-sub { display: flex; align-items: baseline; gap: 10px; padding-left: 24px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10px; color: var(--ink-soft); }
   .ds-watch { margin: 0; }
-  @media (max-width: 420px) { .ds-who .player-name-btn { font-size: 10px; padding: 2px 5px; } }
+  /* A phone's table gives a long name its short form ("S. McClanahan"). */
+  .ds-short { display: none; }
+  @media (max-width: 420px) {
+    .ds-who .player-name-btn { font-size: 10px; padding: 2px 5px; }
+    .ds-full { display: none; }
+    .ds-short { display: inline; }
+  }
   .dh-who .player-name-btn { min-width: 0; }
   .dh-team, .dh-count { flex: none; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10px; color: var(--ink-soft); white-space: nowrap; }
   .ds-name .dh-team { margin-left: 6px; }
@@ -1210,18 +1216,21 @@
   .vc-who { display: flex; align-items: center; justify-content: center; min-width: 0; padding: 9% 0 9% 14%; }
   .vc-photo { height: 100%; aspect-ratio: 4 / 5; width: auto; max-width: 100%; object-fit: cover; object-position: center 18%; display: block; border: 2px solid var(--ink); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45); background: var(--paper-line); }
   .vc-play-side { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4%; min-width: 0; padding: 4% 0; }
-  .vc-where { display: flex; align-items: center; gap: 5px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; }
-  .vc-where img { width: 14px; height: 14px; }
+  .vc-where { display: flex; align-items: center; gap: 6px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); white-space: nowrap; }
+  .vc-where img { width: 19px; height: 19px; }
   .vc-where b { font-weight: inherit; opacity: 0.6; }
   .vc-dia { position: relative; height: 66%; aspect-ratio: 1; }
   .vc-dia svg { width: 100%; height: 100%; display: block; }
-  .vc-dia .pp-rc-rbi { top: 2%; left: 0; }
-  .vc-play { position: absolute; right: 6px; bottom: 6px; display: flex; align-items: center; justify-content: center; }
+  /* RBI dots in the Game Log's proportion to the diamond (5px on 46px). */
+  .vc-dia .pp-rc-rbi { top: 4%; left: 2%; gap: 3%; width: 100%; }
+  .vc-dia .pp-rc-rbi i { width: 11%; height: auto; aspect-ratio: 1; }
+  .vc-play { position: absolute; right: 8px; bottom: 8px; display: flex; align-items: center; justify-content: center; width: 36px; height: 27px; font-size: 13px; }
   .vc:hover .vc-play, .vc:focus-visible .vc-play { border-color: var(--gold); }
   @container (max-width: 250px) {
-    .vc-where { font-size: 8px; gap: 3px; }
-    .vc-where img { width: 12px; height: 12px; }
-    .vc-play { right: 4px; bottom: 4px; transform: scale(0.85); transform-origin: bottom right; }
+    .vc-where { font-size: 10px; gap: 4px; }
+    .vc-where img { width: 15px; height: 15px; }
+    .vc-play { right: 6px; bottom: 6px; width: 30px; height: 23px; font-size: 11px; }
+    .vc-dia { height: 58%; }
   }
   .vc-kicker { padding: 0 2px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); }
   .vc-kicker em { font-style: normal; font-weight: 700; letter-spacing: 0.02em; color: var(--ink-soft); }
@@ -1232,11 +1241,11 @@
   /* A row of videos in a section: swiped on a phone, a grid when wide. */
   .dp-row { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(200px, 62%); gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; }
   .dp-row + .dy-hr, .dp-row + .ds-table { margin-top: 10px; }
-  /* The section's list under its videos: the homers two columns wide and
-     the starts at a box score's width on a wide sheet. */
+  /* Out of the Park and On the Mound: stacked on a phone, side by side
+     on a wide sheet. */
+  .dy-pair { min-width: 0; }
   @container (min-width: 940px) {
-    .dy-hr-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 36px; }
-    .ds-table { max-width: 640px; }
+    .dy-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 40px; align-items: start; }
   }
   @container (min-width: 940px) {
     .dp-row { grid-auto-flow: row; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-columns: auto; overflow: visible; }
@@ -6856,7 +6865,7 @@
       return `
         <div class="ds-row">
           <span class="ds-name">
-            <span class="ds-who"><img class="dh-cap" src="${capLogoUrl(p.teamId)}" alt=""><button type="button" class="player-name-btn" data-player-id="${p.id}">${p.name}</button></span>
+            <span class="ds-who"><img class="dh-cap" src="${capLogoUrl(p.teamId)}" alt=""><button type="button" class="player-name-btn" data-player-id="${p.id}" title="${p.name}"><span class="ds-full">${p.name}</span><span class="ds-short">${shortPlayerName(p.name)}</span></button></span>
             <span class="ds-sub">${p.isHome ? 'vs' : '@'} ${p.oppAbbr}${reels[p.id] ? `<button type="button" class="dh-watch ds-watch" data-day-clip="${dayVideoKey({ clip: reels[p.id] })}">Watch &#9654;</button>` : ''}</span>
           </span>
           <span>${p.ip}</span><span>${blank(p.h)}</span><span${p.er ? '' : ' class="is-zero"'}>${p.er}</span><span${p.bb ? '' : ' class="is-zero"'}>${p.bb}</span><span>${blank(p.k)}</span><span class="ds-gs">${p.gameScore}</span>
@@ -6870,9 +6879,10 @@
   }
 
   // ---- What to watch ----
-  // Big Moments (the plays that swung games most, by WPA) and Defense
-  // (MLB's own defense clips, its "wow" ones first) are rows of videos;
-  // Home Runs and On the Mound are tables with a Watch link a row.
+  // Clutch Plays (the plays that swung games most, by WPA) and Web Gems
+  // (MLB's own defense clips, its "wow" ones first) are rows
+  // of videos; Out of the Park (home runs) and On the Mound are tables
+  // with a Watch link a row, side by side on a wide sheet.
   // A play plays MLB's clip of it when there is one (photo, headline);
   // otherwise Savant's clip of that pitch, on a scorebook card instead of
   // a photo -- MLB keeps only ten clips a game, and a big double can miss
@@ -7062,10 +7072,12 @@
           <div class="pp-skg-head"><span>Scores</span></div>
           <div class="dg-grid">${games.map(g => renderDayGame(g, media[g.gamePk])).join('')}</div>
         </div>
-        ${renderVideoSection('Big Moments', sec.moments)}
-        ${renderVideoSection('Home Runs', [], { note: homeRuns.length || '', body: renderDayHomeRuns(homeRuns, season, dayData.wpaByPk) })}
-        ${renderVideoSection('On the Mound', [], { body: renderDayStarts(starts, season, sec.reels) })}
-        ${renderVideoSection('Defense', sec.defense)}
+        ${renderVideoSection('Clutch Plays', sec.moments)}
+        <div class="dy-pair">
+          ${renderVideoSection('Out of the Park', [], { note: homeRuns.length || '', body: renderDayHomeRuns(homeRuns, season, dayData.wpaByPk) })}
+          ${renderVideoSection('On the Mound', [], { body: renderDayStarts(starts, season, sec.reels) })}
+        </div>
+        ${renderVideoSection('Web Gems', sec.defense)}
       </div>`;
   }
 
