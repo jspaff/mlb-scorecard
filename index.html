@@ -1116,25 +1116,30 @@
   .dy-pair { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0 36px; }
   .dy-side { min-width: 0; }
 
-  /* Scores */
-  .dg-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-  .dg { position: relative; display: flex; flex-direction: column; min-width: 0; padding: 7px 8px 8px; background: rgba(0, 0, 0, 0.14); border: 1px solid var(--paper-line); cursor: pointer; }
-  .dg:hover { border-color: var(--ink-soft); }
+  /* Scores: two lines a game, like a paper's agate -- the line score,
+     then the recap headline. One column on a phone, more on a wide sheet. */
+  .dg-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0 28px; }
+  .dg { min-width: 0; padding: 5px 4px 6px; margin: 0 -4px; border-bottom: 1px dashed var(--paper-line); cursor: pointer; }
+  .dg:hover { background: rgba(243, 236, 219, 0.05); }
   .dg:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
-  .dg.is-live { border-color: var(--lamp-green, #3fae56); }
-  .dg-state { margin-bottom: 3px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
-  .dg.is-live .dg-state { color: var(--ink); }
-  .dg-team { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; align-items: center; gap: 6px; padding: 1px 0; }
-  .dg-team img { width: 18px; height: 18px; }
-  .dg-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 15px; color: var(--ink); }
-  .dg-score { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 17px; color: var(--ink); font-variant-numeric: tabular-nums; }
-  .dg-team.is-lost .dg-name, .dg-team.is-lost .dg-score { color: var(--ink-soft); font-weight: 400; }
-  .dg-dec { display: flex; flex-wrap: wrap; gap: 0 8px; margin-top: 5px; font-family: 'Overpass', sans-serif; font-weight: 600; font-size: 10px; color: var(--ink-soft); }
-  .dg-dec b { font-weight: 800; color: var(--ink); }
-  .dg-story { margin-top: 6px; font-family: 'Inter', sans-serif; font-size: 11.5px; line-height: 1.35; color: var(--ink); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .dg-recap, .dh-watch, .dy-more {
-    align-self: flex-start;
-    margin-top: 5px;
+  .dg-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .dg.is-my-team { background: rgba(217, 169, 26, 0.13); }
+  .dg-abbr { width: 30px; }
+  .dg-side { display: inline-flex; align-items: center; gap: 5px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11.5px; color: var(--ink); white-space: nowrap; }
+  .dg-side img { width: 16px; height: 16px; }
+  .dg-side b { width: 20px; margin-left: 0; font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 16px; text-align: right; font-variant-numeric: tabular-nums; }
+  .dg-side.is-lost { color: var(--ink-soft); }
+  .dg-side.is-lost b { font-weight: 400; }
+  .dg-at { width: 14px; text-align: center; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 9.5px; color: var(--ink-soft); }
+  .dg-state { margin-left: auto; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; }
+  .dg.is-live .dg-state { color: #3fae56; }
+  .dg-recap { flex: none; width: 24px; height: 20px; padding: 0; background: rgba(0, 0, 0, 0.22); border: 1px solid var(--paper-line); font-size: 9px; line-height: 1; color: var(--gold); cursor: pointer; }
+  .dg-recap:hover, .dg-recap:focus-visible { border-color: var(--gold); }
+  .dg-recap.is-none { background: none; border-color: transparent; }
+  .dg-story { margin-top: 2px; padding-left: 21px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: 'Inter', sans-serif; font-size: 11.5px; line-height: 1.35; color: var(--ink-soft); }
+  .dh-watch, .dy-more {
+    align-self: flex-end;
+    margin-top: 2px;
     padding: 0;
     background: none;
     border: 0;
@@ -1147,27 +1152,20 @@
     text-decoration: none;
     cursor: pointer;
   }
-  .dg-recap:hover, .dh-watch:hover { text-decoration: underline; }
-  @container (min-width: 620px) { .dg-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-  @container (min-width: 940px) { .dg-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } .dy-title { font-size: 30px; } }
+  .dh-watch:hover { text-decoration: underline; }
+  @container (min-width: 620px) { .dg-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @container (min-width: 940px) { .dg-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .dy-title { font-size: 30px; } }
 
-  /* Home runs: the field, then the longest first */
-  .hrf { max-width: 420px; margin: 0 auto 6px; }
-  .hrf svg { overflow: visible; }
-  .hrf-dot { cursor: pointer; }
-  .hrf-halo { fill: #c98a12; opacity: 0.22; transition: opacity 0.15s; }
-  .hrf-core { fill: #fff8ea; stroke: #c98a12; stroke-width: 1.1; }
-  .hrf-dot.is-gold .hrf-core { fill: var(--gold); stroke: var(--gold); }
-  .hrf-dot:hover .hrf-halo { opacity: 0.45; }
-  .hrf-dots:has(.is-picked) .hrf-dot:not(.is-picked) { opacity: 0.3; }
-  .hrf-dot.is-picked .hrf-halo { opacity: 0.6; }
-  .hrf-dot.is-picked .hrf-core { stroke: var(--ink); stroke-width: 1.4; }
-  .dh { display: flex; align-items: flex-start; gap: 10px; padding: 7px 6px; margin: 0 -6px; border-bottom: 1px dashed var(--paper-line); cursor: pointer; }
+  /* Home runs, longest first */
+  .dh { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; border-bottom: 1px dashed var(--paper-line); }
   .dh.is-extra { display: none; }
   .dy-hr.is-open .dh.is-extra { display: flex; }
-  .dh.is-picked { background: rgba(217, 169, 26, 0.13); }
   .dh-main { flex: 1; min-width: 0; }
   .dh-who { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .dh-cap { width: 18px; height: 18px; flex: none; }
+  .dh-context { padding-left: 24px; }
+  .ds-name .dh-cap { margin-right: 6px; }
+  .ds-row .is-zero { color: var(--ink); }
   .dh-who .player-name-btn { min-width: 0; }
   .dh-team, .dh-count { flex: none; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10px; color: var(--ink-soft); white-space: nowrap; }
   .ds-name .dh-team { margin-left: 6px; }
@@ -1192,17 +1190,20 @@
 
   /* Top plays: video cards, swiped on a phone, in a grid on a wide sheet */
   .dp-row { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(200px, 62%); gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; }
-  .dp { display: flex; flex-direction: column; gap: 5px; min-width: 0; padding: 0; background: none; border: 0; text-align: left; color: var(--ink); cursor: pointer; scroll-snap-align: start; }
-  .dp-thumb { position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden; background: var(--paper-line); border: 1px solid var(--paper-line); }
+  /* Each clip a framed card: a darker board wash and rule around the
+     still, so a photo never sits raw on the sheet. */
+  .dp { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 6px 6px 8px; background: rgba(0, 0, 0, 0.18); border: 1px solid var(--paper-line); text-align: left; color: var(--ink); cursor: pointer; scroll-snap-align: start; }
+  .dp-title, .dp-meta { padding: 0 2px; }
+  .dp-thumb { position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden; background: var(--paper-line); border: 1px solid rgba(243, 236, 219, 0.35); }
   .dp-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .dp-play { position: absolute; left: 6px; bottom: 6px; padding: 2px 6px 1px; background: rgba(27, 32, 25, 0.82); font-size: 10px; color: var(--ink); }
-  .dp:hover .dp-thumb, .dp:focus-visible .dp-thumb { border-color: var(--gold); }
+  .dp:hover, .dp:focus-visible { border-color: var(--gold); }
   .dp:focus-visible { outline: none; }
   .dp-title { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 13.5px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .dp-meta { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 9.5px; color: var(--ink-soft); }
   @container (min-width: 940px) {
     .dy-pair { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
-    .dp-row { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-columns: auto; overflow: visible; }
+    .dp-row { grid-auto-flow: row; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-columns: auto; overflow: visible; }
   }
 
 
@@ -6622,27 +6623,25 @@
     return { label: formatGameTime(t.gameDate), started: false };
   }
 
+  // One game in two lines: the score and its state, then MLB's recap
+  // headline, whose video the play mark at the end of the row runs.
   function renderDayGame(g, media) {
-    const s = dayGameState(g);
+    const st = dayGameState(g);
     const a = g.teams.away, h = g.teams.home;
-    const aWon = s.final && a.score > h.score;
-    const hWon = s.final && h.score > a.score;
-    const row = (t, won) => `
-      <div class="dg-team${s.final ? (won ? ' is-won' : ' is-lost') : ''}">
-        <img src="${capLogoUrl(t.team.id)}" alt="">
-        <span class="dg-name">${teamNickname(t.team)}</span>
-        <span class="dg-score">${s.started ? (t.score ?? 0) : ''}</span>
-      </div>`;
-    const d = g.decisions || {};
-    const dec = [['W', d.winner], ['L', d.loser], ['S', d.save]].filter(([, p]) => p)
-      .map(([k, p]) => `<span><b>${k}</b> ${shortPlayerName(p.fullName)}</span>`).join('');
+    const side = (t, other) => {
+      const lost = st.final && t.score < other.score;
+      return `<span class="dg-side${lost ? ' is-lost' : ''}"><img src="${capLogoUrl(t.team.id)}" alt=""><span class="dg-abbr">${teamAbbr(t.team)}</span><b>${st.started ? (t.score ?? 0) : ''}</b></span>`;
+    };
     const recap = media && media.recap;
+    const mine = myTeamId() && (a.team.id === myTeamId() || h.team.id === myTeamId());
     return `
-      <div class="dg${s.live ? ' is-live' : ''}" data-date="${g.officialDate}" data-game-pk="${g.gamePk}" tabindex="0" role="button">
-        <div class="dg-state">${s.label}</div>
-        ${row(a, aWon)}${row(h, hWon)}
-        ${dec ? `<div class="dg-dec">${dec}</div>` : ''}
-        ${recap ? `<div class="dg-story">${recap.title}</div><button type="button" class="dg-recap" data-day-clip="${dayClipKey(recap)}">Recap &#9654;</button>` : ''}
+      <div class="dg${st.live ? ' is-live' : ''}${mine ? ' is-my-team' : ''}" data-date="${g.officialDate}" data-game-pk="${g.gamePk}" tabindex="0" role="button">
+        <div class="dg-line">
+          ${side(a, h)}<span class="dg-at">@</span>${side(h, a)}
+          <span class="dg-state">${st.label}</span>
+          ${recap ? `<button type="button" class="dg-recap" data-day-clip="${dayClipKey(recap)}" aria-label="Recap video" title="Recap">&#9654;</button>` : '<span class="dg-recap is-none"></span>'}
+        </div>
+        ${recap ? `<div class="dg-story">${recap.title}</div>` : ''}
       </div>`;
   }
 
@@ -6656,11 +6655,11 @@
     const context = [`vs ${shortPlayerName(hr.pitcherName)}`, inning, kind, ev].filter(Boolean).join(' &#183; ');
     const watch = hr.videoUrl ? `<a class="dh-watch" ${clipWatchAttrs(hr.videoUrl, `Home Run &#183; ${hr.batterName}`)}>Watch &#9654;</a>` : '';
     return `
-      <div class="dh${gold ? ' is-gold' : ''}${i >= DAY_HR_SHOWN ? ' is-extra' : ''}" data-hr="${i}">
+      <div class="dh${gold ? ' is-gold' : ''}${i >= DAY_HR_SHOWN ? ' is-extra' : ''}">
         <div class="dh-main">
           <div class="dh-who">
+            <img class="dh-cap" src="${capLogoUrl(hr.battingTeamId)}" alt="">
             <button type="button" class="player-name-btn" data-player-id="${hr.batterId || ''}">${hr.batterName}</button>
-            <span class="dh-team">${hr.battingAbbr}</span>
             ${hr.seasonCount ? `<span class="dh-count">No. ${hr.seasonCount}</span>` : ''}
           </div>
           <div class="dh-context">${tag ? `<span class="dh-tag${gold ? ' is-gold' : ''}">${tag}</span> &#183; ` : ''}${context}</div>
@@ -6675,17 +6674,11 @@
   function renderDayHomeRuns(homeRuns, season) {
     if (!homeRuns.length) return `<div class="dy-sec"><div class="pp-skg-head"><span>Home Runs</span></div><div class="dy-empty">None yet.</div></div>`;
     const sorted = homeRuns.slice().sort((a, b) => (b.distance || 0) - (a.distance || 0));
-    const field = renderBattedBallFieldSVG([], { viewBox: '-4 0 259 206' }).replace('</svg>',
-      `<g class="hrf-dots">${sorted.map((hr, i) => hr.x == null || hr.y == null ? '' :
-        `<g class="hrf-dot${hr.impact === 'walkoff' || hr.isGrandSlam ? ' is-gold' : ''}" data-hr="${i}"><circle class="hrf-halo" cx="${hr.x}" cy="${hr.y}" r="6"/><circle class="hrf-core" cx="${hr.x}" cy="${hr.y}" r="2.6"/></g>`).join('')}</g></svg>`);
     const more = sorted.length > DAY_HR_SHOWN ? `<button type="button" class="dy-more" data-more="All ${sorted.length}" data-less="Top ${DAY_HR_SHOWN}">All ${sorted.length}</button>` : '';
     return `
       <div class="dy-sec dy-hr">
         <div class="pp-skg-head"><span>Home Runs</span><em>${sorted.length}</em></div>
-        <div class="dy-hr-layout">
-          <div class="hrf">${field}</div>
-          <div class="dy-hr-list">${sorted.map((hr, i) => renderDayHomeRun(hr, i, season)).join('')}${more}</div>
-        </div>
+        <div class="dy-hr-list">${sorted.map((hr, i) => renderDayHomeRun(hr, i, season)).join('')}${more}</div>
       </div>`;
   }
 
@@ -6693,12 +6686,14 @@
     if (!starts.length) return '';
     const top = starts.slice().sort((a, b) => b.gameScore - a.gameScore).slice(0, DAY_STARTS_SHOWN);
     const blank = v => (v ? v : '');
+    // A zero earned runs or walks is the point of the line, so those two
+    // keep their zeros.
     const rows = top.map(p => {
       storeTeamPlayer(p.id, p.name, 'P', p.teamId, season);
       return `
         <div class="ds-row">
-          <span class="ds-name"><button type="button" class="player-name-btn" data-player-id="${p.id}">${p.name}</button><span class="dh-team">${p.teamAbbr} ${p.isHome ? 'vs' : '@'} ${p.oppAbbr}</span></span>
-          <span>${p.ip}</span><span>${blank(p.h)}</span><span>${blank(p.er)}</span><span>${blank(p.bb)}</span><span>${blank(p.k)}</span><span class="ds-gs">${p.gameScore}</span>
+          <span class="ds-name"><img class="dh-cap" src="${capLogoUrl(p.teamId)}" alt=""><button type="button" class="player-name-btn" data-player-id="${p.id}">${p.name}</button><span class="dh-team">${p.isHome ? 'vs' : '@'} ${p.oppAbbr}</span></span>
+          <span>${p.ip}</span><span>${blank(p.h)}</span><span${p.er ? '' : ' class="is-zero"'}>${p.er}</span><span${p.bb ? '' : ' class="is-zero"'}>${p.bb}</span><span>${blank(p.k)}</span><span class="ds-gs">${p.gameScore}</span>
         </div>`;
     }).join('');
     return `
@@ -6748,11 +6743,9 @@
         </div>
         <div class="dy-pair">
           ${renderDayHomeRuns(homeRuns, season)}
-          <div class="dy-side">
-            ${renderDayStarts(starts, season)}
-            ${renderDayPlays(plays)}
-          </div>
+          <div class="dy-side">${renderDayStarts(starts, season)}</div>
         </div>
+        ${renderDayPlays(plays)}
       </div>`;
   }
 
@@ -6772,7 +6765,7 @@
     if (!isPoll) dailyBody.innerHTML = '<div class="mlb-status-msg">Loading the day&#8217;s games&#8230;</div>';
     try {
       const withMedia = !isPoll || Date.now() - dayMediaAt > DAY_MEDIA_TTL_MS;
-      const hydrate = `linescore,decisions${withMedia ? ',game(content(highlights(highlights)))' : ''}`;
+      const hydrate = `linescore${withMedia ? ',game(content(highlights(highlights)))' : ''}`;
       const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}&hydrate=${hydrate}`);
       const data = await res.json();
       const games = (data.dates && data.dates[0] && data.dates[0].games) || [];
@@ -6843,27 +6836,6 @@
       return;
     }
     if (e.target.closest('a, button')) return;
-    // A dot picks its row and a row its dot; picking a dot for a row past
-    // the first few opens the full list.
-    const hit = e.target.closest('[data-hr]');
-    if (hit) {
-      const idx = hit.dataset.hr;
-      const already = hit.classList.contains('is-picked');
-      dailyBody.querySelectorAll('[data-hr].is-picked').forEach(el => el.classList.remove('is-picked'));
-      if (already) return;
-      dailyBody.querySelectorAll(`[data-hr="${idx}"]`).forEach(el => el.classList.add('is-picked'));
-      if (hit.classList.contains('hrf-dot')) {
-        const row = dailyBody.querySelector(`.dh[data-hr="${idx}"]`);
-        if (row && row.classList.contains('is-extra')) {
-          const sec = row.closest('.dy-hr');
-          sec.classList.add('is-open');
-          const btn = sec.querySelector('.dy-more');
-          if (btn) btn.textContent = btn.dataset.less;
-        }
-        if (row) row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-      }
-      return;
-    }
     const game = e.target.closest('.dg');
     if (game) jumpToScorecardGame(game.dataset.date, Number(game.dataset.gamePk));
   });
