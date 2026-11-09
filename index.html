@@ -1206,35 +1206,39 @@
   .vc-thumb { position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden; margin-bottom: 2px; background: var(--paper-line); border: 1px solid var(--paper-line); }
   .vc-thumb > img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .vc { container-type: inline-size; }
+  /* One ruled grid: the gap is the rule, so every line is the same
+     hairline, as on the scorecard. */
   .vc-card {
     position: absolute; inset: 0;
-    display: grid; grid-template-columns: 27% 37% minmax(0, 1fr); align-items: center; gap: 0 5%;
-    padding: 0 7% 0 6%;
-    background: var(--paper);
-    background-image: linear-gradient(90deg, transparent 0, transparent calc(6% + 27% + 2.5%), rgba(243, 236, 219, 0.07) calc(6% + 27% + 2.5%), rgba(243, 236, 219, 0.07) calc(6% + 27% + 2.5% + 1px), transparent calc(6% + 27% + 2.5% + 1px));
+    display: grid; grid-template-columns: 30% minmax(0, 1fr) 30%; grid-template-rows: 20% minmax(0, 1fr);
+    gap: 1px; background: var(--paper-line);
   }
-  .vc-who { position: relative; }
-  .vc-who .dcf-print { width: 100%; }
-  .vc-cap { position: absolute; right: -6px; bottom: -6px; width: 22%; min-width: 16px; max-width: 24px; height: auto; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6)); }
-  /* The scorecard cell: a ruled box, the inning heading it. */
-  .vc-cell { display: flex; flex-direction: column; border: 1px solid var(--paper-line); background: rgba(0, 0, 0, 0.18); }
-  .vc-cell-inn { padding: 2px 0 1px; border-bottom: 1px solid var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; text-align: center; color: var(--ink-soft); }
-  .vc-dia { position: relative; display: block; padding: 6%; }
-  .vc-dia svg { width: 100%; height: auto; display: block; }
-  .vc-dia .pp-rc-rbi { top: 5%; left: 5%; }
-  .vc-facts { display: flex; flex-direction: column; gap: 8px; min-width: 0; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 14px; line-height: 1.1; color: var(--ink); white-space: nowrap; }
-  .vc-facts span { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-  .vc-facts i { display: block; }
-  .vc-facts b { font-weight: inherit; }
+  .vc-c { display: flex; align-items: center; justify-content: center; min-width: 0; min-height: 0; overflow: hidden; background: var(--paper); }
+  .vc-h { gap: 5px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); white-space: nowrap; }
+  .vc-h i { font-style: normal; color: var(--ink-soft); }
+  .vc-team img { width: 15px; height: 15px; }
+  .vc-who { align-items: flex-end; }
+  .vc-photo { width: 100%; height: 100%; object-fit: cover; object-position: center 20%; display: block; }
+  .vc-cell { background: #343b30; }
+  .vc-dia { position: relative; height: 84%; aspect-ratio: 1; }
+  .vc-dia svg { width: 100%; height: 100%; display: block; }
+  .vc-dia .pp-rc-rbi { top: 2%; left: 0; }
+  .vc-pitchcell { position: relative; flex-direction: column; gap: 2px; }
+  .vc-mph { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 30px; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .vc-pitch { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; }
+  .vc-pitch b { font-weight: inherit; }
   .vc-pitch-code { display: none; }
-  .vc-facts i { font-style: normal; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 1px; }
+  .vc-play { position: absolute; right: 6px; bottom: 6px; display: flex; align-items: center; justify-content: center; }
+  .vc:hover .vc-play, .vc:focus-visible .vc-play { border-color: var(--gold); }
   @container (max-width: 250px) {
-    .vc-card { grid-template-columns: 30% 44% minmax(0, 1fr); gap: 0 4%; padding: 0 5%; }
-    .vc-facts { font-size: 11px; gap: 5px; }
-    .vc-facts i { font-size: 7px; }
+    .vc-h { font-size: 8px; gap: 3px; letter-spacing: 0.05em; }
+    .vc-team img { width: 12px; height: 12px; }
+    .vc-mph { font-size: 22px; }
+    .vc-pitch { font-size: 7.5px; }
+    .vc-play { right: 4px; bottom: 4px; transform: scale(0.85); transform-origin: bottom right; }
   }
-  /* Where "Sweeper" won't fit beside the cell, the pitch's short code. */
-  @container (max-width: 360px) {
+  /* Where "Sweeper" won't fit, the pitch's short code. */
+  @container (max-width: 260px) {
     .vc-pitch-name { display: none; }
     .vc-pitch-code { display: inline; }
   }
@@ -7030,30 +7034,35 @@
   // for MLB's photos where it has them.
   const DAY_PHOTO_THUMBS = new URLSearchParams(location.search).get('thumbs') === 'photo';
 
-  // The still is a strip of the scorecard: the player's print in the name
-  // column, the play as its cell -- the inning heading the box, the
-  // diamond, an RBI dot a run -- and the count and pitch painted beside
-  // it. A clip with no play keeps the print and an empty cell.
+  // The still is a piece of the scorecard itself: one ruled grid, a head
+  // row over a body row. Heads: his team | the inning | the count. Body:
+  // his photo filling its cell | the play's diamond (an RBI dot a run) |
+  // the pitch -- speed big, its name painted under -- and the play mark,
+  // the same recessed square the score boxes use. A clip with no play
+  // keeps the grid with an empty cell.
   function renderScorebookStill(item) {
     const k = item.k;
-    const print = item.personId
-      ? `<span class="dcf-print"><img src="${headshotUrl(item.personId, 160)}" alt="" onerror="this.style.visibility='hidden'"></span>`
+    const team = item.teamId
+      ? `<img src="${capLogoUrl(item.teamId)}" alt="">${TEAM_ABBR[item.teamId] || ''}`
       : '';
-    const cap = item.teamId ? `<img class="vc-cap" src="${capLogoUrl(item.teamId)}" alt="">` : '';
+    const photo = item.personId
+      ? `<img class="vc-photo" src="${headshotUrl(item.personId, 240)}" alt="" onerror="this.style.visibility='hidden'">`
+      : '';
     const dots = k && k.rbi ? `<span class="pp-rc-rbi">${'<i></i>'.repeat(k.rbi)}</span>` : '';
     const diamond = k
       ? diamondSVG(k.reached, k.reached === 4, k.code, k.isOut, k.outEdge, null, false, k.calledLooking)
       : diamondSVG(0, false, '', false, null, null, false);
-    const facts = k ? `
-        <span class="vc-facts">
-          <span><i>Count</i>${k.count}</span>
-          ${k.pitchType ? `<span><i>Pitch</i>${k.pitchSpeed ? `${k.pitchSpeed} ` : ''}<b class="vc-pitch-name">${pitchName(k.pitchType)}</b><b class="vc-pitch-code">${pitchShort(k.pitchType)}</b></span>` : ''}
-        </span>` : '';
+    const pitch = k && k.pitchType
+      ? `<span class="vc-mph">${k.pitchSpeed || ''}</span><span class="vc-pitch"><b class="vc-pitch-name">${pitchName(k.pitchType)}</b><b class="vc-pitch-code">${pitchShort(k.pitchType)}</b></span>`
+      : '';
     return `
       <span class="vc-card">
-        <span class="vc-who">${print}${cap}</span>
-        <span class="vc-cell"><span class="vc-cell-inn">${k ? inningTag(k) : '&nbsp;'}</span><span class="vc-dia">${dots}${diamond}</span></span>
-        ${facts}
+        <span class="vc-c vc-h vc-team">${team}</span>
+        <span class="vc-c vc-h">${k ? inningTag(k) : ''}</span>
+        <span class="vc-c vc-h">${k ? `<i>Count</i>${k.count}` : ''}</span>
+        <span class="vc-c vc-who">${photo}</span>
+        <span class="vc-c vc-cell"><span class="vc-dia">${dots}${diamond}</span></span>
+        <span class="vc-c vc-pitchcell">${pitch}<span class="dg-recap vc-play">&#9654;</span></span>
       </span>`;
   }
 
@@ -7064,7 +7073,7 @@
       : renderScorebookStill(item);
     return `
       <button type="button" class="vc" data-day-clip="${dayVideoKey(item)}">
-        <span class="vc-thumb">${still}<span class="dp-play">&#9654;</span></span>
+        <span class="vc-thumb">${still}${DAY_PHOTO_THUMBS && item.clip && item.clip.thumb ? '<span class="dp-play">&#9654;</span>' : ''}</span>
         <span class="vc-kicker">${item.label || '&nbsp;'}${item.why ? ` <em>${item.why}</em>` : ''}</span>
         <span class="vc-title">${item.title}</span>
         <span class="dp-meta">${matchup}</span>
