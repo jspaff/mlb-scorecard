@@ -306,6 +306,24 @@ The Standings tab's Playoffs view, drawn like a printed bracket.
 - **Outcome:** a team that's out fades to Faded Cream. Only the World Series winner turns gold, with an award plate beneath ("2026 World Series Champions"). A series not yet set shows TBD rows.
 - **Older formats:** before 2022 the series are listed by round instead.
 
+### Team Overview
+The Team tab's Overview reads like the front page of a team's media guide.
+- **Head:** the cap, the nickname in Oswald, and one line under it: the season ("2026 Final"), the division place and games back, the streak while the season runs, and how October went ("Lost NLCS"). A champion gets an award plate ("2004 World Series Champions"), the one gold on the head.
+- **Record:** W, L, RD, Home, Away and L10 as plain totals (the Overview board's Totals type), never gold. Three across a phone, six across a wide sheet.
+- **Games over .500:** the win/loss chart, full width, drawn in its own wide proportions on a wide sheet rather than scaled up.
+- **Recent / Up Next:** one line per game, like a pocket schedule: date, vs/@ with the opponent's cap and nickname, then W or L and the score (or first pitch). W and L are both cream; a loss is just softer. The line opens the scorecard.
+
+### Team Stats
+Every player's line for the team, hitters then pitchers, in the Players list's table: nameplates, sortable heads (gold when sorted), and a "Team" totals row under a cream rule. Zero counts are blank. Stat columns keep a fixed compact width, so on a wide sheet they read as one block beside the names; on a phone the name column stays put while the stats scroll sideways.
+
+### Roster and Depth Chart
+- **Rows:** jersey number in gold trim, the nameplate, then B/T, season age and position in fixed right-aligned slots under painted heads. Pitchers split into Rotation (in order) and Bullpen (closer first, "CL"). Subgroup titles (Rotation, Catchers) start in line with the names, not the numbers.
+- **Depth chart:** the roster's first view, standing in for the 26-man. Everyone on it gets a photo, a small pinned print (2px cream border, the profile photo's 4:5), or nobody does.
+  - **Field:** the starters on a chalk-drawn field (faint fence, foul lines, infield cut and bases on the board), each a print over his position in gold trim and his nameplate. Any other spot he backs up follows his position in Faded Cream ("LF · CF"), so his own spot still leads. DH stands off the field by home. The field keeps one square shape, capped at 560px.
+  - **Bench:** players who start nowhere, as photo cards labelled with every spot they cover in scoring order ("1B · 2B · 3B · SS").
+  - **Staff:** the rotation numbered in order, then the bullpen with the closer first ("CL"), the rest "RP", all as photo cards.
+  - On a wide sheet the field sits left and bench, rotation and bullpen run down the right.
+
 ### Your Team
 The user's team is a cap in a fixed slot at the end of the tab row (a stitched ball when none is picked). Its rows in standings and the bracket get the chosen-segment gold wash (`rgba(217,169,26,0.13)`): trim marking the user's own focus, never a gold value.
 

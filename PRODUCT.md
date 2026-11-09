@@ -17,7 +17,7 @@ MLB Scorecard (installed as "Scorecard") is a personal MLB companion. It tells a
 - **Following a live game** on a phone, with the scorecard updating play by play.
 - **Catching up after** a finished game: its scorecard, highlights and box score.
 - **Digging into players:** leaderboards, profiles, game logs and splits.
-- **Tracking a team** through the season: schedule, standings and roster.
+- **Tracking a team** through the season: its record and results, schedule, leaders, roster and standings.
 
 Success is that it stays the app they reach for in those moments instead of the official MLB app or a stats site.
 
@@ -30,7 +30,7 @@ Success is that it stays the app they reach for in those moments instead of the 
 ## Operating Context
 
 - Used mostly on a phone as an installed home-screen app, often during a game. It is also used on desktop and tablet, and both must work well.
-- Six tabs: Scorecard, Highlights, Standings, Schedule, Roster, Players. Popups provide pitch detail, player quick-looks, game summaries, rosters, spray charts and team win/loss charts.
+- Five tabs: Scorecard, Highlights, Standings, Team, Players. Popups provide pitch detail, player quick-looks, game summaries, rosters, spray charts and team win/loss charts.
 - The phone's Back button behaves like an app's. It undoes the last drill-in (a player, a game opened from elsewhere, a popup) rather than leaving the app.
 
 ## Capabilities and Constraints

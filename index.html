@@ -1487,7 +1487,7 @@
   /* Stacked by default (narrow modal); once #rosterOverlay's .pitch-modal
      is wide enough (see its own max-width override below) position
      players and pitchers split into their own columns instead of one long
-     scroll. Named lineup-* rather than reusing the Roster tab's own
+     scroll. Named lineup-* rather than reusing the Team tab's roster
      .roster-columns/.roster-column (below) -- same-sounding but a
      different layout, so sharing the name would fight it. */
   .lineup-columns { display: flex; flex-direction: column; }
@@ -1538,10 +1538,8 @@
      empty background, while the fixed-width position column after it
      still lines up the same across every row. */
   .roster-name-col { flex: 1 1 auto; min-width: 0; }
-  /* Scoped to the roster modal rather than the shared .roster-pos rule
-     above -- that class is also used by the Roster tab's own rows (see
-     renderRosterRow), which this pass doesn't touch. Pitching rows in
-     the modal drop this column entirely (see bullpenRowsHtml). */
+  /* Pitching rows in the modal drop this column entirely (see
+     bullpenRowsHtml). */
   #rosterOverlay .roster-pos { flex: none; width: 28px; text-align: right; }
   .roster-empty {
     font-family: 'Inter', sans-serif;
@@ -1549,14 +1547,6 @@
     color: var(--ink-soft);
     font-style: italic;
     padding: 4px 0;
-  }
-  .roster-jersey {
-    font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 10.5px;
-    color: var(--ink-soft);
-    width: 26px;
-    flex-shrink: 0;
   }
   .roster-badge {
     font-family: 'Overpass', sans-serif;
@@ -1568,7 +1558,7 @@
     background: rgba(243, 236, 219, 0.08);
     border: 1px solid var(--paper-line);
     padding: 2px 6px;
-    border-radius: 3px;
+    border-radius: 0;
     white-space: nowrap;
   }
   .roster-badge.roster-badge-il { color: #fbf3e3; background: var(--brick); border-color: var(--brick); }
@@ -1584,6 +1574,134 @@
     margin: 10px 0 4px;
   }
   .roster-subgroup-title:first-child { margin-top: 0; }
+  /* Team tab. The sheet is its own container, so the Overview's pairs
+     and the roster's columns follow the sheet's width, not the screen's. */
+  .tm { container-type: inline-size; }
+  .tm-head { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+  .tm-cap { width: 52px; height: 52px; flex: none; }
+  .tm-id { min-width: 0; }
+  .tm-name { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 30px; line-height: 1.05; text-transform: uppercase; color: var(--ink); }
+  .tm-place { margin-top: 4px; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 15px; line-height: 1.3; color: var(--ink-soft); }
+  .tm-rec { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 8px; padding: 12px 0 14px; border-top: 1px solid var(--paper-line); border-bottom: 1px solid var(--paper-line); }
+  .tm-pair { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0 40px; }
+  .tm-col { min-width: 0; }
+  .tm-sec { margin-top: 20px; min-width: 0; }
+  .tm-chart-note { margin-top: 6px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10.5px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .tm-wide { display: none; }
+  @container (min-width: 700px) { .tm-wide { display: block; } .tm-narrow { display: none; } }
+  .tm-g {
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 6px 4px;
+    background: none;
+    border: 0;
+    border-bottom: 1px dashed var(--paper-line);
+    color: var(--ink);
+    text-align: left;
+    cursor: pointer;
+  }
+  .tm-g:hover { background: rgba(243, 236, 219, 0.06); }
+  .tm-g:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+  .tm-g-date { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .tm-g-opp { display: flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; white-space: nowrap; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 15px; }
+  .tm-g-opp img { width: 18px; height: 18px; flex: none; }
+  .tm-g-at { width: 16px; flex: none; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10px; color: var(--ink-soft); }
+  .tm-g-out { display: flex; align-items: baseline; gap: 6px; font-variant-numeric: tabular-nums; }
+  .tm-g-wl { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 11px; color: var(--ink); }
+  .tm-g-wl.is-loss { color: var(--ink-soft); }
+  .tm-g-score { min-width: 40px; text-align: right; font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 16px; }
+  .tm-g-when { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); }
+  @container (min-width: 700px) {
+    .tm-cap { width: 64px; height: 64px; }
+    .tm-name { font-size: 42px; }
+    .tm-place { font-size: 17px; }
+    .tm-rec { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+    .tm-rec .pp-tot-v { font-size: 32px; }
+  }
+  @container (min-width: 760px) {
+    .tm-pair { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  .pp-tabs.tm-roster-tabs { margin-top: -6px; }
+  .tm-roster-title { margin-bottom: 12px; }
+  .tm-stats:first-child { margin-top: 0; }
+  /* Stat columns at a fixed compact width, so on a wide sheet they read as
+     one block beside the names instead of spreading across the page. */
+  table.pitch-table.tm-stats-table { width: auto; }
+  table.tm-stats-table col:not(.plc-player) { width: var(--stat-col-min-w); }
+  table.tm-stats-table col.plc-player { width: 200px; }
+  @media (max-width: 520px) { table.tm-stats-table col.plc-player { width: 156px; } }
+  /* The name stays put while a phone scrolls the stats sideways. */
+  table.tm-stats-table th:first-child, table.tm-stats-table td:first-child { position: sticky; left: 0; z-index: 1; background: var(--paper); }
+  table.tm-stats-table tfoot td { border-top: 1px solid var(--ink); border-bottom: none; padding-top: 6px; }
+  .tm-stats-total { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
+  .tm-champs { margin-top: 8px; }
+
+  /* Roster rows: number, nameplate, then B/T, age and position in fixed
+     slots so every row's columns line up under the painted heads. */
+  .rr { display: grid; grid-template-columns: 24px minmax(0, 1fr) 30px 26px 26px; align-items: center; gap: 6px; padding: 4px 0; border-bottom: 1px dashed var(--paper-line); }
+  .rr-head { padding: 0 0 4px; border-bottom: 1px solid var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+  .rr-head span:nth-child(n+3) { text-align: right; }
+  .rr-num { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--gold); font-variant-numeric: tabular-nums; }
+  .rr-name { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .rr-name .player-name-btn { flex: 0 1 auto; min-width: 0; }
+  .rr-name .roster-badge { flex: none; }
+  .rr-d { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .rr-staff { grid-template-columns: 24px minmax(0, 1fr) 34px; }
+  .roster-column .pp-skg-head { margin-bottom: 8px; }
+  .tm .roster-columns { flex-direction: column; align-items: stretch; gap: 22px 0; }
+  .tm .roster-column { width: 100%; }
+  @container (min-width: 700px) {
+    .tm .roster-columns { flex-direction: row; align-items: flex-start; gap: 0 36px; }
+  }
+  .roster-column .rr-head + .roster-subgroup-title { margin-top: 8px; }
+  .roster-column .roster-subgroup-title { padding-left: 30px; }
+
+  .dc-none { color: var(--ink-soft); }
+
+  /* Depth chart: the starters on a chalk-drawn field, each a small
+     pinned print over his position and plate. The field keeps one shape
+     at every width, capped so it doesn't swallow a wide sheet. */
+  .dcf { position: relative; width: 100%; max-width: 560px; aspect-ratio: 1 / 1; margin: 0 auto 64px; }
+  .dcf-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0 36px; }
+  .dcf-side { min-width: 0; }
+  .dcf-side .tm-sec:first-child { margin-top: 0; }
+  @container (min-width: 900px) {
+    .dcf-layout { grid-template-columns: minmax(0, 560px) minmax(0, 1fr); align-items: start; }
+  }
+  .dcf-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .dcf-grass { fill: rgba(84, 121, 109, 0.16); }
+  .dcf-dirt { fill: rgba(243, 236, 219, 0.05); }
+  .dcf-fence { fill: none; stroke: var(--ink-soft); stroke-width: 0.5; vector-effect: non-scaling-stroke; opacity: 0.6; }
+  .dcf-line { fill: none; stroke: var(--ink); stroke-width: 1; vector-effect: non-scaling-stroke; opacity: 0.35; }
+  .dcf-mound { fill: rgba(243, 236, 219, 0.12); }
+  .dcf-base { fill: var(--ink); opacity: 0.7; }
+  .dcf-spot { position: absolute; transform: translate(-50%, -28%); display: flex; flex-direction: column; align-items: center; gap: 3px; width: 92px; }
+  .dcf-photo { padding: 0; border: 0; background: none; cursor: pointer; display: block; }
+  .dcf-print { display: block; width: 40px; aspect-ratio: 4 / 5; overflow: hidden; background: var(--paper-line); border: 2px solid var(--ink); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.45); }
+  .dcf-print img { width: 100%; height: 100%; object-fit: cover; object-position: center 18%; display: block; }
+  .dcf-print.is-empty { opacity: 0.35; box-shadow: none; }
+  .dcf-photo:hover .dcf-print, .dcf-photo:focus-visible .dcf-print { border-color: var(--gold); }
+  .dcf-photo:focus-visible { outline: none; }
+  .dcf-pos { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.1em; color: var(--gold); line-height: 1; margin-top: 1px; }
+  .dcf-spot .player-name-btn, .dcf-rot .player-name-btn { font-size: 9.5px; padding: 1px 5px; }
+  @container (min-width: 520px) {
+    .dcf-spot { width: 120px; }
+    .dcf-print { width: 58px; }
+    .dcf-spot .player-name-btn { font-size: 10.5px; padding: 2px 7px; }
+  }
+  .dcf-rotation { display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: 12px 8px; }
+  .dcf-rot { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
+  .dcf-rot .dcf-print { width: 52px; }
+  /* The other spots a starter backs up follow his own position, in
+     Faded Cream so his own spot still leads in gold trim. */
+  .dcf-pos { white-space: nowrap; }
+  .dcf-pos-also { color: var(--ink-soft); font-weight: 700; }
+
+  .il-head { margin-top: 4px; }
+  .il-head ~ .il-head { margin-top: 18px; }
   table.il-table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
   table.il-table col.il-col-num { width: 32px; }
   table.il-table col.il-col-name { width: 140px; }
@@ -3348,8 +3466,7 @@
       <button type="button" class="tab-btn active" data-tab="scorecard">Scorecard</button>
       <button type="button" class="tab-btn" data-tab="daily">Highlights</button>
       <button type="button" class="tab-btn" data-tab="standings">Standings</button>
-      <button type="button" class="tab-btn" data-tab="schedule">Schedule</button>
-      <button type="button" class="tab-btn" data-tab="roster">Roster</button>
+      <button type="button" class="tab-btn" data-tab="team">Team</button>
       <button type="button" class="tab-btn" data-tab="players">Players</button>
     </div>
     <label class="my-team" title="Your team">
@@ -3395,15 +3512,14 @@
         <button type="button" class="view-toggle-btn" data-view="postseason">Playoffs</button>
       </div>
     </div>
-    <div class="mlb-controls" data-tab-controls="schedule" hidden>
-      <select id="scheduleTeamPick"></select>
-    </div>
-    <div class="mlb-controls" data-tab-controls="roster" hidden>
-      <select id="rosterTabTeamPick"></select>
-      <div class="view-toggle" id="rosterTabViewToggle">
-        <button type="button" class="view-toggle-btn active" data-view="active">26-Man</button>
-        <button type="button" class="view-toggle-btn" data-view="40man">40-Man</button>
-        <button type="button" class="view-toggle-btn" data-view="il">Injured List</button>
+    <div class="mlb-controls" data-tab-controls="team" hidden>
+      <select id="teamTabPick" aria-label="Team"></select>
+      <select id="teamYearPick" aria-label="Season"></select>
+      <div class="view-toggle" id="teamViewToggle">
+        <button type="button" class="view-toggle-btn active" data-view="overview">Overview</button>
+        <button type="button" class="view-toggle-btn" data-view="schedule">Schedule</button>
+        <button type="button" class="view-toggle-btn" data-view="roster">Roster</button>
+        <button type="button" class="view-toggle-btn" data-view="stats">Stats</button>
       </div>
     </div>
     <div class="mlb-controls" data-tab-controls="players" hidden>
@@ -3446,14 +3562,9 @@
       <div class="mlb-status-msg">Loading standings&#8230;</div>
     </div>
   </div>
-  <div class="tab-panel" data-tab-panel="schedule" id="schedulePanel" hidden>
-    <div id="scheduleBody">
-      <div class="mlb-status-msg">Loading schedule&#8230;</div>
-    </div>
-  </div>
-  <div class="tab-panel" data-tab-panel="roster" id="rosterTabPanel" hidden>
-    <div id="rosterTabBody">
-      <div class="mlb-status-msg">Loading roster&#8230;</div>
+  <div class="tab-panel" data-tab-panel="team" id="teamPanel" hidden>
+    <div id="teamBody">
+      <div class="mlb-status-msg">Loading team&#8230;</div>
     </div>
   </div>
   <div class="tab-panel" data-tab-panel="players" id="playersPanel" hidden>
@@ -5900,8 +6011,6 @@
     return TEAM_ABBR[team && team.id] || teamNickname(team);
   }
 
-  const scheduleTeamSelect = document.getElementById('scheduleTeamPick');
-  const scheduleBody = document.getElementById('scheduleBody');
   const scheduleCache = {};
   const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -5912,9 +6021,9 @@
   }
 
   // The user's team, picked from the cap at the end of the tab row. It's
-  // where the Schedule and Roster tabs open and the Scorecard's first game,
-  // and it's marked in Standings. A team picked on Schedule or Roster is
-  // just browsing and lasts the session. Before this existed each of those
+  // where the Team tab opens and the Scorecard's first game, and it's
+  // marked in Standings. A team picked on the Team tab is just browsing
+  // and lasts the session. Before this existed each of those
   // tabs saved its own pick, so the first load adopts whichever was saved.
   const MY_TEAM_KEY = 'mlb-my-team';
   const LEGACY_TEAM_KEYS = ['mlb-schedule-team', 'mlb-roster-tab-team'];
@@ -5944,17 +6053,20 @@
   myTeamSelect.value = myTeam;
   renderMyTeamMark();
 
-  // Shared by the Schedule and Roster tabs' team pickers: the same 30-team
-  // list, opening on the user's team.
+  // The Team tab's team picker: the 30-team list, opening on the user's team.
   function populateTeamSelect(selectEl) {
     const teams = sortedTeams();
     selectEl.innerHTML = teams.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
     selectEl.value = myTeam || teams[0].id;
   }
 
+  // A season still being played is refetched after five minutes, so the
+  // Team tab's results and record don't sit on a morning's copy all day.
+  const SCHEDULE_LIVE_TTL_MS = 5 * 60 * 1000;
   async function fetchTeamSchedule(teamId, season) {
     const key = `${teamId}-${season}`;
-    if (scheduleCache[key]) return scheduleCache[key];
+    const cached = scheduleCache[key];
+    if (cached && (Number(season) < new Date().getFullYear() || Date.now() - cached.fetchedAt < SCHEDULE_LIVE_TTL_MS)) return cached;
     try {
       const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&teamId=${teamId}&season=${season}&gameType=R`;
       const res = await fetch(url);
@@ -5971,6 +6083,8 @@
             isHome,
             opponent: teamAbbr(opponent),
             opponentFull: teamNickname(opponent),
+            awayId: g.teams.away.team.id,
+            homeId: g.teams.home.team.id,
             gameDate: g.gameDate,
             state: g.status.abstractGameState,
             detailedState: g.status.detailedState,
@@ -5984,7 +6098,8 @@
       const result = {
         gamesByDate,
         seasonStart: dates.length ? dates[0].date : null,
-        seasonEnd: dates.length ? dates[dates.length - 1].date : null
+        seasonEnd: dates.length ? dates[dates.length - 1].date : null,
+        fetchedAt: Date.now()
       };
       scheduleCache[key] = result;
       return result;
@@ -5993,12 +6108,14 @@
     }
   }
 
-  const teamChartCache = {};
+  // Keyed by the schedule it was built from, so a refetched schedule
+  // (see SCHEDULE_LIVE_TTL_MS) rebuilds the series too.
+  const teamChartCache = new WeakMap();
 
   async function getTeamWinLossSeries(teamId, season) {
-    const key = `${teamId}-${season}`;
-    if (teamChartCache[key]) return teamChartCache[key];
-    const { gamesByDate } = await fetchTeamSchedule(teamId, season);
+    const schedule = await fetchTeamSchedule(teamId, season);
+    if (teamChartCache.has(schedule)) return teamChartCache.get(schedule);
+    const { gamesByDate } = schedule;
     const dates = Object.keys(gamesByDate).sort();
     const series = [];
     let net = 0;
@@ -6014,29 +6131,29 @@
         series.push({ date, net, won });
       });
     });
-    teamChartCache[key] = series;
+    teamChartCache.set(schedule, series);
     return series;
   }
 
-  function renderTeamChartContent(teamId, teamName, season, series, throughDate) {
-    const played = throughDate ? series.filter(s => s.date <= throughDate) : series;
-    if (!played.length) {
-      return `<div class="pitch-header">${teamName}</div><div class="pitch-subheader">${season} Season</div><div class="pitch-empty">No completed games yet this season.</div>`;
-    }
-    const wins = played.filter(s => s.won).length;
-    const losses = played.length - wins;
+  function winLossExtremes(played) {
     const netValues = played.map(s => s.net);
-    const finalNet = netValues[netValues.length - 1];
     let peakIdx = 0, troughIdx = 0;
     netValues.forEach((v, i) => {
       if (v > netValues[peakIdx]) peakIdx = i;
       if (v < netValues[troughIdx]) troughIdx = i;
     });
+    return { netValues, peakIdx, troughIdx };
+  }
+
+  // clipId must be unique in the document: the Team tab draws this chart
+  // inline while the Standings popup can draw it too.
+  function renderWinLossSvg(clipId, played, { width = 320, height = 160 } = {}) {
+    const { netValues, peakIdx, troughIdx } = winLossExtremes(played);
+    const finalNet = netValues[netValues.length - 1];
     const maxNet = Math.max(0, netValues[peakIdx]);
     const minNet = Math.min(0, netValues[troughIdx]);
     const range = Math.max(1, maxNet - minNet);
 
-    const width = 320, height = 160;
     const padL = 26, padR = 10, padT = 10, padB = 16;
     const plotW = width - padL - padR;
     const plotH = height - padT - padB;
@@ -6059,8 +6176,13 @@
         lastMonth = month;
       }
     });
+    // A season opening in late March keeps its gridline but gives up its
+    // label, which would otherwise print over April's.
+    monthTicks.forEach((t, i) => {
+      const next = monthTicks[i + 1];
+      if (next && next.x - t.x < 18) t.label = '';
+    });
 
-    const clipId = `teamChartClip${teamId}`;
     const { ink, gold, brick } = PALETTE;
 
     let svg = `<svg viewBox="0 0 ${width} ${height}" width="100%" style="display:block; margin-top:4px;">`;
@@ -6088,17 +6210,30 @@
     const lastX = xFor(n - 1), lastY = yFor(finalNet);
     svg += `<circle cx="${lastX.toFixed(1)}" cy="${lastY.toFixed(1)}" r="3" fill="${finalNet >= 0 ? gold : brick}" stroke="${ink}" stroke-width="1"/>`;
     svg += '</svg>';
+    return svg;
+  }
 
-    const fmtNet = v => v > 0 ? `+${v}` : String(v);
-    const fmtDate = d => {
-      const [y, m, dd] = d.split('-').map(Number);
-      return `${MONTH_NAMES[m - 1].slice(0, 3)} ${dd}`;
-    };
+  function fmtNet(v) { return v > 0 ? `+${v}` : String(v); }
+  function fmtShortDate(d) {
+    const [, m, dd] = d.split('-').map(Number);
+    return `${MONTH_NAMES[m - 1].slice(0, 3)} ${dd}`;
+  }
+  function winLossCaption(played) {
+    const { netValues, peakIdx, troughIdx } = winLossExtremes(played);
+    return `Current: ${fmtNet(netValues[netValues.length - 1])} &#8226; Best: ${fmtNet(netValues[peakIdx])} on ${fmtShortDate(played[peakIdx].date)} &#8226; Worst: ${fmtNet(netValues[troughIdx])} on ${fmtShortDate(played[troughIdx].date)}`;
+  }
 
+  function renderTeamChartContent(teamId, teamName, season, series, throughDate) {
+    const played = throughDate ? series.filter(s => s.date <= throughDate) : series;
+    if (!played.length) {
+      return `<div class="pitch-header">${teamName}</div><div class="pitch-subheader">${season} Season</div><div class="pitch-empty">No completed games yet this season.</div>`;
+    }
+    const wins = played.filter(s => s.won).length;
+    const losses = played.length - wins;
     return `<div class="pitch-header">${teamName}</div>
       <div class="pitch-subheader">${season} Season &#8226; ${wins}-${losses}</div>
-      ${svg}
-      <div class="pitch-final-desc">Current: ${fmtNet(finalNet)} &#8226; Best: ${fmtNet(netValues[peakIdx])} on ${fmtDate(played[peakIdx].date)} &#8226; Worst: ${fmtNet(netValues[troughIdx])} on ${fmtDate(played[troughIdx].date)}</div>`;
+      ${renderWinLossSvg(`teamChartClip${teamId}`, played)}
+      <div class="pitch-final-desc">${winLossCaption(played)}</div>`;
   }
 
   function formatGameTime(iso) {
@@ -6183,28 +6318,12 @@
       if (m > 11) { m = 0; y++; }
     }
 
-    scheduleBody.innerHTML = `<div class="sheet">${blocks}</div>`;
-    const currentBlock = scheduleBody.querySelector('[data-current-month="1"]');
-    if (currentBlock) currentBlock.scrollIntoView({ block: 'start' });
+    return blocks;
   }
 
+  // The schedule the Team tab last drew, which a calendar day's tap opens
+  // in the game summary popup.
   let currentScheduleTeam = null;
-
-  async function loadTeamSchedule(teamId) {
-    scheduleBody.innerHTML = '<div class="mlb-status-msg">Loading schedule&#8230;</div>';
-    const season = new Date().getFullYear();
-    try {
-      const { gamesByDate, seasonStart, seasonEnd } = await fetchTeamSchedule(teamId, season);
-      if (!seasonStart) {
-        scheduleBody.innerHTML = '<div class="mlb-status-msg">No regular season schedule available.</div>';
-        return;
-      }
-      currentScheduleTeam = { teamId, gamesByDate };
-      renderScheduleAllMonths(gamesByDate, seasonStart, seasonEnd);
-    } catch (e) {
-      scheduleBody.innerHTML = apiErrorMsg('schedule');
-    }
-  }
 
   // Opening a game from elsewhere (a profile's Game Log, a game summary)
   // pushes an entry first, so Back returns to where it was opened from.
@@ -6490,19 +6609,29 @@
     renderDailyView();
   });
 
-  const rosterTabTeamSelect = document.getElementById('rosterTabTeamPick');
-  const rosterTabBody = document.getElementById('rosterTabBody');
-  const rosterTabViewToggle = document.getElementById('rosterTabViewToggle');
-  let rosterTabView = 'active';
+  // ---- Team tab ----
+  // One team's season in four views: Overview (record, the games-over-.500
+  // chart, recent and upcoming games), Schedule (the month calendars),
+  // Roster and Stats. The team and season pickers are browsing and
+  // aren't saved; the tab opens on the user's team and the latest season.
+  const teamTabSelect = document.getElementById('teamTabPick');
+  const teamYearSelect = document.getElementById('teamYearPick');
+  const teamViewToggle = document.getElementById('teamViewToggle');
+  const teamBody = document.getElementById('teamBody');
+  const teamTab = { teamId: null, season: null, latestSeason: null, view: 'overview', rosterView: 'depth' };
+  let teamRequestId = 0;
   const teamRosterCache = {};
   const teamInjuryCache = {};
 
-  async function fetchTeamRoster(teamId, rosterType) {
-    const key = `${teamId}-${rosterType}`;
+  // rosterType 'fullSeason' with a season is everyone who played for the
+  // team that year; the other types only exist for the current roster.
+  async function fetchTeamRoster(teamId, rosterType, season) {
+    const key = `${teamId}-${rosterType}-${season || ''}`;
     if (teamRosterCache[key]) return teamRosterCache[key];
     try {
-      const url = `https://statsapi.mlb.com/api/v1/teams/${teamId}/roster?rosterType=${rosterType}`;
+      const url = `https://statsapi.mlb.com/api/v1/teams/${teamId}/roster?rosterType=${rosterType}${season ? `&season=${season}` : ''}&hydrate=person`;
       const res = await fetch(url);
+      if (!res.ok) return null;
       const data = await res.json();
       const roster = (data.roster || []).map(r => ({
         id: r.person && r.person.id,
@@ -6510,12 +6639,15 @@
         jersey: r.jerseyNumber || '',
         posAbbr: (r.position && r.position.abbreviation) || '',
         posType: (r.position && r.position.type) || 'Other',
-        statusDesc: (r.status && r.status.description) || ''
+        statusDesc: (r.status && r.status.description) || '',
+        bats: (r.person && r.person.batSide && r.person.batSide.code) || '',
+        throws: (r.person && r.person.pitchHand && r.person.pitchHand.code) || '',
+        birthDate: (r.person && r.person.birthDate) || ''
       }));
       teamRosterCache[key] = roster;
       return roster;
     } catch (e) {
-      return [];
+      return null;
     }
   }
 
@@ -6544,11 +6676,209 @@
     }
   }
 
-  function extractInjuryDetail(description) {
-    if (!description) return null;
-    const sentences = description.split(/\.\s+/).map(s => s.trim()).filter(Boolean);
-    return sentences.length > 1 ? sentences.slice(1).join('. ').replace(/\.$/, '') : null;
+  // Every player's line for this team alone (a traded player's other
+  // club's numbers stay out). A season in progress is kept five minutes.
+  const teamPlayerStatsCache = {};
+  async function getTeamPlayerStats(teamId, season, group) {
+    const key = `${teamId}-${season}-${group}`;
+    const cached = teamPlayerStatsCache[key];
+    if (cached && (Number(season) < new Date().getFullYear() || Date.now() - cached.at < SCHEDULE_LIVE_TTL_MS)) return cached.rows;
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/stats?stats=season&group=${group}&teamId=${teamId}&season=${season}&sportId=1&playerPool=ALL&limit=200`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      const rows = ((data.stats && data.stats[0] && data.stats[0].splits) || [])
+        .filter(s => s.player && s.player.id != null)
+        .map(s => ({ id: s.player.id, name: s.player.fullName || '', pos: (s.position && s.position.abbreviation) || '', stat: s.stat || {} }));
+      teamPlayerStatsCache[key] = { rows, at: Date.now() };
+      return rows;
+    } catch (e) {
+      return null;
+    }
   }
+
+  async function getTeamSeasonRecord(teamId, season) {
+    const status = await standingsSeasonStatus(season);
+    const records = await getStandings(season, status.asOf);
+    for (const div of records) {
+      const rec = (div.teamRecords || []).find(t => t.team && t.team.id === Number(teamId));
+      if (rec) return { rec, divisionId: div.division && div.division.id, final: status.final };
+    }
+    return null;
+  }
+
+  // How the team's October went: its deepest series, won, lost or still
+  // going. null when it didn't make it (or the lookup failed).
+  async function getTeamPostseasonResult(teamId, season) {
+    const raw = await getPostseasonSeries(season);
+    if (!raw) return null;
+    const id = Number(teamId);
+    const round = sr => 'FDLW'.indexOf(sr.id[0]);
+    const mine = raw.map(buildPostseasonSeries)
+      .filter(sr => sr && sr.teams.some(t => t && t.id === id))
+      .sort((a, b) => round(b) - round(a));
+    if (!mine.length) return null;
+    const last = mine[0];
+    const name = last.title.replace(/ Division Series$/, 'DS').replace(/ Championship Series$/, 'CS');
+    if (last.winnerId === id) return last.id === 'W_1' ? { champion: true } : { text: `Won ${name}` };
+    return { text: last.winnerId ? `Lost ${name}` : `In ${name}` };
+  }
+
+  // The quick-look popup reads a name's details from playerStore; an entry
+  // a game already wrote (with that day's line) is left alone.
+  function storeTeamPlayer(id, name, pos, teamId, season) {
+    if (!id || playerStore[id]) return;
+    playerStore[id] = { id, name, pos, team: TEAM_NICKNAMES[teamId] || '', season, todayStats: {} };
+  }
+
+  // ---- Overview ----
+
+  // "C. Rafaela" -- short enough for the depth chart's narrow plates.
+  function shortPlayerName(name) {
+    const parts = (name || '').split(' ');
+    return parts.length > 1 ? `${parts[0][0]}. ${parts.slice(1).join(' ')}` : name;
+  }
+
+  function teamScheduleGames(gamesByDate) {
+    return Object.keys(gamesByDate).sort()
+      .flatMap(date => gamesByDate[date].slice().sort((a, b) => a.gameNumber - b.gameNumber).map(g => ({ ...g, date })));
+  }
+  // A game called off never happened -- it's neither a result nor still to come.
+  function isCalledOff(g) { return /postponed|cancel/i.test(g.detailedState || ''); }
+
+  // One line per game, like a pocket schedule: date, opponent, then the
+  // result or first pitch. The row opens that game's scorecard.
+  function teamGameRow(g) {
+    let outcome;
+    if (g.state === 'Final') {
+      const us = g.isHome ? g.homeScore : g.awayScore, them = g.isHome ? g.awayScore : g.homeScore;
+      const won = us > them;
+      outcome = `<span class="tm-g-wl${won ? '' : ' is-loss'}">${won ? 'W' : 'L'}</span><span class="tm-g-score">${us}-${them}</span>`;
+    } else if (g.state === 'Live') {
+      outcome = `<span class="tm-g-when">${g.detailedState === 'In Progress' ? 'Live' : (g.detailedState || 'Live')}</span>`;
+    } else {
+      outcome = `<span class="tm-g-when">${formatGameTime(g.gameDate)}</span>`;
+    }
+    const oppId = g.isHome ? g.awayId : g.homeId;
+    return `<button type="button" class="tm-g" data-date="${g.date}" data-game-pk="${g.gamePk}">
+        <span class="tm-g-date">${fmtShortDate(g.date)}</span>
+        <span class="tm-g-opp"><span class="tm-g-at">${g.isHome ? 'vs' : '@'}</span><img src="${capLogoUrl(oppId)}" alt="">${g.opponentFull}</span>
+        <span class="tm-g-out">${outcome}</span>
+      </button>`;
+  }
+
+  function divisionShortName(divisionId) {
+    const info = DIVISION_INFO[divisionId];
+    return info ? info.name.replace('American League', 'AL').replace('National League', 'NL') : '';
+  }
+
+  function renderTeamOverview(teamId, season, record, schedule, october) {
+    const name = TEAM_NICKNAMES[teamId] || '';
+    const games = teamScheduleGames(schedule.gamesByDate).filter(g => !isCalledOff(g));
+    const finals = games.filter(g => g.state === 'Final' && g.homeScore != null && g.awayScore != null);
+    const ahead = games.filter(g => g.state !== 'Final');
+    const recent = finals.slice(-5).reverse();
+    // Up Next leads with a game under way.
+    const upcoming = ahead.slice(0, 5);
+
+    let place = '';
+    let board = '';
+    if (record) {
+      const { rec, divisionId, final } = record;
+      const split = type => {
+        const r = ((rec.records && rec.records.splitRecords) || []).find(x => x.type === type);
+        return r ? `${r.wins}-${r.losses}` : '&#8212;';
+      };
+      const rank = Number(rec.divisionRank);
+      const gb = rec.gamesBack && rec.gamesBack !== '-' ? `, ${rec.gamesBack} GB` : '';
+      const div = divisionShortName(divisionId);
+      place = rank && div ? `${ordinalSuffix(rank)} in ${div}${rank > 1 ? gb : ''}` : '';
+      if (!final && rec.streak && rec.streak.streakCode) place += `${place ? ' &#183; ' : ''}${rec.streak.streakCode}`;
+      const cells = [
+        ['W', rec.wins], ['L', rec.losses], ['RD', fmtNet(rec.runDifferential || 0)],
+        ['Home', split('home')], ['Away', split('away')], ['L10', split('lastTen')]
+      ];
+      board = `<div class="tm-rec">${cells.map(([k, v]) => `<div class="pp-tot"><span class="pp-sk-name">${k}</span><span class="pp-tot-v">${v}</span></div>`).join('')}</div>`;
+    }
+    const seasonLabel = record && record.final ? `${season} Final` : `${season} Season`;
+    if (october && october.text) place += `${place ? ' &#183; ' : ''}${october.text}`;
+    const champs = october && october.champion
+      ? `<div class="player-award-tags tm-champs"><span class="player-award"><span class="player-award-label">${season} World Series Champions</span></span></div>`
+      : '';
+
+    // Two drawings of one chart, a phone's and a wide sheet's, so its type
+    // stays readable at both sizes (only one shows -- see .tm-wide).
+    const played = getTeamWinLossFromGames(finals);
+    const chart = played.length ? `<section class="tm-sec">
+        <div class="pp-skg-head"><span>Games Over .500</span></div>
+        <div class="tm-narrow">${renderWinLossSvg(`teamTabClipN${teamId}`, played)}</div>
+        <div class="tm-wide">${renderWinLossSvg(`teamTabClipW${teamId}`, played, { width: 900, height: 170 })}</div>
+        <div class="tm-chart-note">${winLossCaption(played)}</div>
+      </section>` : '';
+
+    const gameList = (title, list) => list.length ? `<section class="tm-sec">
+        <div class="pp-skg-head"><span>${title}</span></div>
+        ${list.map(teamGameRow).join('')}
+      </section>` : '';
+
+
+    return `<div class="sheet tm">
+      <div class="tm-head">
+        <img class="tm-cap" src="${capLogoUrl(teamId)}" alt="">
+        <div class="tm-id">
+          <div class="tm-name">${name}</div>
+          <div class="tm-place">${seasonLabel}${place ? ` &#183; ${place}` : ''}</div>
+          ${champs}
+        </div>
+      </div>
+      ${board}
+      ${chart}
+      <div class="tm-pair">${gameList('Recent', recent)}${gameList('Up Next', upcoming)}</div>
+    </div>`;
+  }
+
+  // Same running tally getTeamWinLossSeries keeps, from games already in hand.
+  function getTeamWinLossFromGames(finals) {
+    let net = 0;
+    return finals.filter(g => g.homeScore !== g.awayScore).map(g => {
+      const won = g.isHome ? g.homeScore > g.awayScore : g.awayScore > g.homeScore;
+      net += won ? 1 : -1;
+      return { date: g.date, net, won };
+    });
+  }
+
+  async function loadTeamOverview(requestId, teamId, season) {
+    const [record, schedule] = await Promise.all([
+      getTeamSeasonRecord(teamId, season),
+      fetchTeamSchedule(teamId, season)
+    ]);
+    if (requestId !== teamRequestId) return;
+    if (!record && !schedule.seasonStart) {
+      teamBody.innerHTML = apiErrorMsg('this team\'s season');
+      return;
+    }
+    currentScheduleTeam = { teamId, gamesByDate: schedule.gamesByDate };
+    const october = record && record.final ? await getTeamPostseasonResult(teamId, season) : null;
+    if (requestId !== teamRequestId) return;
+    teamBody.innerHTML = renderTeamOverview(teamId, season, record, schedule, october);
+  }
+
+  // ---- Schedule ----
+
+  async function loadTeamScheduleView(requestId, teamId, season) {
+    const { gamesByDate, seasonStart, seasonEnd } = await fetchTeamSchedule(teamId, season);
+    if (requestId !== teamRequestId) return;
+    if (!seasonStart) {
+      teamBody.innerHTML = '<div class="mlb-status-msg">No regular season schedule available.</div>';
+      return;
+    }
+    currentScheduleTeam = { teamId, gamesByDate };
+    teamBody.innerHTML = `<div class="sheet">${renderScheduleAllMonths(gamesByDate, seasonStart, seasonEnd)}</div>`;
+    const currentBlock = teamBody.querySelector('[data-current-month="1"]');
+    if (currentBlock) currentBlock.scrollIntoView({ block: 'start' });
+  }
+
+  // ---- Roster ----
 
   function rosterStatusRank(p) {
     const desc = p.statusDesc || '';
@@ -6567,49 +6897,162 @@
   function rosterStatusBadge(p) {
     const desc = p.statusDesc || '';
     if (!desc || /^active$/i.test(desc)) return '';
-    if (/injured/i.test(desc)) return `<span class="roster-badge roster-badge-il">${desc}</span>`;
+    if (/injured/i.test(desc)) return `<span class="roster-badge roster-badge-il">${desc.replace(/^Injured\s+/i, 'IL ').replace(/-Day$/i, '')}</span>`;
     return `<span class="roster-badge">${desc}</span>`;
   }
 
+  // Baseball age: how old he was on June 30 of that season.
+  function seasonAge(birthDate, season) {
+    if (!birthDate) return '';
+    const [y, m, d] = birthDate.split('-').map(Number);
+    return Number(season) - y - ((m > 6 || (m === 6 && d > 30)) ? 1 : 0);
+  }
+
+  function renderRosterHead() {
+    return '<div class="rr rr-head"><span>#</span><span></span><span>B/T</span><span>Age</span><span>Pos</span></div>';
+  }
   function renderRosterRow(p, opts) {
-    return `
-      <div class="roster-row">
-        <span class="roster-jersey">${p.jersey ? '#' + p.jersey : ''}</span>
-        <button type="button" class="player-name-btn roster-name" data-player-id="${p.id}">${p.name}</button>
-        ${opts.badges ? rosterStatusBadge(p) : ''}
-        <span class="roster-pos">${p.posAbbr}</span>
+    const bt = p.bats || p.throws ? `${p.bats || '&#8211;'}/${p.throws || '&#8211;'}` : '';
+    return `<div class="rr">
+        <span class="rr-num">${p.jersey}</span>
+        <span class="rr-name"><button type="button" class="player-name-btn" data-player-id="${p.id}">${p.name}</button>${opts.badges ? rosterStatusBadge(p) : ''}</span>
+        <span class="rr-d">${bt}</span>
+        <span class="rr-d">${seasonAge(p.birthDate, opts.season)}</span>
+        <span class="rr-d">${p.role || p.posAbbr}</span>
       </div>`;
   }
 
   const POSITION_PLAYER_GROUP_ORDER = ['Catcher', 'Infielder', 'Outfielder', 'Hitter'];
   const POSITION_PLAYER_GROUP_LABEL = {
-    Catcher: 'Catchers', Infielder: 'Infielders', Outfielder: 'Outfielders', Hitter: 'Designated Hitter'
+    Catcher: 'Catchers', Infielder: 'Infielders', Outfielder: 'Outfielders', Hitter: 'Designated Hitters'
   };
 
-  function renderPositionPlayerColumn(list, opts) {
-    if (!list.length) return '<div class="roster-empty">None</div>';
-    const groups = {};
-    list.forEach(p => { (groups[p.posType] = groups[p.posType] || []).push(p); });
-    const keys = POSITION_PLAYER_GROUP_ORDER.filter(g => groups[g])
-      .concat(Object.keys(groups).filter(g => !POSITION_PLAYER_GROUP_ORDER.includes(g)));
-    return keys.map(g => {
-      const rows = sortRosterList(groups[g]).map(p => renderRosterRow(p, opts)).join('');
-      return `<div class="roster-subgroup-title">${POSITION_PLAYER_GROUP_LABEL[g] || g}</div>${rows}`;
-    }).join('');
+  function renderRosterSubgroups(groups, opts) {
+    return groups.filter(g => g.list.length).map(g =>
+      `${g.title ? `<div class="roster-subgroup-title">${g.title}</div>` : ''}${g.list.map(p => renderRosterRow(p, opts)).join('')}`).join('');
+  }
+
+  // With the depth chart in hand (the current roster only), pitchers split
+  // into the rotation in its order and the bullpen with the closer first.
+  function pitcherSubgroups(pitchers, depth) {
+    if (!depth) return [{ title: '', list: sortRosterList(pitchers) }];
+    const starters = depth.filter(d => d.posAbbr === 'SP').map(d => d.id);
+    const closers = depth.filter(d => d.posAbbr === 'CP').map(d => d.id);
+    const rotation = starters.map(id => pitchers.find(p => p.id === id)).filter(Boolean).map(p => ({ ...p, role: 'SP' }));
+    const pen = sortRosterList(pitchers.filter(p => !starters.includes(p.id)))
+      .map(p => ({ ...p, role: closers.includes(p.id) ? 'CL' : 'RP' }))
+      .sort((a, b) => (b.role === 'CL') - (a.role === 'CL'));
+    return [{ title: 'Rotation', list: rotation }, { title: 'Bullpen', list: pen }];
   }
 
   function renderRosterGroups(list, opts) {
-    opts = opts || {};
     if (!list.length) return '<div class="roster-empty">No players found.</div>';
-    const pitchers = sortRosterList(list.filter(p => p.posType === 'Pitcher'));
-    const positionPlayers = list.filter(p => p.posType !== 'Pitcher');
-    const pitcherRows = pitchers.length ? pitchers.map(p => renderRosterRow(p, opts)).join('') : '<div class="roster-empty">None</div>';
-    const col = (title, inner) => `
+    const pitchers = list.filter(p => p.posType === 'Pitcher');
+    const hitters = list.filter(p => p.posType !== 'Pitcher');
+    const byType = {};
+    hitters.forEach(p => { (byType[p.posType] = byType[p.posType] || []).push(p); });
+    const hitterGroups = POSITION_PLAYER_GROUP_ORDER.filter(g => byType[g])
+      .concat(Object.keys(byType).filter(g => !POSITION_PLAYER_GROUP_ORDER.includes(g)))
+      .map(g => ({ title: POSITION_PLAYER_GROUP_LABEL[g] || g, list: sortRosterList(byType[g]) }));
+    const col = (title, count, inner) => `
       <div class="roster-column">
-        <div class="roster-section-title">${title}</div>
-        ${inner}
+        <div class="pp-skg-head"><span>${title}</span><em>${count}</em></div>
+        ${renderRosterHead()}
+        ${inner || '<div class="roster-empty">None</div>'}
       </div>`;
-    return `<div class="roster-columns">${col('Pitchers', pitcherRows)}${col('Position Players', renderPositionPlayerColumn(positionPlayers, opts))}</div>`;
+    return `<div class="roster-columns">${col('Pitchers', pitchers.length, renderRosterSubgroups(pitcherSubgroups(pitchers, opts.depth), opts))}${col('Position Players', hitters.length, renderRosterSubgroups(hitterGroups, opts))}</div>`;
+  }
+
+  // The depth chart: the starters on a drawn diamond with their photos,
+  // each with any other spots he backs up beside his own; the bench as
+  // players with the spots each covers; then the staff. Everyone on it
+  // gets a photo.
+  // [position, x%, y%] -- spots on the drawn field, the photo's center,
+  // in the field SVG's 0-100 box.
+  const DEPTH_SPOTS = [
+    ['CF', 50, 9], ['LF', 17, 24], ['RF', 83, 24],
+    ['SS', 35, 36], ['2B', 65, 36], ['3B', 19, 55], ['1B', 81, 55],
+    ['C', 50, 84], ['DH', 11, 90]
+  ];
+  // Scoring order, which the spots a man covers are listed in.
+  const DEPTH_POSITIONS = ['C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'DH'];
+
+  // Chalk on the board: the fence, the foul lines, the infield's cut and
+  // the bases, home at (50, 80) and 90 feet = 19 units.
+  const DEPTH_FIELD_SVG = `<svg class="dcf-svg" viewBox="0 0 100 100" aria-hidden="true">
+      <path class="dcf-grass" d="M50 80 L2 32 Q50 -24 98 32 Z"/>
+      <path class="dcf-fence" d="M2 32 Q50 -24 98 32"/>
+      <path class="dcf-dirt" d="M50 80 L25 55 Q50 20 75 55 Z"/>
+      <path class="dcf-line" d="M50 80 L2 32 M50 80 L98 32"/>
+      <path class="dcf-line" d="M50 80 L69 61 L50 42 L31 61 Z"/>
+      <circle class="dcf-mound" cx="50" cy="62" r="2.4"/>
+      <rect class="dcf-base" x="67.4" y="59.4" width="3.2" height="3.2" transform="rotate(45 69 61)"/>
+      <rect class="dcf-base" x="48.4" y="40.4" width="3.2" height="3.2" transform="rotate(45 50 42)"/>
+      <rect class="dcf-base" x="29.4" y="59.4" width="3.2" height="3.2" transform="rotate(45 31 61)"/>
+      <path class="dcf-base" d="M48.3 79 h3.4 v1.5 l-1.7 1.7 l-1.7 -1.7 Z"/>
+    </svg>`;
+
+  function depthAt(depth, pos) { return depth.filter(d => d.posAbbr === pos); }
+  function depthStaff(depth) {
+    const rotation = depthAt(depth, 'SP');
+    const closers = depthAt(depth, 'CP');
+    const pen = depthAt(depth, 'P').filter(p => !closers.some(c => c.id === p.id) && !rotation.some(s => s.id === p.id));
+    return { rotation, closers, pen };
+  }
+  function depthPlate(p) {
+    return `<button type="button" class="player-name-btn" data-player-id="${p.id}" title="${p.name}">${shortPlayerName(p.name)}</button>`;
+  }
+  function depthPrint(p) {
+    return `<button type="button" class="dcf-photo" data-player-id="${p.id}" aria-label="${p.name}" title="${p.name}"><span class="dcf-print"><img src="${headshotUrl(p.id, 120)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'"></span></button>`;
+  }
+  // A photo card: print, a label (slot, role or the spots he covers), plate.
+  function depthCard(p, label) {
+    return `<div class="dcf-rot">${depthPrint(p)}<span class="dcf-pos">${label}</span>${depthPlate(p)}</div>`;
+  }
+  function depthCards(list) {
+    return `<div class="dcf-rotation">${list.join('') || '<div class="roster-empty">None</div>'}</div>`;
+  }
+
+  // Everyone behind a starter somewhere, once each, with the spots he
+  // covers in scoring order -- and whether he starts somewhere himself.
+  function buildDepthCoverage(depth) {
+    const starterIds = new Set(DEPTH_POSITIONS.map(pos => (depthAt(depth, pos)[0] || {}).id).filter(Boolean));
+    const covers = new Map();
+    DEPTH_POSITIONS.forEach(pos => depthAt(depth, pos).slice(1).forEach(p => {
+      if (!covers.has(p.id)) covers.set(p.id, { p, spots: [] });
+      covers.get(p.id).spots.push(pos);
+    }));
+    const all = [...covers.values()];
+    return { bench: all.filter(c => !starterIds.has(c.p.id)), starters: all.filter(c => starterIds.has(c.p.id)) };
+  }
+
+  function renderDepthChart(depth) {
+    if (!depth.length) return '<div class="roster-empty">No depth chart available.</div>';
+    const { bench, starters: also } = buildDepthCoverage(depth);
+    const alsoById = new Map(also.map(c => [c.p.id, c.spots]));
+    const spots = DEPTH_SPOTS.map(([pos, x, y]) => {
+      const starter = depthAt(depth, pos)[0];
+      const covers = starter && alsoById.get(starter.id);
+      return `<div class="dcf-spot" style="left:${x}%; top:${y}%">
+          ${starter ? depthPrint(starter) : '<span class="dcf-print is-empty"></span>'}
+          <span class="dcf-pos">${pos}${covers ? `<span class="dcf-pos-also">${covers.map(c => ` &#183; ${c}`).join('')}</span>` : ''}</span>
+          ${starter ? depthPlate(starter) : ''}
+        </div>`;
+    }).join('');
+    const { rotation, closers, pen } = depthStaff(depth);
+    return `<div class="dcf-layout"><div class="dcf">${DEPTH_FIELD_SVG}${spots}</div><div class="dcf-side">
+      <section class="tm-sec">
+        <div class="pp-skg-head"><span>Bench</span></div>
+        ${depthCards(bench.map(({ p, spots: s }) => depthCard(p, s.join(' &#183; '))))}
+      </section>
+      <section class="tm-sec">
+        <div class="pp-skg-head"><span>Rotation</span></div>
+        ${depthCards(rotation.map((p, i) => depthCard(p, i + 1)))}
+      </section>
+      <section class="tm-sec">
+        <div class="pp-skg-head"><span>Bullpen</span></div>
+        ${depthCards([...closers.map(p => depthCard(p, 'CL')), ...pen.map(p => depthCard(p, 'RP'))])}
+      </section></div></div>`;
   }
 
   function renderInjuredListRows(list, injuryMap) {
@@ -6624,7 +7067,7 @@
       const dateLabel = date ? new Date(date + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '&#8212;';
       return `
         <tr>
-          <td class="il-num">${p.jersey ? '#' + p.jersey : ''}</td>
+          <td class="il-num">${p.jersey}</td>
           <td class="il-name"><button type="button" class="player-name-btn" data-player-id="${p.id}">${p.name}</button></td>
           <td class="il-pos">${p.posAbbr}</td>
           <td class="il-injury">${detail || 'Details unavailable'}</td>
@@ -6633,51 +7076,259 @@
     }).join('');
   }
 
+  function extractInjuryDetail(description) {
+    if (!description) return null;
+    const sentences = description.split(/\.\s+/).map(s => s.trim()).filter(Boolean);
+    return sentences.length > 1 ? sentences.slice(1).join('. ').replace(/\.$/, '') : null;
+  }
+
   function renderInjuredList(fortyMan, injuryMap) {
     const ilPlayers = fortyMan.filter(p => /injured/i.test(p.statusDesc || ''));
     if (!ilPlayers.length) return '<div class="roster-empty">No players currently on the injured list.</div>';
     const groups = {};
     ilPlayers.forEach(p => { (groups[p.statusDesc] = groups[p.statusDesc] || []).push(p); });
     return Object.keys(groups).sort().map(status => `
-      <div class="roster-section-title">${status}</div>
+      <div class="pp-skg-head il-head"><span>${status}</span><em>${groups[status].length}</em></div>
       <div class="table-scroll"><table class="il-table">
         <colgroup><col class="il-col-num"><col class="il-col-name"><col class="il-col-pos"><col><col class="il-col-date"></colgroup>
-        <thead><tr><th></th><th>Player</th><th>Pos</th><th>Injury</th><th>Since</th></tr></thead>
+        <thead><tr><th>#</th><th>Player</th><th>Pos</th><th>Injury</th><th>Since</th></tr></thead>
         <tbody>${renderInjuredListRows(groups[status], injuryMap)}</tbody>
       </table></div>`).join('');
   }
 
-  async function loadRosterTab(teamId) {
-    rosterTabBody.innerHTML = '<div class="mlb-status-msg">Loading roster&#8230;</div>';
+  // The depth chart stands in for the 26-man: it's the active roster laid
+  // out by where everyone plays.
+  const ROSTER_VIEWS = [['depth', 'Depth Chart'], ['40man', '40-Man'], ['il', 'IL']];
+
+  async function loadTeamRosterView(requestId, teamId, season) {
+    const current = Number(season) === Number(teamTab.latestSeason);
+    const view = current ? teamTab.rosterView : 'season';
+    const opts = { season };
+    let inner;
+    if (view === 'season') {
+      // A past season's status is where each player ended up (traded,
+      // released), which says nothing about his year here -- list by name.
+      const list = await fetchTeamRoster(teamId, 'fullSeason', season);
+      if (requestId !== teamRequestId) return;
+      if (list) list.forEach(p => { p.statusDesc = ''; });
+      if (!list) { teamBody.innerHTML = apiErrorMsg('the roster'); return; }
+      list.forEach(p => storeTeamPlayer(p.id, p.name, p.posType === 'Pitcher' ? 'P' : p.posAbbr, teamId, season));
+      inner = renderRosterGroups(list, opts);
+    } else {
+      const [list, depth, injuryMap] = await Promise.all([
+        fetchTeamRoster(teamId, view === 'depth' ? 'depthChart' : '40Man'),
+        view === 'il' ? null : fetchTeamRoster(teamId, 'depthChart'),
+        view === 'il' ? fetchTeamInjuryDetails(teamId) : null
+      ]);
+      if (requestId !== teamRequestId) return;
+      if (!list) { teamBody.innerHTML = apiErrorMsg('the roster'); return; }
+      list.forEach(p => storeTeamPlayer(p.id, p.name, p.posType === 'Pitcher' || /^(SP|CP)$/.test(p.posAbbr) ? 'P' : p.posAbbr, teamId, season));
+      if (view === 'depth') inner = renderDepthChart(list);
+      else if (view === 'il') inner = renderInjuredList(list, injuryMap);
+      else inner = renderRosterGroups(list, { ...opts, depth, badges: view === '40man' });
+    }
+    const tabs = current
+      ? `<div class="pp-tabs tm-roster-tabs" role="tablist">${ROSTER_VIEWS.map(([id, label]) => `<button type="button" class="pp-tab" role="tab" data-roster-view="${id}" aria-selected="${id === view}">${label}</button>`).join('')}</div>`
+      : `<div class="pp-skg-head tm-roster-title"><span>${season} Roster</span><em>Everyone who played</em></div>`;
+    teamBody.innerHTML = `<div class="sheet tm">${tabs}${inner}</div>`;
+  }
+
+  // ---- Stats ----
+  // Every player's line for this team, hitters then pitchers, each table
+  // sortable like the Players list, with the team's own line beneath.
+
+  // The team's own season line -- its totals row.
+  const teamTotalsCache = {};
+  async function getTeamSeasonTotals(teamId, season, group) {
+    const key = `${teamId}-${season}-${group}`;
+    const cached = teamTotalsCache[key];
+    if (cached && (Number(season) < new Date().getFullYear() || Date.now() - cached.at < SCHEDULE_LIVE_TTL_MS)) return cached.stat;
     try {
-      if (rosterTabView === 'active') {
-        const active = await fetchTeamRoster(teamId, 'active');
-        rosterTabBody.innerHTML = `<div class="sheet">${renderRosterGroups(active)}</div>`;
-      } else if (rosterTabView === '40man') {
-        const fortyMan = await fetchTeamRoster(teamId, '40Man');
-        rosterTabBody.innerHTML = `<div class="sheet">${renderRosterGroups(fortyMan, { badges: true })}</div>`;
-      } else {
-        const [fortyMan, injuryMap] = await Promise.all([
-          fetchTeamRoster(teamId, '40Man'),
-          fetchTeamInjuryDetails(teamId)
-        ]);
-        rosterTabBody.innerHTML = `<div class="sheet">${renderInjuredList(fortyMan, injuryMap)}</div>`;
-      }
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/teams/${teamId}/stats?stats=season&group=${group}&season=${season}&sportId=1`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      const split = data.stats && data.stats[0] && data.stats[0].splits && data.stats[0].splits[0];
+      const stat = split ? split.stat : null;
+      teamTotalsCache[key] = { stat, at: Date.now() };
+      return stat;
     } catch (e) {
-      rosterTabBody.innerHTML = apiErrorMsg('roster');
+      return null;
     }
   }
 
-  rosterTabTeamSelect.addEventListener('change', () => {
-    const teamId = rosterTabTeamSelect.value;
-    loadRosterTab(teamId);
+  // count: a zero is left blank, per the scorebook's blank-zero rule.
+  const statCol = (key, label, field, opts = {}) => ({
+    key, label, dir: opts.dir || 'desc', count: !!opts.count,
+    get: r => r.stat[field] != null ? Number(r.stat[field]) : null,
+    render: r => r.stat[field] ?? '&#8212;'
   });
-  rosterTabViewToggle.addEventListener('click', (e) => {
+  const TEAM_BATTING_COLUMNS = [
+    statCol('g', 'G', 'gamesPlayed'),
+    statCol('pa', 'PA', 'plateAppearances', { count: true }),
+    statCol('avg', 'AVG', 'avg'),
+    statCol('obp', 'OBP', 'obp'),
+    statCol('slg', 'SLG', 'slg'),
+    { key: 'wobaPlus', label: 'wOBA+', dir: 'desc',
+      get: (r, ctx) => (ctx.leagueWoba ? wobaPlusValue(r.stat, ctx.leagueWoba) : null),
+      render: (r, ctx) => computeWOBAPlus(r.stat, ctx.leagueWoba) },
+    statCol('hr', 'HR', 'homeRuns', { count: true }),
+    statCol('rbi', 'RBI', 'rbi', { count: true }),
+    { key: 'sb', label: 'SB', dir: 'desc', count: true, get: r => r.stat.stolenBases ?? null,
+      render: r => (r.stat.stolenBases || r.stat.caughtStealing) ? formatStolenBases(r.stat.stolenBases, r.stat.caughtStealing) : '' }
+  ];
+  const TEAM_PITCHING_COLUMNS = [
+    { key: 'g', label: 'G', dir: 'desc', get: r => r.stat.gamesPitched ?? r.stat.gamesPlayed ?? null, render: r => r.stat.gamesPitched ?? r.stat.gamesPlayed ?? '&#8212;' },
+    statCol('gs', 'GS', 'gamesStarted', { count: true }),
+    { key: 'ip', label: 'IP', dir: 'desc', get: r => ipToOuts(r.stat.inningsPitched), render: r => r.stat.inningsPitched ?? '&#8212;' },
+    statCol('era', 'ERA', 'era', { dir: 'asc' }),
+    statCol('whip', 'WHIP', 'whip', { dir: 'asc' }),
+    { key: 'kbb', label: 'K%-BB%', dir: 'desc',
+      get: r => rawKBB(r.stat.strikeOuts, r.stat.baseOnBalls, r.stat.battersFaced),
+      render: r => formatKBB(r.stat.strikeOuts, r.stat.baseOnBalls, r.stat.battersFaced) },
+    statCol('so', 'SO', 'strikeOuts', { count: true }),
+    statCol('bb', 'BB', 'baseOnBalls', { count: true, dir: 'asc' }),
+    statCol('sv', 'SV', 'saves', { count: true })
+  ];
+  const TEAM_STATS_DEFAULT_SORT = { hitting: { key: 'pa', dir: 'desc' }, pitching: { key: 'ip', dir: 'desc' } };
+  const teamStatsSort = { hitting: { ...TEAM_STATS_DEFAULT_SORT.hitting }, pitching: { ...TEAM_STATS_DEFAULT_SORT.pitching } };
+  let lastTeamStats = null;
+
+  function renderTeamStatsTable(group, rows, totals, ctx) {
+    const columns = group === 'pitching' ? TEAM_PITCHING_COLUMNS : TEAM_BATTING_COLUMNS;
+    const { key, dir } = teamStatsSort[group];
+    const sortColumn = columns.find(c => c.key === key) || columns[0];
+    const nameColumn = { key: 'name', get: r => r.name };
+    const sorted = rows.slice().sort((a, b) => key === 'name'
+      ? compareListRows(a, b, nameColumn, dir, ctx)
+      : compareListRows(a, b, sortColumn, dir, ctx));
+    const head = (k, label) => {
+      const active = k === key;
+      const arrow = active ? (dir === 'asc' ? ' &#9650;' : ' &#9660;') : '';
+      return `<th data-sort-key="${k}"${active ? ' class="sorted"' : ''}>${label}${arrow}</th>`;
+    };
+    const cell = (c, r) => {
+      if (c.count && c.get(r, ctx) === 0) return '<td></td>';
+      return `<td>${c.render(r, ctx)}</td>`;
+    };
+    const body = sorted.map(r => `<tr><td>${renderPlayerNameplate(r)}</td>${columns.map(c => cell(c, r)).join('')}</tr>`).join('');
+    const foot = totals
+      ? `<tfoot><tr><td class="tm-stats-total">Team</td>${columns.map(c => cell(c, { stat: totals })).join('')}</tr></tfoot>`
+      : '';
+    return `<div class="table-scroll"><table class="pitch-table player-list-table tm-stats-table" style="--stat-cols: ${columns.length}; --team-col-w: 0px">
+        <colgroup><col class="plc-player">${'<col>'.repeat(columns.length)}</colgroup>
+        <thead><tr>${head('name', 'Player')}${columns.map(c => head(c.key, c.label)).join('')}</tr></thead>
+        <tbody>${body}</tbody>${foot}
+      </table></div>`;
+  }
+
+  function renderTeamStats(data) {
+    const { teamId, season, hitting, pitching, hitTotals, pitchTotals, leagueWoba } = data;
+    const section = (title, group, rows, totals) => `<section class="tm-sec tm-stats" data-group="${group}">
+        <div class="pp-skg-head"><span>${title}</span><em>${rows.length}</em></div>
+        ${rows.length ? renderTeamStatsTable(group, rows, totals, { leagueWoba }) : '<div class="roster-empty">None</div>'}
+      </section>`;
+    return `<div class="sheet tm">
+      ${section('Hitting', 'hitting', hitting, hitTotals)}
+      ${section('Pitching', 'pitching', pitching, pitchTotals)}
+    </div>`;
+  }
+
+  async function loadTeamStatsView(requestId, teamId, season) {
+    const [hitting, pitching, hitTotals, pitchTotals, leagueWoba] = await Promise.all([
+      getTeamPlayerStats(teamId, season, 'hitting'),
+      getTeamPlayerStats(teamId, season, 'pitching'),
+      getTeamSeasonTotals(teamId, season, 'hitting'),
+      getTeamSeasonTotals(teamId, season, 'pitching'),
+      getLeagueWOBA(season)
+    ]);
+    if (requestId !== teamRequestId) return;
+    if (!hitting || !pitching) { teamBody.innerHTML = apiErrorMsg('team stats'); return; }
+    const team = TEAM_NICKNAMES[teamId] || '';
+    const withMeta = r => ({ ...r, team, teamId: Number(teamId), season });
+    lastTeamStats = {
+      teamId, season, hitTotals, pitchTotals, leagueWoba,
+      hitting: hitting.filter(r => (r.stat.plateAppearances || 0) > 0).map(withMeta),
+      pitching: pitching.filter(r => ipToOuts(r.stat.inningsPitched) > 0 || (r.stat.gamesPitched || 0) > 0).map(withMeta)
+    };
+    teamBody.innerHTML = renderTeamStats(lastTeamStats);
+  }
+
+  // ---- Wiring ----
+
+  async function loadTeamTab() {
+    const requestId = ++teamRequestId;
+    const { teamId, season, view } = teamTab;
+    teamBody.innerHTML = `<div class="mlb-status-msg">Loading ${view}&#8230;</div>`;
+    try {
+      if (view === 'schedule') await loadTeamScheduleView(requestId, teamId, season);
+      else if (view === 'roster') await loadTeamRosterView(requestId, teamId, season);
+      else if (view === 'stats') await loadTeamStatsView(requestId, teamId, season);
+      else await loadTeamOverview(requestId, teamId, season);
+    } catch (e) {
+      if (requestId === teamRequestId) teamBody.innerHTML = apiErrorMsg('the team');
+    }
+  }
+
+  async function initTeamTab() {
+    populateTeamSelect(teamTabSelect);
+    teamTab.teamId = teamTabSelect.value;
+    teamTab.latestSeason = await getDefaultListSeason();
+    const years = [];
+    for (let y = teamTab.latestSeason; y >= PLAYER_LIST_FIRST_SEASON; y--) years.push(y);
+    teamYearSelect.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+    teamTab.season = String(teamTab.latestSeason);
+    teamYearSelect.value = teamTab.season;
+    loadTeamTab();
+  }
+
+  teamTabSelect.addEventListener('change', () => {
+    teamTab.teamId = teamTabSelect.value;
+    loadTeamTab();
+  });
+  teamYearSelect.addEventListener('change', () => {
+    teamTab.season = teamYearSelect.value;
+    loadTeamTab();
+  });
+  teamViewToggle.addEventListener('click', (e) => {
     const btn = e.target.closest('.view-toggle-btn');
-    if (!btn || btn.dataset.view === rosterTabView) return;
-    rosterTabView = btn.dataset.view;
-    rosterTabViewToggle.querySelectorAll('.view-toggle-btn').forEach(b => b.classList.toggle('active', b === btn));
-    loadRosterTab(rosterTabTeamSelect.value);
+    if (!btn || btn.dataset.view === teamTab.view) return;
+    teamTab.view = btn.dataset.view;
+    teamViewToggle.querySelectorAll('.view-toggle-btn').forEach(b => b.classList.toggle('active', b === btn));
+    loadTeamTab();
+  });
+  function openTeamTile(el) {
+    if (el.matches('.calendar-day.is-game')) showGameSummaryModal(el.dataset.date);
+    else jumpToScorecardGame(el.dataset.date, el.dataset.gamePk);
+  }
+  teamBody.addEventListener('click', (e) => {
+    const th = e.target.closest('.tm-stats-table th[data-sort-key]');
+    if (th && lastTeamStats) {
+      const group = th.closest('.tm-stats').dataset.group;
+      const key = th.dataset.sortKey;
+      const sort = teamStatsSort[group];
+      const columns = group === 'pitching' ? TEAM_PITCHING_COLUMNS : TEAM_BATTING_COLUMNS;
+      const column = columns.find(c => c.key === key);
+      sort.dir = sort.key === key ? (sort.dir === 'asc' ? 'desc' : 'asc') : (column ? column.dir : 'asc');
+      sort.key = key;
+      teamBody.innerHTML = renderTeamStats(lastTeamStats);
+      return;
+    }
+    const photo = e.target.closest('.dcf-photo[data-player-id]');
+    if (photo) { showPlayerModal(photo.dataset.playerId); return; }
+    const rosterTab = e.target.closest('[data-roster-view]');
+    if (rosterTab) {
+      if (rosterTab.dataset.rosterView === teamTab.rosterView) return;
+      teamTab.rosterView = rosterTab.dataset.rosterView;
+      loadTeamTab();
+      return;
+    }
+    const tile = e.target.closest('.calendar-day.is-game, .tm-g');
+    if (tile) openTeamTile(tile);
+  });
+  teamBody.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const tile = e.target.closest('.calendar-day.is-game');
+    if (tile) { e.preventDefault(); openTeamTile(tile); }
   });
 
   const gameSummaryOverlay = document.getElementById('gameSummaryOverlay');
@@ -7082,19 +7733,6 @@
     }
   }
 
-  scheduleTeamSelect.addEventListener('change', () => {
-    const teamId = scheduleTeamSelect.value;
-    loadTeamSchedule(teamId);
-  });
-  scheduleBody.addEventListener('click', (e) => {
-    const cell = e.target.closest('.calendar-day.is-game');
-    if (cell) showGameSummaryModal(cell.dataset.date);
-  });
-  scheduleBody.addEventListener('keydown', (e) => {
-    if (e.key !== 'Enter' && e.key !== ' ') return;
-    const cell = e.target.closest('.calendar-day.is-game');
-    if (cell) { e.preventDefault(); showGameSummaryModal(cell.dataset.date); }
-  });
   gameSummaryModalBody.addEventListener('click', (e) => {
     const btn = e.target.closest('.modal-cta');
     if (btn) jumpToScorecardGame(btn.dataset.date, btn.dataset.gamePk);
@@ -7831,13 +8469,10 @@
     try { localStorage.setItem(MY_TEAM_KEY, myTeam); } catch (e) {}
     renderMyTeamMark();
     // Tabs already opened switch to the new team; the rest pick it up when they open.
-    if (myTeam && scheduleTeamSelect.options.length) {
-      scheduleTeamSelect.value = myTeam;
-      loadTeamSchedule(myTeam);
-    }
-    if (myTeam && rosterTabTeamSelect.options.length) {
-      rosterTabTeamSelect.value = myTeam;
-      loadRosterTab(myTeam);
+    if (myTeam && teamTab.season) {
+      teamTabSelect.value = myTeam;
+      teamTab.teamId = myTeam;
+      loadTeamTab();
     }
     if (standingsBody.querySelector('.sheet')) loadStandings();
   });
@@ -8292,7 +8927,8 @@
 
     function init(defaultId) {
       tabBtns.forEach(btn => btn.addEventListener('click', () => switchTo(btn.dataset.tab)));
-      const fromHash = location.hash.slice(1);
+      // Schedule and Roster were their own tabs before Team took both in.
+      const fromHash = { schedule: 'team', roster: 'team' }[location.hash.slice(1)] || location.hash.slice(1);
       switchTo(tabs[fromHash] ? fromHash : defaultId);
     }
 
@@ -11199,8 +11835,7 @@
     if (final && standingsView === 'division') setStandingsView('postseason');
     loadStandings();
   } });
-  Tabs.register('schedule', { init: () => { populateTeamSelect(scheduleTeamSelect); loadTeamSchedule(scheduleTeamSelect.value); } });
-  Tabs.register('roster', { init: () => { populateTeamSelect(rosterTabTeamSelect); loadRosterTab(rosterTabTeamSelect.value); } });
+  Tabs.register('team', { init: initTeamTab });
   // onShow keeps --tab-header-h current for this tab's own header height
   // (its controls row differs from the Scorecard's), which the Game Log's
   // sticky recent-games column reads.
