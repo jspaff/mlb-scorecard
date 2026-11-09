@@ -1205,6 +1205,8 @@
   .dp:focus-visible { outline: none; }
   .dp-title { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 13.5px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .dp-meta { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 9.5px; color: var(--ink-soft); }
+  .dp-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 4px; }
+  .dp-wpa { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--ink); }
   .dp-meta b { font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; font-size: 9px; color: var(--ink); }
   @container (min-width: 940px) {
     .dy-pair { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
@@ -6497,9 +6499,30 @@
   // triples-5-on-a-line-drive-..."), which is how a hitting clip finds its
   // play in the feed.
   const DAY_SLUG_LEN = 32;
-  function slugify(text) {
+  function slugify(text, len = DAY_SLUG_LEN) {
     return (text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, DAY_SLUG_LEN);
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, len);
+  }
+
+  // Each play's swing in win probability, by atBatIndex, for weighing the
+  // day's clips. Trimmed by fields= to ~8 KB a game (the whole response is
+  // over 1 MB). A game still going isn't cached, nor is a failure.
+  const gameWpaCache = {};
+  async function getGameWpa(gamePk, isFinal) {
+    if (gameWpaCache[gamePk]) return gameWpaCache[gamePk];
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/game/${gamePk}/winProbability?fields=atBatIndex,homeTeamWinProbabilityAdded`);
+      if (!res.ok) return {};
+      const data = await res.json();
+      const byIndex = {};
+      (Array.isArray(data) ? data : []).forEach(e => {
+        if (e.atBatIndex != null && e.homeTeamWinProbabilityAdded != null) byIndex[e.atBatIndex] = Math.abs(e.homeTeamWinProbabilityAdded) / 100;
+      });
+      if (isFinal) gameWpaCache[gamePk] = byIndex;
+      return byIndex;
+    } catch (e) {
+      return {};
+    }
   }
 
   async function fetchGameStats(gamePk, awayTeam, homeTeam, isFinal) {
@@ -6569,10 +6592,17 @@
           gameScore: 40 + 2 * st.outs + st.strikeOuts - 2 * st.baseOnBalls - 2 * st.hits - 3 * st.runs - 6 * st.homeRuns
         };
       }).filter(Boolean);
-      // The other scoring plays and triples, for matching hitting clips.
-      const keyPlays = allPlays.filter(p => p.result && p.result.event !== 'Home Run' && p.result.type === 'atBat')
-        .map(p => ({ slug: slugify(p.result.description), event: p.result.event, batterId: p.matchup && p.matchup.batter && p.matchup.batter.id, ...playImpact(p) }))
-        .filter(k => k.runs || k.event === 'Triple');
+      // Every at-bat, for matching the day's clips to their plays.
+      const keyPlays = allPlays.filter(p => p.result && p.result.type === 'atBat' && p.about)
+        .map(p => {
+          const batter = (p.matchup && p.matchup.batter) || {};
+          const pitcher = (p.matchup && p.matchup.pitcher) || {};
+          return {
+            atBatIndex: p.about.atBatIndex, slug: slugify(p.result.description), event: p.result.event,
+            batterId: batter.id, batterSlug: slugify(batter.fullName, 99), pitcherSlug: slugify(pitcher.fullName, 99),
+            ...playImpact(p)
+          };
+        });
       const result = { homeRuns, starts, keyPlays };
       if (isFinal) gameStatsCache[gamePk] = result;
       return result;
@@ -6617,51 +6647,69 @@
       return mp4 ? { mp4, title: item.headline || '', date: g.officialDate, gamePk: g.gamePk, matchup, thumb: highlightThumb(item), duration: item.duration || '' } : null;
     };
     const recapItem = items.find(item => tags(item).includes('game-recap'));
-    // Hitting clips carry no "wow"; they're weighed later, against their
-    // play in the feed (weighDayPlays).
+    // Weighed later against their plays in the feed (weighDayPlays).
     const plays = items.map(item => {
       const t = tags(item);
       if (!t.includes('highlight') || t.includes('home-run')) return null;
       const c = clip(item);
       if (!c) return null;
-      if (t.includes('defense')) return { ...c, weight: t.includes('wow') ? 4 : 2, tag: 'Defense' };
-      if (t.includes('wow')) return { ...c, weight: 2, tag: t.includes('pitching') ? 'Pitching' : '' };
+      const base = { ...c, id: item.id || '', slug: (item.id || '').slice(0, DAY_SLUG_LEN), wow: t.includes('wow'), defense: t.includes('defense') };
+      if (base.defense) return { ...base, tag: 'Defense' };
+      if (base.wow) return { ...base, tag: t.includes('pitching') ? 'Pitching' : '' };
       if (t.includes('hitting')) {
         const playerIds = (item.keywordsAll || []).filter(k => k.type === 'player_id').map(k => Number(k.value));
-        return { ...c, weight: 0, slug: (item.id || '').slice(0, DAY_SLUG_LEN), playerIds };
+        return { ...base, hitting: true, playerIds };
       }
       return null;
     }).filter(Boolean);
     return { recap: recapItem ? clip(recapItem) : null, plays };
   }
 
-  // A hitting clip counts by what its play did: a walk-off above all,
-  // then a late go-ahead or tying hit, then a big early one; an RBI single
-  // in a blowout doesn't make the row.
+  // Clips are ranked by their play's swing in win probability (WPA),
+  // plus a bump for MLB's own "wow" and defense tags, so a diving catch in
+  // a blowout still makes the row but a late go-ahead hit outranks it.
+  // A clip finds its play by its id: either the play's description as a
+  // slug, or "pitcher-in-play-run-s-to-batter" (the likeliest of his
+  // at-bats against that pitcher, if he had more than one); a hitting
+  // clip can also find it through its batter's player id.
   const DAY_HIT_LABELS = { walkoff: 'Walk-off', goahead: 'Go-ahead', tying: 'Game-tying' };
-  function weighDayPlays(plays, keyPlays) {
+  const DAY_WOW_BONUS = 0.08;
+  const DAY_DEFENSE_BONUS = 0.04;
+  const DAY_HIT_MIN_WPA = 0.1;
+  function findClipPlay(c, keyPlays, wpa) {
+    const bySlug = keyPlays.find(k => k.slug && k.slug === c.slug);
+    if (bySlug) return bySlug;
+    const inPlay = /-in-play-(run|out|no-out)/.exec(c.id || '');
+    let candidates = [];
+    if (inPlay) {
+      candidates = keyPlays.filter(k => c.id.startsWith(`${k.pitcherSlug}-in-play-`) && c.id.includes(`-to-${k.batterSlug}`)
+        && (inPlay[1] === 'run' ? k.runs > 0 : !k.runs));
+    }
+    // A clip's id doesn't always name the pitcher who gave up the hit.
+    if (c.hitting) {
+      keyPlays.forEach(k => {
+        if (c.playerIds.includes(k.batterId) && (k.runs || k.event === 'Triple') && !candidates.includes(k)) candidates.push(k);
+      });
+    }
+    // "Jake Cronenworth's RBI double" off a pitcher he also homered off:
+    // the hit its headline names settles it.
+    const headline = c.title.toLowerCase();
+    const named = candidates.filter(k => k.event && headline.includes(k.event.toLowerCase()));
+    if (named.length) candidates = named;
+    return candidates.sort((a, b) => (wpa[b.atBatIndex] || 0) - (wpa[a.atBatIndex] || 0))[0] || null;
+  }
+  function weighDayPlays(plays, keyPlays, wpa) {
     return plays.map(c => {
-      if (!c.slug) return c;
-      // Its slug when that's the play's description; otherwise ("pitcher-in-
-      // play-run-s-to-batter") the batter among its players, and when he
-      // drove in runs more than once, the play its headline names.
-      let play = keyPlays.find(k => k.slug && k.slug === c.slug);
-      if (!play) {
-        const his = keyPlays.filter(k => c.playerIds.includes(k.batterId));
-        const headline = c.title.toLowerCase();
-        play = his.find(k => headline.includes((k.event || '').toLowerCase())) || (his.length === 1 ? his[0] : null);
-      }
-      if (!play) return null;
-      const late = play.inning >= 7;
-      let weight = 0;
-      if (play.kind === 'walkoff') weight = 6;
-      else if (play.kind === 'goahead') weight = late ? 5 : 2;
-      else if (play.kind === 'tying') weight = late ? 4 : 1;
-      if (play.runs >= 3) weight += 2;
-      if (play.event === 'Triple') weight += 1;
-      if (weight < 2) return null;
-      const tag = play.kind ? DAY_HIT_LABELS[play.kind] : play.runs >= 3 ? `${play.runs}-run ${play.event.toLowerCase()}` : play.event;
-      return { ...c, weight, tag };
+      const play = findClipPlay(c, keyPlays, wpa);
+      // Home runs have their own section, whether or not MLB tagged the
+      // clip as one.
+      if (play && play.event === 'Home Run') return null;
+      const swing = play ? (wpa[play.atBatIndex] || 0) : 0;
+      if (c.hitting && (!play || swing < DAY_HIT_MIN_WPA)) return null;
+      let tag = c.tag;
+      if (c.hitting) tag = play.kind ? DAY_HIT_LABELS[play.kind] : play.runs >= 2 ? `${play.runs}-run` : '';
+      const weight = swing + (c.wow ? DAY_WOW_BONUS : 0) + (c.defense ? DAY_DEFENSE_BONUS : 0);
+      return { ...c, weight, tag, wpa: swing };
     }).filter(Boolean);
   }
 
@@ -6780,7 +6828,7 @@
           <button type="button" class="dp" data-day-clip="${dayClipKey(c)}">
             <span class="dp-thumb"><img src="${c.thumb}" alt="" loading="lazy"><span class="dp-play">&#9654;</span></span>
             <span class="dp-title">${c.title}</span>
-            <span class="dp-meta">${c.matchup}${c.tag ? ` &#183; <b>${c.tag}</b>` : ''}</span>
+            <span class="dp-meta">${c.matchup}${c.tag ? ` &#183; <b>${c.tag}</b>` : ''}${c.wpa >= 0.01 ? `<span class="dp-wpa">${c.wpa.toFixed(2).replace(/^0/, '')} WPA</span>` : ''}</span>
           </button>`).join('')}
         </div>
       </div>`;
@@ -6788,13 +6836,13 @@
 
   function renderDay() {
     if (!dayData) return '';
-    const { dateStr, games, media, stats, statsByPk, season } = dayData;
+    const { dateStr, games, media, stats, statsByPk, wpaByPk, season } = dayData;
     dayClips = {};
     const homeRuns = stats.flatMap(s => s.homeRuns);
     const starts = stats.flatMap(s => s.starts);
     // At most two clips a game, so one wild game can't fill the row.
     const perGame = {};
-    const plays = games.flatMap(g => (media[g.gamePk] ? weighDayPlays(media[g.gamePk].plays, (statsByPk[g.gamePk] || {}).keyPlays || []) : []))
+    const plays = games.flatMap(g => (media[g.gamePk] ? weighDayPlays(media[g.gamePk].plays, (statsByPk[g.gamePk] || {}).keyPlays || [], (wpaByPk && wpaByPk[g.gamePk]) || {}) : []))
       .sort((a, b) => b.weight - a.weight)
       .filter(c => (perGame[c.gamePk] = (perGame[c.gamePk] || 0) + 1) <= 2)
       .slice(0, DAY_PLAYS_SHOWN);
@@ -6843,9 +6891,11 @@
         return;
       }
       const startedGames = games.filter(g => g.status.abstractGameState === 'Live' || g.status.abstractGameState === 'Final');
-      const stats = await Promise.all(startedGames.map(g =>
-        fetchGameStats(g.gamePk, g.teams.away.team, g.teams.home.team, g.status.abstractGameState === 'Final')
-      ));
+      const [stats, wpas] = await Promise.all([
+        Promise.all(startedGames.map(g =>
+          fetchGameStats(g.gamePk, g.teams.away.team, g.teams.home.team, g.status.abstractGameState === 'Final'))),
+        Promise.all(startedGames.map(g => getGameWpa(g.gamePk, g.status.abstractGameState === 'Final')))
+      ]);
       if (requestId !== dailyRequestId) return;
       let media = {};
       if (withMedia) {
@@ -6855,8 +6905,9 @@
         media = dayData.media;
       }
       const statsByPk = {};
-      startedGames.forEach((g, i) => { statsByPk[g.gamePk] = stats[i]; });
-      dayData = { dateStr, games, media, stats, statsByPk, season: Number(dateStr.slice(0, 4)) };
+      const wpaByPk = {};
+      startedGames.forEach((g, i) => { statsByPk[g.gamePk] = stats[i]; wpaByPk[g.gamePk] = wpas[i]; });
+      dayData = { dateStr, games, media, stats, statsByPk, wpaByPk, season: Number(dateStr.slice(0, 4)) };
       const openLists = isPoll ? [...dailyBody.querySelectorAll('.dy-hr.is-open')].length > 0 : false;
       dailyBody.innerHTML = renderDay();
       if (openLists) {
