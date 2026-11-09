@@ -150,7 +150,7 @@ A three-layer palette of wall, board and ink, with two spare signal colors.
 - **Monster Green**: the frame. It's the page background behind every sheet and the PWA theme color, matching Fenway's Green Monster. It is binding and never changes. Contrast is solved by what sits on it.
 
 ### Secondary
-- **Pennant Gold**: the scheme's accent and its one positive signal. As trim it paints section titles, the active tab and segment rules, focus rings and the jersey number. In the data it marks award plates, a skill score of 90 or more (or a Defense-tab stat in the top 10% of qualified players), a made 5-star catch, quality starts, RBI dots and hits on the spray chart.
+- **Pennant Gold**: the scheme's accent and its one positive signal. As trim it paints section titles, the active tab and segment rules, focus rings and the jersey number. In the data it marks award plates, a skill score of 90 or more (or a Defense-tab stat in the top 10% of qualified players), a made 5-star catch, quality starts, a walk-off or grand slam, RBI dots and hits on the spray chart.
 
 ### Tertiary
 - **Brick Red**: the out and the run against. It fills strikeout diamonds and out ticks. Its text-only tint, **Brick Red Text**, is lighter for small type on the board, where the fill color is too dark to read (runs allowed, strikes).
@@ -168,7 +168,7 @@ A three-layer palette of wall, board and ink, with two spare signal colors.
 
 **The Two Golds Rule.** Gold has two jobs, and they don't mix. As trim it is simply part of the scheme, like the paint on a scoreboard: section titles, the active tab and segment rules, focus rings, the jersey number, the wash on the user's own team. In the data it is earned: a number, dot, lamp or mark turns gold only for excellence or a positive event (top 10% of that season's qualified pool, a quality start, an award, a hit, an RBI, a made 5-star catch). Trim never reaches into the data: a value is never gold just to lead the eye, so a "lead stat" stays cream.
 
-**The Blank Zero Rule.** In game logs and tables, a zero count is left blank, never written as 0. The exceptions are pairs read aloud ("0-4" H-AB, an inning pitched) and a linescore or big-number summary, where a blank would read as missing.
+**The Blank Zero Rule.** In game logs and tables, a zero count is left blank, never written as 0. The exceptions are pairs read aloud ("0-4" H-AB, an inning pitched), a linescore or big-number summary, where a blank would read as missing, and a zero that is the achievement (a starter's 0 ER or 0 BB on the Highlights tab).
 
 ## Typography
 
@@ -323,6 +323,15 @@ Every player's line for the team, hitters then pitchers, in the Players list's t
   - **Bench:** players who start nowhere, as photo cards labelled with every spot they cover in scoring order ("1B · 2B · 3B · SS").
   - **Staff:** the rotation numbered in order, then the bullpen with the closer first ("CL"), the rest "RP", all as photo cards.
   - On a wide sheet the field sits left and bench, rotation and bullpen run down the right.
+
+### Highlights
+The day on one sheet, built to be watched: the scores, then a handful of videos, then the day's homers and best starts.
+- **Scores:** a small box a game, the teams stacked with their runs in a fixed column, the state beside them and MLB's recap on a ▶ (a recessed square, gold triangle). Two across a phone, five on a wide sheet, where the recap's headline joins the box. A box opens the scorecard; your team's gets the gold wash.
+- **Video rows:** Big Moments (the day's biggest swings in win probability, at most two of them homers, the biggest non-homer second so a phone shows it unswiped) and Defense. Four to a row on a wide sheet; on a phone a row swipes sideways, the next card peeking in.
+- **Video card:** a framed still over a gold kicker saying why it's there (Go-ahead, Big hit, Big out, Walk-off; a defensive play's position), the title, the game. The kicker keeps its line when empty so a row's titles align.
+- **The still:** the player's photo as a pinned print (cream border all round, the print's shadow) beside the play's diamond as the scorecard draws it, RBI dots and all, under one quiet line of his team and the inning; the ▶ in the score boxes' recessed square in the corner. Every card draws its own still, never MLB's photo, so a play only Savant has a clip of looks like any other. No grid rules, no fades, no pitch data.
+- **Home Runs:** a table, the biggest swing first, six until asked for all (two columns on a wide sheet): the cap, the nameplate, his season count ("No. 17"), the pitcher, inning, runs and exit velocity, then distance and a Watch link. A walk-off or grand slam is gold; go-ahead and game-tying are tagged from the 7th on.
+- **On the Mound:** the best starts by Game Score as box-score lines (IP, H, ER, BB, K, GSc), the cap and nameplate over "vs ATH · Watch" when MLB has a reel. Zero hits and strikeouts stay blank, but zero earned runs and walks are written: they're the point of the line.
 
 ### Your Team
 The user's team is a cap in a fixed slot at the end of the tab row (a stitched ball when none is picked). Its rows in standings and the bracket get the chosen-segment gold wash (`rgba(217,169,26,0.13)`): trim marking the user's own focus, never a gold value.

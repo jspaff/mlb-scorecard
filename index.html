@@ -1103,59 +1103,145 @@
     right: 6px;
   }
 
-  .hr-list { display: flex; flex-direction: column; }
-  .hr-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 0;
-    border-bottom: 1px dashed var(--paper-line);
-  }
-  .hr-row:last-child { border-bottom: none; }
-  .hr-row.is-grand-slam { border-left: 3px solid var(--gold); padding-left: 8px; margin-left: -11px; }
-  .hr-main { flex: 1; min-width: 0; }
-  .hr-grand-slam-label {
+  /* Highlights: the day on one sheet. Scores across the top, then the
+     home runs (field and list) beside the best starts and top plays on a
+     wide sheet; all stacked on a phone. */
+  .dy { container-type: inline-size; }
+  .dy-head { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 4px 14px; margin-bottom: 16px; }
+  .dy-title { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 24px; line-height: 1.1; text-transform: uppercase; color: var(--ink); }
+  .dy-meta { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .dy-sec { min-width: 0; margin-top: 24px; }
+  .dy-head + .dy-sec { margin-top: 0; }
+  .dy-empty { color: var(--ink-soft); font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; padding: 6px 0; }
+
+  /* Scores: a small box a game -- two across a phone, more on a wide
+     sheet. The teams stack with their runs in a fixed column; the state
+     and the recap's play mark sit beside them. */
+  .dg-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .dg { min-width: 0; padding: 6px 7px 7px; background: rgba(0, 0, 0, 0.14); border: 1px solid var(--paper-line); cursor: pointer; }
+  .dg:hover { border-color: var(--ink-soft); }
+  .dg:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+  .dg.is-my-team { background: rgba(217, 169, 26, 0.13); }
+  .dg.is-live { border-color: #3fae56; }
+  .dg-box { display: flex; gap: 6px; }
+  .dg-teams { flex: 1; min-width: 0; }
+  .dg-team { display: grid; grid-template-columns: 16px minmax(0, 1fr) 22px; align-items: center; gap: 5px; height: 21px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11.5px; color: var(--ink); }
+  .dg-team img { width: 16px; height: 16px; }
+  .dg-team b { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 16px; text-align: right; font-variant-numeric: tabular-nums; }
+  .dg-team.is-lost { color: var(--ink-soft); }
+  .dg-team.is-lost b { font-weight: 400; }
+  .dg-aside { display: flex; flex-direction: column; align-items: flex-end; justify-content: space-between; width: 42px; flex: none; }
+  .dg-state { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; line-height: 21px; }
+  .dg.is-live .dg-state { color: #3fae56; }
+  .dg-recap { width: 24px; height: 18px; padding: 0; background: rgba(0, 0, 0, 0.22); border: 1px solid var(--paper-line); font-size: 9px; line-height: 1; color: var(--gold); cursor: pointer; }
+  .dg-recap:hover, .dg-recap:focus-visible { border-color: var(--gold); }
+  .dg-story { margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(84, 94, 77, 0.6); font-family: 'Inter', sans-serif; font-size: 10.5px; line-height: 1.35; color: var(--ink-soft); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  /* On a phone the box is just the score; the recap's headline joins it
+     once there's room. */
+  .dg-story { display: none; }
+  @container (min-width: 620px) { .dg-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .dg-story { display: -webkit-box; } }
+  @container (min-width: 940px) { .dg-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); } .dy-title { font-size: 30px; } }
+  .dh-watch, .dy-more {
+    align-self: flex-end;
+    margin-top: 2px;
+    padding: 0;
+    background: none;
+    border: 0;
     font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 10px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--gold);
-    margin-bottom: 2px;
-  }
-  .hr-batter { margin-bottom: 3px; }
-  .hr-row.is-grand-slam .hr-batter { color: var(--gold); }
-  .hr-pitcher {
-    font-family: 'Inter', sans-serif;
-    font-size: 11.5px;
-    color: var(--ink-soft);
-    margin-top: 1px;
-  }
-  .hr-team {
-    font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 10px;
-    color: var(--ink-soft);
-  }
-  .hr-distance {
-    font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 12px;
-    color: var(--ink-soft);
-    white-space: nowrap;
-  }
-  .hr-watch {
-    display: inline-block;
-    margin-top: 3px;
-    font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 10px;
-    letter-spacing: 0.05em;
+    font-weight: 800;
+    font-size: 9.5px;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--gold);
     text-decoration: none;
+    cursor: pointer;
   }
-  .hr-watch:hover, .hr-watch:focus-visible { text-decoration: underline; }
+  .dh-watch:hover { text-decoration: underline; }
+
+  /* Home runs, the biggest swing first */
+  .dh { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; border-bottom: 1px dashed var(--paper-line); }
+  .dh.is-extra { display: none; }
+  .dy-hr.is-open .dh.is-extra { display: flex; }
+  .dh-main { flex: 1; min-width: 0; }
+  .dh-who { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .dh-cap { width: 18px; height: 18px; flex: none; }
+  .dh-context { padding-left: 24px; }
+  .ds-name .dh-cap { margin-right: 6px; }
+  .ds-row .is-zero { color: var(--ink); }
+  /* Name over "vs ATH · Watch", like a home run's row. */
+  .ds-row .ds-name { flex-direction: column; align-items: flex-start; gap: 2px; }
+  .ds-head .ds-name { flex-direction: row; }
+  .ds-who { display: flex; align-items: center; min-width: 0; max-width: 100%; }
+  .ds-sub { display: flex; align-items: baseline; gap: 10px; padding-left: 24px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10px; color: var(--ink-soft); }
+  .ds-watch { margin: 0; }
+  @media (max-width: 420px) { .ds-who .player-name-btn { font-size: 10px; padding: 2px 5px; } }
+  .dh-who .player-name-btn { min-width: 0; }
+  .dh-team, .dh-count { flex: none; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10px; color: var(--ink-soft); white-space: nowrap; }
+  .ds-name .dh-team { margin-left: 6px; }
+  .dh-count { font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; font-size: 9px; }
+  .dh-context { margin-top: 3px; font-family: 'Overpass', sans-serif; font-weight: 600; font-size: 10.5px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .dh-tag { font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; font-size: 9px; color: var(--ink); }
+  .dh-tag.is-gold { color: var(--gold); }
+  .dh-side { flex: none; display: flex; flex-direction: column; align-items: flex-end; }
+  .dh-dist { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 20px; line-height: 1.1; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .dh-dist small { margin-left: 2px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 8.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); }
+  .dh-watch { margin-top: 2px; }
+  .dy-more { margin-top: 8px; color: var(--ink-soft); }
+  .dy-more:hover { color: var(--ink); }
+
+  /* Best starts: a box-score line under painted heads, zeros blank */
+  .ds-row { display: grid; grid-template-columns: minmax(0, 1fr) repeat(6, 30px); align-items: center; gap: 4px; padding: 5px 0; border-bottom: 1px dashed var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 12px; color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; }
+  .ds-head { padding: 0 0 3px; border-bottom: 1px solid var(--paper-line); font-weight: 800; font-size: 8.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+  .ds-name { display: flex; align-items: center; min-width: 0; text-align: left; }
+  .ds-name .player-name-btn { min-width: 0; }
+  .ds-gs { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 15px; }
+  @media (max-width: 420px) { .ds-row { grid-template-columns: minmax(0, 1fr) repeat(6, 26px); } }
+
+  /* Videos. A card is a framed scorebook still -- the player's print
+     beside the play's diamond -- over a kicker saying why it's here. */
+  .vc { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 6px 6px 8px; background: rgba(0, 0, 0, 0.18); border: 1px solid var(--paper-line); text-align: left; color: var(--ink); cursor: pointer; scroll-snap-align: start; }
+  .vc:hover, .vc:focus-visible { border-color: var(--gold); }
+  .vc:focus-visible { outline: none; }
+  .vc-thumb { position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden; margin-bottom: 2px; background: var(--paper-line); border: 1px solid var(--paper-line); }
+  .vc { container-type: inline-size; }
+  .vc-card { position: absolute; inset: 0; display: grid; grid-template-columns: 40% minmax(0, 1fr); background: var(--paper); }
+  /* The photo is a pinned print, as on the profile and the depth chart:
+     a cream border all round and the print's shadow, set into the board. */
+  .vc-who { display: flex; align-items: center; justify-content: center; min-width: 0; padding: 9% 0 9% 14%; }
+  .vc-photo { height: 100%; aspect-ratio: 4 / 5; width: auto; max-width: 100%; object-fit: cover; object-position: center 18%; display: block; border: 2px solid var(--ink); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45); background: var(--paper-line); }
+  .vc-play-side { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4%; min-width: 0; padding: 4% 0; }
+  .vc-where { display: flex; align-items: center; gap: 5px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; }
+  .vc-where img { width: 14px; height: 14px; }
+  .vc-where b { font-weight: inherit; opacity: 0.6; }
+  .vc-dia { position: relative; height: 66%; aspect-ratio: 1; }
+  .vc-dia svg { width: 100%; height: 100%; display: block; }
+  .vc-dia .pp-rc-rbi { top: 2%; left: 0; }
+  .vc-play { position: absolute; right: 6px; bottom: 6px; display: flex; align-items: center; justify-content: center; }
+  .vc:hover .vc-play, .vc:focus-visible .vc-play { border-color: var(--gold); }
+  @container (max-width: 250px) {
+    .vc-where { font-size: 8px; gap: 3px; }
+    .vc-where img { width: 12px; height: 12px; }
+    .vc-play { right: 4px; bottom: 4px; transform: scale(0.85); transform-origin: bottom right; }
+  }
+  .vc-kicker { padding: 0 2px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); }
+  .vc-kicker em { font-style: normal; font-weight: 700; letter-spacing: 0.02em; color: var(--ink-soft); }
+  .vc-title { padding: 0 2px; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 13.5px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .dp-meta { padding: 0 2px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 9.5px; color: var(--ink-soft); }
+
+
+  /* A row of videos in a section: swiped on a phone, a grid when wide. */
+  .dp-row { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(200px, 62%); gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; }
+  .dp-row + .dy-hr, .dp-row + .ds-table { margin-top: 10px; }
+  /* The section's list under its videos: the homers two columns wide and
+     the starts at a box score's width on a wide sheet. */
+  @container (min-width: 940px) {
+    .dy-hr-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 36px; }
+    .ds-table { max-width: 640px; }
+  }
+  @container (min-width: 940px) {
+    .dp-row { grid-auto-flow: row; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-columns: auto; overflow: visible; }
+  }
+
 
   .team-block { margin-bottom: 20px; }
   .team-block:last-child { margin-bottom: 8px; }
@@ -3498,10 +3584,6 @@
           <span class="date-display-text" id="dailyDatePickText"></span>
         </div>
         <button type="button" class="date-nav-btn" id="dailyDateNext" aria-label="Next day">&#8250;</button>
-      </div>
-      <div class="view-toggle" id="dailyViewToggle">
-        <button type="button" class="view-toggle-btn active" data-view="homeruns">Home Runs</button>
-        <button type="button" class="view-toggle-btn" data-view="strikeouts">Strikeouts</button>
       </div>
     </div>
     <div class="mlb-controls" data-tab-controls="standings" hidden>
@@ -6424,8 +6506,59 @@
   }
 
   const gameStatsCache = {};
+  const DAY_OUT_REACHED = { '2B': 1, '3B': 2, '4B': 3, 'HM': 3 };
+  const DAY_OUT_EDGE = { '2B': 'first-second', '3B': 'second-third', '4B': 'third-home', 'HM': 'third-home' };
 
-  async function fetchGameStats(gamePk, awayAbbr, homeAbbr, isFinal) {
+  // What a scoring play did to the game, from the score after it less the
+  // runs that crossed on it.
+  function playImpact(p) {
+    const isTop = p.about && p.about.isTopInning;
+    const inning = (p.about && p.about.inning) || 0;
+    const scored = (p.runners || []).filter(r => r.movement && r.movement.end === 'score').length;
+    const runs = scored || (p.result && p.result.rbi) || 0;
+    if (!runs) return { kind: null, inning, runs };
+    const after = isTop ? p.result.awayScore : p.result.homeScore;
+    const opp = isTop ? p.result.homeScore : p.result.awayScore;
+    const before = after - runs;
+    let kind = null;
+    if (!isTop && inning >= 9 && after > opp && before <= opp) kind = 'walkoff';
+    else if (before <= opp && after > opp) kind = 'goahead';
+    else if (before < opp && after === opp) kind = 'tying';
+    return { kind, inning, runs };
+  }
+  // A highlight's id is its play's description as a slug ("justin-crawford-
+  // triples-5-on-a-line-drive-..."), which is how a hitting clip finds its
+  // play in the feed.
+  const DAY_SLUG_LEN = 32;
+  function slugify(text, len = DAY_SLUG_LEN) {
+    return (text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, len);
+  }
+
+  // Each play's swing in win probability, by atBatIndex, for weighing the
+  // day's clips. Trimmed by fields= to ~8 KB a game (the whole response is
+  // over 1 MB). A game still going isn't cached, nor is a failure.
+  const gameWpaCache = {};
+  async function getGameWpa(gamePk, isFinal) {
+    if (gameWpaCache[gamePk]) return gameWpaCache[gamePk];
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/game/${gamePk}/winProbability?fields=atBatIndex,homeTeamWinProbabilityAdded`);
+      if (!res.ok) return {};
+      const data = await res.json();
+      const byIndex = {};
+      (Array.isArray(data) ? data : []).forEach(e => {
+        if (e.atBatIndex != null && e.homeTeamWinProbabilityAdded != null) byIndex[e.atBatIndex] = Math.abs(e.homeTeamWinProbabilityAdded) / 100;
+      });
+      if (isFinal) gameWpaCache[gamePk] = byIndex;
+      return byIndex;
+    } catch (e) {
+      return {};
+    }
+  }
+
+  async function fetchGameStats(gamePk, awayTeam, homeTeam, isFinal) {
+    const awayAbbr = teamAbbr(awayTeam);
+    const homeAbbr = teamAbbr(homeTeam);
     if (isFinal && gameStatsCache[gamePk] !== undefined) return gameStatsCache[gamePk];
     try {
       const res = await fetch(`https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live`);
@@ -6433,161 +6566,612 @@
       const allPlays = (data.liveData && data.liveData.plays && data.liveData.plays.allPlays) || [];
       const homeRuns = allPlays.filter(p => p.result && p.result.event === 'Home Run').map(p => {
         const isTop = p.about && p.about.isTopInning;
-        let distance = null;
         const events = p.playEvents || [];
+        let hitData = null;
         for (let i = events.length - 1; i >= 0; i--) {
-          const hd = events[i].hitData;
-          if (hd && hd.totalDistance != null) { distance = hd.totalDistance; break; }
+          if (events[i].hitData) { hitData = events[i].hitData; break; }
         }
+        const distance = hitData && hitData.totalDistance != null ? hitData.totalDistance : null;
+        const coords = hitData && hitData.coordinates;
+        const pitch = events.slice().reverse().find(e => e.isPitch);
+        // Go-ahead and tying only count late -- a 2-1 lead in the 2nd
+        // isn't a story.
+        const { kind, inning, runs } = playImpact(p);
+        const impact = kind === 'walkoff' || inning >= 7 ? kind : null;
         const lastEvent = events[events.length - 1];
         const playId = lastEvent && lastEvent.playId;
+        // The description carries his count the way a broadcast does:
+        // "Bo Bichette homers (17) on a fly ball ...".
+        const countMatch = /\((\d+)\)/.exec(p.result.description || '');
         return {
+          atBatIndex: p.about && p.about.atBatIndex,
+          gamePk,
           batterId: p.matchup && p.matchup.batter && p.matchup.batter.id,
+          battingTeamId: isTop ? awayTeam.id : homeTeam.id,
+          seasonCount: countMatch ? Number(countMatch[1]) : null,
           batterName: (p.matchup && p.matchup.batter && p.matchup.batter.fullName) || '',
           pitcherName: (p.matchup && p.matchup.pitcher && p.matchup.pitcher.fullName) || '',
           battingAbbr: isTop ? awayAbbr : homeAbbr,
           pitchingAbbr: isTop ? homeAbbr : awayAbbr,
           isGrandSlam: p.result.rbi === 4,
+          runs,
+          impact,
+          inning,
+          isTop,
+          exitVelo: hitData && hitData.launchSpeed != null ? hitData.launchSpeed : null,
+          launchAngle: hitData && hitData.launchAngle != null ? hitData.launchAngle : null,
+          x: coords && coords.coordX != null ? coords.coordX : null,
+          y: coords && coords.coordY != null ? coords.coordY : null,
+          pitchType: (pitch && pitch.details && pitch.details.type && pitch.details.type.code) || '',
+          pitchSpeed: pitch && pitch.pitchData && pitch.pitchData.startSpeed ? Math.round(pitch.pitchData.startSpeed) : null,
           distance,
           videoUrl: savantVideoUrl(playId)
         };
       });
-      const strikeoutTotals = {};
-      allPlays.forEach(p => {
-        if (!(p.result && p.result.event && p.result.event.startsWith('Strikeout'))) return;
-        const pitcher = p.matchup && p.matchup.pitcher;
-        if (!pitcher || pitcher.id == null) return;
-        const isTop = p.about && p.about.isTopInning;
-        const existing = strikeoutTotals[pitcher.id];
-        if (existing) existing.count++;
-        else strikeoutTotals[pitcher.id] = { id: pitcher.id, name: pitcher.fullName || '', teamAbbr: isTop ? homeAbbr : awayAbbr, count: 1 };
-      });
-      const result = { homeRuns, strikeouts: Object.values(strikeoutTotals) };
+      // The day's starters, scored by Game Score (Tango's version):
+      // 40 + 2 per out + K - 2 per BB and hit - 3 per run - 6 per HR.
+      const box = data.liveData && data.liveData.boxscore;
+      const starts = ['away', 'home'].map(side => {
+        const t = box && box.teams && box.teams[side];
+        const id = t && t.pitchers && t.pitchers[0];
+        const pl = id && t.players && t.players[`ID${id}`];
+        const st = pl && pl.stats && pl.stats.pitching;
+        if (!st || st.outs == null) return null;
+        const team = side === 'away' ? awayTeam : homeTeam;
+        const opp = side === 'away' ? homeTeam : awayTeam;
+        return {
+          id, name: (pl.person && pl.person.fullName) || '', teamId: team.id, teamAbbr: teamAbbr(team), oppAbbr: teamAbbr(opp), isHome: side === 'home',
+          ip: st.inningsPitched, h: st.hits, r: st.runs, er: st.earnedRuns, bb: st.baseOnBalls, k: st.strikeOuts,
+          gameScore: 40 + 2 * st.outs + st.strikeOuts - 2 * st.baseOnBalls - 2 * st.hits - 3 * st.runs - 6 * st.homeRuns
+        };
+      }).filter(Boolean);
+      // Every at-bat, for matching the day's clips to their plays.
+      const keyPlays = allPlays.filter(p => p.result && p.result.type === 'atBat' && p.about)
+        .map(p => {
+          const batter = (p.matchup && p.matchup.batter) || {};
+          const pitcher = (p.matchup && p.matchup.pitcher) || {};
+          const events = p.playEvents || [];
+          const last = [...events].reverse().find(e => e.playId);
+          // How far the batter got on the play itself, for its diamond --
+          // a single he was thrown out stretching is 1B with the out drawn
+          // on the way to second, as the scorecard draws it.
+          const run = (p.runners || []).filter(r => r.details && r.details.runner && r.details.runner.id === batter.id).pop();
+          const end = run && run.movement && run.movement.end;
+          const outBase = run && run.movement && run.movement.isOut && run.movement.outBase !== '1B' ? run.movement.outBase : null;
+          const pitches = events.filter(e => e.isPitch);
+          const lastPitch = pitches[pitches.length - 1];
+          const before = pitches[pitches.length - 2];
+          return {
+            atBatIndex: p.about.atBatIndex, slug: slugify(p.result.description), event: p.result.event,
+            description: p.result.description || '', code: getPlayCode(p), playId: last ? last.playId : null,
+            rbi: p.result.rbi || 0, calledLooking: isCalledStrikeout(p),
+            reached: end === 'score' ? 4 : end === '3B' ? 3 : end === '2B' ? 2 : end === '1B' ? 1 : DAY_OUT_REACHED[outBase] || 0,
+            outEdge: DAY_OUT_EDGE[outBase] || null,
+            // Everyone credited with a putout or assist: how a defense
+            // clip finds its play.
+            fielderIds: [...new Set((p.runners || []).flatMap(r => (r.credits || []).map(c => c.player && c.player.id)).filter(Boolean))],
+            fielderPos: Object.fromEntries((p.runners || []).flatMap(r => (r.credits || []).filter(c => c.player && c.position).map(c => [c.player.id, c.position.abbreviation]))),
+            count: before && before.count ? `${before.count.balls}-${before.count.strikes}` : '0-0',
+            pitchSpeed: lastPitch && lastPitch.pitchData && lastPitch.pitchData.startSpeed ? Math.round(lastPitch.pitchData.startSpeed) : null,
+            pitchType: (lastPitch && lastPitch.details && lastPitch.details.type && lastPitch.details.type.code) || '',
+            isTop: p.about.isTopInning, isOut: !!p.result.isOut,
+            batterId: batter.id, batterName: batter.fullName || '', batterSlug: slugify(batter.fullName, 99),
+            pitcherId: pitcher.id, pitcherName: pitcher.fullName || '', pitcherSlug: slugify(pitcher.fullName, 99),
+            battingTeamId: p.about.isTopInning ? awayTeam.id : homeTeam.id,
+            fieldingTeamId: p.about.isTopInning ? homeTeam.id : awayTeam.id,
+            ...playImpact(p)
+          };
+        });
+      const result = { homeRuns, starts, keyPlays };
       if (isFinal) gameStatsCache[gamePk] = result;
       return result;
     } catch (e) {
-      return { homeRuns: [], strikeouts: [] };
+      return { homeRuns: [], starts: [], keyPlays: [] };
     }
   }
 
-  function renderHomeRunRow(hr) {
-    const grandSlamLabel = hr.isGrandSlam ? '<div class="hr-grand-slam-label">Grand Slam</div>' : '';
-    const distanceHtml = hr.distance != null ? `<div class="hr-distance">${Math.round(hr.distance)} ft</div>` : '';
-    const watchHtml = hr.videoUrl ? `<a class="hr-watch" ${clipWatchAttrs(hr.videoUrl, `Home Run &#183; ${hr.batterName}`)}>Watch &#9654;</a>` : '';
-    return `
-      <div class="hr-row${hr.isGrandSlam ? ' is-grand-slam' : ''}">
-        <div class="hr-main">
-          ${grandSlamLabel}
-          <button type="button" class="player-name-btn hr-batter" data-player-id="${hr.batterId || ''}">${hr.batterName} <span class="hr-team">${hr.battingAbbr}</span></button>
-          <div class="hr-pitcher">vs ${hr.pitcherName} <span class="hr-team">${hr.pitchingAbbr}</span></div>
-          ${watchHtml}
-        </div>
-        ${distanceHtml}
-      </div>`;
+  const HR_IMPACT_LABELS = { walkoff: 'Walk-off', goahead: 'Go-ahead', tying: 'Game-tying' };
+
+  // ---- Highlights: the day in one page ----
+  // Scores (with MLB's recap headline and video), then Big Moments, Home
+  // Runs, On the Mound and Defense -- see "What to watch" below. Videos
+  // play in the clip popup from dayClips, keyed per render.
+  let dayClips = {};
+  let dayData = null;
+  const DAY_HR_SHOWN = 6;
+  const DAY_STARTS_SHOWN = 5;
+
+  function highlightMp4(item) {
+    const pbs = item.playbacks || [];
+    const pb = pbs.find(b => b.name === 'mp4Avc') || pbs.find(b => /\.mp4$/.test(b.url || ''));
+    return pb ? pb.url : null;
   }
 
-  function renderStrikeoutRow(k) {
-    return `
-      <div class="hr-row">
-        <div class="hr-main">
-          <button type="button" class="player-name-btn hr-batter" data-player-id="${k.id}">${k.name} <span class="hr-team">${k.teamAbbr}</span></button>
-        </div>
-        <div class="hr-distance">${k.count} K</div>
-      </div>`;
+  // From the schedule's own highlights hydrate: the game's recap video
+  // (its headline is the game's story) and its clips worth a look:
+  // defense, MLB's "wow" tag, and hitting (home runs included).
+  const DAY_PITCHING_WORDS = /\bstrikes? out\b|\bstrands\b|\bescapes\b|\bfans\b|K['’]s\b|\bwhiffs\b|\bsets down\b|\bretires\b|\bsecures\b|\bjam\b/i;
+  function buildGameMedia(g) {
+    const items = (g.content && g.content.highlights && g.content.highlights.highlights && g.content.highlights.highlights.items) || [];
+    const tags = item => (item.keywordsAll || []).filter(k => k.type === 'taxonomy').map(k => k.value);
+    const matchup = `${teamAbbr(g.teams.away.team)} @ ${teamAbbr(g.teams.home.team)}`;
+    const clip = item => {
+      const mp4 = highlightMp4(item);
+      return mp4 ? { mp4, title: (item.headline || '').trim(), date: g.officialDate, gamePk: g.gamePk, matchup } : null;
+    };
+    const recapItem = items.find(item => tags(item).includes('game-recap'));
+    // Matched to their plays in the feed later (buildClipIndex).
+    const plays = items.map(item => {
+      const t = tags(item);
+      if (!t.includes('highlight')) return null;
+      const c = clip(item);
+      if (!c) return null;
+      const playerIds = (item.keywordsAll || []).filter(k => k.type === 'player_id').map(k => Number(k.value));
+      const base = { ...c, id: item.id || '', slug: (item.id || '').slice(0, DAY_SLUG_LEN), wow: t.includes('wow'), defense: t.includes('defense'), playerIds };
+      // "Escapes bases-loaded jam with groundout" is the pitcher's moment
+      // even when MLB tags it defense.
+      if (DAY_PITCHING_WORDS.test(item.headline || '')) return { ...base, cat: 'pitching' };
+      if (base.defense) return { ...base, cat: 'defense' };
+      if (t.includes('pitching')) return { ...base, cat: 'pitching' };
+      if (t.includes('hitting')) return { ...base, cat: 'hitting', hitting: true };
+      return null;
+    }).filter(Boolean);
+    return { recap: recapItem ? clip(recapItem) : null, plays };
   }
 
-  let dailyView = 'homeruns';
-  let dailyStatsData = { homeRuns: [], strikeoutLeaders: [] };
-
-  function renderDailyView() {
-    const section = document.getElementById('dailyViewSection');
-    if (!section) return;
-    if (dailyView === 'strikeouts') {
-      const leaders = dailyStatsData.strikeoutLeaders;
-      section.innerHTML = leaders.length
-        ? `<div class="hr-list">${leaders.map(renderStrikeoutRow).join('')}</div>`
-        : '<div class="roster-empty">No strikeouts on this date.</div>';
-    } else {
-      const homeRuns = dailyStatsData.homeRuns;
-      section.innerHTML = homeRuns.length
-        ? `<div class="hr-list">${homeRuns.map(renderHomeRunRow).join('')}</div>`
-        : '<div class="roster-empty">No home runs on this date.</div>';
+  // A clip finds its play by its id: either the play's description as a
+  // slug, or "pitcher-in-play-run-s-to-batter" (the likeliest of his
+  // at-bats against that pitcher, if he had more than one); a hitting
+  // clip can also find it through its batter's player id.
+  // "In play" means a ball in play: never a strikeout, walk or HBP.
+  const DAY_NOT_IN_PLAY = /^(Strikeout|Walk|Intent Walk|Hit By Pitch)/;
+  function findClipPlay(c, keyPlays, wpa) {
+    const bySlug = keyPlays.find(k => k.slug && k.slug === c.slug);
+    if (bySlug) return { play: bySlug, exact: true };
+    const inPlay = /-in-play-(run|out|no-out)/.exec(c.id || '');
+    let candidates = [];
+    if (inPlay) {
+      candidates = keyPlays.filter(k => c.id.startsWith(`${k.pitcherSlug}-in-play-`) && c.id.includes(`-to-${k.batterSlug}`)
+        && (inPlay[1] === 'run' ? k.runs > 0 : !k.runs) && !DAY_NOT_IN_PLAY.test(k.event || ''));
     }
+    // A defense clip's fielder is credited on its play ("Masyn Winn's
+    // running catch" is the at-bat that's a flyout to Winn, not the
+    // batter's other two). Without an id naming the at-bat, it's the one
+    // play he's credited on in the inning its headline names, or nothing.
+    let mustBeOnly = false;
+    if (c.defense) {
+      const credited = k => c.playerIds.some(id => (k.fielderIds || []).includes(id));
+      if (candidates.length) {
+        const theirs = candidates.filter(credited);
+        if (theirs.length) candidates = theirs;
+      } else if (!c.hitting) {
+        candidates = keyPlays.filter(credited);
+        mustBeOnly = true;
+      }
+    }
+    const exact = candidates.length > 0 && !mustBeOnly;
+    // A clip's id doesn't always name the pitcher who gave up the hit.
+    if (c.hitting) {
+      keyPlays.forEach(k => {
+        if (c.playerIds.includes(k.batterId) && (k.runs || k.event === 'Triple') && !candidates.includes(k)) candidates.push(k);
+      });
+    }
+    // "Jake Cronenworth's RBI double" off a pitcher he also homered off:
+    // the hit its headline names settles it.
+    const headline = c.title.toLowerCase();
+    const named = candidates.filter(k => k.event && headline.includes(k.event.toLowerCase()));
+    if (named.length) candidates = named;
+    // "Connor Norby's nice catch in the 2nd": the inning it names.
+    const inning = /\bin the (\d+)(?:st|nd|rd|th)\b/.exec(headline);
+    if (inning) candidates = candidates.filter(k => k.inning === Number(inning[1]));
+    if (mustBeOnly && (!inning || candidates.length !== 1)) return { play: null, exact: false };
+    const play = candidates.sort((a, b) => (wpa[b.atBatIndex] || 0) - (wpa[a.atBatIndex] || 0))[0];
+    return play ? { play, exact } : { play: null, exact: false };
+  }
+  function dayGameState(g) {
+    const t = scheduleGameToTileGame(g);
+    const isRealDelay = t.detailedState && /delay|suspend/i.test(t.detailedState);
+    if (/postponed|cancel/i.test(t.detailedState || '')) return { label: t.detailedState, started: false };
+    if (t.state === 'Final') {
+      const inn = g.linescore && g.linescore.currentInning;
+      const sched = (g.linescore && g.linescore.scheduledInnings) || 9;
+      return { label: inn && inn !== sched ? `F/${inn}` : 'Final', started: true, final: true };
+    }
+    if (t.state === 'Live' && t.detailedState !== 'Warmup' && !isRealDelay) {
+      return { label: `${formatInningState(t.inningState)} ${t.inningOrdinal || ''}`.trim(), started: true, live: true };
+    }
+    if (t.state === 'Live') return { label: t.detailedState || 'Warmup', started: false };
+    return { label: formatGameTime(t.gameDate), started: false };
+  }
+
+  // One game as a small box: the two teams stacked with their runs, the
+  // state and a play mark for MLB's recap video beside them, and the
+  // recap's headline under them.
+  function renderDayGame(g, media) {
+    const st = dayGameState(g);
+    const a = g.teams.away, h = g.teams.home;
+    const team = (t, other) => {
+      const lost = st.final && t.score < other.score;
+      return `<div class="dg-team${lost ? ' is-lost' : ''}"><img src="${capLogoUrl(t.team.id)}" alt=""><span>${teamAbbr(t.team)}</span><b>${st.started ? (t.score ?? 0) : ''}</b></div>`;
+    };
+    const recap = media && media.recap;
+    const mine = myTeamId() && (a.team.id === myTeamId() || h.team.id === myTeamId());
+    return `
+      <div class="dg${st.live ? ' is-live' : ''}${mine ? ' is-my-team' : ''}" data-date="${g.officialDate}" data-game-pk="${g.gamePk}" tabindex="0" role="button">
+        <div class="dg-box">
+          <div class="dg-teams">${team(a, h)}${team(h, a)}</div>
+          <div class="dg-aside">
+            <span class="dg-state">${st.label}</span>
+            ${recap ? `<button type="button" class="dg-recap" data-day-clip="${dayVideoKey({ clip: recap })}" aria-label="Recap video" title="Recap">&#9654;</button>` : ''}
+          </div>
+        </div>
+        ${recap ? `<div class="dg-story">${recap.title}</div>` : ''}
+      </div>`;
+  }
+
+  function renderDayHomeRun(hr, i, season) {
+    storeTeamPlayer(hr.batterId, hr.batterName, '', hr.battingTeamId, season);
+    const tag = hr.impact === 'walkoff' ? 'Walk-off' : hr.isGrandSlam ? 'Grand slam' : hr.impact ? HR_IMPACT_LABELS[hr.impact] : '';
+    const gold = hr.impact === 'walkoff' || hr.isGrandSlam;
+    const kind = hr.isGrandSlam ? '' : hr.runs === 1 ? 'Solo' : `${hr.runs}-run`;
+    const inning = hr.inning ? `${hr.isTop ? 'T' : 'B'}${hr.inning}` : '';
+    const ev = hr.exitVelo != null ? `${hr.exitVelo.toFixed(1)} mph` : '';
+    const context = [`vs ${shortPlayerName(hr.pitcherName)}`, inning, kind, ev].filter(Boolean).join(' &#183; ');
+    const watch = hr.videoUrl ? `<a class="dh-watch" ${clipWatchAttrs(hr.videoUrl, `Home Run &#183; ${hr.batterName}`)}>Watch &#9654;</a>` : '';
+    return `
+      <div class="dh${gold ? ' is-gold' : ''}${i >= DAY_HR_SHOWN ? ' is-extra' : ''}">
+        <div class="dh-main">
+          <div class="dh-who">
+            <img class="dh-cap" src="${capLogoUrl(hr.battingTeamId)}" alt="">
+            <button type="button" class="player-name-btn" data-player-id="${hr.batterId || ''}">${hr.batterName}</button>
+            ${hr.seasonCount ? `<span class="dh-count">No. ${hr.seasonCount}</span>` : ''}
+          </div>
+          <div class="dh-context">${tag ? `<span class="dh-tag${gold ? ' is-gold' : ''}">${tag}</span> &#183; ` : ''}${context}</div>
+        </div>
+        <div class="dh-side">
+          <div class="dh-dist">${hr.distance != null ? `${Math.round(hr.distance)}<small>ft</small>` : '&#8212;'}</div>
+          ${watch}
+        </div>
+      </div>`;
+  }
+
+  // The day's homers, the ones that swung their games most (WPA) first.
+  function renderDayHomeRuns(homeRuns, season, wpaByPk = {}) {
+    if (!homeRuns.length) return '<div class="dy-empty">None yet.</div>';
+    const swing = hr => (wpaByPk[hr.gamePk] || {})[hr.atBatIndex] || 0;
+    const sorted = homeRuns.slice().sort((a, b) => swing(b) - swing(a) || (b.distance || 0) - (a.distance || 0));
+    const more = sorted.length > DAY_HR_SHOWN ? `<button type="button" class="dy-more" data-more="All ${sorted.length}" data-less="Top ${DAY_HR_SHOWN}">All ${sorted.length}</button>` : '';
+    return `<div class="dy-hr"><div class="dy-hr-list">${sorted.map((hr, i) => renderDayHomeRun(hr, i, season)).join('')}</div>${more}</div>`;
+  }
+
+  // A start with MLB's reel of the outing gets a Watch link.
+  function renderDayStarts(starts, season, reels = {}) {
+    if (!starts.length) return '';
+    const top = starts.slice().sort((a, b) => b.gameScore - a.gameScore).slice(0, DAY_STARTS_SHOWN);
+    const blank = v => (v ? v : '');
+    // A zero earned runs or walks is the point of the line, so those two
+    // keep their zeros.
+    const rows = top.map(p => {
+      storeTeamPlayer(p.id, p.name, 'P', p.teamId, season);
+      return `
+        <div class="ds-row">
+          <span class="ds-name">
+            <span class="ds-who"><img class="dh-cap" src="${capLogoUrl(p.teamId)}" alt=""><button type="button" class="player-name-btn" data-player-id="${p.id}">${p.name}</button></span>
+            <span class="ds-sub">${p.isHome ? 'vs' : '@'} ${p.oppAbbr}${reels[p.id] ? `<button type="button" class="dh-watch ds-watch" data-day-clip="${dayVideoKey({ clip: reels[p.id] })}">Watch &#9654;</button>` : ''}</span>
+          </span>
+          <span>${p.ip}</span><span>${blank(p.h)}</span><span${p.er ? '' : ' class="is-zero"'}>${p.er}</span><span${p.bb ? '' : ' class="is-zero"'}>${p.bb}</span><span>${blank(p.k)}</span><span class="ds-gs">${p.gameScore}</span>
+        </div>`;
+    }).join('');
+    return `
+      <div class="ds-table">
+        <div class="ds-row ds-head"><span class="ds-name">Best starts</span><span>IP</span><span>H</span><span>ER</span><span>BB</span><span>K</span><span>GSc</span></div>
+        ${rows}
+      </div>`;
+  }
+
+  // ---- What to watch ----
+  // Big Moments (the plays that swung games most, by WPA) and Defense
+  // (MLB's own defense clips, its "wow" ones first) are rows of videos;
+  // Home Runs and On the Mound are tables with a Watch link a row.
+  // A play plays MLB's clip of it when there is one (photo, headline);
+  // otherwise Savant's clip of that pitch, on a scorebook card instead of
+  // a photo -- MLB keeps only ten clips a game, and a big double can miss
+  // the cut. No play shows twice on the page.
+  const DAY_MOMENT_MIN_WPA = 0.1;
+  const DAY_DEFENSE_BONUS = 0.06;
+  const DAY_WOW_BONUS = 0.1;
+  const DAY_ROW = 4;
+
+  function inningTag(k) {
+    return k.inning ? `${k.isTop ? 'T' : 'B'}${k.inning}` : '';
+  }
+  function matchupOf(g) {
+    return g ? `${teamAbbr(g.teams.away.team)} @ ${teamAbbr(g.teams.home.team)}` : '';
+  }
+  // "Jonah Heim's 2-run double"; a strikeout names both men; any other
+  // out keeps the feed's own words ("Juan Soto grounds into a double play").
+  const DAY_HIT_WORDS = { 'Single': 'single', 'Double': 'double', 'Triple': 'triple', 'Home Run': 'home run' };
+  function momentTitle(k) {
+    const hit = DAY_HIT_WORDS[k.event];
+    if (hit) {
+      if (k.event === 'Home Run') return `${k.batterName}'s ${k.runs === 4 ? 'grand slam' : k.runs > 1 ? `${k.runs}-run homer` : 'solo homer'}`;
+      return `${k.batterName}'s ${k.runs > 1 ? `${k.runs}-run ` : k.runs ? 'RBI ' : ''}${hit}`;
+    }
+    if (/^Strikeout/.test(k.event)) return `${k.pitcherName} strikes out ${k.batterName}`;
+    return (k.description.split(/\.\s|, /)[0] || k.event).replace(/\s+on a .*$/, '').replace(/\s+\(\d+\)/, '').replace(/\.$/, '');
+  }
+
+  // Every clip of the day keyed to its play ("gamePk-atBatIndex"); the clip
+  // named for the play beats a reel that merely includes it.
+  function buildClipIndex(games, media, statsByPk, wpaByPk) {
+    const byPlay = {};
+    const loose = [];
+    games.forEach(g => {
+      const m = media[g.gamePk];
+      if (!m) return;
+      const keyPlays = (statsByPk[g.gamePk] || {}).keyPlays || [];
+      const wpa = (wpaByPk && wpaByPk[g.gamePk]) || {};
+      m.plays.forEach(c => {
+        const { play, exact } = findClipPlay(c, keyPlays, wpa);
+        const entry = { ...c, play, exact, wpa: play ? (wpa[play.atBatIndex] || 0) : 0 };
+        if (!play) { loose.push(entry); return; }
+        const key = `${g.gamePk}-${play.atBatIndex}`;
+        const prev = byPlay[key];
+        if (!prev || (exact && !prev.exact)) byPlay[key] = entry;
+      });
+    });
+    return { byPlay, loose };
+  }
+
+  function buildDaySections({ games, media, stats, statsByPk, wpaByPk }) {
+    const { byPlay, loose } = buildClipIndex(games, media, statsByPk, wpaByPk);
+    const used = new Set();
+    const fill = (candidates, n) => {
+      const out = [];
+      candidates.forEach(c => {
+        if (!c || out.length >= n || used.has(c.key)) return;
+        used.add(c.key);
+        out.push(c);
+      });
+      return out;
+    };
+    const gameOf = pk => games.find(x => x.gamePk === pk);
+
+    // Big Moments: every at-bat of the day by WPA, at most two of them
+    // homers (they have a row of their own), and the biggest that isn't a
+    // homer second, where a phone shows it before any swipe.
+    const all = games.flatMap(g => {
+      const wpa = (wpaByPk && wpaByPk[g.gamePk]) || {};
+      return ((statsByPk[g.gamePk] || {}).keyPlays || []).map(k => ({ k, g, wpa: wpa[k.atBatIndex] || 0 }));
+    }).filter(m => m.wpa >= DAY_MOMENT_MIN_WPA).sort((a, b) => b.wpa - a.wpa).map(({ k, g, wpa }) => {
+      const key = `${g.gamePk}-${k.atBatIndex}`;
+      // A reel that only touches the play ("first career four-hit game")
+      // isn't the play: then it's Savant's clip of the pitch.
+      const found = byPlay[key];
+      const clip = found && (found.exact || found.title.toLowerCase().includes((k.event || '').toLowerCase())) ? found : null;
+      return {
+        key, g, k, wpa, clip, playId: k.playId,
+        title: clip ? clip.title : momentTitle(k),
+        label: k.kind ? HR_IMPACT_LABELS[k.kind] : k.event === 'Home Run' ? 'Home run' : k.isOut ? 'Big out' : 'Big hit',
+        why: k.runs > 1 ? `${k.runs} runs` : k.runs ? '1 run' : '',
+        teamId: k.isOut ? k.fieldingTeamId : k.battingTeamId, personId: k.isOut ? k.pitcherId : k.batterId
+      };
+    }).filter(m => m.clip || m.playId);
+    let homers = 0;
+    const capped = all.filter(m => m.k.event !== 'Home Run' || ++homers <= 2);
+    const firstNonHr = capped.find(m => m.k.event !== 'Home Run');
+    const moments = fill([capped[0], firstNonHr, ...capped], DAY_ROW);
+    moments.sort((a, b) => (a === capped[0] ? -1 : b === capped[0] ? 1 : a === firstNonHr ? -1 : b === firstNonHr ? 1 : b.wpa - a.wpa));
+
+    // On the Mound plays each start's reel, when MLB has one, from its
+    // row in the table.
+    const starts = stats.flatMap(s => s.starts);
+    const reels = {};
+    loose.filter(c => c.cat === 'pitching').forEach(c => {
+      const sp = starts.find(p => c.playerIds.includes(p.id));
+      if (sp && !reels[sp.id]) reels[sp.id] = c;
+    });
+
+    // Defense: MLB's defense clips, "wow" first, then by the play's WPA.
+    const defense = fill([...Object.values(byPlay), ...loose].filter(c => c.cat === 'defense')
+      .map(c => ({ c, weight: c.wpa + DAY_DEFENSE_BONUS + (c.wow ? DAY_WOW_BONUS : 0) }))
+      .sort((a, b) => b.weight - a.weight)
+      .map(({ c }) => ({
+        key: c.play ? `${c.gamePk}-${c.play.atBatIndex}` : `d-${c.mp4}`, clip: c, k: c.play,
+        title: c.title, label: c.play ? c.playerIds.map(id => c.play.fielderPos[id]).find(Boolean) || '' : '', why: '',
+        // The fielder: the clip's player who isn't the play's batter or
+        // pitcher.
+        personId: c.playerIds.find(id => !c.play || (id !== c.play.batterId && id !== c.play.pitcherId)) || c.playerIds[0],
+        teamId: c.play ? c.play.fieldingTeamId : null
+      })), DAY_ROW);
+
+    return { moments, defense, reels };
+  }
+
+  function dayVideoKey(item) {
+    const key = `c${Object.keys(dayClips).length}`;
+    dayClips[key] = item.clip ? item.clip : { playId: item.playId, matchup: matchupOf(item.g), title: item.title };
+    return key;
+  }
+
+  // The still: his photo pinned as a print on the left, and the
+  // play's diamond as the scorecard draws it (an RBI dot a run), under a
+  // quiet line of his team and the inning. A clip with no play gets an
+  // empty diamond.
+  function renderScorebookStill(item) {
+    const k = item.k;
+    const photo = item.personId
+      ? `<img class="vc-photo" src="${headshotUrl(item.personId, 240)}" alt="" onerror="this.style.visibility='hidden'">`
+      : '';
+    const team = item.teamId ? `<img src="${capLogoUrl(item.teamId)}" alt="">${TEAM_ABBR[item.teamId] || ''}` : '';
+    const where = [team, k ? inningTag(k) : ''].filter(Boolean).join('<b>&#183;</b>');
+    const dots = k && k.rbi ? `<span class="pp-rc-rbi">${'<i></i>'.repeat(k.rbi)}</span>` : '';
+    const diamond = k
+      ? diamondSVG(k.reached, k.reached === 4, k.code, k.isOut, k.outEdge, null, false, k.calledLooking)
+      : diamondSVG(0, false, '', false, null, null, false);
+    return `
+      <span class="vc-card">
+        <span class="vc-who">${photo}</span>
+        <span class="vc-play-side">
+          <span class="vc-where">${where}</span>
+          <span class="vc-dia">${dots}${diamond}</span>
+        </span>
+        <span class="dg-recap vc-play">&#9654;</span>
+      </span>`;
+  }
+
+  // A video card: the scorebook still, then a kicker saying why it's here
+  // (it keeps its line even when empty, so a row's titles line up), the
+  // title and the game. Every card draws its own still -- MLB's photos
+  // never show -- so a Savant-only play looks like any other.
+  function renderVideoCard(item) {
+    const matchup = item.clip ? item.clip.matchup : matchupOf(item.g);
+    return `
+      <button type="button" class="vc" data-day-clip="${dayVideoKey(item)}">
+        <span class="vc-thumb">${renderScorebookStill(item)}</span>
+        <span class="vc-kicker">${item.label || '&nbsp;'}${item.why ? ` <em>${item.why}</em>` : ''}</span>
+        <span class="vc-title">${item.title}</span>
+        <span class="dp-meta">${matchup}</span>
+      </button>`;
+  }
+
+  function renderVideoSection(title, items, { note = '', body = '' } = {}) {
+    if (!items.length && !body) return '';
+    return `
+      <div class="dy-sec">
+        <div class="pp-skg-head"><span>${title}</span>${note ? `<em>${note}</em>` : ''}</div>
+        ${items.length ? `<div class="dp-row">${items.map(renderVideoCard).join('')}</div>` : ''}
+        ${body}
+      </div>`;
+  }
+
+  function renderDay() {
+    if (!dayData) return '';
+    const { dateStr, games, media, stats, season } = dayData;
+    dayClips = {};
+    const homeRuns = stats.flatMap(s => s.homeRuns);
+    const starts = stats.flatMap(s => s.starts);
+    const sec = buildDaySections(dayData);
+    const finals = games.filter(g => g.status.abstractGameState === 'Final').length;
+    const when = new Date(`${dateStr}T12:00:00`).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    const meta = [`${games.length} game${games.length === 1 ? '' : 's'}`, finals && finals < games.length ? `${finals} final` : '', homeRuns.length ? `${homeRuns.length} HR` : ''].filter(Boolean).join(' &#183; ');
+    return `
+      <div class="sheet dy">
+        <div class="dy-head"><div class="dy-title">${when}</div><div class="dy-meta">${meta}</div></div>
+        <div class="dy-sec">
+          <div class="pp-skg-head"><span>Scores</span></div>
+          <div class="dg-grid">${games.map(g => renderDayGame(g, media[g.gamePk])).join('')}</div>
+        </div>
+        ${renderVideoSection('Big Moments', sec.moments)}
+        ${renderVideoSection('Home Runs', [], { note: homeRuns.length || '', body: renderDayHomeRuns(homeRuns, season, dayData.wpaByPk) })}
+        ${renderVideoSection('On the Mound', [], { body: renderDayStarts(starts, season, sec.reels) })}
+        ${renderVideoSection('Defense', sec.defense)}
+      </div>`;
   }
 
   let dailyRequestId = 0;
+  // The schedule's highlights make it ~2 MB a day, so a poll refetches
+  // them only every few minutes and otherwise keeps the last ones.
+  const DAY_MEDIA_TTL_MS = 3 * 60 * 1000;
+  let dayMediaAt = 0;
 
   // isPoll distinguishes a silent background refresh from a real navigation
-  // (tab open, date change, prev/next click): a poll reuses the page that's
-  // already there and just swaps in fresh tile content, rather than flashing
-  // back through the loading messages every 15 seconds.
+  // (tab open, date change, prev/next click): a poll redraws the page in
+  // place rather than flashing back through the loading message.
   async function loadDailySummary(dateStr, isPoll) {
     const requestId = ++dailyRequestId;
     clearTimeout(dailyPollTimer);
     dailyPollTimer = null;
-    if (!isPoll) dailyBody.innerHTML = '<div class="mlb-status-msg">Loading today&#8217;s highlights&#8230;</div>';
+    if (!isPoll) dailyBody.innerHTML = '<div class="mlb-status-msg">Loading the day&#8217;s games&#8230;</div>';
     try {
-      const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}&hydrate=linescore`);
+      const withMedia = !isPoll || Date.now() - dayMediaAt > DAY_MEDIA_TTL_MS;
+      const hydrate = `linescore${withMedia ? ',game(content(highlights(highlights)))' : ''}`;
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}&hydrate=${hydrate}`);
       const data = await res.json();
       const games = (data.dates && data.dates[0] && data.dates[0].games) || [];
+      // A newer date's load may have started while this one was waiting.
+      if (requestId !== dailyRequestId) return;
       if (!games.length) {
         if (!isPoll) dailyBody.innerHTML = '<div class="mlb-status-msg">No MLB games scheduled on this date.</div>';
         return;
       }
-      if (!isPoll) {
-        dailyBody.innerHTML = '<div class="sheet"><div id="dailyViewSection"><div class="mlb-status-msg">Loading game stats&#8230;</div></div></div>';
-      }
-
       const startedGames = games.filter(g => g.status.abstractGameState === 'Live' || g.status.abstractGameState === 'Final');
-      const gameStats = await Promise.all(startedGames.map(g =>
-        fetchGameStats(g.gamePk, teamAbbr(g.teams.away.team), teamAbbr(g.teams.home.team), g.status.abstractGameState === 'Final')
-      ));
+      const [stats, wpas] = await Promise.all([
+        Promise.all(startedGames.map(g =>
+          fetchGameStats(g.gamePk, g.teams.away.team, g.teams.home.team, g.status.abstractGameState === 'Final'))),
+        Promise.all(startedGames.map(g => getGameWpa(g.gamePk, g.status.abstractGameState === 'Final')))
+      ]);
       if (requestId !== dailyRequestId) return;
-      const homeRuns = gameStats.map(s => s.homeRuns).flat();
-      const strikeoutTotals = {};
-      gameStats.forEach(s => s.strikeouts.forEach(k => {
-        const existing = strikeoutTotals[k.id];
-        if (existing) existing.count += k.count;
-        else strikeoutTotals[k.id] = { ...k };
-      }));
-      const strikeoutLeaders = Object.values(strikeoutTotals).sort((a, b) => b.count - a.count).slice(0, 10);
-      dailyStatsData = { homeRuns, strikeoutLeaders };
-      renderDailyView();
+      let media = {};
+      if (withMedia) {
+        games.forEach(g => { media[g.gamePk] = buildGameMedia(g); });
+        dayMediaAt = Date.now();
+      } else if (dayData && dayData.dateStr === dateStr) {
+        media = dayData.media;
+      }
+      const statsByPk = {};
+      const wpaByPk = {};
+      startedGames.forEach((g, i) => { statsByPk[g.gamePk] = stats[i]; wpaByPk[g.gamePk] = wpas[i]; });
+      dayData = { dateStr, games, media, stats, statsByPk, wpaByPk, season: Number(dateStr.slice(0, 4)) };
+      const openLists = isPoll ? [...dailyBody.querySelectorAll('.dy-hr.is-open')].length > 0 : false;
+      dailyBody.innerHTML = renderDay();
+      if (openLists) {
+        const sec = dailyBody.querySelector('.dy-hr');
+        if (sec) sec.classList.add('is-open');
+      }
 
       // Keep polling as long as anything on this date could still change --
       // not just while something is *currently* Live. A date can have some
       // games Final and others still Preview (an early game ends before a
       // late one starts), and checking only for Live means polling can stop
-      // for good in that gap, silently freezing every not-yet-started game
-      // until the date is changed or the page reloaded. A past date is all
-      // Final and a future one is all Preview-with-nothing-to-catch-yet, so
-      // this still naturally stops polling a date with nothing left to
-      // change -- it just also covers today's gaps between games. Preview
-      // games only need an occasional check-in to catch the Live transition
-      // (or a postponement), so they get a much gentler interval than an
-      // active game's 15s.
+      // for good in that gap. Preview games only need an occasional
+      // check-in to catch the Live transition (or a postponement).
       const stillLive = games.some(g => g.status.abstractGameState === 'Live');
       const stillUpcoming = games.some(g => g.status.abstractGameState === 'Preview');
       if (requestId === dailyRequestId && (stillLive || stillUpcoming)) {
         dailyPollTimer = setTimeout(() => loadDailySummary(dateStr, true), stillLive ? 15000 : 60000);
       }
     } catch (e) {
+      if (requestId !== dailyRequestId) return;
       if (!isPoll) {
-        dailyBody.innerHTML = apiErrorMsg("today's highlights");
+        dailyBody.innerHTML = apiErrorMsg("the day's games");
         return;
       }
       // A transient failure mid-poll (a network blip, e.g. right as the
-      // phone wakes up) must not silently kill the poll chain for the rest
-      // of the session -- unlike fetchAndRender's setInterval, this chain
-      // only keeps going if something here re-arms dailyPollTimer, and the
-      // background-resume catch-up above only acts when dailyPollTimer is
-      // set. Retry on the live cadence; once a fetch succeeds again, the
-      // normal stillLive/stillUpcoming check above takes back over.
+      // phone wakes up) must not silently kill the poll chain -- this chain
+      // only keeps going if something here re-arms dailyPollTimer. Retry
+      // on the live cadence.
       if (requestId === dailyRequestId) {
         dailyPollTimer = setTimeout(() => loadDailySummary(dateStr, true), 15000);
       }
     }
   }
+
+  dailyBody.addEventListener('click', (e) => {
+    const clipBtn = e.target.closest('[data-day-clip]');
+    if (clipBtn) {
+      const clip = dayClips[clipBtn.dataset.dayClip];
+      if (clip && clip.mp4) showClipModal(null, { head: `<div class="cv-head"><span class="cv-result">${clip.matchup}</span></div>`, clip });
+      else if (clip && clip.playId) showClipModal(clip.playId, { head: `<div class="cv-head"><span class="cv-result">${clip.matchup}</span></div>` });
+      return;
+    }
+    const more = e.target.closest('.dy-more');
+    if (more) {
+      const open = more.closest('.dy-hr').classList.toggle('is-open');
+      more.textContent = open ? more.dataset.less : more.dataset.more;
+      return;
+    }
+    if (e.target.closest('a, button')) return;
+    const game = e.target.closest('.dg');
+    if (game) jumpToScorecardGame(game.dataset.date, Number(game.dataset.gamePk));
+  });
+  dailyBody.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const game = e.target.closest('.dg');
+    if (!game || e.target !== game) return;
+    e.preventDefault();
+    jumpToScorecardGame(game.dataset.date, Number(game.dataset.gamePk));
+  });
 
   dailyDateInput.addEventListener('change', () => {
     dailyDateInputText.textContent = formatShortDate(dailyDateInput.value);
@@ -6601,13 +7185,7 @@
     setDateInputValue(dailyDateInput, dailyDateInputText, addDays(dailyDateInput.value, 1));
     loadDailySummary(dailyDateInput.value);
   });
-  document.getElementById('dailyViewToggle').addEventListener('click', (e) => {
-    const btn = e.target.closest('.view-toggle-btn');
-    if (!btn || btn.dataset.view === dailyView) return;
-    dailyView = btn.dataset.view;
-    document.querySelectorAll('#dailyViewToggle .view-toggle-btn').forEach(b => b.classList.toggle('active', b === btn));
-    renderDailyView();
-  });
+
 
   // ---- Team tab ----
   // One team's season in four views: Overview (record, the games-over-.500
