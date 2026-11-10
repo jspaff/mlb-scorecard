@@ -504,13 +504,19 @@
     flex-direction: column;
     flex-shrink: 0;
     padding: 6px 11px 9px;
-    border-right: 2px solid var(--ink);
   }
+  /* R/H/E stays pinned at the panel's right edge while extra innings
+     scroll under it, so a narrow popup never hides the final score. The
+     divider rides on this column, not the innings, so it stays with it. */
   .monster-panel-right {
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
     padding: 6px 11px 9px;
+    position: sticky;
+    right: 0;
+    background: var(--paper);
+    border-left: 2px solid var(--ink);
   }
   /* Mirrors .monster-count's own margin/padding/border-top exactly, so the
      two horizontal dividers land on the same line across both columns.
@@ -697,6 +703,8 @@
      the rest of the modal's left-aligned text. */
   .game-summary-game .monster-panel { margin-bottom: 14px; }
   .gs-box-score { text-align: center; }
+  /* The Scorecard's own Final summary, ruled off under the line score. */
+  .gs-story { margin-bottom: 14px; border-top: 1px solid var(--paper-line); }
 
   .badge {
     display: flex;
@@ -722,26 +730,6 @@
     margin-bottom: 10px;
   }
   .gs-weather { color: var(--ink-soft); }
-  .pog-section {
-    margin-top: 14px;
-    padding-top: 12px;
-    border-top: 1px dashed var(--paper-line);
-  }
-  .pog-inning {
-    font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 10px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
-    margin-bottom: 4px;
-  }
-  .pog-description {
-    font-family: 'Inter', sans-serif;
-    font-size: 12.5px;
-    color: var(--ink);
-    line-height: 1.5;
-  }
   .pog-watch {
     display: inline-block;
     margin-top: 6px;
@@ -758,43 +746,12 @@
      pitcher lines, left-aligned like them, at .pog-watch's own original
      size (no overrides needed here). */
   .atbat-watch { display: block; margin-bottom: 4px; }
-  .potg-section {
-    margin-top: 14px;
-    margin-bottom: 16px;
-    padding-top: 12px;
-    border-top: 1px dashed var(--paper-line);
-  }
   .potg-loading {
     font-family: 'Inter', sans-serif;
     font-size: 12px;
     color: var(--ink-soft);
   }
-  .potg-players { display: flex; gap: 10px; margin-top: 8px; }
-  .potg-player {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: 4px;
-  }
-  .potg-headshot {
-    width: 40px;
-    height: 50px;
-    border-radius: 0;
-    object-fit: cover;
-    background: var(--paper-line);
-    border: 1px solid var(--paper-line);
-  }
   .potg-player-name { max-width: 100%; }
-  .potg-stat-line {
-    font-family: 'Oswald', sans-serif;
-    font-weight: 500;
-    font-size: 11.5px;
-    letter-spacing: 0.02em;
-    color: var(--ink);
-  }
   .potg-stat { white-space: nowrap; }
   .modal-cta {
     display: block;
@@ -5966,7 +5923,9 @@
 
   // A finished game's story: the play of the game and the players of the
   // game, both picked by win probability (which stays behind the scenes).
-  function renderGameStory(h) {
+  // fullProfile: a name opens the full profile (the game summary popup,
+  // off the Scorecard) rather than the quick look.
+  function renderGameStory(h, { fullProfile = false } = {}) {
     if (!h || (!h.playOfGame && !(h.leaders && h.leaders.length))) {
       return `<div class="sc-story"><div class="hv-desc">Highlights aren't available for this game.</div></div>`;
     }
@@ -5977,7 +5936,7 @@
       </div>` : '';
     const playersHtml = h.leaders && h.leaders.length ? `<div class="story-sec">
         <div class="story-title">Players of the Game</div>
-        <div class="story-players">${h.leaders.map(p => `<div class="story-pl"><span class="story-abbr">${p.teamAbbr || ''}</span><button type="button" class="player-name-btn" data-player-id="${p.id}" title="${p.name}">${p.name}</button>${p.statLine ? `<span class="story-line">${p.statLine}</span>` : ''}</div>`).join('')}</div>
+        <div class="story-players">${h.leaders.map(p => `<div class="story-pl"><span class="story-abbr">${p.teamAbbr || ''}</span><button type="button" class="player-name-btn${fullProfile ? ' potg-player-name' : ''}" data-player-id="${p.id}" title="${p.name}">${p.name}</button>${p.statLine ? `<span class="story-line">${p.statLine}</span>` : ''}</div>`).join('')}</div>
       </div>` : '';
     return `<div class="sc-story">${pogHtml}${playersHtml}</div>`;
   }
@@ -8246,7 +8205,7 @@
     // Top play/players highlights only make sense once a game is over --
     // a Live game's WPA swings are still in motion.
     const wpaHtml = game.state === 'Final'
-      ? `<div class="pog-section" id="wpaLeaders-${game.gamePk}"><div class="potg-loading">Loading game highlights&#8230;</div></div>`
+      ? `<div class="gs-story" id="wpaLeaders-${game.gamePk}"><div class="sc-story"><div class="story-sec"><div class="potg-loading">Loading game highlights&#8230;</div></div></div></div>`
       : '';
 
     const ctaHtml = `<button type="button" class="modal-cta" data-date="${dateStr}" data-game-pk="${game.gamePk}">View Full Scorecard &#8594;</button>`;
@@ -8550,44 +8509,6 @@
     }
   }
 
-  function renderPlayOfGame(playOfGame) {
-    if (!playOfGame) return '';
-    const watchHtml = playOfGame.videoUrl
-      ? `<a class="pog-watch" ${clipWatchAttrs(playOfGame.videoUrl, 'Play of the Game')}>Watch &#9654;</a>`
-      : '';
-    return `
-      <div class="pog-section">
-        <div class="gs-game-label">Play of the Game</div>
-        ${playOfGame.inningLabel ? `<div class="pog-inning">${playOfGame.inningLabel}</div>` : ''}
-        <div class="pog-description">${playOfGame.description}</div>
-        ${watchHtml}
-      </div>`;
-  }
-
-  function renderPlayersOfTheGame(leaders) {
-    if (!leaders.length) return '';
-    const players = leaders.map(p => {
-      return `
-        <div class="potg-player">
-          <img class="potg-headshot" src="${headshotUrl(p.id)}" alt="" loading="lazy" onerror="this.style.display='none'">
-          <button type="button" class="player-name-btn potg-player-name" data-player-id="${p.id}" title="${p.name}">${p.lastName}</button>
-          ${p.statLine ? `<div class="potg-stat-line">${p.statLine}</div>` : ''}
-        </div>`;
-    }).join('');
-    return `
-      <div class="potg-section">
-        <div class="gs-game-label">Players of the Game</div>
-        <div class="potg-players">${players}</div>
-      </div>`;
-  }
-
-  function renderGameHighlights(playOfGame, leaders) {
-    if (!playOfGame && !leaders.length) {
-      return `<div class="pog-section"><div class="potg-loading">Highlights unavailable for this game.</div></div>`;
-    }
-    return renderPlayOfGame(playOfGame) + renderPlayersOfTheGame(leaders);
-  }
-
   // getVenueInfo is cached by venue id, so this is cheap on repeat opens of
   // the same park -- swaps the name-only placeholder for the full name+city
   // once the detailed /v1/venues record resolves.
@@ -8604,7 +8525,7 @@
     if (requestId !== gameSummaryRequestId) return;
     if (includeHighlights) {
       const wpaEl = document.getElementById(`wpaLeaders-${game.gamePk}`);
-      if (wpaEl) wpaEl.outerHTML = renderGameHighlights(playOfGame, leaders);
+      if (wpaEl) wpaEl.innerHTML = renderGameStory({ playOfGame, leaders }, { fullProfile: true });
     }
     if (!game.linescore) {
       const boxEl = document.getElementById(`boxScore-${game.gamePk}`);

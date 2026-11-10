@@ -14,7 +14,7 @@ Polish notes from poking around the app (captured 2026-11-10). Check an item off
 
 ## Game Summary popup
 
-- [ ] **Restyle the Game Summary modal to match the Scorecard's newer format.** (`openGameSummaryModal`, `renderGameSummaryContent`, `renderGameSummaryGame`)
+- [x] **Restyle the Game Summary modal to match the Scorecard's newer format.** (`openGameSummaryModal`, `renderGameSummaryContent`, `renderGameSummaryGame`)
 
 ## Highlights tab
 
