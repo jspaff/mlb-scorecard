@@ -466,27 +466,6 @@
     color: var(--ink-soft);
     white-space: nowrap;
   }
-  /* Matches the controls bar's own select/date-picker styling (see the
-     shared select/input rule below) rather than its old standalone look,
-     now that it lives in that same controls bar next to them. */
-  .box-score-link {
-    margin-left: auto;
-    flex-shrink: 0;
-    font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 11px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--ink);
-    background: rgba(243, 236, 219, 0.04);
-    border: 1px solid var(--paper-line);
-    border-radius: 0;
-    padding: 6px 12px;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  .box-score-link:hover { background: rgba(243, 236, 219, 0.08); }
-  .box-score-link:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
   .score-strip-sub {
     font-family: 'Inter', sans-serif;
     font-size: 12px;
@@ -2521,10 +2500,7 @@
      up. line-height, not display: flex, does the vertical centering here --
      .player-name-btn truncates long names with text-overflow: ellipsis,
      which stops working the moment the element becomes a flex container.
-     Applies at every width -- the max-width: 520px breakpoint below swaps
-     in its own narrower/shorter values (and can use flex there, since the
-     truncated .pnb-name span is hidden in favor of a never-truncated
-     jersey number at that width). A substitute's button is a plain
+     A substitute's button is a plain
      .ply-stack child same as the starter's (see renderTeamTable) rather
      than wrapped in anything of its own, so this one rule already covers
      both -- no separate substitute-only sizing to keep in sync. */
@@ -2653,14 +2629,6 @@
     background: var(--paper-line);
   }
   .sub-note { font-size: 10px; color: var(--ink-soft); opacity: 0.85; font-style: italic; }
-  /* Jersey-number fallback for the scorecard grid's Player buttons -- shown
-     only under the max-width: 520px breakpoint below, where it swaps places
-     with .pnb-name so the frozen Player column can shrink from last-name
-     width down to jersey-number width. */
-  .pnb-num { display: none; }
-  /* Same swap for the Player column's own header text -- "Player" becomes
-     "#" to match, only under the max-width: 520px breakpoint below. */
-  .th-short { display: none; }
 
   .footnote {
     font-size: 10.5px;
@@ -3688,36 +3656,6 @@
     .cal-game-opp { font-size: 16px; margin-top: 2px; }
     .cal-daynum { font-size: 7px; }
     .calendar-day.is-dh .cal-game-opp { font-size: 12px; margin-top: 1px; }
-    /* The scorecard grid isn't built for a narrow screen and never will be
-       -- but the frozen Player column eating a fixed 96px of a phone's
-       width is the single biggest, cheapest thing to reclaim: swap the
-       last-name button for a jersey-number one, its "Player" header for
-       "#", and shrink the column down to match Pos's own width exactly
-       (Pos's sticky offset moves with it) instead of a size in between
-       that just leaves the two looking mismatched as you scroll. */
-    .pnb-name, .th-full { display: none; }
-    .pnb-num, .th-short { display: inline; }
-    table.scorecard-table th.ply, table.scorecard-table td.ply {
-      width: 34px;
-      min-width: 34px;
-      max-width: 34px;
-      text-align: center;
-    }
-    table.scorecard-table th.pos, table.scorecard-table td.pos { left: 34px; }
-    table.scorecard-table td.pos { padding-left: 0; }
-    /* Tighter than the desktop default (see .ply-stack/.pos-stack above) --
-       and, critically, the same value in both columns so a starter and its
-       substitute(s) land at the same height in Player as in Pos. */
-    .ply-stack, .pos-stack { gap: 2px; }
-    /* The shared fixed-height rule lives with the other table.ply/pos rules
-       above (it applies at every width) -- text-align: center on td.ply
-       above is what centers the Player column's own content horizontally
-       here, since the column has shrunk down to jersey-number width and no
-       longer wants the wide column's left alignment. */
-    /* box-sizing: border-box (already set above) means this padding counts
-       toward that same 17px instead of adding to it -- applies to every
-       entry in the stack, starter and substitutes alike. */
-    table.scorecard-table td.ply .player-name-btn { padding: 1px 3px; }
   }
 </style>
 </head>
@@ -3751,7 +3689,6 @@
       <div class="game-strip-wrap">
         <div class="game-strip" id="gameStrip"></div>
       </div>
-      <button type="button" class="box-score-link" id="gameSummaryTopBtn" hidden>Game Summary</button>
     </div>
     <div class="mlb-controls" data-tab-controls="daily" hidden>
       <div class="date-nav">
@@ -3951,12 +3888,6 @@
   let renderedFeedKey = null;
   let renderedFeedLive = false;
   let lastFeedOkAt = null;
-  // The currently loaded game, in the same shape renderGameSummaryGame()
-  // expects, so the Scorecard tab's "Game Summary" link can reuse the exact
-  // modal the Daily/Schedule tabs open rather than duplicating it. Lives
-  // outside fetchAndRender since the link is clicked well after that call
-  // returns, on whatever the latest poll last rendered.
-  let currentGameSummary = null;
   // Self-rescheduling (not setInterval) so a fresh call -- whether from the
   // user changing dates or the poll tick itself -- can always cancel
   // whatever's pending with one clearTimeout at the top, with no risk of a
@@ -6243,7 +6174,7 @@
   const NOW_TRI_SVG = top => `<svg class="now-tri" viewBox="0 0 10 8" aria-hidden="true"><path d="${top ? 'M5 0L10 8H0Z' : 'M0 0H10L5 8Z'}" fill="currentColor"/></svg>`;
 
   function renderTeamTable(teamName, rows, numInnings, pitcherByInning, starterPitcherId, columnsPerInning, pitchingBoxHtml, teamKey, liveBatterInfo, season, gameDate, headerControlsHtml, hidden) {
-    let head = `<tr><th class="ply"><span class="th-full">Player</span><span class="th-short">#</span></th><th class="pos">Pos</th>`;
+    let head = `<tr><th class="ply">Player</th><th class="pos">Pos</th>`;
     for (let i = 1; i <= numInnings; i++) {
       const cols = (columnsPerInning && columnsPerInning[i]) || 1;
       const isNow = liveBatterInfo && liveBatterInfo.team === teamKey && liveBatterInfo.inning === i;
@@ -6266,16 +6197,12 @@
       const nameHtml = `<div class="ply-stack">` + r.players.map((p, i) => {
         if (!p.id) return '';
         playerStore[p.id] = { id: p.id, name: p.name, pos: p.pos, team: teamName, season, gameDate, todayStats: p.stats };
-        // Both spans always render; a narrow-mobile media query swaps which
-        // one is visible so the Player column can shrink to jersey-number
-        // width there instead of a whole last name -- see .pnb-num/.pnb-name.
-        const numLabel = p.number ? `#${p.number}` : p.lastName;
         // A substitute's name button renders exactly like the starter's --
         // no wrapper, no arrow -- so it gets the same width/height behavior
         // in the Player column instead of shrinking to fit its text; Pos
         // (below) still marks it as a substitute with the muted .sub-note
         // style.
-        return `<button type="button" class="player-name-btn" data-player-id="${p.id}" title="${p.name}"><span class="pnb-name">${p.lastName}</span><span class="pnb-num">${numLabel}</span></button>`;
+        return `<button type="button" class="player-name-btn" data-player-id="${p.id}" title="${p.name}">${p.lastName}</button>`;
       }).join('') + `</div>`;
       const posHtml = `<div class="pos-stack">` + r.players.map((p, i) =>
         i === 0 ? `<span class="pos-main">${p.pos}</span>` : `<span class="sub-note">${p.pos}</span>`
@@ -8214,16 +8141,13 @@
     // status tag rides along in this same row (see renderVenueHeader).
     const topRowHtml = game.venueHtml || renderVenueHeader(game.venueName, null, game.gamePk, renderStateBadge(game));
 
-    // game.linescore is only ever supplied by the Scorecard tab's "Box
-    // Score" link, which already has the full live feed loaded -- Daily
-    // and Schedule tabs only know the score, so every game (pre-game
-    // included, so the box score is the one place team names/score show up
-    // instead of a separate matchup line) fetches the inning-by-inning grid
-    // lazily into this same slot (see loadGameSummaryExtrasInto), alongside
-    // the WPA highlights below. game.allPlays rides along with it (see
-    // currentGameSummary) so a Live game's panel here shows the same live
-    // count/baserunner band it does on the Scorecard tab, not just the box
-    // score.
+    // A caller that already has the feed can pass game.linescore (and
+    // game.allPlays, for a Live game's count/baserunner band); otherwise --
+    // the Daily and Schedule tabs only know the score -- every game
+    // (pre-game included, so the box score is the one place team
+    // names/score show up instead of a separate matchup line) fetches the
+    // inning-by-inning grid lazily into this same slot (see
+    // loadGameSummaryExtrasInto), alongside the WPA highlights below.
     const boxScoreHtml = game.linescore
       ? `<div class="gs-box-score">${renderMonsterPanel(game.linescore, awayAbbr, homeAbbr, game.allPlays || [], game.state === 'Live' && hasGameStarted(game.allPlays))}</div>`
       : `<div id="boxScore-${game.gamePk}" class="box-score-slot gs-box-score"><div class="potg-loading">Loading box score&#8230;</div></div>`;
@@ -8234,14 +8158,7 @@
       ? `<div class="pog-section" id="wpaLeaders-${game.gamePk}"><div class="potg-loading">Loading game highlights&#8230;</div></div>`
       : '';
 
-    // The Scorecard tab's own "Game Summary" link always points at the game
-    // already on screen there, so a "View Full Scorecard" CTA in that one
-    // context would just reload the same game -- suppressed via this flag
-    // rather than a gamePk comparison, since it should only ever apply to
-    // that exact entry point, not any modal that happens to share a gamePk.
-    const ctaHtml = game.hideScorecardCta
-      ? ''
-      : `<button type="button" class="modal-cta" data-date="${dateStr}" data-game-pk="${game.gamePk}">View Full Scorecard &#8594;</button>`;
+    const ctaHtml = `<button type="button" class="modal-cta" data-date="${dateStr}" data-game-pk="${game.gamePk}">View Full Scorecard &#8594;</button>`;
 
     return `
       <div class="game-summary-game">
@@ -8277,11 +8194,9 @@
     // g.linescore, so it always needs the fetch); highlights still only
     // make sense once a game has actually started, gated inside
     // fetchGameHighlights itself via includeHighlights. A Live game whose
-    // linescore and weather are already known (the Scorecard tab's own
-    // "Game Summary" link, via currentGameSummary) has nothing left for
-    // this to fetch -- renderGameSummaryGame won't have left a placeholder
-    // for either -- so skip it instead of fetching the whole feed for
-    // nothing.
+    // linescore and weather are already known has nothing left for this to
+    // fetch -- renderGameSummaryGame won't have left a placeholder for
+    // either -- so skip it instead of fetching the whole feed for nothing.
     games.filter(g => !g.venueHtml && g.venueId).forEach(g => loadVenueInto(g, requestId));
     games.filter(g => g.state === 'Final' || !g.linescore || !g.weather)
       .forEach(g => loadGameSummaryExtrasInto(g, requestId));
@@ -8301,14 +8216,6 @@
       homeAbbr: g.isHome ? selectedAbbr : g.opponent
     }));
     openGameSummaryModal(dateStr, neutralGames, teamName);
-  }
-  // Scorecard tab's "Game Summary" link -- reuses the exact same modal as
-  // the Daily/Schedule tabs, just fed the one game already loaded there
-  // (with linescore attached, so the box score renders instantly instead
-  // of needing the lazy fetch Final tiles from other tabs rely on).
-  function showCurrentGameSummary() {
-    if (!currentGameSummary) return;
-    openGameSummaryModal(currentGameSummary.dateStr, [{ ...currentGameSummary, hideScorecardCta: true }]);
   }
   // Shared by every modal here whose hide function is just this one line
   // (hidePitchPopup is kept separate since it also resets extra state).
@@ -8519,10 +8426,10 @@
     }
   }
 
-  function renderPlayOfGame(playOfGame, onItsScorecard) {
+  function renderPlayOfGame(playOfGame) {
     if (!playOfGame) return '';
     const watchHtml = playOfGame.videoUrl
-      ? `<a class="pog-watch" ${clipWatchAttrs(playOfGame.videoUrl, 'Play of the Game', { gameLink: !onItsScorecard })}>Watch &#9654;</a>`
+      ? `<a class="pog-watch" ${clipWatchAttrs(playOfGame.videoUrl, 'Play of the Game')}>Watch &#9654;</a>`
       : '';
     return `
       <div class="pog-section">
@@ -8550,11 +8457,11 @@
       </div>`;
   }
 
-  function renderGameHighlights(playOfGame, leaders, onItsScorecard) {
+  function renderGameHighlights(playOfGame, leaders) {
     if (!playOfGame && !leaders.length) {
       return `<div class="pog-section"><div class="potg-loading">Highlights unavailable for this game.</div></div>`;
     }
-    return renderPlayOfGame(playOfGame, onItsScorecard) + renderPlayersOfTheGame(leaders);
+    return renderPlayOfGame(playOfGame) + renderPlayersOfTheGame(leaders);
   }
 
   // getVenueInfo is cached by venue id, so this is cheap on repeat opens of
@@ -8573,7 +8480,7 @@
     if (requestId !== gameSummaryRequestId) return;
     if (includeHighlights) {
       const wpaEl = document.getElementById(`wpaLeaders-${game.gamePk}`);
-      if (wpaEl) wpaEl.outerHTML = renderGameHighlights(playOfGame, leaders, game.hideScorecardCta);
+      if (wpaEl) wpaEl.outerHTML = renderGameHighlights(playOfGame, leaders);
     }
     if (!game.linescore) {
       const boxEl = document.getElementById(`boxScore-${game.gamePk}`);
@@ -9021,11 +8928,6 @@
       const detailedState = gameData.status.detailedState;
       const allPlays = (liveData.plays && liveData.plays.allPlays) || [];
       const personIndex = gameData.players || {};
-      // Started here (not awaited yet) so it resolves in parallel with all
-      // the synchronous work below and the bullpen fetches -- it's cached by
-      // venue id and doesn't feed into anything else in this function, so
-      // there's no reason to block on it this early.
-      const venuePromise = getVenueInfo(gameData.venue && gameData.venue.id);
 
       const numInnings = Math.max((linescore.innings || []).length, 9);
       const away = buildTeamRows(liveData.boxscore.teams.away, 'top', allPlays, personIndex);
@@ -9212,8 +9114,7 @@
       const probable = gameData.probablePitchers || {};
       const homeStarterId = away.starterPitcherId || (probable.home && probable.home.id);
       const awayStarterId = home.starterPitcherId || (probable.away && probable.away.id);
-      const [venue, homeBullpen, awayBullpen, wpa] = await Promise.all([
-        venuePromise,
+      const [homeBullpen, awayBullpen, wpa] = await Promise.all([
         buildBullpenList(liveData.boxscore.teams.home, homeStarterId, season, officialDate, allPlays, 'top'),
         buildBullpenList(liveData.boxscore.teams.away, awayStarterId, season, officialDate, allPlays, 'bottom'),
         state === 'Final' ? getGameWpaSigned(gamePk, true) : null
@@ -9266,10 +9167,7 @@
       rosterStore[awayName] = renderRosterContent(awayName, awayBullpen, awayRows, getBenchPlayers(liveData.boxscore.teams.away, awayName));
       rosterStore[homeName] = renderRosterContent(homeName, homeBullpen, homeRows, getBenchPlayers(liveData.boxscore.teams.home, homeName));
 
-      // Text for the always-visible compact score strip. The venue header,
-      // inning-by-inning box score, and top-play highlights all live in the
-      // game summary modal (opened via the "Game Summary" link) instead of
-      // here, so the scorecard grid keeps the viewport.
+      // Text for the pre-game score strip (Live and Final get the board).
       const awayAbbr = (gameData.teams.away.abbreviation) || awayName;
       const homeAbbr = (gameData.teams.home.abbreviation) || homeName;
       let compactStateHtml = '';
@@ -9299,41 +9197,15 @@
           : '';
       }
 
-      const showRuns = state === 'Live' || state === 'Final';
-      const awayRuns = (linescore.teams && linescore.teams.away && linescore.teams.away.runs) ?? 0;
-      const homeRuns = (linescore.teams && linescore.teams.home && linescore.teams.home.runs) ?? 0;
       // scoreStripHtml only ever renders now for the preview (game hasn't
       // started) branch above -- Live and Final both take the monster-panel
       // path instead (see monsterPanelHtml below), so there's no score
       // to show here and no team abbreviations either, just the detailed
-      // status and first-pitch time. The Game Summary link itself lives in
-      // the tab's controls bar now (#gameSummaryTopBtn, next to the game
-      // picker) rather than down here, so it doesn't need to be rebuilt
-      // per-state.
+      // status and first-pitch time.
       const scoreStripHtml = `
         <span class="score-strip-teams">${awayAbbr} @ ${homeAbbr}</span>
         ${compactStateHtml ? `<span class="score-strip-state">${compactStateHtml}</span>` : ''}
       `;
-
-      // Fed to showCurrentGameSummary() when the link above is clicked --
-      // reuses the exact same modal the Daily/Schedule tabs open, just with
-      // this game's linescore and allPlays already attached so its own
-      // monster-panel (see renderGameSummaryGame) renders instantly instead
-      // of needing the lazy fetch those tabs rely on.
-      currentGameSummary = {
-        gamePk,
-        dateStr: officialDate,
-        awayName, homeName,
-        awayAbbr, homeAbbr,
-        awayScore: showRuns ? awayRuns : null,
-        homeScore: showRuns ? homeRuns : null,
-        state, detailedState,
-        gameDate: gameData.datetime && gameData.datetime.dateTime,
-        linescore: showRuns ? linescore : null,
-        allPlays: showRuns ? allPlays : null,
-        weather: gameData.weather || null,
-        venueHtml: renderVenueHeader(gameData.venue && gameData.venue.name, venue, undefined, renderStateBadge({ state, detailedState }))
-      };
 
       // Lives in the fixed bottom bar (#scoreBottomBar) below the wide
       // breakpoint, not in .sheet -- see .score-bottom-bar for why -- and in
@@ -13041,8 +12913,6 @@
   }
 
   document.addEventListener('click', (e) => {
-    const boxScoreLink = e.target.closest('.box-score-link');
-    if (boxScoreLink) showCurrentGameSummary();
     const target = e.target.closest('[data-pkey]');
     // The pitch-tag plate sits inside the same cell-wrap the pitch popup
     // is wired to (see data-pkey), so without this guard a click on the
