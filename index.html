@@ -3408,9 +3408,15 @@
      stay in view (just under the sticky tab header, see --tab-header-h)
      while the season scrolls past. Below this width a side column would
      squeeze the log, so the five-across row above takes over. */
+  /* The column is sized to a five-PA card (five 44px diamonds), the
+     usual game, rather than six: a sixth PA shrinks the diamonds a
+     little, and most cards no longer trail empty room. */
   @container (min-width: 1150px) {
-    .pp-gl { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 22px; align-items: start; }
-    .pp-gl .pp-recent { grid-template-columns: 1fr; margin-bottom: 0; position: sticky; top: calc(var(--tab-header-h, 0px) + 12px); }
+    .pp-gl { display: grid; grid-template-columns: 262px minmax(0, 1fr); gap: 22px; align-items: start; }
+    .pp-gl .pp-recent { grid-template-columns: 1fr; gap: 8px; margin-bottom: 0; position: sticky; top: calc(var(--tab-header-h, 0px) + 12px); }
+    .pp-gl .pp-rc { padding: 8px 10px; }
+    .pp-gl .pp-rc-pas { margin-top: 6px; }
+    .pp-gl .pp-rc-pa { flex-basis: 44px; }
   }
   /* A flex column, not a plain block: a <button> centers its content
      vertically by default, and cards in a row are stretched to the
@@ -5204,10 +5210,14 @@
     const fmt = p => `${p[0].toFixed(2)},${p[1].toFixed(2)}`;
     const poly = pts => pts.map((p, i) => `${i ? 'L' : 'M'} ${fmt(p)}`).join(' ');
 
-    // Generic fence: 400 ft to center falling to 330 down the lines --
-    // one smooth curve, 400 - 70 * (|angle| / 45)^1.22, whose exponent puts
-    // the gaps (22.5 degrees) at 370 ft. Sampled every 1.5 degrees.
-    const fenceFt = a => 400 - 70 * Math.pow(Math.abs(a) / 45, 1.22);
+    // Generic fence: 400 ft to center, 370 in the gaps (22.5 degrees), 330
+    // down the lines. An even polynomial in the angle (t^2 and t^4), so it
+    // rounds over center field -- a power of |angle| below 2 put a point
+    // there. Sampled every 1.5 degrees.
+    const fenceFt = a => {
+      const t2 = (a / 45) * (a / 45);
+      return 400 - 70 * (1.952 * t2 - 0.952 * t2 * t2);
+    };
     const angles = [];
     for (let a = -45; a <= 45.001; a += 1.5) angles.push(a);
     const fence = angles.map(a => polar(a, fenceFt(a)));
@@ -10048,7 +10058,9 @@
     if (st.tab === 'players') {
       if (st.profile) {
         if (playersView !== 'profile' || Number(lastProfilePerson && lastProfilePerson.id) !== st.profile) {
-          showPlayerProfile({ id: st.profile, fullName: '' }, { history: false });
+          showPlayerProfile({ id: st.profile, fullName: '' }, { history: false, tab: st.profileTab || 'ov' });
+        } else if ((st.profileTab || 'ov') !== profileTab) {
+          showProfileTab(st.profileTab || 'ov');
         }
       } else if (playersView === 'profile') {
         showPlayerList();
@@ -10198,12 +10210,13 @@
     if (e.target.closest('.pp-back')) { leaveProfileForList(); return; }
     const tab = e.target.closest('.pp-tab');
     if (tab) {
-      profileTab = tab.dataset.ppTab;
-      rerenderPlayerProfile();
-      ensureProfileRecent();
-      ensureProfileDefense();
-      ensureProfileSpray();
-      ensureProfileArsenal();
+      // A switch within the profile, so it replaces the entry rather than
+      // pushing one -- but the entry keeps it, so Back to this player
+      // lands on the same tab.
+      try {
+        if (history.state && history.state.profile) history.replaceState({ ...history.state, profileTab: tab.dataset.ppTab }, '', location.hash);
+      } catch (err) {}
+      showProfileTab(tab.dataset.ppTab);
       return;
     }
     const arsSide = e.target.closest('[data-ars-side]');
@@ -11766,7 +11779,8 @@
   // starts at .500 (lower only if a split dips under it); a pitcher's,
   // whose opponents' OPS runs far lower, is fit to his own range. Both
   // ends are labelled under the bars, since a truncated bar's length is
-  // only meaningful against them.
+  // only meaningful against them. A pitcher's scale runs high to low, so
+  // for both a longer bar is the better split.
   const SPLIT_MONTHS = ['May', 'June', 'July', 'August', 'September'];
   function renderProfileSplits(splits, pitcher, seasonStat) {
     const marApr = [splits.March, splits.April].filter(Boolean);
@@ -11784,7 +11798,7 @@
     const fitLo = Math.max(0, Math.floor((Math.min(...values) - 0.05) * 10) / 10);
     const lo = pitcher ? fitLo : Math.min(0.5, fitLo);
     const hi = Math.max(lo + 0.3, Math.ceil((Math.max(...values) + 0.05) * 10) / 10);
-    const pct = v => `${Math.max(0, Math.min(100, ((v - lo) / (hi - lo)) * 100)).toFixed(1)}%`;
+    const pct = v => `${Math.max(0, Math.min(100, ((pitcher ? hi - v : v - lo) / (hi - lo)) * 100)).toFixed(1)}%`;
     const tick = v => formatRate(v, 1);
     const mark = seasonValue ? `<i class="pp-sb-season" style="left:${pct(seasonValue)}"></i>` : '';
     const sampleLabel = pitcher ? 'BF' : 'PA';
@@ -11799,7 +11813,7 @@
           <span class="pp-ssample">${r.sample ?? 0} ${sampleLabel}</span>
         </div>`).join('')}
       </div>`).join('')}
-      <div class="pp-srow pp-saxis" aria-hidden="true"><span></span><span class="pp-saxis-ends"><span>${tick(lo)}</span><span>${tick(hi)}</span></span><span></span><span></span></div>
+      <div class="pp-srow pp-saxis" aria-hidden="true"><span></span><span class="pp-saxis-ends"><span>${tick(pitcher ? hi : lo)}</span><span>${tick(pitcher ? lo : hi)}</span></span><span></span><span></span></div>
     </div>`;
   }
 
@@ -12541,7 +12555,13 @@
   function renderPlayerProfile(person) {
     const pitcher = isPitcher(person);
     const tabs = profileTabsFor(pitcher, lastProfileDetail, person);
-    if (!tabs.some(([id]) => id === profileTab)) profileTab = 'ov';
+    // Which tabs exist depends on his position and season, which a first
+    // draw may not know yet -- so a tab asked for by history (Defense,
+    // Arsenal, Starts) waits for them, showing Overview meanwhile, and is
+    // only dropped once it's certain he doesn't have it.
+    const hasTab = tabs.some(([id]) => id === profileTab);
+    if (!hasTab && lastProfileDetail !== undefined && person.primaryPosition) profileTab = 'ov';
+    const shownTab = hasTab ? profileTab : 'ov';
     const team = person.currentTeam && person.currentTeam.name;
     const pos = person.primaryPosition && person.primaryPosition.name;
     const ident = [team, pos].filter(Boolean).map((t, i) => (i ? `<span class="pp-sep">&#183;</span><span class="pp-pos">${t}</span>` : t)).join('');
@@ -12580,8 +12600,8 @@
         </div>
         ${bio ? `<div class="pp-narrow pp-vitals-narrow">${bio}</div>` : ''}
         <div class="pp-narrow">${awardsHtml}</div>
-        <div class="pp-tabs" role="tablist">${tabs.map(([id, label]) => `<button type="button" class="pp-tab" role="tab" data-pp-tab="${id}" aria-selected="${id === profileTab}">${label}</button>`).join('')}</div>
-        <div class="pp-panel" role="tabpanel">${renderProfileTabBody(profileTab, pitcher)}</div>
+        <div class="pp-tabs" role="tablist">${tabs.map(([id, label]) => `<button type="button" class="pp-tab" role="tab" data-pp-tab="${id}" aria-selected="${id === shownTab}">${label}</button>`).join('')}</div>
+        <div class="pp-panel" role="tabpanel">${renderProfileTabBody(shownTab, pitcher)}</div>
       </div>
     </div>`;
   }
@@ -12694,6 +12714,15 @@
     rerenderPlayerProfile();
   }
 
+  function showProfileTab(id) {
+    profileTab = id;
+    rerenderPlayerProfile();
+    ensureProfileRecent();
+    ensureProfileDefense();
+    ensureProfileSpray();
+    ensureProfileArsenal();
+  }
+
   function ensureProfileRecent() {
     if (profileRecentRequested || profileTab !== 'log' || !lastProfileDetail) return;
     profileRecentRequested = true;
@@ -12762,7 +12791,7 @@
   // pushed one (jumpToPlayerProfile, before switching tabs). from/depth
   // record whether it was opened from the list and how many players deep,
   // for leaveProfileForList.
-  async function showPlayerProfile(rawPerson, { history: pushHistory = true } = {}) {
+  async function showPlayerProfile(rawPerson, { history: pushHistory = true, tab = 'ov' } = {}) {
     // Normalized once, here, since callers don't agree on type: search
     // results carry a numeric id straight from the API, but a dataset
     // attribute (jumpToPlayerProfile, showPlayerModal) is always a string.
@@ -12780,7 +12809,7 @@
     }
     playersView = 'profile';
     syncPlayerToggle();
-    profileTab = 'ov';
+    profileTab = tab;
     lastProfilePerson = person;
     lastProfileCareerSplits = null;
     lastProfileAwardTags = [];
@@ -12832,6 +12861,7 @@
     if (!pitcher) playerSprayState.season = season;
     loadProfileSeason(person.id, season, pitcher, requestId);
     ensureProfileDefense();
+    ensureProfileArsenal();
     await profileAwardsReady;
     if (requestId !== playerProfileRequestId) return;
     rerenderPlayerProfile();

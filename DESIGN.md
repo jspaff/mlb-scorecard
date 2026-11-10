@@ -203,7 +203,7 @@ Breakpoints are content-driven:
 - **Below 520px (phone):** single column. Stat boards become 2×4, recent-game cards become a swipeable row (each card capped near its content width), and tables abbreviate opponents and tighten cells so they fit without sideways scrolling down to 320px.
 - **Around 700px:** wide variants switch on, such as the larger name and numerals, the extra hit columns, and labels inline instead of stacked.
 - **Around 900px:** recent-game cards line up five across.
-- **Around 1150px:** they stand in a sticky column beside the season log.
+- **Around 1150px:** they stand in a sticky column beside the season log, sized to a five-PA card rather than six, so most cards don't trail empty room.
 
 Tables size their identity columns (date, opponent, result) to content, and give stat columns a fixed compact width on wide sheets, so stats read as one block rather than spreading across the sheet.
 
@@ -363,7 +363,8 @@ Single-series and quiet: Board Rule gridlines, Faded Cream axis labels, thin mar
 - **Do** use Pennant Gold as trim (section titles, active and focus rules) and, within the data, only for top-10% stats, made 5-star catches, quality starts, awards, RBIs and hits.
 - **Do** use tabular figures for every column of numbers.
 - **Do** size changeable controls to fixed slots so filters never shift the layout.
-- **Do** draw spray charts in the API's own coordinate space (home 125.42, 198.27; 2.495 ft per unit) so fences and batted balls agree.
+- **Do** draw spray charts in the API's own coordinate space (home 125.42, 198.27; 2.495 ft per unit) so fences and batted balls agree, with a fence that rounds smoothly over center field.
+- **Do** run a split bar so longer is better: a pitcher's opponent-OPS scale runs high to low.
 
 ### Don't:
 - **Don't** round corners on plates, cards, buttons or selects. Only slots (2px), bar ends (3px) and dots are rounded.

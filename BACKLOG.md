@@ -28,10 +28,10 @@ Polish notes from poking around the app (captured 2026-11-10). Check an item off
 
 ## Player profile
 
-- [ ] **Back button and profiles — verify.** Check that Back returns to the player you were looking at (e.g. profile → another player → Back; profile → scorecard → Back). Fix any path that doesn't push/restore a profile entry. (`navPush`, `jumpToPlayerProfile`, the `popstate` handler)
-- [ ] **Game Log (desktop): tighten the last-5-games scorecards.** Cards leave room for ~6 diamonds and usually use 1–4; reduce the dead space. (`renderProfileGameLog`, `loadProfileRecent`)
-- [ ] **Spray chart: smoother field drawing.** The outline has a visible point/kink in the middle (likely the outfield arc meeting at center). (`renderBattedBallFieldSVG`)
-- [ ] **Pitcher Splits: invert the axis?** Lower OPS against is better for a pitcher, so the scale should probably read that way. (pitcher Splits tab chart)
+- [x] **Back button and profiles — verify.** Check that Back returns to the player you were looking at (e.g. profile → another player → Back; profile → scorecard → Back). Fix any path that doesn't push/restore a profile entry. (`navPush`, `jumpToPlayerProfile`, the `popstate` handler) — Verified: profile → profile, profile → game, popup → profile and Team → profile all return correctly. Fixed: Back now also restores the profile's tab (it used to reset to Overview).
+- [x] **Game Log (desktop): tighten the last-5-games scorecards.** Cards leave room for ~6 diamonds and usually use 1–4; reduce the dead space. (`renderProfileGameLog`, `loadProfileRecent`)
+- [x] **Spray chart: smoother field drawing.** The outline has a visible point/kink in the middle (likely the outfield arc meeting at center). (`renderBattedBallFieldSVG`)
+- [x] **Pitcher Splits: invert the axis?** Lower OPS against is better for a pitcher, so the scale should probably read that way. (pitcher Splits tab chart)
 
 ## Player profile — Defense tab
 
