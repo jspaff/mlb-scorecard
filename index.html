@@ -2582,7 +2582,7 @@
   .sub-plate { position: absolute; left: 0; bottom: -6px; width: 52px; box-sizing: border-box; padding: 1px 3px 0; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8.5px; line-height: 11px; letter-spacing: 0.02em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink); background: var(--paper); border: 1px solid var(--ink); }
   .sub-by { position: absolute; left: 0; bottom: -5px; width: 52px; text-align: center; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8.5px; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink-soft); }
   .sub-v4 table.scorecard-table tr.sub-line td { border-top: 1px dotted rgba(243, 236, 219, 0.25); }
-  .sub-v5 table.scorecard-table td.sub-divider { position: relative; border-left: 2px solid rgba(243, 236, 219, 0.7); }
+  .sub-v5 table.scorecard-table td.sub-divider, .sub-v6 table.scorecard-table td.sub-divider { position: relative; border-left: 2px solid rgba(243, 236, 219, 0.7); }
   .sub-up { position: absolute; bottom: 4px; max-height: calc(100% - 8px); writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8.5px; line-height: 9px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); pointer-events: none; }
   .sub-up b { color: var(--ink-soft); font-weight: 800; }
   /* an inset shadow instead of border-top: back when this table used
@@ -6333,9 +6333,9 @@
             const who = r.players.find(p => p.id === c.playerId);
             if (who) inner += `<span class="sub-by">${who.lastName}</span>`;
           }
-          const entering = (SUBV === 2 || SUBV === 5) && k === 0 ? r.players.slice(1).filter(p => entryOf(p) === i) : [];
+          const entering = (SUBV === 2 || SUBV === 5 || SUBV === 6) && k === 0 ? r.players.slice(1).filter(p => entryOf(p) === i) : [];
           if (entering.length && SUBV === 2) inner += `<span class="sub-plate">${entering.map(p => `${p.pos} ${p.lastName}`).join(' &#183; ')}</span>`;
-          const upTheLine = SUBV === 5 ? entering.map((p, j) => `<span class="sub-up" style="left:${2 + j * 10}px"><b>${p.pos}</b> ${p.lastName}</span>`).join('') : '';
+          const upTheLine = SUBV === 5 || SUBV === 6 ? entering.map((p, j) => `<span class="sub-up" style="left:${SUBV === 5 ? 2 + j * 10 : -12 - j * 10}px"><b>${p.pos}</b> ${p.lastName}</span>`).join('') : '';
           const isLiveCell = withLive && !c && liveBatterInfo && liveBatterInfo.team === teamKey
             && liveBatterInfo.rowSlot === r.slot && liveBatterInfo.inning === i && liveBatterInfo.slotIndex === k;
           if (isLiveCell) inner += liveCellInner(liveBatterInfo);
