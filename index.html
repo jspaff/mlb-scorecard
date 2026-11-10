@@ -2219,12 +2219,14 @@
   }
   .pbox-gsc { padding-left: 16px; border-left: 1px solid var(--paper-line); }
   .pbox-rel { display: flex; flex-direction: column; gap: 6px; padding-left: 26px; border-left: 1px solid var(--paper-line); }
-  .pbox-rel-list { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; }
+  /* Three deep, then a new column, so a long bullpen night spreads across
+     instead of running down past the starter's line. */
+  .pbox-rel-list { display: grid; grid-template-rows: repeat(3, auto); grid-auto-flow: column; justify-items: start; gap: 7px 12px; }
   .sc-half .pbox-body { flex-direction: column; gap: 12px; }
   .sc-half .pbox-starter { width: 100%; padding-bottom: 12px; border-bottom: 1px solid var(--paper-line); }
   .sc-half .pbox-stats { width: 100%; justify-content: space-between; }
   .sc-half .pbox-rel { flex-direction: row; align-items: center; flex-wrap: wrap; gap: 8px 10px; padding-left: 0; border-left: 0; }
-  .sc-half .pbox-rel-list { flex-direction: row; flex-wrap: wrap; gap: 8px 10px; }
+  .sc-half .pbox-rel-list { display: flex; flex-wrap: wrap; gap: 8px 10px; }
 
   /* The team toggle in each card's header (see renderTeamToggle); the
      triangle marks the side batting now. */
@@ -2348,15 +2350,6 @@
   .bar-ab-name { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 16px; text-transform: uppercase; letter-spacing: 0.02em; color: var(--ink); line-height: 1.2; }
   .bar-ab-vs { margin-bottom: 6px; font-family: 'Inter', sans-serif; font-size: 12px; color: var(--ink-soft); }
 
-  .bp-subtitle { margin-top: 12px; }
-  .bp-role {
-    margin-left: 6px;
-    font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 10px;
-    letter-spacing: 0.06em;
-    color: var(--ink-soft);
-  }
 
   .table-scroll {
     overflow-x: auto;
@@ -5323,7 +5316,7 @@
     return whole * 3 + partial;
   }
 
-  async function buildBullpenList(sideBoxscore, starterPitcherId, season, officialDate, allPlays, pitchingHalfKey, rolesPromise) {
+  async function buildBullpenList(sideBoxscore, starterPitcherId, season, officialDate, allPlays, pitchingHalfKey) {
     const players = sideBoxscore.players || {};
     const allPitchers = Object.values(players).filter(p => p.person && p.position && p.position.abbreviation === 'P');
 
@@ -5363,18 +5356,11 @@
       };
     }));
 
-    // Who hasn't pitched yet: the closer, then the rest of the bullpen,
-    // then the rotation, by today's depth chart. Anyone it doesn't list (a
-    // past season, a pitcher since traded or optioned) falls back to games
-    // started, between the bullpen and the rotation.
-    const roles = rolesPromise ? await rolesPromise : null;
-    results.forEach(r => { r.role = (roles && roles[r.id]) || null; });
-    const roleRank = r => r.role === 'CP' ? 0 : r.role === 'P' ? 1 : r.role === 'SP' ? 3 : 2;
     results.sort((a, b) => {
       if (a.isStarter !== b.isStarter) return a.isStarter ? -1 : 1;
       if (a.usedToday !== b.usedToday) return a.usedToday ? -1 : 1;
       if (a.usedToday && b.usedToday) return (a.entryOrder ?? 0) - (b.entryOrder ?? 0);
-      return (roleRank(a) - roleRank(b)) || (a.gamesStarted - b.gamesStarted);
+      return a.gamesStarted - b.gamesStarted;
     });
 
     return results;
@@ -5382,19 +5368,16 @@
 
   function bullpenRowsHtml(list) {
     if (!list || !list.length) return '<div class="roster-empty">No pitching data available</div>';
-    let rotationShown = false;
     return list.map(p => {
-      const rotationHead = !p.usedToday && !p.isStarter && p.role === 'SP' && !rotationShown
-        ? (rotationShown = true, '<div class="roster-section-title bp-subtitle">Rotation</div>') : '';
       // Same leading column as the lineup (order number) and bench (a
       // checkbox) rows: the starter just gets "P", everyone else gets a
       // checkbox checked once they've actually appeared in the game --
       // replaces the STARTER/RELIEVER tags this used to carry.
       const orderCell = p.isStarter ? 'P' : `<span class="roster-check${p.usedToday ? ' is-checked' : ''}"></span>`;
-      return `${rotationHead}
+      return `
       <div class="roster-row bp-row">
         <span class="roster-order${p.isStarter ? ' roster-order-gold' : ''}">${orderCell}</span>
-        <span class="roster-name-col"><button type="button" class="player-name-btn roster-name" data-player-id="${p.id}">${p.name}</button>${p.role === 'CP' ? '<span class="bp-role">CL</span>' : ''}</span>
+        <span class="roster-name-col"><button type="button" class="player-name-btn roster-name" data-player-id="${p.id}">${p.name}</button></span>
         <div class="bp-recent">
           <span class="bp-recent-item"><span class="bp-recent-value">${p.usedToday ? (p.todayIp ?? '0.0') : '&#8212;'}</span><span class="bp-recent-label">IP</span></span>
           <span class="bp-recent-item"><span class="bp-recent-value">${p.usedToday ? (p.todayPc ?? 0) : '&#8212;'}</span><span class="bp-recent-label">P</span></span>
@@ -7482,15 +7465,6 @@
     }
   }
 
-  // personId -> 'SP' | 'CP' | 'P' from a team's depth chart (today's only).
-  async function getPitcherRoles(teamId) {
-    const roster = await fetchTeamRoster(teamId, 'depthChart');
-    if (!roster) return null;
-    const roles = {};
-    roster.forEach(r => { if (r.id && (r.posAbbr === 'SP' || r.posAbbr === 'CP' || r.posAbbr === 'P')) roles[r.id] = r.posAbbr; });
-    return roles;
-  }
-
   async function fetchTeamInjuryDetails(teamId) {
     if (teamInjuryCache[teamId]) return teamInjuryCache[teamId];
     try {
@@ -9186,16 +9160,10 @@
       const probable = gameData.probablePitchers || {};
       const homeStarterId = away.starterPitcherId || (probable.home && probable.home.id);
       const awayStarterId = home.starterPitcherId || (probable.away && probable.away.id);
-      // The Roster popup sorts the unused arms by role from the depth chart,
-      // which MLB only publishes as of today -- so only for this season's
-      // games (see buildBullpenList for the fallback).
-      const isCurrentSeason = String(season) === String(new Date().getFullYear());
       const [venue, homeBullpen, awayBullpen, wpa] = await Promise.all([
         venuePromise,
-        buildBullpenList(liveData.boxscore.teams.home, homeStarterId, season, officialDate, allPlays, 'top',
-          isCurrentSeason ? getPitcherRoles(gameData.teams.home.id) : null),
-        buildBullpenList(liveData.boxscore.teams.away, awayStarterId, season, officialDate, allPlays, 'bottom',
-          isCurrentSeason ? getPitcherRoles(gameData.teams.away.id) : null),
+        buildBullpenList(liveData.boxscore.teams.home, homeStarterId, season, officialDate, allPlays, 'top'),
+        buildBullpenList(liveData.boxscore.teams.away, awayStarterId, season, officialDate, allPlays, 'bottom'),
         state === 'Final' ? getGameWpaSigned(gamePk, true) : null
       ]);
 
