@@ -11,6 +11,7 @@ colors:
   brick-red: "#e0604a"
   brick-red-text: "#f59a87"
   brick-shadow: "#5c4038"
+  brick-ink: "#141a15"
   scoreboard-lamp-green: "#3fae56"
   scoreboard-panel: "#33422e"
   weathered-sage: "#7d8577"
@@ -153,7 +154,7 @@ A three-layer palette of wall, board and ink, with two spare signal colors.
 - **Pennant Gold**: the scheme's accent and its one positive signal. As trim it paints section titles, the active tab and segment rules, the rule under the pitcher on the mound, focus rings and the jersey number. In the data it marks award plates, a skill score of 90 or more (or a Defense-tab stat in the top 10% of qualified players), a made 5-star catch, quality starts, a walk-off or grand slam, RBI dots and hits on the spray chart.
 
 ### Tertiary
-- **Brick Red**: the out and the run against. It fills strikeout diamonds and out ticks. Its text-only tint, **Brick Red Text**, is lighter for small type on the board, where the fill color is too dark to read (runs allowed, strikes).
+- **Brick Red**: the out and the run against. It fills strikeout diamonds, out ticks and a runner-out tag (lettered in **Brick Ink**, a near-black, since the board's own ink is only 2.9:1 on it). Its text-only tint, **Brick Red Text**, is lighter for small type on the board, where the fill color is too dark to read (runs allowed, strikes).
 
 ### Neutral
 - **Scorebook Board**: sheets, modals, plates and inputs; the dark page the scorebook is written on.
@@ -282,7 +283,7 @@ The scorebook cell: a 40-unit diamond per plate appearance, drawn in SVG.
 - **Fills:** a run scored fills the diamond gold; a strikeout fills it brick red, with the K mirrored for a called third strike.
 - **Code:** the play code is typed in Special Elite at the center, in brick red for an out.
 - **Marks:** outs on the bases get a brick tick; steals, caught stealing and pickoffs get small gold-framed tags. RBIs are gold dots in the corner, one per run.
-- **Runner tags:** each other runner's move ("1>3") in 9px Overpass beside the diamond: board ink on a cream tag, board ink on gold for a run scored, and Brick Red Text in a brick frame for an out. Never cream on gold or brick: neither clears contrast at that size.
+- **Runner tags:** each other runner's move, as small hung plates beside the diamond (under it in the phone's half-inning view): the base he left, a drawn arrow centered on the figures, and the base he reached ("1 → 3", "2 → H", "1 → X"), 9px Overpass. An advance is cream on Board Rule, a run board ink on gold, an out Brick Ink on solid Brick Red. Never cream on gold or brick: neither clears contrast at that size.
 - **Pitching-change plate:** the entering pitcher's nameplate across the top of the cell, 9px.
 - **As a control:** a diamond with pitch detail is a button (focusable, named by its batter and play) that opens the at-bat.
 
