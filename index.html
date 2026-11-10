@@ -466,27 +466,6 @@
     color: var(--ink-soft);
     white-space: nowrap;
   }
-  /* Matches the controls bar's own select/date-picker styling (see the
-     shared select/input rule below) rather than its old standalone look,
-     now that it lives in that same controls bar next to them. */
-  .box-score-link {
-    margin-left: auto;
-    flex-shrink: 0;
-    font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 11px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--ink);
-    background: rgba(243, 236, 219, 0.04);
-    border: 1px solid var(--paper-line);
-    border-radius: 0;
-    padding: 6px 12px;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  .box-score-link:hover { background: rgba(243, 236, 219, 0.08); }
-  .box-score-link:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
   .score-strip-sub {
     font-family: 'Inter', sans-serif;
     font-size: 12px;
@@ -1636,7 +1615,7 @@
     border: 1.5px solid var(--ink-soft);
     flex-shrink: 0;
   }
-  .roster-check.is-checked { background: var(--gold); border-color: var(--gold); }
+  .roster-check.is-checked { background: var(--ink); border-color: var(--ink); }
   /* Batting order number in the Starting Lineup, and "P" marking the
      starting pitcher in the Pitching column -- everything else in
      .roster-order (bench/reliever checkboxes) stays the muted default. */
@@ -2240,9 +2219,10 @@
   }
   .pbox-gsc { padding-left: 16px; border-left: 1px solid var(--paper-line); }
   .pbox-rel { display: flex; flex-direction: column; gap: 6px; padding-left: 26px; border-left: 1px solid var(--paper-line); }
-  /* Three deep, then a new column, so a long bullpen night spreads across
-     instead of running down past the starter's line. */
-  .pbox-rel-list { display: grid; grid-template-rows: repeat(3, auto); grid-auto-flow: column; justify-items: start; gap: 7px 12px; }
+  /* Up to three across, read left to right in the order they entered, so a
+     long bullpen night spreads beside the starter's line instead of running
+     down past it. */
+  .pbox-rel-list { display: grid; grid-template-columns: repeat(3, max-content); justify-items: start; gap: 7px 12px; }
   .sc-half .pbox-body { flex-direction: column; gap: 12px; }
   .sc-half .pbox-starter { width: 100%; padding-bottom: 12px; border-bottom: 1px solid var(--paper-line); }
   .sc-half .pbox-stats { width: 100%; justify-content: space-between; }
@@ -2289,6 +2269,16 @@
     color: var(--ink);
   }
   .hv-title .now-tri { width: 11px; height: 9px; }
+  /* Stepped away from the half being played: one tap back to it. */
+  .hv-live {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    width: 100%; min-height: 40px; margin: 4px 0 6px;
+    font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--ink); background: transparent; border: 1px solid var(--gold); cursor: pointer;
+  }
+  .hv-live .now-tri { width: 8px; height: 7px; color: var(--gold); }
+  .hv-live:hover { background: rgba(217, 169, 26, 0.12); }
+  .hv-live:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
   .hv-pa { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 8px; align-items: center; padding: 10px 0; border-bottom: 1px dashed var(--paper-line); }
   .hv-dia { position: relative; width: 76px; min-height: 60px; display: grid; place-items: center; }
   .hv-dia .cell-wrap { position: relative; display: flex; flex-direction: column; align-items: center; }
@@ -2304,6 +2294,7 @@
   .hv-pos { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: 0.06em; color: var(--ink-soft); }
   .hv-desc { margin: 5px 0 0 24px; font-family: 'Inter', sans-serif; font-size: 13px; line-height: 1.45; color: var(--ink-soft); }
   .hv-pa.is-live .hv-desc { color: var(--ink); }
+  .hv-vs { margin: 4px 0 0 24px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--ink-soft); }
   .hv-pa.is-ondeck { opacity: 0.6; border-bottom: 0; }
   .hv-sub {
     margin: 14px 0 0;
@@ -2350,6 +2341,14 @@
   .story-line { grid-column: 2; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 12px; color: var(--ink); font-variant-numeric: tabular-nums; }
   .story-line .potg-stat { white-space: nowrap; }
   .sidebar-atbat .sc-story { padding: 0 2px; }
+  /* Between the phone's Final page and the sidebar there's no other home
+     for a finished game's story, so it heads the card there. */
+  .sc-final-story { display: none; }
+  @media (min-width: 700px) and (max-width: 1099px) {
+    .sc-final-story { display: block; margin-bottom: 18px; padding-bottom: 4px; border-bottom: 2px solid var(--ink); }
+    .sc-final-story .sc-story { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 0 32px; }
+    .sc-final-story .story-sec { border-bottom: 0; padding-top: 0; }
+  }
 
   /* The wide-mobile bar: the board and the at-bat as separate cards at
      either side. Only between the phone and the sidebar's breakpoint --
@@ -2369,6 +2368,7 @@
       text-align: left;
     }
   }
+  .status-retry { display: block; margin: 12px auto 0; min-height: 36px; }
   .bar-ab-zone .loc-section { margin: 0; }
   .bar-ab-zone .loc-compact { display: block; width: 136px; height: auto; }
   .bar-ab-name { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 16px; text-transform: uppercase; letter-spacing: 0.02em; color: var(--ink); line-height: 1.2; }
@@ -2521,10 +2521,7 @@
      up. line-height, not display: flex, does the vertical centering here --
      .player-name-btn truncates long names with text-overflow: ellipsis,
      which stops working the moment the element becomes a flex container.
-     Applies at every width -- the max-width: 520px breakpoint below swaps
-     in its own narrower/shorter values (and can use flex there, since the
-     truncated .pnb-name span is hidden in favor of a never-truncated
-     jersey number at that width). A substitute's button is a plain
+     A substitute's button is a plain
      .ply-stack child same as the starter's (see renderTeamTable) rather
      than wrapped in anything of its own, so this one rule already covers
      both -- no separate substitute-only sizing to keep in sync. */
@@ -2591,6 +2588,9 @@
     0%, 100% { opacity: 0.55; transform: scale(0.85); }
     50% { opacity: 1; transform: scale(1.25); }
   }
+  @media (prefers-reduced-motion: reduce) {
+    .live-dot { animation: none; }
+  }
   /* Hangs off the diamond's right point, starting halfway down, so a stack
      of three clears the play code without growing the row or the column. */
   .adv-wrap {
@@ -2653,21 +2653,14 @@
     background: var(--paper-line);
   }
   .sub-note { font-size: 10px; color: var(--ink-soft); opacity: 0.85; font-style: italic; }
-  /* Jersey-number fallback for the scorecard grid's Player buttons -- shown
-     only under the max-width: 520px breakpoint below, where it swaps places
-     with .pnb-name so the frozen Player column can shrink from last-name
-     width down to jersey-number width. */
-  .pnb-num { display: none; }
-  /* Same swap for the Player column's own header text -- "Player" becomes
-     "#" to match, only under the max-width: 520px breakpoint below. */
-  .th-short { display: none; }
 
+  /* On the sheet, not the wall: secondary text on the Monster green can't
+     clear contrast (DESIGN.md, the Monster Stays Rule). */
   .footnote {
-    font-size: 10.5px;
-    color: var(--ink);
-    opacity: 0.85;
+    font-size: 11px;
+    color: var(--ink-soft);
     text-align: right;
-    margin-top: 10px;
+    margin-top: 16px;
     font-family: 'Inter', sans-serif;
   }
 
@@ -3602,7 +3595,9 @@
   table.pitch-table td.pspeed { color: var(--ink-soft); white-space: nowrap; }
   .pitch-result-ball { color: #7fae8f; font-weight: 600; }
   .pitch-result-strike { color: var(--brick-text); font-weight: 600; }
-  .pitch-result-foulhit { color: var(--gold); font-weight: 600; }
+  /* A hit is earned gold; a foul is just a foul (the Two Golds Rule). */
+  .pitch-result-hit { color: var(--gold); font-weight: 600; }
+  .pitch-result-foul { color: var(--ink); font-weight: 600; }
   .pitch-result-out { color: #a39d90; font-weight: 700; }
   .pitch-result-hbp { color: #7fae8f; font-weight: 700; font-style: italic; }
   table.pitch-table tr.hl td { background: rgba(217, 169, 26, 0.14); }
@@ -3688,36 +3683,14 @@
     .cal-game-opp { font-size: 16px; margin-top: 2px; }
     .cal-daynum { font-size: 7px; }
     .calendar-day.is-dh .cal-game-opp { font-size: 12px; margin-top: 1px; }
-    /* The scorecard grid isn't built for a narrow screen and never will be
-       -- but the frozen Player column eating a fixed 96px of a phone's
-       width is the single biggest, cheapest thing to reclaim: swap the
-       last-name button for a jersey-number one, its "Player" header for
-       "#", and shrink the column down to match Pos's own width exactly
-       (Pos's sticky offset moves with it) instead of a size in between
-       that just leaves the two looking mismatched as you scroll. */
-    .pnb-name, .th-full { display: none; }
-    .pnb-num, .th-short { display: inline; }
-    table.scorecard-table th.ply, table.scorecard-table td.ply {
-      width: 34px;
-      min-width: 34px;
-      max-width: 34px;
-      text-align: center;
-    }
-    table.scorecard-table th.pos, table.scorecard-table td.pos { left: 34px; }
-    table.scorecard-table td.pos { padding-left: 0; }
-    /* Tighter than the desktop default (see .ply-stack/.pos-stack above) --
-       and, critically, the same value in both columns so a starter and its
-       substitute(s) land at the same height in Player as in Pos. */
-    .ply-stack, .pos-stack { gap: 2px; }
-    /* The shared fixed-height rule lives with the other table.ply/pos rules
-       above (it applies at every width) -- text-align: center on td.ply
-       above is what centers the Player column's own content horizontally
-       here, since the column has shrunk down to jersey-number width and no
-       longer wants the wide column's left alignment. */
-    /* box-sizing: border-box (already set above) means this padding counts
-       toward that same 17px instead of adding to it -- applies to every
-       entry in the stack, starter and substitutes alike. */
-    table.scorecard-table td.ply .player-name-btn { padding: 1px 3px; }
+  }
+  /* A phone held sideways: too short for a sticky header and a fixed
+     board both, so they scroll with the page and the card gets the height.
+     The board lands after the card. */
+  @media (max-height: 500px) and (max-width: 1099px) {
+    .tab-header { position: static; box-shadow: none; }
+    .score-bottom-bar { position: static; margin: 18px -18px -18px; box-shadow: none; }
+    #mlbBody { padding-bottom: 0; }
   }
 </style>
 </head>
@@ -3751,7 +3724,6 @@
       <div class="game-strip-wrap">
         <div class="game-strip" id="gameStrip"></div>
       </div>
-      <button type="button" class="box-score-link" id="gameSummaryTopBtn" hidden>Game Summary</button>
     </div>
     <div class="mlb-controls" data-tab-controls="daily" hidden>
       <div class="date-nav">
@@ -3951,12 +3923,6 @@
   let renderedFeedKey = null;
   let renderedFeedLive = false;
   let lastFeedOkAt = null;
-  // The currently loaded game, in the same shape renderGameSummaryGame()
-  // expects, so the Scorecard tab's "Game Summary" link can reuse the exact
-  // modal the Daily/Schedule tabs open rather than duplicating it. Lives
-  // outside fetchAndRender since the link is clicked well after that call
-  // returns, on whatever the latest poll last rendered.
-  let currentGameSummary = null;
   // Self-rescheduling (not setInterval) so a fresh call -- whether from the
   // user changing dates or the poll tick itself -- can always cancel
   // whatever's pending with one clearTimeout at the top, with no risk of a
@@ -4407,8 +4373,10 @@
 
   // Shared catch-block fallback across every top-level load function --
   // `what` names the resource that failed (e.g. 'schedule', 'roster').
-  function apiErrorMsg(what) {
-    return `<div class="mlb-status-msg">Could not load ${what}. The MLB API may be unreachable right now.</div>`;
+  // retry: a data-sc-retry value the Scorecard's click handler knows how
+  // to rerun ('game' or 'schedule'); other tabs leave it out.
+  function apiErrorMsg(what, retry) {
+    return `<div class="mlb-status-msg">Could not load ${what}. The MLB API may be unreachable right now.${retry ? `<button type="button" class="roster-btn status-retry" data-sc-retry="${retry}">Try again</button>` : ''}</div>`;
   }
 
   function todayStr() {
@@ -4723,6 +4691,10 @@
         } : null;
       }
     }
+    // The strikes each pitch was thrown with, so a foul can be told apart
+    // by what it did to the count (see classifyPitch).
+    let strikesBefore = 0;
+    pitches.forEach(p => { p.preStrikes = strikesBefore; if (p.strikes != null) strikesBefore = p.strikes; });
     return pitches;
   }
 
@@ -5885,7 +5857,7 @@
   function renderCompactPitchTable(pitches) {
     if (!pitches || !pitches.length) return '';
     return `<table class="cpt"><thead><tr><th></th><th>Result</th><th>Pitch</th><th class="r">MPH</th></tr></thead><tbody>${pitches.map(p =>
-      `<tr data-num="${p.num || ''}"><td class="n">${p.num || ''}</td><td class="${RESULT_CLASS(p.result)}">${p.result || ''}</td><td class="t">${p.typeCode || ''}</td><td class="r">${p.speed || ''}</td></tr>`).join('')}</tbody></table>`;
+      `<tr data-num="${p.num || ''}"><td class="n">${p.num || ''}</td><td class="${RESULT_CLASS(p)}">${p.result || ''}</td><td class="t" title="${p.type}">${p.typeCode || ''}</td><td class="r">${p.speed || ''}</td></tr>`).join('')}</tbody></table>`;
   }
 
   const HALF_EMPTY_DIAMOND = `<svg class="hv-empty-dia" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3L37 20L20 37L3 20Z" fill="none" stroke="${PALETTE.ink}" stroke-opacity="0.35" stroke-width="1.5"/></svg>`;
@@ -5904,9 +5876,12 @@
     const title = isFinalPage ? 'Final' : `${NOW_TRI_SVG(v.half.top)}${v.half.top ? 'Top' : 'Bottom'} ${ordinalSuffix(v.half.inning)}`;
     const step = `<div class="hv-step">
       <button type="button" class="hv-step-btn" data-hv-step="-1" aria-label="Previous half-inning"${idx <= 0 ? ' disabled' : ''}>${HV_CHEV(true)}</button>
-      <div class="hv-title">${title}</div>
+      <div class="hv-title" aria-live="polite">${title}</div>
       <button type="button" class="hv-step-btn" data-hv-step="1" aria-label="Next half-inning"${idx >= pages - 1 ? ' disabled' : ''}>${HV_CHEV(false)}</button>
     </div>`;
+    const offLive = m.state === 'Live' && m.liveHalf && !sameHalf(v.half, m.liveHalf);
+    const liveBtn = offLive
+      ? `<button type="button" class="hv-live" data-hv-live>Back to live &#183; ${NOW_TRI_SVG(m.liveHalf.top)}${m.liveHalf.top ? 'Top' : 'Bottom'} ${ordinalSuffix(m.liveHalf.inning)}</button>` : '';
     if (isFinalPage) return head + step + renderGameStory(m.highlights);
 
     const team = m[side];
@@ -5940,7 +5915,8 @@
       if (r) {
         const batter = r.players.find(x => x.name === lb.batterName);
         html += row(r, batter && batter.id, wrap(`${team.name}-${lb.rowSlot}-${inning}-${lb.slotIndex}`, liveCellInner(lb), true),
-          (lb.currentInterruption ? `<div class="hv-desc">${lb.currentInterruption}</div>` : '') + renderCompactPitchTable(lb.pitches), 'is-live');
+          (lb.pitcherFullName ? `<div class="hv-vs">vs ${lb.pitcherFullName}</div>` : '')
+          + (lb.currentInterruption ? `<div class="hv-desc">${lb.currentInterruption}</div>` : '') + renderCompactPitchTable(lb.pitches), 'is-live');
         const next = team.rows.find(x => x.slot === (lb.rowSlot % team.rows.length) + 1);
         if (next) html += `<div class="hv-sub">On deck</div>` + row(next, null, HALF_EMPTY_DIAMOND, '', 'is-ondeck');
       }
@@ -5948,7 +5924,7 @@
       html += `<div class="hv-sub">Leading off</div>` + row(team.rows[0], null, HALF_EMPTY_DIAMOND, '', 'is-ondeck');
     }
     const fielding = m[side === 'away' ? 'home' : 'away'];
-    return head + step + `<div class="hv-list">${html}</div>` + fielding.pitchingBox;
+    return head + step + liveBtn + `<div class="hv-list">${html}</div>` + fielding.pitchingBox;
   }
 
   // A finished game's story: the play of the game and the players of the
@@ -6243,7 +6219,7 @@
   const NOW_TRI_SVG = top => `<svg class="now-tri" viewBox="0 0 10 8" aria-hidden="true"><path d="${top ? 'M5 0L10 8H0Z' : 'M0 0H10L5 8Z'}" fill="currentColor"/></svg>`;
 
   function renderTeamTable(teamName, rows, numInnings, pitcherByInning, starterPitcherId, columnsPerInning, pitchingBoxHtml, teamKey, liveBatterInfo, season, gameDate, headerControlsHtml, hidden) {
-    let head = `<tr><th class="ply"><span class="th-full">Player</span><span class="th-short">#</span></th><th class="pos">Pos</th>`;
+    let head = `<tr><th class="ply">Player</th><th class="pos">Pos</th>`;
     for (let i = 1; i <= numInnings; i++) {
       const cols = (columnsPerInning && columnsPerInning[i]) || 1;
       const isNow = liveBatterInfo && liveBatterInfo.team === teamKey && liveBatterInfo.inning === i;
@@ -6266,16 +6242,12 @@
       const nameHtml = `<div class="ply-stack">` + r.players.map((p, i) => {
         if (!p.id) return '';
         playerStore[p.id] = { id: p.id, name: p.name, pos: p.pos, team: teamName, season, gameDate, todayStats: p.stats };
-        // Both spans always render; a narrow-mobile media query swaps which
-        // one is visible so the Player column can shrink to jersey-number
-        // width there instead of a whole last name -- see .pnb-num/.pnb-name.
-        const numLabel = p.number ? `#${p.number}` : p.lastName;
         // A substitute's name button renders exactly like the starter's --
         // no wrapper, no arrow -- so it gets the same width/height behavior
         // in the Player column instead of shrinking to fit its text; Pos
         // (below) still marks it as a substitute with the muted .sub-note
         // style.
-        return `<button type="button" class="player-name-btn" data-player-id="${p.id}" title="${p.name}"><span class="pnb-name">${p.lastName}</span><span class="pnb-num">${numLabel}</span></button>`;
+        return `<button type="button" class="player-name-btn" data-player-id="${p.id}" title="${p.name}">${p.lastName}</button>`;
       }).join('') + `</div>`;
       const posHtml = `<div class="pos-stack">` + r.players.map((p, i) =>
         i === 0 ? `<span class="pos-main">${p.pos}</span>` : `<span class="sub-note">${p.pos}</span>`
@@ -8214,16 +8186,13 @@
     // status tag rides along in this same row (see renderVenueHeader).
     const topRowHtml = game.venueHtml || renderVenueHeader(game.venueName, null, game.gamePk, renderStateBadge(game));
 
-    // game.linescore is only ever supplied by the Scorecard tab's "Box
-    // Score" link, which already has the full live feed loaded -- Daily
-    // and Schedule tabs only know the score, so every game (pre-game
-    // included, so the box score is the one place team names/score show up
-    // instead of a separate matchup line) fetches the inning-by-inning grid
-    // lazily into this same slot (see loadGameSummaryExtrasInto), alongside
-    // the WPA highlights below. game.allPlays rides along with it (see
-    // currentGameSummary) so a Live game's panel here shows the same live
-    // count/baserunner band it does on the Scorecard tab, not just the box
-    // score.
+    // A caller that already has the feed can pass game.linescore (and
+    // game.allPlays, for a Live game's count/baserunner band); otherwise --
+    // the Daily and Schedule tabs only know the score -- every game
+    // (pre-game included, so the box score is the one place team
+    // names/score show up instead of a separate matchup line) fetches the
+    // inning-by-inning grid lazily into this same slot (see
+    // loadGameSummaryExtrasInto), alongside the WPA highlights below.
     const boxScoreHtml = game.linescore
       ? `<div class="gs-box-score">${renderMonsterPanel(game.linescore, awayAbbr, homeAbbr, game.allPlays || [], game.state === 'Live' && hasGameStarted(game.allPlays))}</div>`
       : `<div id="boxScore-${game.gamePk}" class="box-score-slot gs-box-score"><div class="potg-loading">Loading box score&#8230;</div></div>`;
@@ -8234,14 +8203,7 @@
       ? `<div class="pog-section" id="wpaLeaders-${game.gamePk}"><div class="potg-loading">Loading game highlights&#8230;</div></div>`
       : '';
 
-    // The Scorecard tab's own "Game Summary" link always points at the game
-    // already on screen there, so a "View Full Scorecard" CTA in that one
-    // context would just reload the same game -- suppressed via this flag
-    // rather than a gamePk comparison, since it should only ever apply to
-    // that exact entry point, not any modal that happens to share a gamePk.
-    const ctaHtml = game.hideScorecardCta
-      ? ''
-      : `<button type="button" class="modal-cta" data-date="${dateStr}" data-game-pk="${game.gamePk}">View Full Scorecard &#8594;</button>`;
+    const ctaHtml = `<button type="button" class="modal-cta" data-date="${dateStr}" data-game-pk="${game.gamePk}">View Full Scorecard &#8594;</button>`;
 
     return `
       <div class="game-summary-game">
@@ -8277,11 +8239,9 @@
     // g.linescore, so it always needs the fetch); highlights still only
     // make sense once a game has actually started, gated inside
     // fetchGameHighlights itself via includeHighlights. A Live game whose
-    // linescore and weather are already known (the Scorecard tab's own
-    // "Game Summary" link, via currentGameSummary) has nothing left for
-    // this to fetch -- renderGameSummaryGame won't have left a placeholder
-    // for either -- so skip it instead of fetching the whole feed for
-    // nothing.
+    // linescore and weather are already known has nothing left for this to
+    // fetch -- renderGameSummaryGame won't have left a placeholder for
+    // either -- so skip it instead of fetching the whole feed for nothing.
     games.filter(g => !g.venueHtml && g.venueId).forEach(g => loadVenueInto(g, requestId));
     games.filter(g => g.state === 'Final' || !g.linescore || !g.weather)
       .forEach(g => loadGameSummaryExtrasInto(g, requestId));
@@ -8302,14 +8262,6 @@
     }));
     openGameSummaryModal(dateStr, neutralGames, teamName);
   }
-  // Scorecard tab's "Game Summary" link -- reuses the exact same modal as
-  // the Daily/Schedule tabs, just fed the one game already loaded there
-  // (with linescore attached, so the box score renders instantly instead
-  // of needing the lazy fetch Final tiles from other tabs rely on).
-  function showCurrentGameSummary() {
-    if (!currentGameSummary) return;
-    openGameSummaryModal(currentGameSummary.dateStr, [{ ...currentGameSummary, hideScorecardCta: true }]);
-  }
   // Shared by every modal here whose hide function is just this one line
   // (hidePitchPopup is kept separate since it also resets extra state).
   // Popups take part in history too: opening one pushes an entry listing
@@ -8324,10 +8276,41 @@
   let pendingModalPops = 0;
   let awaitingModalPop = false;
   const afterModalPop = [];
+  // Each popup is a modal dialog: focus moves to its close button on open
+  // (once the caller has filled it, so its heading can name it) and goes
+  // back to whatever opened it on close -- or, if a redraw replaced that
+  // control meanwhile, to its stand-in in the new markup.
+  const overlayOpeners = {};
+  document.querySelectorAll('.pitch-overlay > .pitch-modal').forEach(m => {
+    m.setAttribute('role', 'dialog');
+    m.setAttribute('aria-modal', 'true');
+  });
+  function focusIntoOverlay(overlay) {
+    requestAnimationFrame(() => {
+      if (!overlay.classList.contains('open')) return;
+      const modal = overlay.querySelector('.pitch-modal');
+      const heading = modal && modal.querySelector('.pitch-header, .gs-title, h2, h3');
+      if (heading) modal.setAttribute('aria-label', heading.textContent.trim());
+      const close = overlay.querySelector('.pitch-close');
+      if (close) close.focus({ preventScroll: true });
+    });
+  }
+  function restoreOverlayOpener(overlay) {
+    const o = overlayOpeners[overlay.id];
+    delete overlayOpeners[overlay.id];
+    if (!o) return;
+    let el = o.el && o.el.isConnected ? o.el : null;
+    if (!el && o.sel) el = Array.from(document.querySelectorAll(o.sel)).find(x => x.offsetParent !== null) || null;
+    const top = modalStack.length ? document.getElementById(modalStack[modalStack.length - 1]) : null;
+    if (el && (!top || top.contains(el))) el.focus({ preventScroll: true });
+  }
   function openOverlay(overlay) {
     if (overlay.classList.contains('open')) return;
+    const active = document.activeElement;
+    overlayOpeners[overlay.id] = { el: active && active !== document.body ? active : null, sel: active ? focusedControlSelector(document.body) : null };
     overlay.classList.add('open');
     modalStack.push(overlay.id);
+    focusIntoOverlay(overlay);
     try {
       const here = history.state || { tab: Tabs.current() };
       history.replaceState({ ...here, scrollY: window.scrollY }, '', location.hash);
@@ -8335,9 +8318,11 @@
     } catch (e) {}
   }
   function closeOverlay(overlay, { fromHistory = false } = {}) {
+    const wasOpen = overlay.classList.contains('open');
     overlay.classList.remove('open');
     overlay.querySelectorAll('video').forEach(v => v.pause());
     const idx = modalStack.indexOf(overlay.id);
+    if (wasOpen) queueMicrotask(() => restoreOverlayOpener(overlay));
     if (idx < 0 || fromHistory) return;
     // anything opened on top of it goes too
     const above = modalStack.splice(idx);
@@ -8519,10 +8504,10 @@
     }
   }
 
-  function renderPlayOfGame(playOfGame, onItsScorecard) {
+  function renderPlayOfGame(playOfGame) {
     if (!playOfGame) return '';
     const watchHtml = playOfGame.videoUrl
-      ? `<a class="pog-watch" ${clipWatchAttrs(playOfGame.videoUrl, 'Play of the Game', { gameLink: !onItsScorecard })}>Watch &#9654;</a>`
+      ? `<a class="pog-watch" ${clipWatchAttrs(playOfGame.videoUrl, 'Play of the Game')}>Watch &#9654;</a>`
       : '';
     return `
       <div class="pog-section">
@@ -8550,11 +8535,11 @@
       </div>`;
   }
 
-  function renderGameHighlights(playOfGame, leaders, onItsScorecard) {
+  function renderGameHighlights(playOfGame, leaders) {
     if (!playOfGame && !leaders.length) {
       return `<div class="pog-section"><div class="potg-loading">Highlights unavailable for this game.</div></div>`;
     }
-    return renderPlayOfGame(playOfGame, onItsScorecard) + renderPlayersOfTheGame(leaders);
+    return renderPlayOfGame(playOfGame) + renderPlayersOfTheGame(leaders);
   }
 
   // getVenueInfo is cached by venue id, so this is cheap on repeat opens of
@@ -8573,7 +8558,7 @@
     if (requestId !== gameSummaryRequestId) return;
     if (includeHighlights) {
       const wpaEl = document.getElementById(`wpaLeaders-${game.gamePk}`);
-      if (wpaEl) wpaEl.outerHTML = renderGameHighlights(playOfGame, leaders, game.hideScorecardCta);
+      if (wpaEl) wpaEl.outerHTML = renderGameHighlights(playOfGame, leaders);
     }
     if (!game.linescore) {
       const boxEl = document.getElementById(`boxScore-${game.gamePk}`);
@@ -8809,7 +8794,7 @@
       scheduleGameStripPoll(dateStr, games);
       loadGame(chosen);
     } catch (e) {
-      body.innerHTML = apiErrorMsg('schedule');
+      body.innerHTML = apiErrorMsg('schedule', 'schedule');
     }
   }
 
@@ -8912,11 +8897,24 @@
     if (!m) return;
     const wantTop = side === 'away';
     const cur = v.half === 'final' ? null : v.half;
-    const target = (cur && m.halves.find(h => h.inning === cur.inning && h.top === wantTop))
+    // The batting team during a live game always means the half being
+    // played, so checking the other dugout and coming back returns to live
+    // rather than to the same inning number (which would be the last one).
+    const target = (m.liveHalf && m.liveHalf.top === wantTop && m.liveHalf)
+      || (cur && m.halves.find(h => h.inning === cur.inning && h.top === wantTop))
       || m.halves.slice().reverse().find(h => h.top === wantTop);
     if (target) v.half = target;
     v.side = side;
     v.follow = sameHalf(v.half, m.liveHalf) && wantTop === m.liveHalf.top;
+    renderScorecardSheet();
+  }
+
+  function jumpToLiveHalf() {
+    const m = scorecardModel, v = scorecardView;
+    if (!m || !m.liveHalf) return;
+    v.half = m.liveHalf;
+    v.side = m.liveHalf.top ? 'away' : 'home';
+    v.follow = true;
     renderScorecardSheet();
   }
 
@@ -8953,14 +8951,19 @@
         renderTeamToggle(m, v.side) + `<button class="roster-btn" data-team="${t.name}">Roster</button>`, side !== v.side);
     }).join('');
     body.innerHTML = `
-      <div class="sheet sc-sheet"><div class="sc-grid">${grid}</div><div class="sc-half">${renderHalfView(m, v)}</div></div>
-      <div class="footnote">Source: MLB Stats API${m.state === 'Final' ? '' : ` &#183; <span class="feed-updated">${lastFeedOkAt ? `updated ${lastFeedOkAt.toLocaleTimeString()}` : ''}</span>`}</div>
+      <div class="sheet sc-sheet">${m.state === 'Final' ? `<div class="sc-final-story">${renderGameStory(m.highlights)}</div>` : ''}<div class="sc-grid">${grid}</div><div class="sc-half">${renderHalfView(m, v)}</div>
+        <div class="footnote">Source: MLB Stats API${m.state === 'Final' ? '' : ` &#183; <span class="feed-updated">${lastFeedOkAt ? `updated ${lastFeedOkAt.toLocaleTimeString()}` : ''}</span>`}</div></div>
     `;
     body.querySelectorAll('.table-scroll').forEach((el, i) => {
       if (scrollLefts[i]) el.scrollLeft = scrollLefts[i];
     });
     if (focusSelector) {
-      const el = Array.from(body.querySelectorAll(focusSelector)).find(x => x.offsetParent !== null);
+      let el = Array.from(body.querySelectorAll(focusSelector)).find(x => x.offsetParent !== null);
+      // Stepping onto the last half disables the button just pressed; keep
+      // focus on the stepper rather than letting it fall to <body>.
+      if (el && el.disabled) el = el.parentNode.querySelector('[data-hv-step]:not([disabled])');
+      // "Back to live" goes away once pressed; the stepper takes its focus.
+      if (!el && /data-hv-live/.test(focusSelector)) el = body.querySelector('.sc-half [data-hv-step]:not([disabled])');
       if (el) el.focus({ preventScroll: true });
     }
   }
@@ -8980,6 +8983,13 @@
   body.addEventListener('click', (e) => {
     const sideBtn = e.target.closest('[data-sc-side]');
     if (sideBtn) { setScorecardSide(sideBtn.dataset.scSide); return; }
+    if (e.target.closest('[data-hv-live]')) { jumpToLiveHalf(); return; }
+    const retry = e.target.closest('[data-sc-retry]');
+    if (retry) {
+      if (retry.dataset.scRetry === 'schedule') loadSchedule(dateInput.value);
+      else if (currentGamePk) { body.innerHTML = '<div class="mlb-status-msg">Loading the game&#8230;</div>'; loadGame(currentGamePk); }
+      return;
+    }
     const stepBtn = e.target.closest('[data-hv-step]');
     if (stepBtn && !stepBtn.disabled) stepScorecardHalf(Number(stepBtn.dataset.hvStep));
   });
@@ -9021,11 +9031,6 @@
       const detailedState = gameData.status.detailedState;
       const allPlays = (liveData.plays && liveData.plays.allPlays) || [];
       const personIndex = gameData.players || {};
-      // Started here (not awaited yet) so it resolves in parallel with all
-      // the synchronous work below and the bullpen fetches -- it's cached by
-      // venue id and doesn't feed into anything else in this function, so
-      // there's no reason to block on it this early.
-      const venuePromise = getVenueInfo(gameData.venue && gameData.venue.id);
 
       const numInnings = Math.max((linescore.innings || []).length, 9);
       const away = buildTeamRows(liveData.boxscore.teams.away, 'top', allPlays, personIndex);
@@ -9212,8 +9217,7 @@
       const probable = gameData.probablePitchers || {};
       const homeStarterId = away.starterPitcherId || (probable.home && probable.home.id);
       const awayStarterId = home.starterPitcherId || (probable.away && probable.away.id);
-      const [venue, homeBullpen, awayBullpen, wpa] = await Promise.all([
-        venuePromise,
+      const [homeBullpen, awayBullpen, wpa] = await Promise.all([
         buildBullpenList(liveData.boxscore.teams.home, homeStarterId, season, officialDate, allPlays, 'top'),
         buildBullpenList(liveData.boxscore.teams.away, awayStarterId, season, officialDate, allPlays, 'bottom'),
         state === 'Final' ? getGameWpaSigned(gamePk, true) : null
@@ -9266,10 +9270,7 @@
       rosterStore[awayName] = renderRosterContent(awayName, awayBullpen, awayRows, getBenchPlayers(liveData.boxscore.teams.away, awayName));
       rosterStore[homeName] = renderRosterContent(homeName, homeBullpen, homeRows, getBenchPlayers(liveData.boxscore.teams.home, homeName));
 
-      // Text for the always-visible compact score strip. The venue header,
-      // inning-by-inning box score, and top-play highlights all live in the
-      // game summary modal (opened via the "Game Summary" link) instead of
-      // here, so the scorecard grid keeps the viewport.
+      // Text for the pre-game score strip (Live and Final get the board).
       const awayAbbr = (gameData.teams.away.abbreviation) || awayName;
       const homeAbbr = (gameData.teams.home.abbreviation) || homeName;
       let compactStateHtml = '';
@@ -9299,41 +9300,15 @@
           : '';
       }
 
-      const showRuns = state === 'Live' || state === 'Final';
-      const awayRuns = (linescore.teams && linescore.teams.away && linescore.teams.away.runs) ?? 0;
-      const homeRuns = (linescore.teams && linescore.teams.home && linescore.teams.home.runs) ?? 0;
       // scoreStripHtml only ever renders now for the preview (game hasn't
       // started) branch above -- Live and Final both take the monster-panel
       // path instead (see monsterPanelHtml below), so there's no score
       // to show here and no team abbreviations either, just the detailed
-      // status and first-pitch time. The Game Summary link itself lives in
-      // the tab's controls bar now (#gameSummaryTopBtn, next to the game
-      // picker) rather than down here, so it doesn't need to be rebuilt
-      // per-state.
+      // status and first-pitch time.
       const scoreStripHtml = `
         <span class="score-strip-teams">${awayAbbr} @ ${homeAbbr}</span>
         ${compactStateHtml ? `<span class="score-strip-state">${compactStateHtml}</span>` : ''}
       `;
-
-      // Fed to showCurrentGameSummary() when the link above is clicked --
-      // reuses the exact same modal the Daily/Schedule tabs open, just with
-      // this game's linescore and allPlays already attached so its own
-      // monster-panel (see renderGameSummaryGame) renders instantly instead
-      // of needing the lazy fetch those tabs rely on.
-      currentGameSummary = {
-        gamePk,
-        dateStr: officialDate,
-        awayName, homeName,
-        awayAbbr, homeAbbr,
-        awayScore: showRuns ? awayRuns : null,
-        homeScore: showRuns ? homeRuns : null,
-        state, detailedState,
-        gameDate: gameData.datetime && gameData.datetime.dateTime,
-        linescore: showRuns ? linescore : null,
-        allPlays: showRuns ? allPlays : null,
-        weather: gameData.weather || null,
-        venueHtml: renderVenueHeader(gameData.venue && gameData.venue.name, venue, undefined, renderStateBadge({ state, detailedState }))
-      };
 
       // Lives in the fixed bottom bar (#scoreBottomBar) below the wide
       // breakpoint, not in .sheet -- see .score-bottom-bar for why -- and in
@@ -9416,7 +9391,7 @@
         return;
       }
       renderedFeedKey = null;
-      body.innerHTML = apiErrorMsg('game data');
+      body.innerHTML = apiErrorMsg('game data', 'game');
       scoreBottomBar.innerHTML = '';
       sidebarMonsterPanel.innerHTML = '';
       updateAtBatTrackers(null);
@@ -9577,11 +9552,24 @@
     return 'other';
   }
 
-  const RESULT_CLASS = (result) => {
-    switch (classifyResult(result)) {
+  // A pitch's kind with its count in hand: a foul tip is always a strike
+  // (with two, a strikeout), as is a two-strike foul bunt; any other foul
+  // with two strikes changes nothing ('foul-2k'), and one with fewer is a
+  // strike like any other ('foul').
+  function classifyPitch(p) {
+    const kind = classifyResult(p.result || '');
+    if (kind !== 'foul') return kind;
+    if (/foul tip/i.test(p.result)) return 'strike-swinging';
+    if ((p.preStrikes || 0) >= 2) return /bunt/i.test(p.result) ? 'strike-swinging' : 'foul-2k';
+    return 'foul';
+  }
+
+  const RESULT_CLASS = (pitch) => {
+    switch (classifyPitch(pitch)) {
       case 'ball': return 'pitch-result-ball';
       case 'strike-called': case 'strike-swinging': return 'pitch-result-strike';
-      case 'foul': case 'inplay-safe': return 'pitch-result-foulhit';
+      case 'foul': case 'foul-2k': return 'pitch-result-foul';
+      case 'inplay-safe': return 'pitch-result-hit';
       case 'inplay-out': return 'pitch-result-out';
       case 'hbp': return 'pitch-result-hbp';
       default: return '';
@@ -9596,7 +9584,11 @@
     ball: { hue: PALETTE.ball, hollow: false },
     'strike-called': { hue: PALETTE.brick, hollow: true },
     'strike-swinging': { hue: PALETTE.brick, hollow: false },
-    foul: { hue: PALETTE.gold, hollow: true },
+    // Every foul is cream; one that left the count where it was (two
+    // strikes) is the hollow, lesser mark, the rest filled like the strike
+    // they were.
+    foul: { hue: PALETTE.ink, hollow: false },
+    'foul-2k': { hue: PALETTE.ink, hollow: true },
     'inplay-safe': { hue: PALETTE.gold, hollow: false },
     'inplay-out': { hue: PALETTE.gray, hollow: false },
     hbp: { hue: PALETTE.ball, hollow: true },
@@ -9644,7 +9636,7 @@
   // whichever pitch(es) newly showed up since this popup was last rendered,
   // regardless of whether the at-bat is done -- see showPitchPopup.
   function pitchLocationMarker(p, px, py, ringed, justArrived) {
-    const spec = RESULT_MARKER[classifyResult(p.result)] || RESULT_MARKER.other;
+    const spec = RESULT_MARKER[classifyPitch(p)] || RESULT_MARKER.other;
     let svg = `<g class="loc-dot" data-num="${p.num || ''}">`;
     if (ringed) {
       svg += `<circle cx="${px}" cy="${py}" r="10.5" fill="none" stroke="${spec.hue}" stroke-width="1.2" opacity="0.6"/>`;
@@ -9743,16 +9735,24 @@
   // as renderPitchLocation's allowEmpty, so the table doesn't wink in and
   // out (or get replaced by a text placeholder) around the exact moments
   // the zone above it would otherwise be doing the same thing.
+  // The count is the one each pitch was thrown in, as a scorekeeper writes
+  // it -- the feed's own count on a pitch is the count after it, which would
+  // read 3-3 on a strikeout.
   function renderPitchTable(pitches) {
-    const rowsHtml = pitches.map(p => `
+    let b = 0, st = 0;
+    const rowsHtml = pitches.map(p => {
+      const before = `${b}-${st}`;
+      if (p.balls != null) b = p.balls;
+      if (p.strikes != null) st = p.strikes;
+      return `
       <tr data-num="${p.num || ''}"${p.hasReview ? ' class="challenged"' : ''}>
         <td class="pnum">${p.num || ''}</td>
-        <td>${p.type}</td>
+        <td title="${p.type}">${p.typeCode || p.type}</td>
         <td class="pspeed">${p.speed || ''}</td>
-        <td class="${RESULT_CLASS(p.result)}">${p.result || ''}${p.hasReview ? ' <span class="abs-tag" title="ABS challenge">ABS</span>' : ''}</td>
-        <td class="pcount">${p.balls != null ? p.balls : ''}-${p.strikes != null ? p.strikes : ''}</td>
-      </tr>
-    `).join('');
+        <td class="${RESULT_CLASS(p)}">${p.result || ''}${p.hasReview ? ' <span class="abs-tag" title="ABS challenge">ABS</span>' : ''}</td>
+        <td class="pcount">${before}</td>
+      </tr>`;
+    }).join('');
     return `<table class="pitch-table">
       <thead><tr><th>#</th><th>Pitch</th><th>MPH</th><th>Result</th><th>Count</th></tr></thead>
       <tbody>${rowsHtml}</tbody>
@@ -13041,8 +13041,6 @@
   }
 
   document.addEventListener('click', (e) => {
-    const boxScoreLink = e.target.closest('.box-score-link');
-    if (boxScoreLink) showCurrentGameSummary();
     const target = e.target.closest('[data-pkey]');
     // The pitch-tag plate sits inside the same cell-wrap the pitch popup
     // is wired to (see data-pkey), so without this guard a click on the
@@ -13094,6 +13092,19 @@
     if (e.target === teamChartOverlay) hideTeamChartModal();
   });
   document.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab' && modalStack.length) {
+      const top = document.getElementById(modalStack[modalStack.length - 1]);
+      const modal = top && top.querySelector('.pitch-modal');
+      if (modal) {
+        const items = Array.from(modal.querySelectorAll('a[href], button:not([disabled]), select, input, video[controls], [tabindex="0"]')).filter(x => x.offsetParent !== null);
+        if (items.length) {
+          const first = items[0], last = items[items.length - 1];
+          if (!modal.contains(document.activeElement)) { e.preventDefault(); first.focus(); return; }
+          if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); return; }
+          if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); return; }
+        }
+      }
+    }
     if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.cell-wrap.clickable[data-pkey]')) {
       e.preventDefault();
       showPitchPopup(e.target.getAttribute('data-pkey'));
