@@ -5210,13 +5210,18 @@
     const fmt = p => `${p[0].toFixed(2)},${p[1].toFixed(2)}`;
     const poly = pts => pts.map((p, i) => `${i ? 'L' : 'M'} ${fmt(p)}`).join(' ');
 
-    // Generic fence: 400 ft to center, 370 in the gaps (22.5 degrees), 330
-    // down the lines. An even polynomial in the angle (t^2 and t^4), so it
-    // rounds over center field -- a power of |angle| below 2 put a point
-    // there. Sampled every 1.5 degrees.
+    // Generic fence: one circular arc through both foul poles (330 ft) and
+    // center field (400 ft), about 380 in the gaps -- the plain ballpark
+    // drawing. A curve defined by distance per angle instead came to a
+    // point in center or flared at the poles. The circle's center sits on
+    // the line to center field, `fenceC` ft out from home; each angle's
+    // distance is where its ray from home meets the circle.
+    const pole = 330 * Math.SQRT1_2;
+    const fenceC = (400 * 400 - 2 * pole * pole) / (2 * (400 - pole));
+    const fenceR = 400 - fenceC;
     const fenceFt = a => {
-      const t2 = (a / 45) * (a / 45);
-      return 400 - 70 * (1.952 * t2 - 0.952 * t2 * t2);
+      const bc = fenceC * Math.cos(a * Math.PI / 180);
+      return bc + Math.sqrt(bc * bc + fenceR * fenceR - fenceC * fenceC);
     };
     const angles = [];
     for (let a = -45; a <= 45.001; a += 1.5) angles.push(a);
@@ -10001,10 +10006,23 @@
     }
 
     // history: false when restoring a tab from Back (popstate), where the
-    // browser has already set the URL; a tab-bar switch replaces the
-    // current entry rather than pushing one (see navPush).
+    // browser has already set the URL. A tab-bar switch replaces the
+    // current entry rather than pushing one (see navPush) -- except over a
+    // drill-in (a profile, a game opened from elsewhere), which it would
+    // erase: that one is kept and the switch pushes above it, noting the
+    // tab it left (`over`). Tapping that tab again steps back to it rather
+    // than stacking a second entry for the same screen.
     function switchTo(id, { history: touchHistory = true } = {}) {
+      const here = (touchHistory && history.state) || {};
+      if (touchHistory && here.over === id && id !== active) {
+        try { history.back(); return; } catch (e) {}
+      }
       if (!tabs[id] || id === active) return;
+      // Before the panels change, so the entry left keeps its own scroll.
+      if (touchHistory) {
+        if (here.profile || here.game) navPush({ tab: id, over: here.tab });
+        else try { history.replaceState({ tab: id, ...(here.over ? { over: here.over } : {}) }, '', '#' + id); } catch (e) {}
+      }
       tabBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === id));
       tabPanels.forEach(p => { p.hidden = p.dataset.tabPanel !== id; });
       tabControls.forEach(c => { c.hidden = c.dataset.tabControls !== id; });
@@ -10012,9 +10030,6 @@
       if (!tab.initialized) { if (tab.init) tab.init(); tab.initialized = true; }
       if (tab.onShow) tab.onShow();
       active = id;
-      if (touchHistory) {
-        try { history.replaceState({ tab: id }, '', '#' + id); } catch (e) {}
-      }
     }
 
     function init(defaultId) {

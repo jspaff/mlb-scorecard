@@ -363,7 +363,7 @@ Single-series and quiet: Board Rule gridlines, Faded Cream axis labels, thin mar
 - **Do** use Pennant Gold as trim (section titles, active and focus rules) and, within the data, only for top-10% stats, made 5-star catches, quality starts, awards, RBIs and hits.
 - **Do** use tabular figures for every column of numbers.
 - **Do** size changeable controls to fixed slots so filters never shift the layout.
-- **Do** draw spray charts in the API's own coordinate space (home 125.42, 198.27; 2.495 ft per unit) so fences and batted balls agree, with a fence that rounds smoothly over center field.
+- **Do** draw spray charts in the API's own coordinate space (home 125.42, 198.27; 2.495 ft per unit) so fences and batted balls agree, with a generic fence drawn as one circular arc from pole to pole (330 down the lines, 400 to center).
 - **Do** run a split bar so longer is better: a pitcher's opponent-OPS scale runs high to low.
 
 ### Don't:
