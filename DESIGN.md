@@ -283,7 +283,7 @@ The scorebook cell: a 40-unit diamond per plate appearance, drawn in SVG.
 - **Fills:** a run scored fills the diamond gold; a strikeout fills it brick red, with the K mirrored for a called third strike.
 - **Code:** the play code is typed in Special Elite at the center, in brick red for an out.
 - **Marks:** outs on the bases get a brick tick; steals, caught stealing and pickoffs get small gold-framed tags. RBIs are gold dots in the corner, one per run.
-- **Runner tags:** each other runner's move, as small hung plates beside the diamond (under it in the phone's half-inning view): the base he left, a drawn arrow centered on the figures, and the base he reached ("1 → 3", "2 → H", "1 → X"), 9px Overpass. An advance is cream on Board Rule, a run board ink on gold, an out Brick Ink on solid Brick Red. Never cream on gold or brick: neither clears contrast at that size.
+- **Runner tags:** each other runner's move, as small hung plates stacked off the diamond's right point from halfway down, so they never cover the play code or grow the row (under the diamond in the phone's half-inning view): the base he left, a drawn arrow centered on the figures, and the base he reached ("1 → 3", "2 → H", "1 → X"), 9px Overpass. An advance is cream on Board Rule, a run board ink on gold, an out Brick Ink on solid Brick Red. Never cream on gold or brick: neither clears contrast at that size.
 - **Pitching-change plate:** the entering pitcher's nameplate across the top of the cell, 9px.
 - **As a control:** a diamond with pitch detail is a button (focusable, named by its batter and play) that opens the at-bat.
 
