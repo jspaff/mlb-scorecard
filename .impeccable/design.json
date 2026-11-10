@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-06T19:35:08Z",
+  "generatedAt": "2026-11-10T14:29:13Z",
   "title": "Design System: MLB Scorecard",
   "extensions": {
     "colorMeta": {
@@ -183,6 +183,21 @@
           "#d1d3d0",
           "#f0f0ef"
         ]
+      },
+      "brick-ink": {
+        "role": "tertiary",
+        "displayName": "Brick Ink",
+        "canonical": "#141a15",
+        "tonalRamp": [
+          "#0b0e0c",
+          "#141a15",
+          "#232c25",
+          "#364238",
+          "#56645a",
+          "#7f8b82",
+          "#b0b8b2",
+          "#e4e8e5"
+        ]
       }
     },
     "typographyMeta": {
@@ -251,6 +266,11 @@
         "name": "state",
         "value": "0.15s ease",
         "purpose": "Hover/focus color and shadow changes on plates, selects and toggles; nothing animates on entry."
+      },
+      {
+        "name": "live-pulse",
+        "value": "1.3s ease-in-out infinite",
+        "purpose": "The at-bat-now dot in a diamond; still under prefers-reduced-motion."
       }
     ],
     "breakpoints": [
@@ -260,15 +280,26 @@
       },
       {
         "name": "wide-sheet",
-        "value": "700px"
+        "value": "700px",
+        "purpose": "Wide variants switch on; the Scorecard trades its phone half-inning view for the full card."
       },
       {
         "name": "five-across",
         "value": "900px"
       },
       {
+        "name": "scorecard-sidebar",
+        "value": "1100px",
+        "purpose": "The Scorecard's board and at-bat move from the bottom bar into a sidebar."
+      },
+      {
         "name": "side-column",
         "value": "1150px"
+      },
+      {
+        "name": "short-landscape",
+        "value": "max-height: 500px",
+        "purpose": "A phone held sideways: the header and the board scroll with the page."
       }
     ]
   },
@@ -336,6 +367,22 @@
       "description": "A scorebook page laid on the Monster-green wall.",
       "html": "<div class=\"ds-sheet\">Scorebook page</div>",
       "css": ".ds-sheet{background:var(--paper,#3b4336);color:var(--ink,#f3ecdb);border:2px solid var(--ink,#f3ecdb);border-radius:0;padding:18px;box-shadow:0 2px 0 rgba(0,0,0,.25) inset,0 4px 14px rgba(0,0,0,.35);font-family:'Inter',sans-serif;font-size:13px}"
+    },
+    {
+      "name": "Runner Tags",
+      "kind": "custom",
+      "refersTo": "runner-tag",
+      "description": "Each other runner's move on a play, as small hung plates off the diamond's right point: an advance, a run, an out.",
+      "html": "<div class=\"ds-tags\"><span class=\"ds-tag\">1<svg viewBox=\"0 0 7 6\" aria-hidden=\"true\"><path d=\"M0 3H5.5M3.5 0.8L5.8 3L3.5 5.2\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.2\"/></svg>3</span><span class=\"ds-tag is-run\">2<svg viewBox=\"0 0 7 6\" aria-hidden=\"true\"><path d=\"M0 3H5.5M3.5 0.8L5.8 3L3.5 5.2\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.2\"/></svg>H</span><span class=\"ds-tag is-out\">1<svg viewBox=\"0 0 7 6\" aria-hidden=\"true\"><path d=\"M0 3H5.5M3.5 0.8L5.8 3L3.5 5.2\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.2\"/></svg>X</span></div>",
+      "css": ".ds-tags{display:inline-flex;flex-direction:column;gap:1px;padding:12px;background:var(--paper,#3b4336)}.ds-tag{display:flex;align-items:center;justify-content:center;font-family:'Overpass',sans-serif;font-weight:700;font-size:9px;line-height:11px;color:var(--ink,#f3ecdb);background:var(--paper-line,#545e4d);box-shadow:0 1px 2px rgba(0,0,0,.4);padding:1px 4px 0;white-space:nowrap}.ds-tag svg{width:7px;height:6px;margin:0 2px;position:relative;top:-.5px}.ds-tag.is-run{color:var(--paper,#3b4336);background:var(--gold,#d9a91a)}.ds-tag.is-out{color:#141a15;background:var(--brick,#e0604a)}"
+    },
+    {
+      "name": "Pitching Box",
+      "kind": "card",
+      "refersTo": "pitching-box",
+      "description": "The pitchers' section at the foot of a card: the starter's line of plain totals, then relievers by name; the gold active rule marks who's on the mound.",
+      "html": "<div class=\"ds-pbox\"><div class=\"ds-pbox-title\">Pitching &#183; Mets</div><div class=\"ds-pbox-body\"><div><div class=\"ds-lbl\">Starter</div><div class=\"ds-pbox-name\">Jonah Tong</div><div class=\"ds-lbl\">Final line</div></div><div class=\"ds-pbox-stats\"><div><div class=\"ds-lbl\">IP</div><div class=\"ds-val\">4.2</div></div><div><div class=\"ds-lbl\">PC</div><div class=\"ds-val\">95</div></div><div><div class=\"ds-lbl\">K</div><div class=\"ds-val\">5</div></div></div><div class=\"ds-pbox-rel\"><div class=\"ds-lbl\">Relievers</div><button class=\"ds-plate\">Weisenburger</button><button class=\"ds-plate is-pitching\">Yan</button></div></div></div>",
+      "css": ".ds-pbox{background:var(--paper,#3b4336);padding:18px;color:var(--ink,#f3ecdb)}.ds-pbox-title{font-family:'Overpass',sans-serif;font-weight:800;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold,#d9a91a);margin-bottom:10px}.ds-pbox-body{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 28px}.ds-lbl{font-family:'Overpass',sans-serif;font-weight:700;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft,#c3c8bb)}.ds-pbox-name{font-family:'Oswald',sans-serif;font-weight:500;font-size:20px}.ds-pbox-stats{display:flex;gap:16px;text-align:center}.ds-val{font-family:'Oswald',sans-serif;font-weight:500;font-size:20px;font-variant-numeric:tabular-nums}.ds-pbox-rel{display:flex;flex-direction:column;align-items:flex-start;gap:7px;padding-left:26px;border-left:1px solid var(--paper-line,#545e4d)}.ds-plate{font-family:'Overpass',sans-serif;font-weight:700;font-size:10.5px;text-transform:uppercase;color:var(--ink,#f3ecdb);background:rgba(243,236,219,.08);border:1px solid var(--paper-line,#545e4d);padding:2px 7px;box-shadow:0 2px 3px rgba(0,0,0,.35);cursor:pointer;transition:background .15s,color .15s}.ds-plate.is-pitching{box-shadow:0 2px 3px rgba(0,0,0,.35),0 5px 0 -1px var(--gold,#d9a91a)}.ds-plate:hover,.ds-plate:focus-visible{background:var(--gold,#d9a91a);color:var(--paper,#3b4336);outline:none}"
     }
   ],
   "narrative": {
@@ -361,7 +408,7 @@
       },
       {
         "name": "The Blank Zero Rule",
-        "body": "In game logs and tables, a zero count is left blank, never written as 0. The exceptions are pairs read aloud (\"0-4\" H-AB, an inning pitched) and a linescore or big-number summary, where a blank would read as missing.",
+        "body": "In game logs and tables, a zero count is left blank, never written as 0. The exceptions are pairs read aloud (\"0-4\" H-AB, an inning pitched), a linescore or big-number summary, where a blank would read as missing, and a zero that is the achievement (a starter's 0 ER or 0 BB on the Highlights tab).",
         "section": "colors"
       },
       {
