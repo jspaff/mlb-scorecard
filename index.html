@@ -1688,6 +1688,46 @@
     .tm-pair { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
   .pp-tabs.tm-roster-tabs { margin-top: -6px; }
+  /* Next game: a card that opens the scorecard. */
+  .tn { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'k k' 'opp right' 'go right'; align-items: center; gap: 4px 14px; width: 100%; padding: 12px 14px; text-align: left; color: var(--ink); background: rgba(0, 0, 0, 0.16); border: 1px solid var(--paper-line); cursor: pointer; font: inherit; }
+  .tn:hover, .tn:focus-visible { border-color: var(--gold); outline: none; }
+  .tn.is-live { border-color: #3fae56; }
+  .tn-kicker { grid-area: k; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); }
+  .tn-live { display: inline-flex; align-items: center; gap: 6px; color: #3fae56; }
+  .tn-live i { width: 8px; height: 8px; border-radius: 50%; background: #3fae56; box-shadow: 0 0 6px #3fae56; }
+  .tn-opp { grid-area: opp; display: flex; align-items: center; gap: 8px; min-width: 0; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 24px; line-height: 1.1; white-space: nowrap; overflow: hidden; }
+  .tn-opp img { width: 30px; height: 30px; flex: none; }
+  .tn-at { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 12px; color: var(--ink-soft); }
+  .tn-right { grid-area: right; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+  .tn-day { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 18px; }
+  .tn-score { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 30px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .tn-score b { font-weight: 400; color: var(--ink-soft); margin: 0 3px; }
+  .tn-state { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); }
+  .tn-go { grid-area: go; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); }
+  .tn.is-compact { padding: 8px 12px; gap: 2px 12px; }
+  .tn.is-compact .tn-opp { font-size: 18px; } .tn.is-compact .tn-opp img { width: 22px; height: 22px; }
+  .tm-next-slot { margin-left: auto; min-width: 0; flex: 0 1 300px; }
+  /* Leaders */
+  .tl-sub { margin: 4px 0 10px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); }
+  .tl-sub em { font-style: normal; color: var(--ink-soft); margin-left: 6px; }
+  .tl-cols { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px 40px; }
+  @container (min-width: 760px) { .tl-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .tl-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .tl-card { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; text-align: center; }
+  .tl-card .dcf-print { width: 84px; }
+  .tl-card .player-name-btn { max-width: 100%; }
+  .tl-card-line { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; line-height: 1.35; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .tl-board { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px 8px; margin-bottom: 14px; }
+  .tl-tile { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
+  .tl-tile .pp-slot { align-self: stretch; font-size: 26px; line-height: 1.5; }
+  .tl-tile .player-name-btn { max-width: 100%; }
+  .tl-row { display: grid; grid-template-columns: 14px 34px auto minmax(0, 1fr); align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px dashed var(--paper-line); }
+  .tl-rank { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 15px; color: var(--gold); }
+  .tl-face { width: 34px; height: 42px; object-fit: cover; border: 2px solid var(--ink); background: var(--paper-line); }
+  .tl-line { justify-self: end; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11.5px; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tl-row + .tl-sub { margin-top: 16px; }
+  .tm-split { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0 40px; }
+  @container (min-width: 1000px) { .tov3 .tm-split { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); } .tov3 .tm-split .tm-pair { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   .tm-roster-title { margin-bottom: 12px; }
   .tm-stats:first-child { margin-top: 0; }
   /* Stat columns at a fixed compact width, so on a wide sheet they read as
@@ -7242,7 +7282,7 @@
 
   function dayVideoKey(item) {
     const key = `c${Object.keys(dayClips).length}`;
-    dayClips[key] = item.clip ? item.clip : { playId: item.playId, matchup: matchupOf(item.g), title: item.title };
+    dayClips[key] = item.clip ? item.clip : { playId: item.playId, matchup: item.meta || matchupOf(item.g), title: item.title };
     return key;
   }
 
@@ -7277,7 +7317,7 @@
   // title and the game. Every card draws its own still -- MLB's photos
   // never show -- so a Savant-only play looks like any other.
   function renderVideoCard(item) {
-    const matchup = item.clip ? item.clip.matchup : matchupOf(item.g);
+    const matchup = item.meta || (item.clip ? item.clip.matchup : matchupOf(item.g));
     return `
       <button type="button" class="vc" data-day-clip="${dayVideoKey(item)}">
         <span class="vc-thumb">${renderScorebookStill(item)}</span>
@@ -7653,19 +7693,176 @@
       </section>` : '';
 
 
-    return `<div class="sheet tm">
-      <div class="tm-head">
+    const head = `<div class="tm-head">
         <img class="tm-cap" src="${capLogoUrl(teamId)}" alt="">
         <div class="tm-id">
           <div class="tm-name">${name}</div>
           <div class="tm-place">${seasonLabel}${place ? ` &#183; ${place}` : ''}</div>
           ${champs}
         </div>
-      </div>
+        ${TOV.v === 2 ? '<div class="tm-next-slot" id="tmNext"></div>' : ''}
+      </div>`;
+    const sec = (title, id, extra = '') => `<section class="tm-sec${extra}"><div class="pp-skg-head"><span>${title}</span></div><div id="${id}"></div></section>`;
+    const pair = `<div class="tm-pair">${gameList('Recent', recent)}${gameList('Up Next', upcoming)}</div>`;
+    if (TOV.v === 3) {
+      return `<div class="sheet tm tov3">${head}
+        ${sec('Season Highlights', 'tmMoments')}
+        <div class="tm-split">
+          <div class="tm-col">${board}${chart}${pair}</div>
+          <div class="tm-col"><div class="tm-sec" id="tmNext"></div>${sec('Leaders', 'tmLeaders')}</div>
+        </div>
+      </div>`;
+    }
+    return `<div class="sheet tm tov${TOV.v}">${head}
+      ${TOV.v === 1 ? '<div class="tm-sec" id="tmNext"></div>' : ''}
       ${board}
+      ${sec('Season Highlights', 'tmMoments')}
+      ${sec('Leaders', 'tmLeaders')}
       ${chart}
-      <div class="tm-pair">${gameList('Recent', recent)}${gameList('Up Next', upcoming)}</div>
+      ${pair}
     </div>`;
+  }
+
+  // ---- Overview extras: the season's biggest plays, leaders, next game ----
+  // MOCK: layout variant from ?tov=1|2|3 (and ?tovlive=1 fakes a live next
+  // game) while the versions are compared.
+  const TOV = (() => { try { const q = new URLSearchParams(location.search); return { v: Number(q.get('tov')) || 1, live: q.get('tovlive') === '1' }; } catch (e) { return { v: 1, live: false }; } })();
+
+  // The season's biggest swings in his team's favor: every final's win
+  // probability (under 1 KB a game) ranks them, then only the games that
+  // hold the top few are read in full for their diamonds and clips. At
+  // most two from one game, so one wild night can't fill the row.
+  const TEAM_MOMENTS = 8;
+  const teamMomentsCache = {};
+  async function getTeamSeasonMoments(teamId, finals) {
+    const key = `${teamId}-${finals.length ? finals[finals.length - 1].gamePk : 0}`;
+    if (teamMomentsCache[key]) return teamMomentsCache[key];
+    try {
+      const swings = [];
+      let next = 0;
+      async function worker() {
+        while (next < finals.length) {
+          const g = finals[next++];
+          const signed = await getGameWpaSigned(g.gamePk, true);
+          Object.keys(signed).forEach(i => {
+            const wpa = (g.isHome ? signed[i] : -signed[i]) / 100;
+            if (wpa > 0) swings.push({ g, atBatIndex: Number(i), wpa });
+          });
+        }
+      }
+      await Promise.all(Array.from({ length: SPRAY_FETCH_CONCURRENCY }, worker));
+      swings.sort((a, b) => b.wpa - a.wpa);
+      const perGame = {};
+      const top = swings.filter(m => (perGame[m.g.gamePk] = (perGame[m.g.gamePk] || 0) + 1) <= 2).slice(0, TEAM_MOMENTS);
+      const games = [...new Map(top.map(m => [m.g.gamePk, m.g])).values()];
+      const stats = Object.fromEntries(await Promise.all(games.map(async g =>
+        [g.gamePk, await fetchGameStats(g.gamePk, { id: g.awayId }, { id: g.homeId }, true)])));
+      const items = top.map(m => {
+        const k = ((stats[m.g.gamePk] || {}).keyPlays || []).find(x => x.atBatIndex === m.atBatIndex);
+        if (!k || !k.playId) return null;
+        const g = m.g;
+        return {
+          key: `${g.gamePk}-${k.atBatIndex}`, g, k, wpa: m.wpa, playId: k.playId,
+          title: momentTitle(k),
+          label: k.kind ? HR_IMPACT_LABELS[k.kind] : k.event === 'Home Run' ? 'Home run' : k.isOut ? 'Big out' : 'Big hit',
+          why: k.runs > 1 ? `${k.runs} runs` : k.runs ? '1 run' : '',
+          teamId: Number(teamId), personId: k.isOut ? k.pitcherId : k.batterId,
+          meta: `${fmtShortDate(g.date)} &#183; ${g.isHome ? 'vs' : '@'} ${TEAM_ABBR[g.isHome ? g.awayId : g.homeId] || g.opponentFull}`
+        };
+      }).filter(Boolean);
+      teamMomentsCache[key] = items;
+      return items;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Leaders among the regulars: hitters with a batting title's share of
+  // the team's games in PA, pitchers with an inning a game (a reliever's
+  // categories, saves, take anyone). Rate stats rank only them; counts
+  // rank everyone.
+  function buildTeamLeaders(hitting, pitching, teamGames) {
+    const n = v => Number(v) || 0;
+    const qualH = (hitting || []).filter(r => n(r.stat.plateAppearances) >= 3.1 * teamGames);
+    const qualP = (pitching || []).filter(r => n(r.stat.inningsPitched) >= teamGames);
+    const best = (rows, stat, low) => rows.slice().sort((a, b) => low ? n(a.stat[stat]) - n(b.stat[stat]) : n(b.stat[stat]) - n(a.stat[stat]))[0];
+    const cat = (label, rows, stat, low, fmt) => { const r = best(rows, stat, low); return r && n(r.stat[stat]) ? { label, r, value: fmt ? fmt(r.stat[stat]) : r.stat[stat] } : (r && low ? { label, r, value: r.stat[stat] } : null); };
+    const regulars = (qualH.length >= 3 ? qualH : (hitting || []).filter(r => n(r.stat.plateAppearances) >= 1.5 * teamGames));
+    const arms = (pitching || []).filter(r => n(r.stat.inningsPitched) >= 0.4 * teamGames);
+    return {
+      hitters: regulars.slice().sort((a, b) => n(b.stat.ops) - n(a.stat.ops)).slice(0, 3),
+      pitchers: arms.slice().sort((a, b) => n(a.stat.era) - n(b.stat.era)).slice(0, 3),
+      hitCats: [cat('AVG', qualH, 'avg'), cat('HR', hitting || [], 'homeRuns'), cat('RBI', hitting || [], 'rbi'), cat('SB', hitting || [], 'stolenBases'), cat('OPS', qualH, 'ops')].filter(Boolean),
+      pitchCats: [cat('W', pitching || [], 'wins'), cat('ERA', qualP, 'era', true), cat('K', pitching || [], 'strikeOuts'), cat('SV', pitching || [], 'saves'), cat('WHIP', qualP, 'whip', true)].filter(Boolean)
+    };
+  }
+  function leaderLine(r, pitcher) {
+    const s = r.stat;
+    return pitcher
+      ? [`${s.era} ERA`, `${s.inningsPitched} IP`, `${s.strikeOuts} K`].join(' &#183; ')
+      : [s.avg + '/' + s.obp + '/' + s.slg, `${s.homeRuns} HR`].join(' &#183; ');
+  }
+
+  // The next game: one under way first, else the next on the schedule --
+  // after the last game of a season, next season's opener.
+  async function getTeamNextGame(teamId, season, games) {
+    const ahead = games.filter(g => g.state !== 'Final' && !isCalledOff(g));
+    const live = ahead.find(g => g.state === 'Live');
+    if (live || ahead.length) return { g: live || ahead[0], opener: false };
+    if (Number(season) !== Number(await getDefaultListSeason())) return null;
+    const nextSeason = await fetchTeamSchedule(teamId, Number(season) + 1);
+    const first = teamScheduleGames(nextSeason.gamesByDate || {}).find(g => !isCalledOff(g));
+    return first ? { g: first, opener: true } : null;
+  }
+  function renderNextGame(next, teamId, compact) {
+    if (!next) return '';
+    const g = next.g;
+    const oppId = g.isHome ? g.awayId : g.homeId;
+    const live = g.state === 'Live';
+    const us = g.isHome ? g.homeScore : g.awayScore, them = g.isHome ? g.awayScore : g.homeScore;
+    const when = new Date(g.gameDate);
+    const day = when.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+    const kicker = live ? '<span class="tn-live"><i></i>Live</span>' : next.opener ? 'Opening Day' : 'Next Game';
+    const right = live
+      ? `<span class="tn-score">${us ?? 0}<b>-</b>${them ?? 0}</span><span class="tn-state">${g.inningLabel || g.detailedState || ''}</span>`
+      : `<span class="tn-day">${day}</span><span class="tn-state">${formatGameTime(g.gameDate)}</span>`;
+    return `<button type="button" class="tn${live ? ' is-live' : ''}${compact ? ' is-compact' : ''}" data-tn-date="${g.date}" data-tn-pk="${g.gamePk}">
+        <span class="tn-kicker">${kicker}</span>
+        <span class="tn-opp"><span class="tn-at">${g.isHome ? 'vs' : '@'}</span><img src="${capLogoUrl(oppId)}" alt="">${g.opponentFull}</span>
+        <span class="tn-right">${right}</span>
+        <span class="tn-go">${live ? 'Follow live' : 'Scorecard'} &#8594;</span>
+      </button>`;
+  }
+
+  function renderLeaderCards(leaders, teamId, season) {
+    const card = (r, pitcher) => {
+      storeTeamPlayer(r.id, r.name, r.pos, teamId, season);
+      return `<div class="tl-card">${depthPrint({ id: r.id, name: r.name })}${depthPlate({ id: r.id, name: r.name })}<span class="tl-card-line">${leaderLine(r, pitcher)}</span></div>`;
+    };
+    return `<div class="tl-cols">
+      <div><div class="tl-sub">Hitters <em>by OPS</em></div><div class="tl-cards">${leaders.hitters.map(r => card(r, false)).join('')}</div></div>
+      <div><div class="tl-sub">Pitchers <em>by ERA</em></div><div class="tl-cards">${leaders.pitchers.map(r => card(r, true)).join('')}</div></div>
+    </div>`;
+  }
+  function renderLeaderBoard(leaders, teamId, season) {
+    const tile = c => {
+      storeTeamPlayer(c.r.id, c.r.name, c.r.pos, teamId, season);
+      return `<div class="pp-stat tl-tile"><span class="pp-painted">${c.label}</span><span class="pp-slot">${c.value}</span>${depthPlate({ id: c.r.id, name: c.r.name })}</div>`;
+    };
+    return `<div class="tl-board">${leaders.hitCats.map(tile).join('')}</div><div class="tl-board">${leaders.pitchCats.map(tile).join('')}</div>`;
+  }
+  function renderLeaderRows(leaders, teamId, season) {
+    const row = (r, i, pitcher) => {
+      storeTeamPlayer(r.id, r.name, r.pos, teamId, season);
+      return `<div class="tl-row"><span class="tl-rank">${i + 1}</span><img class="tl-face" src="${headshotUrl(r.id, 120)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">${depthPlate({ id: r.id, name: r.name })}<span class="tl-line">${leaderLine(r, pitcher)}</span></div>`;
+    };
+    return `<div class="tl-sub">Hitters <em>by OPS</em></div>${leaders.hitters.map((r, i) => row(r, i, false)).join('')}
+      <div class="tl-sub">Pitchers <em>by ERA</em></div>${leaders.pitchers.map((r, i) => row(r, i, true)).join('')}`;
+  }
+  function renderTeamMoments(items) {
+    if (items === undefined) return '<div class="mlb-status-msg">Finding the season&#8217;s biggest plays&#8230;</div>';
+    if (!items || !items.length) return '<div class="pitch-empty">No plays yet this season.</div>';
+    return `<div class="dp-row">${items.map(renderVideoCard).join('')}</div>`;
   }
 
   // Same running tally getTeamWinLossSeries keeps, from games already in hand.
@@ -7692,6 +7889,19 @@
     const october = record && record.final ? await getTeamPostseasonResult(teamId, season) : null;
     if (requestId !== teamRequestId) return;
     teamBody.innerHTML = renderTeamOverview(teamId, season, record, schedule, october);
+    const games = teamScheduleGames(schedule.gamesByDate).filter(g => !isCalledOff(g));
+    const finals = games.filter(g => g.state === 'Final' && g.homeScore != null && g.awayScore != null);
+    const fill = (id, html) => { if (requestId !== teamRequestId) return; const el = document.getElementById(id); if (el) el.innerHTML = html; };
+    fill('tmMoments', renderTeamMoments(undefined));
+    getTeamNextGame(teamId, season, games).then(next => {
+      if (next && TOV.live) next = { opener: false, g: { ...next.g, state: 'Live', homeScore: 3, awayScore: 2, inningLabel: '\u25BC 6th' } };
+      fill('tmNext', renderNextGame(next, teamId, TOV.v === 2));
+    });
+    Promise.all([getTeamPlayerStats(teamId, season, 'hitting'), getTeamPlayerStats(teamId, season, 'pitching')]).then(([h, pi]) => {
+      const leaders = buildTeamLeaders(h, pi, finals.length || 1);
+      fill('tmLeaders', TOV.v === 1 ? renderLeaderCards(leaders, teamId, season) : TOV.v === 2 ? renderLeaderBoard(leaders, teamId, season) : renderLeaderRows(leaders, teamId, season));
+    });
+    getTeamSeasonMoments(teamId, finals).then(items => fill('tmMoments', renderTeamMoments(items)));
   }
 
   // ---- Schedule ----
@@ -8153,6 +8363,14 @@
       loadTeamTab();
       return;
     }
+    const clipBtn = e.target.closest('[data-day-clip]');
+    if (clipBtn) {
+      const clip = dayClips[clipBtn.dataset.dayClip];
+      if (clip && clip.playId) showClipModal(clip.playId, { head: `<div class="cv-head"><span class="cv-result">${clip.matchup}</span></div>` });
+      return;
+    }
+    const nextBtn = e.target.closest('[data-tn-pk]');
+    if (nextBtn) { jumpToScorecardGame(nextBtn.dataset.tnDate, nextBtn.dataset.tnPk); return; }
     const tile = e.target.closest('.calendar-day.is-game, .tm-g');
     if (tile) openTeamTile(tile);
   });
