@@ -150,7 +150,7 @@ A three-layer palette of wall, board and ink, with two spare signal colors.
 - **Monster Green**: the frame. It's the page background behind every sheet and the PWA theme color, matching Fenway's Green Monster. It is binding and never changes. Contrast is solved by what sits on it.
 
 ### Secondary
-- **Pennant Gold**: the scheme's accent and its one positive signal. As trim it paints section titles, the active tab and segment rules, focus rings and the jersey number. In the data it marks award plates, a skill score of 90 or more (or a Defense-tab stat in the top 10% of qualified players), a made 5-star catch, quality starts, a walk-off or grand slam, RBI dots and hits on the spray chart.
+- **Pennant Gold**: the scheme's accent and its one positive signal. As trim it paints section titles, the active tab and segment rules, the rule under the pitcher on the mound, focus rings and the jersey number. In the data it marks award plates, a skill score of 90 or more (or a Defense-tab stat in the top 10% of qualified players), a made 5-star catch, quality starts, a walk-off or grand slam, RBI dots and hits on the spray chart.
 
 ### Tertiary
 - **Brick Red**: the out and the run against. It fills strikeout diamonds and out ticks. Its text-only tint, **Brick Red Text**, is lighter for small type on the board, where the fill color is too dark to read (runs allowed, strikes).
@@ -282,6 +282,15 @@ The scorebook cell: a 40-unit diamond per plate appearance, drawn in SVG.
 - **Fills:** a run scored fills the diamond gold; a strikeout fills it brick red, with the K mirrored for a called third strike.
 - **Code:** the play code is typed in Special Elite at the center, in brick red for an out.
 - **Marks:** outs on the bases get a brick tick; steals, caught stealing and pickoffs get small gold-framed tags. RBIs are gold dots in the corner, one per run.
+
+### Scorecard
+The live game's screen. Wider screens keep the full card; a phone gets its own presentation rather than a squeezed grid.
+- **Team toggle:** one team's card at a time, chosen by a segmented toggle in the card's header beside Roster. A small triangle marks the side batting now (up for the top of an inning, down for the bottom), and a live game opens on the batting team. The live inning's column head carries the same triangle and a gold rule.
+- **Phone, half-inning view:** below 700px the card is told one half-inning at a time, read top to bottom like a column of the scorebook. Each plate appearance is its diamond beside the batting-order slot (gold trim), the batter's nameplate and his position, in fixed columns so they line up, with the play written out underneath. The batter up now lists his pitches one line each (result, pitch code, speed; the count is on the board), and one batter waits "On deck" beside an empty diamond. A stepper moves through the half-innings and the toggle picks the team; a live game stops at the half-inning being played. A finished game's last page is "Final", and it opens there. Turning the phone sideways shows the full card.
+- **Final summary:** the Play of the Game (its ▶ is the Highlights tab's recessed square) and the Players of the Game, each with a team abbreviation and his line. Win probability picks them and is never shown. On a phone it's the Final page; on a wide sheet it fills the sidebar under the board once the game is over. During a game the sidebar keeps the live at-bat.
+- **Pitching box:** under each card, the staff that faced it. The starter gets a line of plain totals (IP, PC, H, R, BB, K, then Game Score set apart); once he's out, "Final line" sits under his name. Relievers appear by name only, in the order they entered: beside the starter on a wide card, three deep and then a new column, and in a row under him on a phone. Whoever is on the mound gets the gold active rule, under the starter's name or a reliever's plate; no "now" label.
+- **Bottom bar:** the Monster board. Between a phone and the sidebar's width, the live at-bat joins it as a second card at the far side (the zone without the plate, then the batter and his pitches), so the bar has no empty margins.
+- **Roster popup:** the lineup, the bench, and the pitchers: who has pitched, then everyone else, fewest games started first, so the rotation sinks to the bottom.
 
 ### Tabs
 - **Style:** Overpass 700 uppercase labels, full cream on the frame (the tab bar) and Faded Cream inside a sheet (profile tabs). The active tab has a 2px Pennant Gold underline. Tab rows scroll sideways on a phone rather than wrapping.
