@@ -1131,6 +1131,14 @@
      the detailed and colorful ones to smudges), the club in Oswald. */
   .dg-team { display: grid; grid-template-columns: minmax(0, 1fr) 24px; align-items: center; gap: 5px; height: 21px; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 15px; letter-spacing: 0.04em; color: var(--ink); }
   .dg-team b { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 17px; text-align: right; font-variant-numeric: tabular-nums; }
+  /* A final's winner, as the game strip marks it: his cap faintly behind
+     the box, sized to the box so a phone's short one isn't swamped. */
+  .dg { position: relative; overflow: hidden; }
+  .dg-box, .dg-story { position: relative; }
+  .dg-wm { position: absolute; right: 52px; top: 50%; transform: translateY(-50%); height: min(76px, 90%); aspect-ratio: 1; width: auto; object-fit: contain; opacity: 0.16; pointer-events: none; }
+  /* Two boxes across a phone are too narrow to clear the runs, so the cap
+     moves into the gap between the clubs and the runs. */
+  @container (max-width: 619px) { .dg-wm { right: 66px; height: 82%; } }
   .dg-team.is-lost { color: var(--ink-soft); }
   .dg-team.is-lost b { font-weight: 400; }
   .dg-aside { display: flex; flex-direction: column; align-items: flex-end; justify-content: space-between; width: 42px; flex: none; }
@@ -1220,10 +1228,12 @@
   .vc-photo { height: 100%; aspect-ratio: 4 / 5; width: auto; max-width: 100%; object-fit: cover; object-position: center 18%; display: block; border: 2px solid var(--ink); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45); background: var(--paper-line); }
   .vc-play-side { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4%; min-width: 0; padding: 4% 0; }
   /* Team and inning in scoreboard lettering, sized to the card. */
-  .vc-where { display: flex; align-items: center; gap: 0.35em; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: clamp(13px, 6.6cqw, 22px); line-height: 1.1; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink); white-space: nowrap; }
+  .vc-where { display: flex; align-items: center; gap: 0.35em; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: clamp(15px, 8.6cqw, 28px); line-height: 1.1; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink); white-space: nowrap; }
   .vc-where img { width: 1.15em; height: 1.15em; }
   .vc-where b { font-weight: inherit; opacity: 0.55; }
-  .vc-dia { position: relative; height: 60%; aspect-ratio: 1; }
+  .vc-inn { display: inline-flex; align-items: center; gap: 0.14em; }
+  .vc-inn .now-tri { width: 0.46em; height: 0.37em; }
+  .vc-dia { position: relative; height: 56%; aspect-ratio: 1; }
   .vc-dia svg { width: 100%; height: 100%; display: block; }
   /* RBI dots in the Game Log's proportion to the diamond (5px on 46px). */
   .vc-dia .pp-rc-rbi { top: 4%; left: 2%; gap: 3%; width: 100%; }
@@ -1232,7 +1242,7 @@
   .vc:hover .vc-play, .vc:focus-visible .vc-play { border-color: var(--gold); }
   @container (max-width: 250px) {
     .vc-play { right: 6px; bottom: 6px; width: 30px; height: 23px; font-size: 11px; }
-    .vc-dia { height: 54%; }
+    .vc-dia { height: 52%; }
   }
   .vc-kicker { padding: 0 2px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); }
   .vc-kicker em { font-style: normal; font-weight: 700; letter-spacing: 0.02em; color: var(--ink-soft); }
@@ -7072,10 +7082,12 @@
       const lost = st.final && t.score < other.score;
       return `<div class="dg-team${lost ? ' is-lost' : ''}"><span>${teamAbbr(t.team)}</span><b>${st.started ? (t.score ?? 0) : ''}</b></div>`;
     };
+    const winner = st.final && a.score !== h.score ? (a.score > h.score ? a : h).team.id : null;
     const recap = media && media.recap;
     const mine = myTeamId() && (a.team.id === myTeamId() || h.team.id === myTeamId());
     return `
       <div class="dg${st.live ? ' is-live' : ''}${mine ? ' is-my-team' : ''}" data-date="${g.officialDate}" data-game-pk="${g.gamePk}" tabindex="0" role="button">
+        ${winner ? `<img class="dg-wm" src="${capLogoUrl(winner)}" alt="" aria-hidden="true" onerror="this.remove()">` : ''}
         <div class="dg-box">
           <div class="dg-teams">${team(a, h)}${team(h, a)}</div>
           <div class="dg-aside">
@@ -7161,8 +7173,10 @@
   const DAY_WOW_BONUS = 0.1;
   const DAY_ROW = 4;
 
+  // The scorecard's own half-inning triangle (up for the top, down for
+  // the bottom) before the inning, rather than T/B.
   function inningTag(k) {
-    return k.inning ? `${k.isTop ? 'T' : 'B'}${k.inning}` : '';
+    return k.inning ? `<span class="vc-inn" title="${k.isTop ? 'Top' : 'Bottom'} ${k.inning}">${NOW_TRI_SVG(k.isTop)}${k.inning}</span>` : '';
   }
   function matchupOf(g) {
     return g ? `${teamAbbr(g.teams.away.team)} @ ${teamAbbr(g.teams.home.team)}` : '';
