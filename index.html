@@ -7808,7 +7808,7 @@
   // The next game: one under way first, else the next on the schedule --
   // after the last game of a season, next season's opener.
   async function getTeamNextGame(teamId, season, games) {
-    const ahead = games.filter(g => g.state !== 'Final' && !isCalledOff(g));
+    const ahead = games.filter(g => g.state !== 'Final' && !isCalledOff(g) && !finishedNextGames.has(g.gamePk));
     const live = ahead.find(g => g.state === 'Live');
     if (live || ahead.length) return { g: live || ahead[0], opener: false };
     if (Number(season) !== Number(await getDefaultListSeason())) return null;
@@ -7838,6 +7838,76 @@
 
   // Leaders, a ranked board per side: his print and plate, his line under
   // the plate, and the stat they're ranked by in a slot at the end.
+  // The next-game card follows a game under way -- or due within half an
+  // hour -- every 20s while the Overview is on screen. A tick that comes
+  // due anywhere else pauses (the tab's onShow and catchUpAfterResume pick
+  // it up again); once the game is final the Overview reloads, so it joins
+  // Recent and the card moves on to the next one.
+  const TEAM_NEXT_POLL_MS = 20000;
+  const finishedNextGames = new Set();
+  let teamNextPollTimer = null;
+  let teamNextPolled = null;
+  function armTeamNextPoll(requestId, next) {
+    clearTimeout(teamNextPollTimer);
+    teamNextPollTimer = null;
+    teamNextPolled = null;
+    if (!next || next.opener) return;
+    const g = next.g;
+    if (g.state !== 'Live' && new Date(g.gameDate).getTime() - Date.now() > 30 * 60 * 1000) return;
+    teamNextPolled = { requestId, next };
+    // A live game's inning isn't on the schedule, so the first tick is now.
+    teamNextPollTimer = setTimeout(pollTeamNext, g.state === 'Live' ? 0 : TEAM_NEXT_POLL_MS);
+  }
+  async function pollTeamNext() {
+    teamNextPollTimer = null;
+    const polled = teamNextPolled;
+    if (!polled || polled.requestId !== teamRequestId) return;
+    if (document.hidden || Tabs.current() !== 'team' || teamTab.view !== 'overview') return;
+    const live = await getNextGameLive(polled.next.g.gamePk);
+    if (polled !== teamNextPolled || polled.requestId !== teamRequestId) return;
+    if (live && live.state === 'Final') {
+      // The schedule is cached for minutes and would still call the game
+      // live, so it's dropped, and the game is remembered as over in case
+      // a fresh copy lags too -- either way the card can't keep reloading.
+      finishedNextGames.add(polled.next.g.gamePk);
+      delete scheduleCache[`${teamTab.teamId}-${teamTab.season}`];
+      loadTeamTab();
+      return;
+    }
+    if (live) {
+      polled.next = { ...polled.next, g: { ...polled.next.g, ...live } };
+      const el = document.getElementById('tmNext');
+      if (el) el.innerHTML = renderNextGame(polled.next);
+    }
+    teamNextPollTimer = setTimeout(pollTeamNext, TEAM_NEXT_POLL_MS);
+  }
+  // Deferred a tick: the tab's onShow runs before Tabs marks it current.
+  function resumeTeamNextPoll() {
+    if (teamNextPolled && !teamNextPollTimer) teamNextPollTimer = setTimeout(pollTeamNext, 0);
+  }
+  // One game's state, score and inning, fresh past the browser's cache (a
+  // failure isn't cached: the next tick just tries again).
+  async function getNextGameLive(gamePk) {
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&gamePk=${gamePk}&hydrate=linescore&fields=dates,games,status,abstractGameState,detailedState,teams,away,home,score,linescore,currentInning,inningState,isTopInning`, { cache: 'no-cache' });
+      if (!res.ok) return null;
+      const data = await res.json();
+      const g = data.dates && data.dates[0] && data.dates[0].games && data.dates[0].games[0];
+      if (!g) return null;
+      const ls = g.linescore || {};
+      const half = { Top: 'Top', Bottom: 'Bot', Middle: 'Mid', End: 'End' }[ls.inningState] || '';
+      return {
+        state: g.status.abstractGameState,
+        detailedState: g.status.detailedState,
+        homeScore: g.teams.home.score,
+        awayScore: g.teams.away.score,
+        inningLabel: ls.currentInning ? `${half} ${ordinalSuffix(ls.currentInning)}`.trim() : ''
+      };
+    } catch (e) {
+      return null;
+    }
+  }
+
   function renderLeaderRows(leaders, teamId, season) {
     const side = (title, rows, pitcher) => {
       if (!rows.length) return '';
@@ -7889,7 +7959,11 @@
     const finals = games.filter(g => g.state === 'Final' && g.homeScore != null && g.awayScore != null);
     const fill = (id, html) => { if (requestId !== teamRequestId) return; const el = document.getElementById(id); if (el) el.innerHTML = html; };
     fill('tmMoments', renderTeamMoments(undefined));
-    getTeamNextGame(teamId, season, games).then(next => fill('tmNext', renderNextGame(next)));
+    getTeamNextGame(teamId, season, games).then(next => {
+      if (requestId !== teamRequestId) return;
+      fill('tmNext', renderNextGame(next));
+      armTeamNextPoll(requestId, next);
+    });
     Promise.all([getTeamPlayerStats(teamId, season, 'hitting'), getTeamPlayerStats(teamId, season, 'pitching')]).then(([h, pi]) => {
       const leaders = buildTeamLeaders(h, pi, finals.length || 1);
       fill('tmLeaders', renderLeaderRows(leaders, teamId, season));
@@ -13152,7 +13226,7 @@
     if (final && standingsView === 'division') setStandingsView('postseason');
     loadStandings();
   } });
-  Tabs.register('team', { init: initTeamTab });
+  Tabs.register('team', { init: initTeamTab, onShow: resumeTeamNextPoll });
   // onShow keeps --tab-header-h current for this tab's own header height
   // (its controls row differs from the Scorecard's), which the Game Log's
   // sticky recent-games column reads.
@@ -13361,6 +13435,7 @@
     if (now - lastResumeCatchUp < 1000) return;
     lastResumeCatchUp = now;
     resumeScorecardPolls(true);
+    resumeTeamNextPoll();
     if (dailyPollTimer) {
       clearTimeout(dailyPollTimer);
       dailyPollTimer = null;
