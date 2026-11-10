@@ -1683,7 +1683,6 @@
   .tm-pair { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0 40px; }
   .tm-col { min-width: 0; }
   .tm-sec { margin-top: 20px; min-width: 0; }
-  .tm-chart-note { margin-top: 6px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10.5px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
   .tm-wide { display: none; }
   @container (min-width: 700px) { .tm-wide { display: block; } .tm-narrow { display: none; } }
   .tm-g {
@@ -2134,33 +2133,27 @@
      position column; see bullpenRowsHtml). Deliberately no flex-wrap:
      the grid has to stay on the row's one line, not spill onto a second. */
   .bp-row { gap: 6px 10px; }
-  /* Fixed equal-width tracks (not content-sized) so IP/P/Y/2D line up
+  /* Fixed equal-width tracks (not content-sized) so the four columns line up
      the same across every pitcher's row regardless of digit count. */
   .bp-recent {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    width: 116px;
+    column-gap: 4px;
+    width: 136px;
     flex: none;
   }
-  .bp-recent-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
   .bp-recent-value {
+    text-align: center;
     font-family: 'Overpass', sans-serif;
     font-size: 12px;
     font-weight: 700;
+    font-variant-numeric: tabular-nums;
     color: var(--ink);
   }
-  .bp-recent-label {
-    font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 9px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
-  }
+  /* The Pitching title carries the column heads at its right end, over
+     the rows' .bp-recent grid (same width, so they line up). */
+  .bp-title { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
+  .bp-heads { text-align: center; font-size: 9px; letter-spacing: 0.02em; color: var(--ink-soft); white-space: nowrap; }
 
   /* The pitchers' section at the foot of a card (see renderPitchingBox):
      the starter's line, then the relievers by name. Beside the starter on a
@@ -2605,19 +2598,23 @@
   /* Small hung plates, like the nameplates: Board Rule for an advance,
      gold for a run, brick for an out. Cream doesn't clear contrast on gold
      or brick at 9px, so those carry dark ink (near-black on the brick, where
-     even the board's own ink is only 2.9:1). */
+     even the board's own ink is only 2.9:1). One fixed width, sized for
+     the widest move ("B -> H"), so a stack is a column of equal plates. */
   .adv-tag {
     display: flex;
     align-items: center;
     justify-content: center;
+    box-sizing: border-box;
+    width: 26px;
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
     font-size: 9px;
+    font-variant-numeric: tabular-nums;
     line-height: 11px;
     color: var(--ink);
     background: var(--paper-line);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-    padding: 1px 4px 0;
+    padding: 1px 0 0;
     white-space: nowrap;
   }
   .adv-tag.scored { color: var(--paper); background: var(--gold); }
@@ -2625,7 +2622,7 @@
   /* Overpass's figures sit high in their line box (the 1px of top padding
      above balances them), so the arrow is nudged to the figures' middle
      rather than the box's. */
-  .adv-arrow { width: 7px; height: 6px; margin: 0 2px; flex: none; position: relative; top: -0.5px; }
+  .adv-arrow { width: 7px; height: 6px; margin: 0 1.5px; flex: none; position: relative; top: -0.5px; }
   /* Experimental: styled as a clickable plate, same as .player-name-btn
      (see below) -- the compound selector (rather than .pitch-tag alone)
      out-specificities .player-name-btn's own rules so these values win
@@ -3289,7 +3286,7 @@
   .pp-cb-list { padding: 0 0 10px; }
   .pp-cb-head, .pp-cb-catch {
     display: grid;
-    grid-template-columns: 11px 56px 48px 56px minmax(0, 1fr) 8px;
+    grid-template-columns: 11px 56px 48px 56px minmax(0, 1fr) 24px;
     align-items: center;
     gap: 10px;
     padding: 0 4px;
@@ -3310,11 +3307,12 @@
     cursor: pointer;
   }
   .pp-cb-catch:hover { background: rgba(243, 236, 219, 0.08); }
-  .pp-cb-catch:hover .pp-cb-play { color: var(--gold); }
+  .pp-cb-catch:hover .pp-cb-play { border-color: var(--gold); }
   .pp-cb-catch:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
   .pp-cb-tags { display: flex; gap: 4px; justify-content: flex-end; }
   .pp-cb-tag { padding: 2px 4px 1px; border: 1px solid var(--paper-line); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
-  .pp-cb-play { width: 8px; height: 10px; color: var(--ink-soft); }
+  /* The same boxed gold play mark as a score box's recap button. */
+  .pp-cb-play { box-sizing: border-box; width: 24px; height: 18px; padding: 3px 7px; background: rgba(0, 0, 0, 0.22); border: 1px solid var(--paper-line); color: var(--gold); }
 
   /* An infielder's highlights and double-play plays: date, opponent, what
      happened, play mark -- dates and opponents in fixed columns so the
@@ -3322,7 +3320,7 @@
      with the play's notation in the scorekeeper's typewriter face. */
   .pp-pl-row {
     display: grid;
-    grid-template-columns: 48px 58px minmax(0, 1fr) 8px;
+    grid-template-columns: 48px 58px minmax(0, 1fr) 24px;
     align-items: center;
     gap: 10px;
     width: 100%;
@@ -3340,7 +3338,7 @@
     cursor: pointer;
   }
   .pp-pl-row:hover { background: rgba(243, 236, 219, 0.08); }
-  .pp-pl-row:hover .pp-cb-play { color: var(--gold); }
+  .pp-pl-row:hover .pp-cb-play { border-color: var(--gold); }
   .pp-pl-row:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
   .pp-pl-opp { color: var(--ink-soft); white-space: nowrap; }
   .pp-pl-text { font-family: 'Inter', sans-serif; font-weight: 400; font-size: 12.5px; line-height: 1.35; }
@@ -5367,6 +5365,11 @@
     return results;
   }
 
+  // Painted once in the Pitching title, over the same grid as each row's
+  // figures: today's innings and pitches, then pitches the two days before.
+  const BULLPEN_HEADS = `<span class="bp-recent bp-heads">
+    <span title="Innings pitched today">IP</span><span title="Pitches today">PC</span><span title="Pitches yesterday">Yest</span><span title="Pitches two days ago">2 Days</span>
+  </span>`;
   function bullpenRowsHtml(list) {
     if (!list || !list.length) return '<div class="roster-empty">No pitching data available</div>';
     return list.map(p => {
@@ -5380,10 +5383,10 @@
         <span class="roster-order${p.isStarter ? ' roster-order-gold' : ''}">${orderCell}</span>
         <span class="roster-name-col"><button type="button" class="player-name-btn roster-name" data-player-id="${p.id}">${p.name}</button></span>
         <div class="bp-recent">
-          <span class="bp-recent-item"><span class="bp-recent-value">${p.usedToday ? (p.todayIp ?? '0.0') : '&#8212;'}</span><span class="bp-recent-label">IP</span></span>
-          <span class="bp-recent-item"><span class="bp-recent-value">${p.usedToday ? (p.todayPc ?? 0) : '&#8212;'}</span><span class="bp-recent-label">P</span></span>
-          <span class="bp-recent-item"><span class="bp-recent-value">${p.yPitches ?? '&#8212;'}</span><span class="bp-recent-label">Y</span></span>
-          <span class="bp-recent-item"><span class="bp-recent-value">${p.twoPitches ?? '&#8212;'}</span><span class="bp-recent-label">2D</span></span>
+          <span class="bp-recent-value">${p.usedToday ? (p.todayIp ?? '0.0') : ''}</span>
+          <span class="bp-recent-value">${p.usedToday ? (p.todayPc ?? '') : ''}</span>
+          <span class="bp-recent-value">${p.yPitches || ''}</span>
+          <span class="bp-recent-value">${p.twoPitches || ''}</span>
         </div>
       </div>`;
     }).join('');
@@ -5793,7 +5796,7 @@
           ${benchHtml}
         </div>
         <div class="lineup-col">
-          <div class="roster-section-title">Pitching</div>
+          <div class="roster-section-title bp-title"><span>Pitching</span>${bullpenList && bullpenList.length ? BULLPEN_HEADS : ''}</div>
           ${bullpenRowsHtml(bullpenList)}
         </div>
       </div>
@@ -6471,7 +6474,9 @@
     const minNet = Math.min(0, netValues[troughIdx]);
     const range = Math.max(1, maxNet - minNet);
 
-    const padL = 26, padR = 10, padT = 10, padB = 16;
+    // Room above for the high point's label, below for the low point's
+    // (above the month labels), and on the right for the current mark.
+    const padL = 14, padR = 22, padT = 18, padB = 28;
     const plotW = width - padL - padR;
     const plotH = height - padT - padB;
     const n = played.length;
@@ -6516,16 +6521,25 @@
       svg += `<line x1="${t.x.toFixed(1)}" y1="${padT}" x2="${t.x.toFixed(1)}" y2="${height - padB}" stroke="${ink}" stroke-width="0.5" opacity="0.15"/>`;
       svg += `<text x="${t.x.toFixed(1)}" y="${height - 4}" font-family="Overpass, sans-serif" font-size="7" font-weight="700" letter-spacing="0.04em" fill="${ink}" opacity="0.6">${t.label}</text>`;
     });
-    svg += `<text x="${padL - 4}" y="${(padT + 6).toFixed(1)}" font-family="Overpass, sans-serif" font-weight="700" font-size="8" fill="${ink}" opacity="0.6" text-anchor="end">${maxNet > 0 ? '+' + maxNet : maxNet}</text>`;
-    svg += `<text x="${padL - 4}" y="${(zeroY - 3).toFixed(1)}" font-family="Overpass, sans-serif" font-weight="700" font-size="8" fill="${ink}" opacity="0.6" text-anchor="end">0</text>`;
-    if (minNet < 0) {
-      svg += `<text x="${padL - 4}" y="${height - padB}" font-family="Overpass, sans-serif" font-weight="700" font-size="8" fill="${ink}" opacity="0.6" text-anchor="end">${minNet}</text>`;
-    }
+    svg += `<text x="${padL - 4}" y="${(zeroY + 3).toFixed(1)}" font-family="Overpass, sans-serif" font-weight="700" font-size="8" fill="${ink}" opacity="0.6" text-anchor="end">0</text>`;
     if (n > 1) {
       svg += `<polyline points="${linePts}" fill="none" stroke="${ink}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>`;
     }
+    // The season's high (if it was ever over .500) and low (if ever under)
+    // are marked on the line with their value and date, instead of a
+    // caption; one the team stands at now is left to the current mark.
+    const markLabel = (i, above) => {
+      const x = xFor(i), y = yFor(netValues[i]);
+      const anchor = x < padL + 40 ? 'start' : x > width - padR - 40 ? 'end' : 'middle';
+      const ty = above ? y - 6 : y + 12;
+      return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.2" fill="${PALETTE.paper}" stroke="${ink}" stroke-width="1.2"/>`
+        + `<text x="${x.toFixed(1)}" y="${ty.toFixed(1)}" font-family="Overpass, sans-serif" font-weight="700" font-size="8" fill="${ink}" text-anchor="${anchor}" font-variant-numeric="tabular-nums">${fmtNet(netValues[i])}<tspan fill-opacity="0.6" dx="3">${fmtShortDate(played[i].date)}</tspan></text>`;
+    };
+    if (netValues[peakIdx] > 0 && netValues[peakIdx] !== finalNet) svg += markLabel(peakIdx, true);
+    if (netValues[troughIdx] < 0 && netValues[troughIdx] !== finalNet) svg += markLabel(troughIdx, false);
     const lastX = xFor(n - 1), lastY = yFor(finalNet);
     svg += `<circle cx="${lastX.toFixed(1)}" cy="${lastY.toFixed(1)}" r="3" fill="${finalNet >= 0 ? gold : brick}" stroke="${ink}" stroke-width="1"/>`;
+    svg += `<text x="${(lastX + 5).toFixed(1)}" y="${(lastY + 3).toFixed(1)}" font-family="Overpass, sans-serif" font-weight="700" font-size="8.5" fill="${ink}" font-variant-numeric="tabular-nums">${fmtNet(finalNet)}</text>`;
     svg += '</svg>';
     return svg;
   }
@@ -6534,10 +6548,6 @@
   function fmtShortDate(d) {
     const [, m, dd] = d.split('-').map(Number);
     return `${MONTH_NAMES[m - 1].slice(0, 3)} ${dd}`;
-  }
-  function winLossCaption(played) {
-    const { netValues, peakIdx, troughIdx } = winLossExtremes(played);
-    return `Current: ${fmtNet(netValues[netValues.length - 1])} &#8226; Best: ${fmtNet(netValues[peakIdx])} on ${fmtShortDate(played[peakIdx].date)} &#8226; Worst: ${fmtNet(netValues[troughIdx])} on ${fmtShortDate(played[troughIdx].date)}`;
   }
 
   function renderTeamChartContent(teamId, teamName, season, series, throughDate) {
@@ -6549,8 +6559,7 @@
     const losses = played.length - wins;
     return `<div class="pitch-header">${teamName}</div>
       <div class="pitch-subheader">${season} Season &#8226; ${wins}-${losses}</div>
-      ${renderWinLossSvg(`teamChartClip${teamId}`, played)}
-      <div class="pitch-final-desc">${winLossCaption(played)}</div>`;
+      ${renderWinLossSvg(`teamChartClip${teamId}`, played)}`;
   }
 
   function formatGameTime(iso) {
@@ -7639,7 +7648,6 @@
         <div class="pp-skg-head"><span>Games Over .500</span></div>
         <div class="tm-narrow">${renderWinLossSvg(`teamTabClipN${teamId}`, played)}</div>
         <div class="tm-wide">${renderWinLossSvg(`teamTabClipW${teamId}`, played, { width: 900, height: 170 })}</div>
-        <div class="tm-chart-note">${winLossCaption(played)}</div>
       </section>` : '';
 
     const gameList = (title, list) => list.length ? `<section class="tm-sec">

@@ -4,13 +4,13 @@ Polish notes from poking around the app (captured 2026-11-10). Check an item off
 
 ## Scorecard
 
-- [ ] **Base advancement tags: narrower, and one standard width.** They're a touch wide, and stacked tags of different widths look ragged — make every tag the same width so a stack lines up. (`.adv-tag` CSS, `renderCellInner`)
+- [x] **Base advancement tags: narrower, and one standard width.** They're a touch wide, and stacked tags of different widths look ragged — make every tag the same width so a stack lines up. (`.adv-tag` CSS, `renderCellInner`)
 - [ ] **Rethink the "out on the bases" mark.** The idea — a runner's line cut off by something red — is right, but the current drawing doesn't land. Explore a better treatment. (`diamondSVG`, its `isOut`/`outEdge` handling)
 - [ ] **Show batter substitutions on the scorecard.** Long-parked: find a clean, scorebook-true way to show pinch hitters / pinch runners / defensive subs in the batting grid. (`buildTeamRows`, `renderTeamTable`; substitution detection near the `looksLikeSub` pass)
 
 ## Roster popup (bullpen)
 
-- [ ] **Make IP / Pitch count / Yesterday / 2 Days Ago column headers** instead of repeating the labels in every row. (`renderBullpen…` rows with `.bp-recent-item` / `.bp-recent-label`)
+- [x] **Make IP / Pitch count / Yesterday / 2 Days Ago column headers** instead of repeating the labels in every row. (`renderBullpen…` rows with `.bp-recent-item` / `.bp-recent-label`)
 
 ## Game Summary popup
 
@@ -24,7 +24,7 @@ Polish notes from poking around the app (captured 2026-11-10). Check an item off
 ## Team tab
 
 - [ ] **Overview feels empty — add content.** Video highlights for the team could be a fun fit. (`renderTeamOverview`)
-- [ ] **Games-over-.500 chart: replace the "Current … Best … Worst …" caption.** Reads as generic. Possibly drop it and mark the high and low points on the line itself. Applies everywhere the chart appears (Team Overview and the Standings popup). (`renderWinLossSvg`)
+- [x] **Games-over-.500 chart: replace the "Current … Best … Worst …" caption.** Reads as generic. Possibly drop it and mark the high and low points on the line itself. Applies everywhere the chart appears (Team Overview and the Standings popup). (`renderWinLossSvg`)
 
 ## Player profile
 
@@ -35,6 +35,6 @@ Polish notes from poking around the app (captured 2026-11-10). Check an item off
 
 ## Player profile — Defense tab
 
-- [ ] **Outfielder catch board: Play button is scrunched to the right, and should be gold** like the app's other play buttons. (`renderCatchBoard`, `.pp-cb-play`)
+- [x] **Outfielder catch board: Play button is scrunched to the right, and should be gold** like the app's other play buttons. (`renderCatchBoard`, `.pp-cb-play`)
 - [ ] **Outfielders on wide screens: use the empty space.** The Defense tab leaves a lot unused on a wide sheet.
 - [ ] **Infielders / catchers on wide screens: put Highlights to the right** of the double plays (or catcher boards) instead of below them. (`renderInfieldPlays`, `renderCatcherPlays`)
