@@ -3220,6 +3220,12 @@
      Then the catch board, held to a reading width so a row's count stays
      near its lamps on a wide sheet. */
   .pp-def { max-width: 720px; }
+  /* A wide sheet sets the highlights beside the board and its plays
+     rather than under them, their heading level with the board's labels. */
+  @container (min-width: 1150px) {
+    .pp-def { max-width: none; display: grid; grid-template-columns: minmax(0, 720px) minmax(0, 1fr); gap: 0 40px; align-items: start; }
+    .pp-def-side > .pp-cb:first-child { margin-top: 0; }
+  }
   .pp-def-top { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end; gap: 14px 12px; }
   .pp-def-pools { grid-column: 1 / -1; order: -1; justify-self: end; width: max-content; max-width: 100%; }
   @container (min-width: 520px) {
@@ -11921,7 +11927,7 @@
       plays: 'catcher'
     }
   };
-  const SWEEP_POSITIONS = { infield: ['3', '4', '5', '6'], catcher: ['2'] };
+  const SWEEP_POSITIONS = { outfield: ['7', '8', '9'], infield: ['3', '4', '5', '6'], catcher: ['2'] };
   function defenseGroupFor(person) {
     const type = person && person.primaryPosition && person.primaryPosition.type;
     return DEFENSE_GROUPS[type] || null;
@@ -12151,7 +12157,10 @@
       : slot('OAA', formatSigned(current.row.oaa), current.rank)
         + slot('FRV', current.frv != null ? formatSigned(current.frv) : '&#8212;', current.frvRank);
     const below = group.plays === 'catches' ? renderCatchBoard() : group.plays === 'infield' ? renderInfieldPlays() : renderCatcherPlays();
-    return `<div class="pp-def"><div class="pp-def-top${pools.length > 1 ? '' : ' is-solo'}">${slots}${pools.length > 1 ? toggle : ''}</div>${below}</div>`;
+    return `<div class="pp-def">
+      <div class="pp-def-main"><div class="pp-def-top${pools.length > 1 ? '' : ' is-solo'}">${slots}${pools.length > 1 ? toggle : ''}</div>${below}</div>
+      <div class="pp-def-side">${renderDefenseHighlights(group)}</div>
+    </div>`;
   }
 
   // Each catch chance is a lamp in its star row: lit for a catch, a dark
@@ -12473,8 +12482,19 @@
     const dpHtml = dps.length
       ? `<div class="pp-cb-routine pp-dp-roles">${roles.map(([r, n]) => `${r} <span>${n}</span>`).join('')}</div>${rows}`
       : `<div class="pitch-empty">No ${lastProfileSeason} double plays.</div>`;
-    return `<div class="pp-cb"><span class="pp-painted pp-cb-title">Double Plays <span class="pp-dp-total">${dps.length || ''}</span></span>${dpHtml}</div>
-      ${renderHighlightsSection(data, inPool)}`;
+    return `<div class="pp-cb"><span class="pp-painted pp-cb-title">Double Plays <span class="pp-dp-total">${dps.length || ''}</span></span>${dpHtml}</div>`;
+  }
+
+  // MLB's highlight clips of him, beside his plays on a wide sheet and
+  // under them on a narrower one. They follow the position toggle (the
+  // group's own "All" pool takes every clip). An infielder's or a
+  // catcher's plays already show the sweep's progress, so only an
+  // outfielder's column shows it here.
+  function renderDefenseHighlights(group) {
+    const data = lastProfilePlays;
+    if (!data) return group.plays === 'catches' ? renderPlaysStatus(data) : '';
+    const inPool = pos => profileDefensePool === 'of' || profileDefensePool === 'if' || pos === profileDefensePool;
+    return renderHighlightsSection(data, group.plays === 'catcher' ? () => true : inPool);
   }
 
   // A lamp board like the outfield catch board, for a catcher's plays:
@@ -12527,7 +12547,6 @@
         : `<div class="pitch-empty">No ${lastProfileSeason} challenges.</div>`;
       sections.push(`<div class="pp-cb"><span class="pp-painted pp-cb-title">ABS Challenges <span class="pp-dp-total">${challenges.length ? `${won}/${challenges.length}` : ''}</span></span>${chalHtml}</div>`);
     }
-    sections.push(renderHighlightsSection(data, () => true));
     return sections.join('');
   }
 
@@ -12676,21 +12695,23 @@
         lastProfileCatches = catches;
         rerenderPlayerProfile();
       });
-    } else {
-      // Progress is written straight into the status line rather than by
-      // re-rendering the whole profile once per game.
-      const onProgress = (done, total) => {
-        if (requestId !== playerProfileRequestId) return;
-        lastProfilePlaysProgress = { done, total };
-        const el = playersBody.querySelector('.pp-plays-progress');
-        if (el) el.textContent = `Loading plays\u2026 ${done}/${total} games`;
-      };
-      getSeasonFieldingPlays(personId, season, group.plays, onProgress).then(plays => {
-        if (requestId !== playerProfileRequestId) return;
-        lastProfilePlays = plays;
-        rerenderPlayerProfile();
-      });
     }
+    // Every group sweeps his games for MLB's highlight clips of him; an
+    // infielder's and a catcher's plays come out of the same sweep. An
+    // outfielder's catches come from Savant above instead.
+    // Progress is written straight into the status line rather than by
+    // re-rendering the whole profile once per game.
+    const onProgress = (done, total) => {
+      if (requestId !== playerProfileRequestId) return;
+      lastProfilePlaysProgress = { done, total };
+      const el = playersBody.querySelector('.pp-plays-progress');
+      if (el) el.textContent = `Loading plays\u2026 ${done}/${total} games`;
+    };
+    getSeasonFieldingPlays(personId, season, group.plays === 'catches' ? 'outfield' : group.plays, onProgress).then(plays => {
+      if (requestId !== playerProfileRequestId) return;
+      lastProfilePlays = plays;
+      rerenderPlayerProfile();
+    });
     const def = Number(season) < STATCAST_FIRST_SEASON ? {} : await buildProfileDefense(personId, season, group);
     if (requestId !== playerProfileRequestId) return;
     lastProfileDefense = def;

@@ -36,5 +36,5 @@ Polish notes from poking around the app (captured 2026-11-10). Check an item off
 ## Player profile — Defense tab
 
 - [x] **Outfielder catch board: Play button is scrunched to the right, and should be gold** like the app's other play buttons. (`renderCatchBoard`, `.pp-cb-play`)
-- [ ] **Outfielders on wide screens: use the empty space.** The Defense tab leaves a lot unused on a wide sheet.
-- [ ] **Infielders / catchers on wide screens: put Highlights to the right** of the double plays (or catcher boards) instead of below them. (`renderInfieldPlays`, `renderCatcherPlays`)
+- [x] **Outfielders on wide screens: use the empty space.** The Defense tab leaves a lot unused on a wide sheet.
+- [x] **Infielders / catchers on wide screens: put Highlights to the right** of the double plays (or catcher boards) instead of below them. (`renderInfieldPlays`, `renderCatcherPlays`)
