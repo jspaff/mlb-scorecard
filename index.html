@@ -355,6 +355,19 @@
     text-align: center;
   }
   .score-bottom-bar[hidden], .score-bottom-bar:empty { display: none; }
+  /* A failed poll: the board goes dark like an unlit scoreboard and says
+     how old it is, while the grid above stays put (see setFeedStale). */
+  .is-stale .monster-panel { opacity: 0.5; transition: opacity 0.4s ease-out; }
+  .feed-stale {
+    margin-top: 6px;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 800;
+    font-size: 11px;
+    line-height: 1.2;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
 
   /* Narrow screens don't get a live at-bat tracker at all -- there's no
      room for it alongside .score-bottom-bar on a phone-width screen, and
@@ -3776,7 +3789,24 @@
     input.value = value;
     renderDateText(textEl, value);
   }
+  // The live game's poll, re-armed by fetchAndRender once each fetch has
+  // settled (scheduleLivePoll) rather than on a fixed setInterval: with a
+  // fixed interval, a fetch slower than the interval (a late-game feed on
+  // stadium signal) was superseded by the next tick's requestId before it
+  // could render, so on a slow enough connection nothing ever rendered.
   let pollTimer = null;
+  const LIVE_POLL_MS = 7000;
+  // A tick that comes due while the Scorecard isn't on screen (another tab,
+  // or the app in the background) stops here instead of fetching ~150 KB to
+  // redraw a hidden grid; resumeScorecardPolls picks it back up.
+  let scorecardPollPaused = false;
+  let gameStripPollPaused = false;
+  // `${gamePk}|${metaData.timeStamp}` of the feed on screen -- a poll whose
+  // feed carries the same stamp has nothing new and skips the parse and
+  // redraw. Cleared whenever the grid is replaced by anything else.
+  let renderedFeedKey = null;
+  let renderedFeedLive = false;
+  let lastFeedOkAt = null;
   // The currently loaded game, in the same shape renderGameSummaryGame()
   // expects, so the Scorecard tab's "Game Summary" link can reuse the exact
   // modal the Daily/Schedule tabs open rather than duplicating it. Lives
@@ -4180,29 +4210,32 @@
       return [];
     }
   }
+  // Keyed by season too: the same pitcher turns up in games from different
+  // seasons. A failure isn't cached -- the bullpen's Y/2D columns would
+  // otherwise read blank for the rest of the session.
   async function getPitcherGameLog(personId, season) {
-    if (gameLogCache[personId] !== undefined) return gameLogCache[personId];
+    const key = `${personId}-${season}`;
+    if (gameLogCache[key] !== undefined) return gameLogCache[key];
     try {
       const res = await fetch(`https://statsapi.mlb.com/api/v1/people/${personId}/stats?stats=gameLog&group=pitching&season=${season}`);
       const data = await res.json();
       const splits = (data.stats && data.stats[0] && data.stats[0].splits) || [];
-      gameLogCache[personId] = splits;
+      gameLogCache[key] = splits;
       return splits;
     } catch (e) {
-      gameLogCache[personId] = [];
       return [];
     }
   }
   async function getHitterGameLog(personId, season) {
-    if (hitterGameLogCache[personId] !== undefined) return hitterGameLogCache[personId];
+    const key = `${personId}-${season}`;
+    if (hitterGameLogCache[key] !== undefined) return hitterGameLogCache[key];
     try {
       const res = await fetch(`https://statsapi.mlb.com/api/v1/people/${personId}/stats?stats=gameLog&group=hitting&season=${season}`);
       const data = await res.json();
       const splits = (data.stats && data.stats[0] && data.stats[0].splits) || [];
-      hitterGameLogCache[personId] = splits;
+      hitterGameLogCache[key] = splits;
       return splits;
     } catch (e) {
-      hitterGameLogCache[personId] = [];
       return [];
     }
   }
@@ -8374,8 +8407,9 @@
     const requestId = ++gameStripRequestId;
     clearTimeout(gameStripPollTimer);
     gameStripPollTimer = null;
+    gameStripPollPaused = false;
     try {
-      const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}&hydrate=linescore`);
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}&hydrate=linescore`, { cache: 'no-cache' });
       const data = await res.json();
       const games = (data.dates && data.dates[0] && data.dates[0].games) || [];
       // Stale if a newer poll tick or a real navigation (date change,
@@ -8396,9 +8430,7 @@
       // dailyPollTimer, this only keeps going if something here re-arms
       // gameStripPollTimer (see catchUpAfterResume). Retry once on the live
       // cadence; the next success re-derives the real interval below.
-      if (requestId === gameStripRequestId && dateStr === dateInput.value) {
-        gameStripPollTimer = setTimeout(() => pollGameStrip(dateStr), 15000);
-      }
+      if (requestId === gameStripRequestId && dateStr === dateInput.value) armGameStripPoll(dateStr, 15000);
     }
   }
 
@@ -8412,9 +8444,74 @@
     if (dateStr !== todayStr()) return;
     const stillLive = games.some(g => g.status.abstractGameState === 'Live');
     const stillUpcoming = games.some(g => g.status.abstractGameState === 'Preview');
-    if (stillLive || stillUpcoming) {
-      gameStripPollTimer = setTimeout(() => pollGameStrip(dateStr), stillLive ? 15000 : 60000);
+    if (stillLive || stillUpcoming) armGameStripPoll(dateStr, stillLive ? 15000 : 60000);
+  }
+  function armGameStripPoll(dateStr, ms) {
+    clearTimeout(gameStripPollTimer);
+    gameStripPollTimer = setTimeout(() => {
+      gameStripPollTimer = null;
+      if (!scorecardOnScreen()) { gameStripPollPaused = true; return; }
+      pollGameStrip(dateStr);
+    }, ms);
+  }
+
+  function scorecardOnScreen() {
+    return Tabs.current() === 'scorecard' && document.visibilityState === 'visible';
+  }
+  // Ticks start LIVE_POLL_MS apart while fetches are quick, but never
+  // overlap: a slow fetch is followed by a short breather, not a pile-up.
+  function scheduleLivePoll(gamePk, startedAt) {
+    clearTimeout(pollTimer);
+    const wait = Math.max(1500, LIVE_POLL_MS - (Date.now() - startedAt));
+    pollTimer = setTimeout(() => {
+      pollTimer = null;
+      if (!scorecardOnScreen()) { scorecardPollPaused = true; return; }
+      fetchAndRender(gamePk);
+    }, wait);
+  }
+  // Catches up on whatever came due (or, with `pending`, is still waiting)
+  // while the Scorecard was out of view -- from the tab's onShow, and from
+  // catchUpAfterResume, where a suspended timer may never fire on its own.
+  function resumeScorecardPolls(pending) {
+    if (!scorecardOnScreen()) return;
+    if (currentGamePk && (scorecardPollPaused || (pending && pollTimer))) {
+      clearTimeout(pollTimer);
+      pollTimer = null;
+      scorecardPollPaused = false;
+      fetchAndRender(currentGamePk);
     }
+    if (gameStripPollPaused || (pending && gameStripPollTimer)) {
+      clearTimeout(gameStripPollTimer);
+      gameStripPollTimer = null;
+      gameStripPollPaused = false;
+      pollGameStrip(dateInput.value);
+    }
+  }
+
+  // The board dims and says how old it is when a poll fails, rather than
+  // the grid giving way to an error plate mid-game (see fetchAndRender).
+  function setFeedStale(stale) {
+    [scoreBottomBar, sidebarMonsterPanel].forEach(el => {
+      el.classList.toggle('is-stale', stale);
+      let line = el.querySelector('.feed-stale');
+      if (!stale) { if (line) line.remove(); return; }
+      if (!el.firstElementChild) return;
+      if (!line) {
+        line = document.createElement('div');
+        line.className = 'feed-stale';
+        line.setAttribute('role', 'status');
+        el.appendChild(line);
+      }
+      line.textContent = lastFeedOkAt
+        ? `Last update ${lastFeedOkAt.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })} \u00b7 Reconnecting`
+        : 'Reconnecting';
+    });
+  }
+  function markFeedFresh() {
+    lastFeedOkAt = new Date();
+    setFeedStale(false);
+    const stamp = body.querySelector('.feed-updated');
+    if (stamp) stamp.textContent = `updated ${lastFeedOkAt.toLocaleTimeString()}`;
   }
 
   // Toggles the edge fade (see .game-strip::before/::after) on and off
@@ -8444,10 +8541,14 @@
     scoreBottomBar.innerHTML = '';
     sidebarMonsterPanel.innerHTML = '';
     updateAtBatTrackers(null);
-    clearInterval(pollTimer);
+    clearTimeout(pollTimer);
+    pollTimer = null;
+    scorecardPollPaused = false;
+    renderedFeedKey = null;
     gameStripRequestId++;
     clearTimeout(gameStripPollTimer);
     gameStripPollTimer = null;
+    gameStripPollPaused = false;
     try {
       const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}&hydrate=linescore`);
       const data = await res.json();
@@ -8477,7 +8578,6 @@
   }
 
   async function loadGame(gamePk) {
-    clearInterval(pollTimer);
     await fetchAndRender(gamePk);
   }
 
@@ -8553,9 +8653,31 @@
   let fetchAndRenderRequestId = 0;
   async function fetchAndRender(gamePk) {
     const requestId = ++fetchAndRenderRequestId;
+    const startedAt = Date.now();
+    clearTimeout(pollTimer);
+    pollTimer = null;
+    scorecardPollPaused = false;
     try {
-      const res = await fetch(`https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live`);
-      const data = await res.json();
+      // no-cache: the feed is sent with max-age=10 and stale-while-revalidate,
+      // so a plain fetch could be answered from the browser's own cache with
+      // the previous poll's copy while the fresh one only revalidates in the
+      // background, leaving the board a tick behind. no-cache still goes no
+      // further than MLB's CDN.
+      const res = await fetch(`https://statsapi.mlb.com/api/v1.1/game/${gamePk}/feed/live`, { cache: 'no-cache' });
+      if (!res.ok) throw new Error(`feed ${res.status}`);
+      const text = await res.text();
+      // metaData.timeStamp moves whenever anything in the feed does, and it
+      // sits in the first few hundred characters -- read it before parsing
+      // ~800 KB of JSON that may be identical to what's on screen.
+      const stampMatch = /"timeStamp"\s*:\s*"([^"]+)"/.exec(text.slice(0, 1000));
+      const feedKey = `${gamePk}|${stampMatch ? stampMatch[1] : `?${startedAt}`}`;
+      if (requestId !== fetchAndRenderRequestId) return;
+      if (feedKey === renderedFeedKey) {
+        markFeedFresh();
+        if (renderedFeedLive) scheduleLivePoll(gamePk, startedAt);
+        return;
+      }
+      const data = JSON.parse(text);
       const gameData = data.gameData;
       const liveData = data.liveData;
       const linescore = liveData.linescore;
@@ -8888,6 +9010,9 @@
       // the rebuild below replaces the whole subtree, which would otherwise
       // snap every table-scroll back to scrollLeft 0 on each poll
       const scrollLefts = Array.from(body.querySelectorAll('.table-scroll')).map(el => el.scrollLeft);
+      // The rebuild also drops keyboard focus to <body>; put it back on the
+      // same control in the new grid.
+      const focusSelector = focusedControlSelector(body);
 
       // Lives in the fixed bottom bar (#scoreBottomBar) below the wide
       // breakpoint, not in .sheet -- see .score-bottom-bar for why -- and in
@@ -8910,12 +9035,19 @@
           ${renderTeamTable(awayName, awayRows.length ? awayRows : placeholderLineupRows(), numInnings, away.pitcherByInning, away.starterPitcherId, columnsPerInning, homePitcherCard, 'away', liveBatterInfo, season, officialDate)}
           ${renderTeamTable(homeName, homeRows.length ? homeRows : placeholderLineupRows(), numInnings, home.pitcherByInning, home.starterPitcherId, columnsPerInning, awayPitcherCard, 'home', liveBatterInfo, season, officialDate)}
         </div>
-        <div class="footnote">Source: MLB Stats API &#183; updated ${new Date().toLocaleTimeString()}</div>
+        <div class="footnote">Source: MLB Stats API${state === 'Final' ? '' : ' &#183; <span class="feed-updated"></span>'}</div>
       `;
 
       body.querySelectorAll('.table-scroll').forEach((el, i) => {
         if (scrollLefts[i]) el.scrollLeft = scrollLefts[i];
       });
+      if (focusSelector) {
+        const el = body.querySelector(focusSelector);
+        if (el) el.focus({ preventScroll: true });
+      }
+      renderedFeedKey = feedKey;
+      renderedFeedLive = state === 'Live';
+      markFeedFresh();
 
       // The wide-screen sidebar's own live-at-bat tracker -- livePkey was
       // computed above from liveBatterInfo, and is only now safe to look up
@@ -8923,8 +9055,7 @@
       // populate it (see the isLiveCell branch in that cell-building loop).
       updateAtBatTrackers(livePkey);
 
-      clearInterval(pollTimer);
-      if (state === 'Live') pollTimer = setInterval(() => fetchAndRender(gamePk), 7000);
+      if (state === 'Live') scheduleLivePoll(gamePk, startedAt);
 
       // if the pitch modal is currently open, refresh it in place with the
       // freshly-rebuilt pitchStore rather than leaving it showing stale data.
@@ -8937,11 +9068,29 @@
       }
     } catch (e) {
       if (requestId !== fetchAndRenderRequestId) return;
+      // A dropped poll mid-game keeps the scorecard (and the reader's place
+      // in it) on screen, marked stale, and tries again on the usual beat;
+      // only a game that never loaded gets the error plate.
+      if (renderedFeedKey && renderedFeedKey.startsWith(`${gamePk}|`)) {
+        setFeedStale(true);
+        if (renderedFeedLive) scheduleLivePoll(gamePk, startedAt);
+        return;
+      }
+      renderedFeedKey = null;
       body.innerHTML = apiErrorMsg('game data');
       scoreBottomBar.innerHTML = '';
       sidebarMonsterPanel.innerHTML = '';
       updateAtBatTrackers(null);
     }
+  }
+
+  function focusedControlSelector(root) {
+    const el = document.activeElement;
+    if (!el || el === root || !root.contains(el)) return null;
+    const attrs = Array.from(el.attributes).filter(a => a.name.startsWith('data-'));
+    if (!attrs.length) return null;
+    return el.tagName.toLowerCase() + (el.classList[0] ? `.${CSS.escape(el.classList[0])}` : '')
+      + attrs.map(a => `[${a.name}="${CSS.escape(a.value)}"]`).join('');
   }
 
   dateInput.addEventListener('change', () => {
@@ -8966,6 +9115,7 @@
     // right away that something new is loading instead of leaving the
     // previous game's grid sitting there looking current.
     body.innerHTML = '';
+    renderedFeedKey = null;
     scoreBottomBar.innerHTML = '';
     sidebarMonsterPanel.innerHTML = '';
     updateAtBatTrackers(null);
@@ -12404,7 +12554,9 @@
   // (the Scorecard sidebar, the Game Log's header and recent-games column).
   if (tabHeaderEl && typeof ResizeObserver === 'function') new ResizeObserver(syncSidebarOffsets).observe(tabHeaderEl);
 
-  Tabs.register('scorecard', { onShow: syncSidebarOffsets });
+  // onShow runs before Tabs records the tab as current, so the resume (which
+  // checks that the Scorecard is on screen) waits a microtask.
+  Tabs.register('scorecard', { onShow: () => { syncSidebarOffsets(); queueMicrotask(() => resumeScorecardPolls(false)); } });
   Tabs.register('daily', {
     init: () => {
       findLastStartedDate().then(dateStr => {
@@ -12638,19 +12790,11 @@
     const now = Date.now();
     if (now - lastResumeCatchUp < 1000) return;
     lastResumeCatchUp = now;
-    if (pollTimer && currentGamePk) {
-      clearInterval(pollTimer);
-      fetchAndRender(currentGamePk);
-    }
+    resumeScorecardPolls(true);
     if (dailyPollTimer) {
       clearTimeout(dailyPollTimer);
       dailyPollTimer = null;
       loadDailySummary(dailyDateInput.value, true);
-    }
-    if (gameStripPollTimer) {
-      clearTimeout(gameStripPollTimer);
-      gameStripPollTimer = null;
-      pollGameStrip(dateInput.value);
     }
   }
   document.addEventListener('visibilitychange', () => {

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A self-contained HTML app (`index.html`, ~9,300 lines) implementing a live MLB scorecard widget styled after a traditional paper scorecard, installable as a PWA on mobile home screens. There is no backend, no build step, and no dependencies — all data comes from the public MLB Stats API (plus Baseball Savant for the profile's Defense tab), fetched directly from the browser at runtime.
+A self-contained HTML app (`index.html`, ~12,700 lines) implementing a live MLB scorecard widget styled after a traditional paper scorecard, installable as a PWA on mobile home screens. There is no backend, no build step, and no dependencies — all data comes from the public MLB Stats API (plus Baseball Savant for the profile's Defense tab), fetched directly from the browser at runtime.
 
 The whole page is one file: `<style>` (lines ~18-2985), then the markup (`#mlb-root` and its tab panels/overlays), then a single `<script>` IIFE (from ~3153 to the end) containing all the JS. There is no test suite, linter, or package manager config in this repo.
 
@@ -64,7 +64,14 @@ Every overlay must open through `openOverlay(el)` and close through `closeOverla
 
 ### Live polling
 
-Live-game and daily-summary polling deliberately self-reschedule with `setTimeout` (see `dailyPollTimer`) or clear-then-`setInterval` (see `pollTimer` in `fetchAndRender`) rather than a bare `setInterval`, so that a fresh call — whether triggered by the user changing dates or by the poll tick itself — can cancel whatever's pending with one `clearTimeout`/`clearInterval` at the top. This avoids a stale date's poll cycle surviving a race against a newer one. Polling only runs while a game's `abstractGameState` is `Live`, at a 7s interval (`pollTimer`) for the Scorecard tab and a 15s interval for the Daily tab's summary (`dailyPollTimer`).
+Live-game and daily-summary polling deliberately self-reschedule with `setTimeout` (`scheduleLivePoll` for `pollTimer`, `dailyPollTimer`, `armGameStripPoll`) rather than `setInterval`, so that a fresh call — whether triggered by the user changing dates or by the poll tick itself — can cancel whatever's pending with one `clearTimeout` at the top, and so the next tick is only armed once the last fetch has settled (with a fixed interval, a fetch slower than the interval was superseded by the next tick's request id before it could render, and on a slow connection nothing ever did). Polling only runs while a game's `abstractGameState` is `Live`, every 7s start to start (`LIVE_POLL_MS`, at least 1.5s after a slow fetch lands) for the Scorecard tab and every 15s for the Daily tab's summary.
+
+The Scorecard's live poll is kept cheap and forgiving:
+- It fetches with `cache: 'no-cache'`: the feed is sent with `max-age=10` plus `stale-while-revalidate`, so a plain fetch could get the previous poll's copy from the browser's cache. `no-cache` goes no further than MLB's CDN.
+- It reads `metaData.timeStamp` off the front of the response text before parsing, and skips the parse and redraw when it matches the feed on screen (`renderedFeedKey`; clear it wherever the grid is replaced).
+- A tick that comes due while the Scorecard isn't on screen (another tab, or the app hidden) pauses rather than fetching; the tab's `onShow` and `catchUpAfterResume` pick it back up (`resumeScorecardPolls`). The game strip's poll does the same.
+- A failed poll after the game has rendered keeps the grid and the reader's place, dims the board and says when it last updated (`setFeedStale`), and tries again on the usual beat. Only a game that never loaded gets the error plate.
+- The redraw puts keyboard focus back on the same control (`focusedControlSelector`).
 
 `clearTimeout`/`clearInterval` alone only stops *future* ticks, though — it can't cancel a call already in flight. Every async load path that can have more than one call outstanding at once (`fetchAndRender`, `loadDailySummary`, `openGameSummaryModal`'s venue/highlights loaders, player search, `showPlayerProfile`) also guards with a bumped `xRequestId` counter, checked right before that call writes to shared state or the DOM, so a slow, now-stale response can never overwrite what a newer call already rendered. Match this when adding a new polling or debounced-fetch path.
 
