@@ -369,23 +369,12 @@
     color: var(--ink);
   }
 
-  /* Narrow screens don't get a live at-bat tracker at all -- there's no
-     room for it alongside .score-bottom-bar on a phone-width screen, and
-     the same info is one tap away via any plate appearance's diamond
-     glyph. #mobileAtBat is still populated by updateAtBatTrackers (kept
-     simple rather than special-cased there), just never shown. Wide
-     screens get .sidebar-atbat instead -- see its wide-breakpoint rule
-     below. */
-  .mobile-atbat {
-    display: none !important;
-  }
-
   /* Reserves room at the bottom of the scorecard grid so the last rows
      aren't hidden behind the fixed .score-bottom-bar sitting on top of
      them -- #mlbBody is the scorecard tab's own content container, so
      this doesn't affect any other tab's .sheet. Undone by the wide-screen
      rule below, which drops the fixed bar entirely. */
-  #mlbBody { padding-bottom: 90px; }
+  #mlbBody { padding-bottom: calc(var(--bar-h, 160px) + 16px); }
 
   /* Below the wide breakpoint this is a plain single-column stack --
      .scorecard-sidebar stays display:none (see the breakpoint below) and
@@ -1286,7 +1275,7 @@
     color: var(--ink);
   }
   .team-header-btns { display: flex; gap: 8px; flex-wrap: wrap; }
-  /* Wraps the header, the scrollable table, and the pitcher card. Stretched
+  /* Wraps the header, the scrollable table, and the pitching box. Stretched
      to fill .scorecard-main's own width (not just fit the table's natural
      width) so the .sheet paper background it sits in is never wider than
      this wrap -- that gap used to show up as bare paper background to the
@@ -1419,7 +1408,7 @@
   .view-toggle-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
   .wc-cutoff-line { border-top: 2px solid var(--ink); margin: 2px 0 0; }
 
-  .roster-btn, .spray-btn {
+  .roster-btn {
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
     font-size: 11px;
@@ -1432,8 +1421,8 @@
     padding: 6px 12px;
     cursor: pointer;
   }
-  .roster-btn:hover, .spray-btn:hover { background: rgba(243, 236, 219, 0.08); }
-  .roster-btn:focus-visible, .spray-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
+  .roster-btn:hover { background: rgba(243, 236, 219, 0.08); }
+  .roster-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
   .roster-section-title {
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
@@ -2173,53 +2162,200 @@
     color: var(--ink-soft);
   }
 
-  .pitcher-card {
-    margin-top: 8px;
-    margin-bottom: 14px;
-    padding: 10px 14px;
-    background: rgba(28, 58, 44, 0.035);
-    border: 1px solid var(--paper-line);
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 16px;
+  /* The pitchers' section at the foot of a card (see renderPitchingBox):
+     the starter's line, then the relievers by name. Beside the starter on a
+     wide card, under him on a phone. */
+  .pbox { margin: 18px 0 6px; }
+  .pbox-title {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 10px;
   }
-  .pc-kicker {
+  .pbox-body { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 14px 40px; }
+  .pbox-starter { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 10px 26px; }
+  .pbox-lbl {
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
-    font-size: 8.5px;
+    font-size: 10px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--ink-soft);
-    width: 100%;
-    margin-bottom: -8px;
+    line-height: 1.2;
   }
-  .pc-name {
+  .pbox-who { min-width: 130px; }
+  .pbox-name {
     font-family: 'Oswald', sans-serif;
-    font-weight: 600;
-    font-size: 14px;
-    letter-spacing: 0.02em;
-    color: var(--ink);
-    white-space: nowrap;
-    padding-right: 4px;
-  }
-  .pc-stats { display: flex; gap: 16px; flex-wrap: wrap; }
-  .pc-stat { display: flex; flex-direction: column; align-items: center; min-width: 26px; }
-  .pc-value {
-    font-family: 'Overpass', sans-serif;
-    font-size: 14px;
-    font-weight: 700;
+    font-weight: 500;
+    font-size: 20px;
+    line-height: 1.25;
     color: var(--ink);
   }
-  .pc-label {
+  /* Whoever is on the mound gets the active rule in gold trim, as an active
+     tab does: under the starter's name, or under a reliever's plate. */
+  .pbox-name.is-pitching { text-decoration: underline; text-decoration-color: var(--gold); text-decoration-thickness: 2px; text-underline-offset: 5px; }
+  .pbox .player-name-btn.is-pitching { box-shadow: 0 2px 3px rgba(0, 0, 0, 0.35), 0 5px 0 -1px var(--gold); }
+  .pbox-final {
+    margin-top: 3px;
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
-    font-size: 8px;
-    letter-spacing: 0.06em;
+    font-size: 10px;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--ink-soft);
-    margin-top: 1px;
+  }
+  .pbox-stats { display: flex; gap: 4px 16px; }
+  .pbox-stat { text-align: center; min-width: 28px; }
+  .pbox-val {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 500;
+    font-size: 20px;
+    line-height: 1.25;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .pbox-gsc { padding-left: 16px; border-left: 1px solid var(--paper-line); }
+  .pbox-rel { display: flex; flex-direction: column; gap: 6px; padding-left: 26px; border-left: 1px solid var(--paper-line); }
+  .pbox-rel-list { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; }
+  .sc-half .pbox-body { flex-direction: column; gap: 12px; }
+  .sc-half .pbox-starter { width: 100%; padding-bottom: 12px; border-bottom: 1px solid var(--paper-line); }
+  .sc-half .pbox-stats { width: 100%; justify-content: space-between; }
+  .sc-half .pbox-rel { flex-direction: row; align-items: center; flex-wrap: wrap; gap: 8px 10px; padding-left: 0; border-left: 0; }
+  .sc-half .pbox-rel-list { flex-direction: row; flex-wrap: wrap; gap: 8px 10px; }
+
+  /* The team toggle in each card's header (see renderTeamToggle); the
+     triangle marks the side batting now. */
+  .sc-toggle .view-toggle-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; }
+  .sc-toggle .view-toggle-btn.active { color: var(--ink); background: rgba(217, 169, 26, 0.15); box-shadow: inset 0 -2px 0 var(--gold); }
+  .now-tri { width: 8px; height: 7px; flex: none; }
+  th.is-now { color: var(--ink) !important; box-shadow: inset 0 -2px 0 var(--gold); }
+  th.is-now .now-tri { color: var(--gold); margin-right: 4px; vertical-align: 1px; }
+
+  /* The grid on anything wider than a phone held upright; the half-inning
+     view below that. Both are always rendered (see renderScorecardSheet). */
+  .sc-half { display: none; }
+  @media (max-width: 699px) {
+    .sc-grid { display: none; }
+    .sc-half { display: block; }
+  }
+  .hv-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-bottom: 10px; border-bottom: 2px solid var(--ink); }
+  .hv-head .view-toggle-btn { font-size: 13px; padding: 9px 16px; min-height: 40px; }
+  .hv-head .roster-btn { min-height: 40px; }
+  .hv-step { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 12px 0 4px; }
+  .hv-step-btn {
+    width: 44px; height: 40px;
+    display: grid; place-items: center;
+    background: transparent;
+    border: 1px solid var(--paper-line);
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .hv-step-btn svg { width: 9px; height: 15px; }
+  .hv-step-btn:disabled { opacity: 0.3; cursor: default; }
+  .hv-step-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
+  .hv-title {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: 'Oswald', sans-serif;
+    font-weight: 500;
+    font-size: 19px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .hv-title .now-tri { width: 11px; height: 9px; }
+  .hv-pa { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px dashed var(--paper-line); }
+  .hv-dia { position: relative; width: 64px; min-height: 60px; display: grid; place-items: center; }
+  .hv-dia .cell-wrap { position: relative; }
+  .hv-empty-dia { width: 46px; height: 46px; }
+  /* Batting-order slot, plate, position: fixed columns, so every row's
+     names and positions line up. */
+  .hv-who { display: grid; grid-template-columns: 14px 124px 30px; column-gap: 10px; align-items: center; }
+  .hv-slot { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 13px; color: var(--gold); font-variant-numeric: tabular-nums; }
+  .hv-who .player-name-btn { text-align: center; }
+  .hv-pos { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: 0.06em; color: var(--ink-soft); }
+  .hv-desc { margin: 5px 0 0 24px; font-family: 'Inter', sans-serif; font-size: 13px; line-height: 1.45; color: var(--ink-soft); }
+  .hv-pa.is-live .hv-desc { color: var(--ink); }
+  .hv-pa.is-ondeck { opacity: 0.6; border-bottom: 0; }
+  .hv-sub {
+    margin: 14px 0 0;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 800;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  /* The at-bat's pitches, one line each (see renderCompactPitchTable). */
+  .cpt { width: 100%; border-collapse: collapse; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 12.5px; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .cpt th { font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); text-align: left; padding: 0 8px 4px 0; border-bottom: 1px solid var(--paper-line); font-weight: 700; }
+  .cpt td { padding: 4px 8px 3px 0; white-space: nowrap; border-bottom: 1px solid rgba(84, 94, 77, 0.5); }
+  .cpt .n, .cpt .t { color: var(--ink-soft); }
+  .cpt .n { width: 14px; }
+  .cpt .r { text-align: right; padding-right: 0; }
+  .cpt tr.hl td { background: rgba(243, 236, 219, 0.08); }
+  .hv-main .cpt { margin: 6px 0 0 24px; width: calc(100% - 24px); }
+
+  /* A finished game's story (see renderGameStory): the phone's Final page
+     and the desktop sidebar. */
+  .sc-story { text-align: left; }
+  .story-sec { padding: 14px 0; border-bottom: 1px solid var(--paper-line); }
+  .story-sec:last-child { border-bottom: 0; }
+  .story-title {
+    display: flex; justify-content: space-between; gap: 10px;
+    margin-bottom: 10px;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  .story-title span { color: var(--ink-soft); }
+  .story-play { display: grid; grid-template-columns: 34px 1fr; gap: 12px; align-items: start; }
+  .story-recap { display: grid; place-items: center; width: 34px; height: 26px; font-size: 12px; text-decoration: none; }
+  .story-desc { font-family: 'Inter', sans-serif; font-size: 13.5px; line-height: 1.5; color: var(--ink); }
+  .story-players { display: flex; flex-direction: column; gap: 12px; }
+  .story-pl { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 4px 10px; align-items: center; }
+  .story-pl .player-name-btn { justify-self: start; }
+  .story-abbr { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 11px; letter-spacing: 0.06em; color: var(--ink-soft); }
+  .story-line { grid-column: 2; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 12px; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .story-line .potg-stat { white-space: nowrap; }
+  .sidebar-atbat .sc-story { padding: 0 2px; }
+
+  /* The wide-mobile bar: the board and the at-bat as separate cards at
+     either side. Only between the phone and the sidebar's breakpoint --
+     below it the bar is the board alone, above it the bar is gone. */
+  .bar-row { display: flex; align-items: stretch; justify-content: center; gap: 16px; }
+  .bar-row.has-atbat { justify-content: space-between; }
+  .bar-atbat { display: none; }
+  @media (min-width: 700px) and (max-width: 1099px) {
+    .bar-row.has-atbat .bar-atbat {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 14px;
+      align-items: center;
+      flex: 0 1 380px;
+      padding: 8px 14px 8px 8px;
+      border: 2.5px solid var(--ink);
+      text-align: left;
+    }
+  }
+  .bar-ab-zone .loc-section { margin: 0; }
+  .bar-ab-zone .loc-compact { display: block; width: 136px; height: auto; }
+  .bar-ab-name { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 16px; text-transform: uppercase; letter-spacing: 0.02em; color: var(--ink); line-height: 1.2; }
+  .bar-ab-vs { margin-bottom: 6px; font-family: 'Inter', sans-serif; font-size: 12px; color: var(--ink-soft); }
+
+  .bp-subtitle { margin-top: 12px; }
+  .bp-role {
+    margin-left: 6px;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
   }
 
   .table-scroll {
@@ -2739,14 +2875,12 @@
      this popup/tracker is the one place a name is the headline rather than
      a secondary label next to a team/date. */
   #pitchModalBody .pitch-header,
-  #sidebarAtBat .pitch-header,
-  #mobileAtBat .pitch-header {
+  #sidebarAtBat .pitch-header {
     font-size: 19px;
     text-align: left;
   }
   #pitchModalBody .pitch-subheader,
-  #sidebarAtBat .pitch-subheader,
-  #mobileAtBat .pitch-subheader {
+  #sidebarAtBat .pitch-subheader {
     margin-bottom: 6px;
     font-size: 14px;
   }
@@ -3638,11 +3772,6 @@
     </div>
   </div>
   <div class="tab-panel" data-tab-panel="scorecard" id="scorecardPanel">
-    <!-- Always hidden on narrow screens -- see .mobile-atbat. Kept in the
-         markup (rather than removed) since updateAtBatTrackers still
-         writes to it unconditionally; wide screens get .sidebar-atbat (in
-         .scorecard-sidebar below) instead. -->
-    <div class="mobile-atbat" id="mobileAtBat"></div>
     <div class="scorecard-layout">
       <div id="mlbBody" class="scorecard-main">
         <div class="mlb-status-msg">Loading today's schedule&#8230;</div>
@@ -3687,12 +3816,6 @@
     <div class="pitch-modal">
       <button id="rosterClose" class="pitch-close" aria-label="Close">&#10005;</button>
       <div id="rosterModalBody"></div>
-    </div>
-  </div>
-  <div id="sprayOverlay" class="pitch-overlay">
-    <div class="pitch-modal">
-      <button id="sprayClose" class="pitch-close" aria-label="Close">&#10005;</button>
-      <div id="sprayModalBody"></div>
     </div>
   </div>
   <div id="playerOverlay" class="pitch-overlay">
@@ -3745,7 +3868,6 @@
   const scoreBottomBar = document.getElementById('scoreBottomBar');
   const sidebarMonsterPanel = document.getElementById('sidebarMonsterPanel');
   const sidebarAtBatEl = document.getElementById('sidebarAtBat');
-  const mobileAtBatEl = document.getElementById('mobileAtBat');
   const standingsBody = document.getElementById('standingsBody');
   const standingsYearSelect = document.getElementById('standingsYearPick');
   const dailyBody = document.getElementById('dailyBody');
@@ -3831,12 +3953,10 @@
   // since the popup only has the pitch/team id to work with, not gameData.
   let absChallengeInfo = null;
   let rosterStore = {};
-  let sprayStore = {};
   let playerStore = {};
-  // Single-active-profile state for the player-page spray chart widget --
-  // mirrors sprayFilterState's module-scoped pattern, but keyed implicitly
-  // to whichever profile is currently open rather than by team name, since
-  // only one player profile is ever shown at a time. Always the current
+  // Single-active-profile state for the player-page spray chart widget,
+  // keyed implicitly to whichever profile is currently open, since only one
+  // player profile is ever shown at a time. Always the current
   // season -- no year picker. Reset in showPlayerProfile, updated by
   // loadPlayerSpray once its fetch resolves.
   let playerSprayState = { personId: null, season: null, balls: null, loading: false };
@@ -4055,9 +4175,7 @@
   }
 
   // Pulls this batter's plate-appearance results with hitData coordinates
-  // out of one game's play list -- the same extraction buildTeamRows does
-  // per-team for the Scorecard tab's spray chart, just filtered to one
-  // batter instead of one halfInning. coordX/coordY already sit in the same
+  // out of one game's play list, filtered to one batter. coordX/coordY already sit in the same
   // pixel space diamondSVG/fieldSVG expect, so no transform is needed here.
   // Outs are skipped entirely -- the player profile's season chart is meant
   // to show where a player's hits land, not the outs mixed in with them.
@@ -4270,7 +4388,6 @@
   function apiErrorMsg(what) {
     return `<div class="mlb-status-msg">Could not load ${what}. The MLB API may be unreachable right now.</div>`;
   }
-  const sprayFilterState = {};
 
   function todayStr() {
     const d = new Date();
@@ -4727,7 +4844,6 @@
     // in the game, rather than colliding the two together.
     let lastPitcherId = null;
     let starterPitcherId = null;
-    const battedBalls = [];
     const ghostHandledInnings = new Set();
     teamPlays.forEach((play, order) => {
       const inning = play.about.inning;
@@ -4775,24 +4891,7 @@
 
         const pitches = extractPitches(play);
         const handedness = extractHandedness(play);
-        const hitCoords = extractHitCoordinates(play);
         const videoUrl = savantVideoUrl(extractPlayId(play));
-        if (hitCoords) {
-          const hitType =
-            event === 'Single' ? 'single' :
-            event === 'Double' ? 'double' :
-            event === 'Triple' ? 'triple' :
-            event === 'Home Run' ? 'homerun' : 'out';
-          battedBalls.push({
-            x: hitCoords.x, y: hitCoords.y, hitType, code,
-            pitches, events: extractEvents(play), batterId, ...handedness, isComplete: true,
-            batterName: (play.matchup && play.matchup.batter && play.matchup.batter.fullName) || '',
-            pitcherFullName: (play.matchup && play.matchup.pitcher && play.matchup.pitcher.fullName) || '',
-            playDesc: (play.result && play.result.description) || '',
-            videoUrl
-          });
-        }
-
         row.cells[inning] = row.cells[inning] || [];
         row.cells[inning].push({
           code, reached: rb, scored: rb === 4, isOut: rb === 0, playerId: batterId,
@@ -5065,7 +5164,7 @@
       });
     });
 
-    return { rows, pitcherByInning, starterPitcherId, battedBalls };
+    return { rows, pitcherByInning, starterPitcherId };
   }
 
   // Dot colors for a batted ball's result -- shared between the per-game
@@ -5182,42 +5281,6 @@
     return svg;
   }
 
-  function renderSprayChart(balls, teamName) {
-    if (!balls || !balls.length) return '';
-    const batters = [];
-    const seenBatters = new Set();
-    balls.forEach(b => {
-      if (b.batterId && !seenBatters.has(b.batterId)) {
-        seenBatters.add(b.batterId);
-        batters.push({ id: b.batterId, name: b.batterName });
-      }
-    });
-    const currentFilter = sprayFilterState[teamName] || 'all';
-    const filterOptions = [`<option value="all"${currentFilter === 'all' ? ' selected' : ''}>All Batters</option>`]
-      .concat(batters.map(bt => `<option value="${bt.id}"${String(bt.id) === String(currentFilter) ? ' selected' : ''}>${bt.name}</option>`))
-      .join('');
-
-    const svg = renderBattedBallFieldSVG(balls, {
-      pkeyPrefix: teamName,
-      visible: b => currentFilter === 'all' || String(b.batterId) === String(currentFilter)
-    });
-
-    return `<div class="spray-card">
-      <div class="spray-header">
-        <div class="spray-title">${teamName} &#8212; Batted Balls</div>
-        <select class="spray-filter" data-team="${teamName}">${filterOptions}</select>
-      </div>
-      ${svg}
-      <div class="spray-legend">
-        <span class="spray-key"><span class="dot" style="background:${HIT_DOT_COLORS.single}"></span>1B</span>
-        <span class="spray-key"><span class="dot" style="background:${HIT_DOT_COLORS.double}"></span>2B</span>
-        <span class="spray-key"><span class="dot" style="background:${HIT_DOT_COLORS.triple}"></span>3B</span>
-        <span class="spray-key"><span class="dot hr-dot" style="border-color:${HIT_DOT_COLORS.homerun}"></span>HR</span>
-        <span class="spray-key"><span class="dot out"></span>Out</span>
-      </div>
-    </div>`;
-  }
-
   // A hitter's spray chart for the profile's season, on its Splits tab.
   // Same field/dot drawing and .spray-card/.spray-header/.spray-legend
   // look as the Scorecard tab's per-game chart above -- no year picker of
@@ -5260,7 +5323,7 @@
     return whole * 3 + partial;
   }
 
-  async function buildBullpenList(sideBoxscore, starterPitcherId, season, officialDate, allPlays, pitchingHalfKey) {
+  async function buildBullpenList(sideBoxscore, starterPitcherId, season, officialDate, allPlays, pitchingHalfKey, rolesPromise) {
     const players = sideBoxscore.players || {};
     const allPitchers = Object.values(players).filter(p => p.person && p.position && p.position.abbreviation === 'P');
 
@@ -5300,11 +5363,18 @@
       };
     }));
 
+    // Who hasn't pitched yet: the closer, then the rest of the bullpen,
+    // then the rotation, by today's depth chart. Anyone it doesn't list (a
+    // past season, a pitcher since traded or optioned) falls back to games
+    // started, between the bullpen and the rotation.
+    const roles = rolesPromise ? await rolesPromise : null;
+    results.forEach(r => { r.role = (roles && roles[r.id]) || null; });
+    const roleRank = r => r.role === 'CP' ? 0 : r.role === 'P' ? 1 : r.role === 'SP' ? 3 : 2;
     results.sort((a, b) => {
       if (a.isStarter !== b.isStarter) return a.isStarter ? -1 : 1;
       if (a.usedToday !== b.usedToday) return a.usedToday ? -1 : 1;
       if (a.usedToday && b.usedToday) return (a.entryOrder ?? 0) - (b.entryOrder ?? 0);
-      return a.gamesStarted - b.gamesStarted;
+      return (roleRank(a) - roleRank(b)) || (a.gamesStarted - b.gamesStarted);
     });
 
     return results;
@@ -5312,16 +5382,19 @@
 
   function bullpenRowsHtml(list) {
     if (!list || !list.length) return '<div class="roster-empty">No pitching data available</div>';
+    let rotationShown = false;
     return list.map(p => {
+      const rotationHead = !p.usedToday && !p.isStarter && p.role === 'SP' && !rotationShown
+        ? (rotationShown = true, '<div class="roster-section-title bp-subtitle">Rotation</div>') : '';
       // Same leading column as the lineup (order number) and bench (a
       // checkbox) rows: the starter just gets "P", everyone else gets a
       // checkbox checked once they've actually appeared in the game --
       // replaces the STARTER/RELIEVER tags this used to carry.
       const orderCell = p.isStarter ? 'P' : `<span class="roster-check${p.usedToday ? ' is-checked' : ''}"></span>`;
-      return `
+      return `${rotationHead}
       <div class="roster-row bp-row">
         <span class="roster-order${p.isStarter ? ' roster-order-gold' : ''}">${orderCell}</span>
-        <span class="roster-name-col"><button type="button" class="player-name-btn roster-name" data-player-id="${p.id}">${p.name}</button></span>
+        <span class="roster-name-col"><button type="button" class="player-name-btn roster-name" data-player-id="${p.id}">${p.name}</button>${p.role === 'CP' ? '<span class="bp-role">CL</span>' : ''}</span>
         <div class="bp-recent">
           <span class="bp-recent-item"><span class="bp-recent-value">${p.usedToday ? (p.todayIp ?? '0.0') : '&#8212;'}</span><span class="bp-recent-label">IP</span></span>
           <span class="bp-recent-item"><span class="bp-recent-value">${p.usedToday ? (p.todayPc ?? 0) : '&#8212;'}</span><span class="bp-recent-label">P</span></span>
@@ -5743,34 +5816,155 @@
     `;
   }
 
-  function renderPitcherCard(name, stats) {
-    if (!name) return '';
-    const ip = (stats && stats.inningsPitched) ?? '0.0';
-    const pc = (stats && (stats.numberOfPitches ?? stats.pitchesThrown)) ?? 0;
-    const k = (stats && stats.strikeOuts) ?? 0;
-    const bb = (stats && stats.baseOnBalls) ?? 0;
-    const h = (stats && stats.hits) ?? 0;
-    const r = (stats && stats.runs) ?? 0;
-    const hr = (stats && stats.homeRuns) ?? 0;
-    const outs = inningsToOuts(ip);
-    // Tom Tango's Game Score v2.0 (2016 revision of the Bill James original)
-    const gameScore = Math.round(40 + 2 * outs + 1 * k - 2 * bb - 2 * h - 3 * r - 6 * hr);
+  // Tom Tango's Game Score v2.0 (2016 revision of the Bill James original)
+  function gameScoreOf(stats) {
+    const s = stats || {};
+    return Math.round(40 + 2 * inningsToOuts(s.inningsPitched ?? '0.0') + (s.strikeOuts ?? 0)
+      - 2 * (s.baseOnBalls ?? 0) - 2 * (s.hits ?? 0) - 3 * (s.runs ?? 0) - 6 * (s.homeRuns ?? 0));
+  }
 
-    const stat = (label, val) => `<div class="pc-stat"><div class="pc-value">${val}</div><div class="pc-label">${label}</div></div>`;
+  // A side's pitchers in the order they took the mound (the boxscore keeps
+  // them that way), starter first.
+  function buildStaff(sideBoxscore, personIndex) {
+    const players = (sideBoxscore && sideBoxscore.players) || {};
+    return ((sideBoxscore && sideBoxscore.pitchers) || []).map(id => {
+      const p = players['ID' + id];
+      if (!p || !p.person) return null;
+      return { id, name: p.person.fullName, lastName: lastNameOf(p.person, personIndex), stats: (p.stats && p.stats.pitching) || {} };
+    }).filter(Boolean);
+  }
 
-    return `<div class="pitcher-card">
-      <div class="pc-kicker">Starting Pitcher</div>
-      <div class="pc-name">${name}</div>
-      <div class="pc-stats">
-        ${stat('IP', ip)}
-        ${stat('PC', pc)}
-        ${stat('K', k)}
-        ${stat('BB', bb)}
-        ${stat('H', h)}
-        ${stat('R', r)}
-        ${stat('Game Score', gameScore)}
+  // The pitchers' section at the foot of the card: the starter's line, then
+  // each reliever by name as he enters. Whoever is on the mound now gets the
+  // gold rule; a starter who's done says so.
+  function renderPitchingBox(staff, teamNick, isLive) {
+    if (!staff || !staff.length) return '';
+    const starter = staff[0];
+    const relievers = staff.slice(1);
+    const onMound = isLive ? staff[staff.length - 1] : null;
+    const s = starter.stats;
+    const stat = (label, val, cls) => `<div class="pbox-stat${cls ? ' ' + cls : ''}"><div class="pbox-lbl">${label}</div><div class="pbox-val">${val}</div></div>`;
+    return `<div class="pbox">
+      <div class="pbox-title">Pitching &#183; ${teamNick}</div>
+      <div class="pbox-body">
+        <div class="pbox-starter">
+          <div class="pbox-who">
+            <div class="pbox-lbl">Starter</div>
+            <div class="pbox-name${onMound === starter ? ' is-pitching' : ''}">${starter.name}</div>
+            ${onMound !== starter ? '<div class="pbox-final">Final line</div>' : ''}
+          </div>
+          <div class="pbox-stats">
+            ${stat('IP', s.inningsPitched ?? '0.0')}${stat('PC', s.numberOfPitches ?? s.pitchesThrown ?? 0)}${stat('H', s.hits ?? 0)}${stat('R', s.runs ?? 0)}${stat('BB', s.baseOnBalls ?? 0)}${stat('K', s.strikeOuts ?? 0)}${stat('GSc', gameScoreOf(s), 'pbox-gsc')}
+          </div>
+        </div>
+        ${relievers.length ? `<div class="pbox-rel"><div class="pbox-lbl">Relievers</div><div class="pbox-rel-list">${relievers.map(p =>
+          `<button type="button" class="player-name-btn${onMound === p ? ' is-pitching' : ''}" data-player-id="${p.id}" title="${p.name}">${p.lastName}</button>`).join('')}</div></div>` : ''}
       </div>
     </div>`;
+  }
+
+  function renderTeamToggle(m, activeSide, long) {
+    const battingSide = m.liveHalf ? (m.liveHalf.top ? 'away' : 'home') : null;
+    const btn = side => `<button type="button" class="view-toggle-btn${side === activeSide ? ' active' : ''}" data-sc-side="${side}" aria-pressed="${side === activeSide}">${side === battingSide ? NOW_TRI_SVG(m.liveHalf.top) : ''}${long ? m[side].nickname : m[side].abbr}</button>`;
+    return `<div class="view-toggle sc-toggle" role="group" aria-label="Team">${btn('away')}${btn('home')}</div>`;
+  }
+
+  // The at-bat's pitches in one tidy line each. The count is on the board.
+  function renderCompactPitchTable(pitches) {
+    if (!pitches || !pitches.length) return '';
+    return `<table class="cpt"><thead><tr><th></th><th>Result</th><th>Pitch</th><th class="r">MPH</th></tr></thead><tbody>${pitches.map(p =>
+      `<tr data-num="${p.num || ''}"><td class="n">${p.num || ''}</td><td class="${RESULT_CLASS(p.result)}">${p.result || ''}</td><td class="t">${p.typeCode || ''}</td><td class="r">${p.speed || ''}</td></tr>`).join('')}</tbody></table>`;
+  }
+
+  const HALF_EMPTY_DIAMOND = `<svg class="hv-empty-dia" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3L37 20L20 37L3 20Z" fill="none" stroke="${PALETTE.ink}" stroke-opacity="0.35" stroke-width="1.5"/></svg>`;
+  const HV_CHEV = left => `<svg viewBox="0 0 8 14" aria-hidden="true"><path d="${left ? 'M7 1L1 7l6 6' : 'M1 1l6 6-6 6'}" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`;
+
+  // The phone's Scorecard: one half-inning at a time, the scorebook's column
+  // for it read top to bottom, each plate appearance's diamond beside what
+  // happened. A finished game ends on the Final summary. Must render after
+  // the grid, whose renderTeamTable calls fill pitchStore for these cells.
+  function renderHalfView(m, v) {
+    const pages = m.halves.length + (m.state === 'Final' ? 1 : 0);
+    const isFinalPage = v.half === 'final';
+    const idx = isFinalPage ? m.halves.length : m.halves.findIndex(h => h.inning === v.half.inning && h.top === v.half.top);
+    const side = isFinalPage ? null : (v.half.top ? 'away' : 'home');
+    const head = `<div class="hv-head">${renderTeamToggle(m, side, true)}${side ? `<button class="roster-btn" data-team="${m[side].name}">Roster</button>` : ''}</div>`;
+    const title = isFinalPage ? 'Final' : `${NOW_TRI_SVG(v.half.top)}${v.half.top ? 'Top' : 'Bottom'} ${ordinalSuffix(v.half.inning)}`;
+    const step = `<div class="hv-step">
+      <button type="button" class="hv-step-btn" data-hv-step="-1" aria-label="Previous half-inning"${idx <= 0 ? ' disabled' : ''}>${HV_CHEV(true)}</button>
+      <div class="hv-title">${title}</div>
+      <button type="button" class="hv-step-btn" data-hv-step="1" aria-label="Next half-inning"${idx >= pages - 1 ? ' disabled' : ''}>${HV_CHEV(false)}</button>
+    </div>`;
+    if (isFinalPage) return head + step + renderGameStory(m.highlights);
+
+    const team = m[side];
+    const inning = v.half.inning;
+    const row = (r, playerId, diaHtml, mainHtml, cls) => {
+      const p = r.players.find(x => x.id === playerId) || r.players[r.players.length - 1];
+      return `<div class="hv-pa${cls ? ' ' + cls : ''}">
+        <div class="hv-dia">${diaHtml}</div>
+        <div class="hv-main">
+          <div class="hv-who"><span class="hv-slot">${r.slot}</span><button type="button" class="player-name-btn" data-player-id="${p.id}" title="${p.name}">${p.lastName}</button><span class="hv-pos">${p.pos}</span></div>
+          ${mainHtml}
+        </div>
+      </div>`;
+    };
+    const wrap = (pkey, inner, isLive) => {
+      const src = pitchStore[pkey];
+      return `<div class="cell-wrap${hasPitchDetail(src, isLive, m.liveBatterInfo) ? ' clickable' : ''}"${src ? ` data-pkey="${pkey}"` : ''}>${inner}</div>`;
+    };
+
+    const items = [];
+    team.rows.forEach(r => (r.cells[inning] || []).forEach((c, k) => items.push({ c, r, k })));
+    items.sort((a, b) => a.c.order - b.c.order);
+    let html = items.map(({ c, r, k }) => row(r, c.playerId,
+      wrap(`${team.name}-${r.slot}-${inning}-${k}`, renderCellInner(c), false),
+      `<div class="hv-desc">${c.playDesc || (c.ghostStart ? 'Starts the inning on second.' : '')}</div>`)).join('');
+
+    const lb = m.liveBatterInfo;
+    if (lb && lb.team === side && lb.inning === inning) {
+      const r = team.rows.find(x => x.slot === lb.rowSlot);
+      if (r) {
+        const batter = r.players.find(x => x.name === lb.batterName);
+        html += row(r, batter && batter.id, wrap(`${team.name}-${lb.rowSlot}-${inning}-${lb.slotIndex}`, liveCellInner(lb), true),
+          (lb.currentInterruption ? `<div class="hv-desc">${lb.currentInterruption}</div>` : '') + renderCompactPitchTable(lb.pitches), 'is-live');
+        const next = team.rows.find(x => x.slot === (lb.rowSlot % team.rows.length) + 1);
+        if (next) html += `<div class="hv-sub">On deck</div>` + row(next, null, HALF_EMPTY_DIAMOND, '', 'is-ondeck');
+      }
+    } else if (!items.length && m.state !== 'Live' && m.state !== 'Final' && team.rows.length) {
+      html += `<div class="hv-sub">Leading off</div>` + row(team.rows[0], null, HALF_EMPTY_DIAMOND, '', 'is-ondeck');
+    }
+    const fielding = m[side === 'away' ? 'home' : 'away'];
+    return head + step + `<div class="hv-list">${html}</div>` + fielding.pitchingBox;
+  }
+
+  // A finished game's story: the play of the game and the players of the
+  // game, both picked by win probability (which stays behind the scenes).
+  function renderGameStory(h) {
+    if (!h || (!h.playOfGame && !(h.leaders && h.leaders.length))) {
+      return `<div class="sc-story"><div class="hv-desc">Highlights aren't available for this game.</div></div>`;
+    }
+    const pog = h.playOfGame;
+    const pogHtml = pog ? `<div class="story-sec">
+        <div class="story-title">Play of the Game${pog.inningLabel ? `<span>${pog.inningLabel}</span>` : ''}</div>
+        <div class="story-play">${pog.videoUrl ? `<a class="dg-recap story-recap" ${clipWatchAttrs(pog.videoUrl, 'Play of the Game', { gameLink: false })} aria-label="Watch the play of the game">&#9654;</a>` : '<span></span>'}<div class="story-desc">${pog.description}</div></div>
+      </div>` : '';
+    const playersHtml = h.leaders && h.leaders.length ? `<div class="story-sec">
+        <div class="story-title">Players of the Game</div>
+        <div class="story-players">${h.leaders.map(p => `<div class="story-pl"><span class="story-abbr">${p.teamAbbr || ''}</span><button type="button" class="player-name-btn" data-player-id="${p.id}" title="${p.name}">${p.name}</button>${p.statLine ? `<span class="story-line">${p.statLine}</span>` : ''}</div>`).join('')}</div>
+      </div>` : '';
+    return `<div class="sc-story">${pogHtml}${playersHtml}</div>`;
+  }
+
+  // The wide-mobile bar's at-bat card: the zone, without the plate, beside
+  // the batter and his pitches.
+  function renderBarAtBatHtml(c, newPitchNums) {
+    return `<div class="bar-ab-zone">${renderPitchLocation(c.pitches || [], c.batSide, c.pitchHand, c.isComplete, newPitchNums, true, true)}</div>
+      <div class="bar-ab-main">
+        <div class="bar-ab-name">${c.batterName || 'Batter'}</div>
+        <div class="bar-ab-vs">vs ${c.pitcherFullName || 'pitcher'}</div>
+        ${renderCompactPitchTable(c.pitches)}
+      </div>`;
   }
 
   // venue is the detailed /v1/venues record (city/state) -- optional, since
@@ -6000,11 +6194,42 @@
     }));
   }
 
-  function renderTeamTable(teamName, rows, numInnings, pitcherByInning, starterPitcherId, columnsPerInning, pitcherCardHtml, teamKey, liveBatterInfo, season, gameDate) {
+  // A plate appearance's diamond and everything drawn on it: runner tags and
+  // the entering pitcher's plate. Shared by the grid and the phone's
+  // half-inning view, so a play looks the same in both.
+  function renderCellInner(c) {
+    let inner = diamondSVG(c.reached, c.scored, c.code, c.isOut, c.outEdge, c.specialEdges, c.ghostStart, c.calledLooking);
+    if (c.otherAdvances && c.otherAdvances.length) {
+      inner += '<div class="adv-wrap">' + c.otherAdvances.map(a =>
+        `<div class="adv-tag ${a.scored ? 'scored' : a.out ? 'out' : ''}">${a.label}</div>`
+      ).join('') + '</div>';
+    }
+    if (c.pitcherChanged && c.pitcherName) inner += `<button type="button" class="pitch-tag player-name-btn" data-player-id="${c.pitcherId}" title="${c.pitcherFullName || c.pitcherName} enters to pitch">${c.pitcherName}</button>`;
+    return inner;
+  }
+  function liveCellInner(liveBatterInfo) {
+    // the diamond marks this batter as on deck the moment the prior at-bat
+    // ends; the pulsing dot only joins it once a pitch has actually been
+    // thrown, so "on deck" and "at bat now" read as distinct states
+    const abStarted = liveBatterInfo.pitches && liveBatterInfo.pitches.length > 0;
+    return diamondSVG(0, false, '', false, null, null, false)
+      + (abStarted ? '<div class="live-dot" title="At bat now"></div>' : '');
+  }
+  function hasPitchDetail(src, isLive, liveBatterInfo) {
+    return !!src && !!((src.pitches && src.pitches.length) || (src.events && src.events.length)
+      || (isLive && liveBatterInfo && liveBatterInfo.currentInterruption));
+  }
+  const NOW_TRI_SVG = top => `<svg class="now-tri" viewBox="0 0 10 8" aria-hidden="true"><path d="${top ? 'M5 0L10 8H0Z' : 'M0 0H10L5 8Z'}" fill="currentColor"/></svg>`;
+
+  function renderTeamTable(teamName, rows, numInnings, pitcherByInning, starterPitcherId, columnsPerInning, pitchingBoxHtml, teamKey, liveBatterInfo, season, gameDate, headerControlsHtml, hidden) {
     let head = `<tr><th class="ply"><span class="th-full">Player</span><span class="th-short">#</span></th><th class="pos">Pos</th>`;
     for (let i = 1; i <= numInnings; i++) {
       const cols = (columnsPerInning && columnsPerInning[i]) || 1;
-      for (let k = 0; k < cols; k++) head += `<th${k > 0 ? ' class="inning-cont"' : ''}>${i}</th>`;
+      const isNow = liveBatterInfo && liveBatterInfo.team === teamKey && liveBatterInfo.inning === i;
+      for (let k = 0; k < cols; k++) {
+        const cls = [k > 0 ? 'inning-cont' : '', isNow && k === 0 ? 'is-now' : ''].filter(Boolean).join(' ');
+        head += `<th${cls ? ` class="${cls}"` : ''}>${isNow && k === 0 ? NOW_TRI_SVG(teamKey === 'away') : ''}${i}</th>`;
+      }
     }
     head += `</tr>`;
 
@@ -6040,29 +6265,10 @@
         const cellArr = r.cells[i] || [];
         for (let k = 0; k < cols; k++) {
           const c = cellArr[k];
-          let inner = '';
-          if (c) {
-            const svg = diamondSVG(c.reached, c.scored, c.code, c.isOut, c.outEdge, c.specialEdges, c.ghostStart, c.calledLooking);
-            let advHtml = '';
-            if (c.otherAdvances && c.otherAdvances.length) {
-              advHtml = '<div class="adv-wrap">' + c.otherAdvances.map(a =>
-                `<div class="adv-tag ${a.scored ? 'scored' : a.out ? 'out' : ''}">${a.label}</div>`
-              ).join('') + '</div>';
-            }
-            inner += svg + advHtml;
-          }
-          if (c && c.pitcherChanged && c.pitcherName) inner += `<button type="button" class="pitch-tag player-name-btn" data-player-id="${c.pitcherId}" title="${c.pitcherFullName || c.pitcherName} enters to pitch">${c.pitcherName}</button>`;
+          let inner = c ? renderCellInner(c) : '';
           const isLiveCell = !c && liveBatterInfo && liveBatterInfo.team === teamKey
             && liveBatterInfo.rowSlot === r.slot && liveBatterInfo.inning === i && liveBatterInfo.slotIndex === k;
-          if (isLiveCell) {
-            // the diamond marks this batter as on deck the moment the prior
-            // at-bat ends; the pulsing dot only joins it once a pitch has
-            // actually been thrown, so "on deck" and "at bat now" read as
-            // distinct states
-            const abStarted = liveBatterInfo.pitches && liveBatterInfo.pitches.length > 0;
-            inner += diamondSVG(0, false, '', false, null, null, false)
-              + (abStarted ? '<div class="live-dot" title="At bat now"></div>' : '');
-          }
+          if (isLiveCell) inner += liveCellInner(liveBatterInfo);
           let pitchAttr = '';
           const pitchSource = c || (isLiveCell ? {
             pitches: liveBatterInfo.pitches, events: liveBatterInfo.events, batterName: liveBatterInfo.batterName,
@@ -6079,11 +6285,7 @@
             pitchStore[pkey] = pitchSource;
             pitchAttr = ` data-pkey="${pkey}"`;
           }
-          const hasPitchDetail = pitchSource && (
-            (pitchSource.pitches && pitchSource.pitches.length) || (pitchSource.events && pitchSource.events.length)
-            || (isLiveCell && liveBatterInfo.currentInterruption)
-          );
-          const cellHtml = inner ? `<div class="cell-wrap${hasPitchDetail ? ' clickable' : ''}"${pitchAttr}>${inner}</div>` : '';
+          const cellHtml = inner ? `<div class="cell-wrap${hasPitchDetail(pitchSource, isLiveCell, liveBatterInfo) ? ' clickable' : ''}"${pitchAttr}>${inner}</div>` : '';
           const cls = 'cell'
             + (r.dividerInnings && r.dividerInnings.has(i) && k === 0 ? ' sub-divider' : '')
             + (c && c.pitcherChanged ? ' pitcher-change' : '')
@@ -6094,19 +6296,16 @@
       return `<tr>${cells}</tr>`;
     }).join('');
 
-    return `<div class="team-block">
+    return `<div class="team-block" data-side="${teamKey}"${hidden ? ' hidden' : ''}>
       <div class="team-scorecard-wrap">
         <div class="team-header">
           <div class="team-name">${teamName}</div>
-          <div class="team-header-btns">
-            <button class="roster-btn" data-team="${teamName}">Lineup</button>
-            <button class="spray-btn" data-team="${teamName}">Spray Chart</button>
-          </div>
+          <div class="team-header-btns">${headerControlsHtml || ''}</div>
         </div>
         <div class="table-scroll">
           <table class="scorecard-table"><thead>${head}</thead><tbody>${bodyRows}</tbody></table>
         </div>
-        ${pitcherCardHtml || ''}
+        ${pitchingBoxHtml || ''}
       </div>
     </div>`;
   }
@@ -6581,7 +6780,9 @@
   // day's clips. Trimmed by fields= to ~8 KB a game (the whole response is
   // over 1 MB). A game still going isn't cached, nor is a failure.
   const gameWpaCache = {};
-  async function getGameWpa(gamePk, isFinal) {
+  // atBatIndex -> the home team's win probability added, in points, signed.
+  // ~8 KB a game with fields=, against ~1 MB without.
+  async function getGameWpaSigned(gamePk, isFinal) {
     if (gameWpaCache[gamePk]) return gameWpaCache[gamePk];
     try {
       const res = await fetch(`https://statsapi.mlb.com/api/v1/game/${gamePk}/winProbability?fields=atBatIndex,homeTeamWinProbabilityAdded`);
@@ -6589,13 +6790,20 @@
       const data = await res.json();
       const byIndex = {};
       (Array.isArray(data) ? data : []).forEach(e => {
-        if (e.atBatIndex != null && e.homeTeamWinProbabilityAdded != null) byIndex[e.atBatIndex] = Math.abs(e.homeTeamWinProbabilityAdded) / 100;
+        if (e.atBatIndex != null && e.homeTeamWinProbabilityAdded != null) byIndex[e.atBatIndex] = e.homeTeamWinProbabilityAdded;
       });
       if (isFinal) gameWpaCache[gamePk] = byIndex;
       return byIndex;
     } catch (e) {
       return {};
     }
+  }
+  // The Highlights tab ranks plays by the size of the swing, as a fraction.
+  async function getGameWpa(gamePk, isFinal) {
+    const signed = await getGameWpaSigned(gamePk, isFinal);
+    const byIndex = {};
+    Object.keys(signed).forEach(k => { byIndex[k] = Math.abs(signed[k]) / 100; });
+    return byIndex;
   }
 
   async function fetchGameStats(gamePk, awayTeam, homeTeam, isFinal) {
@@ -7272,6 +7480,15 @@
     } catch (e) {
       return null;
     }
+  }
+
+  // personId -> 'SP' | 'CP' | 'P' from a team's depth chart (today's only).
+  async function getPitcherRoles(teamId) {
+    const roster = await fetchTeamRoster(teamId, 'depthChart');
+    if (!roster) return null;
+    const roles = {};
+    roster.forEach(r => { if (r.id && (r.posAbbr === 'SP' || r.posAbbr === 'CP' || r.posAbbr === 'P')) roles[r.id] = r.posAbbr; });
+    return roles;
   }
 
   async function fetchTeamInjuryDetails(teamId) {
@@ -8189,6 +8406,72 @@
     return n + 'th';
   }
 
+  // The play of the game (biggest win-probability swing) and the three
+  // players with the most win probability added, from a game's own feed and
+  // getGameWpaSigned. Shared by the game summary popup and the Scorecard's
+  // Final summary.
+  function buildGameHighlights(allPlays, wpa, gameData, boxscore) {
+    const personIndex = gameData && gameData.players;
+    const totals = {};
+    const credit = (person, role, amount) => {
+      if (!person || person.id == null) return;
+      const key = person.id + '-' + role;
+      const t = totals[key] || (totals[key] = { id: person.id, name: person.fullName, lastName: lastNameOf(person, personIndex), role, wpa: 0 });
+      t.wpa += amount;
+    };
+    let playOfGame = null;
+    allPlays.forEach(play => {
+      const homeAdded = wpa[play.about && play.about.atBatIndex];
+      if (homeAdded == null) return;
+      const isTop = play.about && play.about.isTopInning;
+      const battingWpa = isTop ? -homeAdded : homeAdded;
+      credit(play.matchup && play.matchup.batter, 'batter', battingWpa);
+      credit(play.matchup && play.matchup.pitcher, 'pitcher', -battingWpa);
+
+      const description = (play.result && play.result.description) || '';
+      const absWpa = Math.abs(homeAdded);
+      if (description && (!playOfGame || absWpa > playOfGame.absWpa)) {
+        const events = play.playEvents || [];
+        const lastEvent = events[events.length - 1];
+        const playId = lastEvent && lastEvent.playId;
+        const inning = play.about && play.about.inning;
+        playOfGame = {
+          absWpa,
+          description,
+          inningLabel: inning ? `${isTop ? 'Top' : 'Bottom'} ${ordinalSuffix(inning)}` : '',
+          videoUrl: savantVideoUrl(playId)
+        };
+      }
+    });
+
+    const officialDate = (gameData && gameData.datetime && gameData.datetime.officialDate) || '';
+    const season = officialDate.slice(0, 4);
+    const leaders = Object.values(totals).sort((a, b) => b.wpa - a.wpa).slice(0, 3).map(p => {
+      const boxPlayer = findBoxscorePlayer(boxscore, p.id);
+      const stats = boxPlayer && boxPlayer.stats;
+      const statParts = p.role === 'pitcher'
+        ? buildPitcherStatLineParts(stats && stats.pitching)
+        : buildBatterStatLineParts(stats && stats.batting);
+      // Populate playerStore so the clickable name button works even if the
+      // Scorecard tab (the usual source of these entries, see renderTeamTable)
+      // was never opened for this game.
+      const isAway = boxscore && boxscore.teams.away.players && boxscore.teams.away.players['ID' + p.id];
+      const team = gameData && gameData.teams && gameData.teams[isAway ? 'away' : 'home'];
+      const teamAbbrev = team ? teamAbbr(team) : '';
+      playerStore[p.id] = {
+        id: p.id,
+        name: p.name,
+        pos: (boxPlayer && boxPlayer.position && boxPlayer.position.abbreviation) || '',
+        team: teamNickname(team),
+        season,
+        gameDate: officialDate,
+        todayStats: (stats && (stats.batting || stats.pitching)) || {}
+      };
+      return { id: p.id, name: p.name, lastName: p.lastName, teamAbbr: teamAbbrev, statLine: renderStatLineParts(statParts) };
+    });
+    return { leaders, playOfGame };
+  }
+
   // includeHighlights skips the winProbability fetch and WPA leaderboard
   // math entirely for Live games -- their box score is still worth fetching
   // eagerly (see openGameSummaryModal), but WPA swings mid-game aren't a
@@ -8212,71 +8495,10 @@
       const allPlays = (feedData.liveData && feedData.liveData.plays && feedData.liveData.plays.allPlays) || [];
       if (!includeHighlights) return { leaders: [], playOfGame: null, linescore, weather, allPlays };
 
-      const wpRes = await fetch(`https://statsapi.mlb.com/api/v1/game/${gamePk}/winProbability`);
-      const wpData = await wpRes.json();
-      const wp = Array.isArray(wpData) ? wpData : [];
-
-      const personIndex = feedData.gameData && feedData.gameData.players;
-      const totals = {};
-      const credit = (person, role, amount) => {
-        if (!person || person.id == null) return;
-        const key = person.id + '-' + role;
-        const t = totals[key] || (totals[key] = { id: person.id, name: person.fullName, lastName: lastNameOf(person, personIndex), role, wpa: 0 });
-        t.wpa += amount;
-      };
-      let playOfGame = null;
-      allPlays.forEach((play, i) => {
-        const entry = wp[i];
-        const homeAdded = entry && entry.homeTeamWinProbabilityAdded;
-        if (homeAdded == null) return;
-        const isTop = play.about && play.about.isTopInning;
-        const battingWpa = isTop ? -homeAdded : homeAdded;
-        credit(play.matchup && play.matchup.batter, 'batter', battingWpa);
-        credit(play.matchup && play.matchup.pitcher, 'pitcher', -battingWpa);
-
-        const description = (play.result && play.result.description) || '';
-        const absWpa = Math.abs(homeAdded);
-        if (description && (!playOfGame || absWpa > playOfGame.absWpa)) {
-          const events = play.playEvents || [];
-          const lastEvent = events[events.length - 1];
-          const playId = lastEvent && lastEvent.playId;
-          const inning = play.about && play.about.inning;
-          playOfGame = {
-            absWpa,
-            description,
-            inningLabel: inning ? `${isTop ? 'Top' : 'Bottom'} ${ordinalSuffix(inning)}` : '',
-            videoUrl: savantVideoUrl(playId)
-          };
-        }
-      });
-
-      const boxscore = feedData.liveData && feedData.liveData.boxscore;
-      const officialDate = (feedData.gameData && feedData.gameData.datetime && feedData.gameData.datetime.officialDate) || '';
-      const season = officialDate.slice(0, 4);
-      const leaders = Object.values(totals).sort((a, b) => b.wpa - a.wpa).slice(0, 3).map(p => {
-        const boxPlayer = findBoxscorePlayer(boxscore, p.id);
-        const stats = boxPlayer && boxPlayer.stats;
-        const statParts = p.role === 'pitcher'
-          ? buildPitcherStatLineParts(stats && stats.pitching)
-          : buildBatterStatLineParts(stats && stats.batting);
-        // Populate playerStore so the clickable name button works even if the
-        // Scorecard tab (the usual source of these entries, see renderTeamTable)
-        // was never opened for this game.
-        const isAway = boxscore && boxscore.teams.away.players && boxscore.teams.away.players['ID' + p.id];
-        const team = feedData.gameData && feedData.gameData.teams && feedData.gameData.teams[isAway ? 'away' : 'home'];
-        playerStore[p.id] = {
-          id: p.id,
-          name: p.name,
-          pos: (boxPlayer && boxPlayer.position && boxPlayer.position.abbreviation) || '',
-          team: teamNickname(team),
-          season,
-          gameDate: officialDate,
-          todayStats: (stats && (stats.batting || stats.pitching)) || {}
-        };
-        return { id: p.id, name: p.name, lastName: p.lastName, statLine: renderStatLineParts(statParts) };
-      });
+      const wpa = await getGameWpaSigned(gamePk, true);
+      const { leaders, playOfGame } = buildGameHighlights(allPlays, wpa, feedData.gameData, feedData.liveData && feedData.liveData.boxscore);
       const result = { leaders, playOfGame, linescore, weather, allPlays };
-      if (includeHighlights) gameHighlightsCache[gamePk] = result;
+      if (Object.keys(wpa).length) gameHighlightsCache[gamePk] = result;
       return result;
     } catch (e) {
       return { leaders: [], playOfGame: null, linescore: null, weather: null, allPlays: [] };
@@ -8650,6 +8872,92 @@
   // point where results start getting written to shared state / the DOM --
   // see the guard below, mirroring the requestId pattern already used by
   // loadDailySummary / openGameSummaryModal / player search & profile.
+  // What the Scorecard shows of the game in scorecardModel (the last feed,
+  // as fetchAndRender left it): which team's card the toggle has up and, on
+  // a phone, which half-inning ('final' is the Final summary). While
+  // `follow` is on, both track the half-inning being played on every poll;
+  // toggling or stepping away turns it off, stepping back onto it turns it
+  // on. Neither control touches history -- they switch views within a tab.
+  let scorecardModel = null;
+  const scorecardView = { gamePk: null, side: 'away', half: null, follow: true };
+  const sameHalf = (a, b) => !!a && !!b && a !== 'final' && b !== 'final' && a.inning === b.inning && a.top === b.top;
+
+  function syncScorecardView() {
+    const m = scorecardModel, v = scorecardView;
+    if (v.gamePk !== m.gamePk) { v.gamePk = m.gamePk; v.follow = true; v.half = null; }
+    const valid = v.half === 'final' ? m.state === 'Final' : m.halves.some(h => sameHalf(h, v.half));
+    if (v.follow || !valid) {
+      v.half = m.state === 'Final' ? 'final' : (m.liveHalf || m.halves[m.halves.length - 1]);
+      v.side = v.half === 'final' || v.half.top ? 'away' : 'home';
+      v.follow = true;
+    }
+  }
+
+  function setScorecardSide(side) {
+    const m = scorecardModel, v = scorecardView;
+    if (!m) return;
+    const wantTop = side === 'away';
+    const cur = v.half === 'final' ? null : v.half;
+    const target = (cur && m.halves.find(h => h.inning === cur.inning && h.top === wantTop))
+      || m.halves.slice().reverse().find(h => h.top === wantTop);
+    if (target) v.half = target;
+    v.side = side;
+    v.follow = sameHalf(v.half, m.liveHalf) && wantTop === m.liveHalf.top;
+    renderScorecardSheet();
+  }
+
+  function stepScorecardHalf(dir) {
+    const m = scorecardModel, v = scorecardView;
+    if (!m) return;
+    const pages = m.state === 'Final' ? m.halves.concat(['final']) : m.halves;
+    const idx = v.half === 'final' ? m.halves.length : m.halves.findIndex(h => sameHalf(h, v.half));
+    const next = pages[idx + dir];
+    if (next === undefined) return;
+    v.half = next;
+    if (next !== 'final') v.side = next.top ? 'away' : 'home';
+    v.follow = next === 'final' || sameHalf(next, m.liveHalf);
+    renderScorecardSheet();
+  }
+
+  // Both teams' grids are always drawn (the toggle hides one), and so is the
+  // phone's half-inning view -- CSS shows the grid or the half-inning by
+  // width, so turning a phone sideways needs no re-render.
+  function renderScorecardSheet() {
+    const m = scorecardModel, v = scorecardView;
+    if (!m) return;
+    // preserve horizontal scroll position of each team's innings grid --
+    // the rebuild below replaces the whole subtree, which would otherwise
+    // snap every table-scroll back to scrollLeft 0 on each poll
+    const scrollLefts = Array.from(body.querySelectorAll('.table-scroll')).map(el => el.scrollLeft);
+    // The rebuild also drops keyboard focus to <body>; put it back on the
+    // same control in the new sheet.
+    const focusSelector = focusedControlSelector(body);
+    const grid = ['away', 'home'].map(side => {
+      const t = m[side], other = m[side === 'away' ? 'home' : 'away'];
+      return renderTeamTable(t.name, t.rows.length ? t.rows : placeholderLineupRows(), m.numInnings, t.pitcherByInning, t.starterPitcherId,
+        m.columnsPerInning, other.pitchingBox, side, m.liveBatterInfo, m.season, m.officialDate,
+        renderTeamToggle(m, v.side) + `<button class="roster-btn" data-team="${t.name}">Roster</button>`, side !== v.side);
+    }).join('');
+    body.innerHTML = `
+      <div class="sheet sc-sheet"><div class="sc-grid">${grid}</div><div class="sc-half">${renderHalfView(m, v)}</div></div>
+      <div class="footnote">Source: MLB Stats API${m.state === 'Final' ? '' : ` &#183; <span class="feed-updated">${lastFeedOkAt ? `updated ${lastFeedOkAt.toLocaleTimeString()}` : ''}</span>`}</div>
+    `;
+    body.querySelectorAll('.table-scroll').forEach((el, i) => {
+      if (scrollLefts[i]) el.scrollLeft = scrollLefts[i];
+    });
+    if (focusSelector) {
+      const el = Array.from(body.querySelectorAll(focusSelector)).find(x => x.offsetParent !== null);
+      if (el) el.focus({ preventScroll: true });
+    }
+  }
+
+  body.addEventListener('click', (e) => {
+    const sideBtn = e.target.closest('[data-sc-side]');
+    if (sideBtn) { setScorecardSide(sideBtn.dataset.scSide); return; }
+    const stepBtn = e.target.closest('[data-hv-step]');
+    if (stepBtn && !stepBtn.disabled) stepScorecardHalf(Number(stepBtn.dataset.hvStep));
+  });
+
   let fetchAndRenderRequestId = 0;
   async function fetchAndRender(gamePk) {
     const requestId = ++fetchAndRenderRequestId;
@@ -8739,6 +9047,7 @@
       // for the leadoff batter during warmup with nothing behind it yet.
       const gameHasStarted = hasGameStarted(allPlays);
       let liveBatterInfo = null;
+      let liveHalf = null;
       if (gameHasStarted && state === 'Live' && linescore.currentInning) {
         // linescore.currentInning/inningHalf are a separately-updated summary
         // field that can lag behind allPlays right at a half-inning handoff
@@ -8767,6 +9076,7 @@
             else { effHalf = 'top'; effInning += 1; }
           }
         }
+        liveHalf = { inning: effInning, top: effHalf === 'top' };
         const battingTeam = effHalf === 'top' ? 'away' : 'home';
         const battingRows = battingTeam === 'away' ? awayRows : homeRows;
 
@@ -8856,14 +9166,8 @@
       // i.e. the HOME team's starter -- and belongs under the away
       // scorecard; home.starterPitcherId is the AWAY team's starter and
       // belongs under the home scorecard
-      function pitcherCardFor(pitcherId, oppositeSideBoxscore) {
-        if (!pitcherId) return '';
-        const p = oppositeSideBoxscore.players && oppositeSideBoxscore.players['ID' + pitcherId];
-        if (!p) return '';
-        return renderPitcherCard(p.person && p.person.fullName, p.stats && p.stats.pitching);
-      }
-      const homePitcherCard = pitcherCardFor(away.starterPitcherId, liveData.boxscore.teams.home);
-      const awayPitcherCard = pitcherCardFor(home.starterPitcherId, liveData.boxscore.teams.away);
+      const awayStaff = buildStaff(liveData.boxscore.teams.away, personIndex);
+      const homeStaff = buildStaff(liveData.boxscore.teams.home, personIndex);
 
       // bullpen: every pitcher who isn't today's starter, with pitch counts
       // from the prior two days for fatigue context. The two sides don't
@@ -8882,10 +9186,17 @@
       const probable = gameData.probablePitchers || {};
       const homeStarterId = away.starterPitcherId || (probable.home && probable.home.id);
       const awayStarterId = home.starterPitcherId || (probable.away && probable.away.id);
-      const [venue, homeBullpen, awayBullpen] = await Promise.all([
+      // The Roster popup sorts the unused arms by role from the depth chart,
+      // which MLB only publishes as of today -- so only for this season's
+      // games (see buildBullpenList for the fallback).
+      const isCurrentSeason = String(season) === String(new Date().getFullYear());
+      const [venue, homeBullpen, awayBullpen, wpa] = await Promise.all([
         venuePromise,
-        buildBullpenList(liveData.boxscore.teams.home, homeStarterId, season, officialDate, allPlays, 'top'),
-        buildBullpenList(liveData.boxscore.teams.away, awayStarterId, season, officialDate, allPlays, 'bottom')
+        buildBullpenList(liveData.boxscore.teams.home, homeStarterId, season, officialDate, allPlays, 'top',
+          isCurrentSeason ? getPitcherRoles(gameData.teams.home.id) : null),
+        buildBullpenList(liveData.boxscore.teams.away, awayStarterId, season, officialDate, allPlays, 'bottom',
+          isCurrentSeason ? getPitcherRoles(gameData.teams.away.id) : null),
+        state === 'Final' ? getGameWpaSigned(gamePk, true) : null
       ]);
 
       // Everything above this point is local computation from this call's
@@ -8934,8 +9245,6 @@
       homeBullpen.forEach(p => { playerStore[p.id] = { id: p.id, name: p.name, pos: 'P', team: homeName, season, gameDate: officialDate, todayStats: p.todayStats || {} }; });
       rosterStore[awayName] = renderRosterContent(awayName, awayBullpen, awayRows, getBenchPlayers(liveData.boxscore.teams.away, awayName));
       rosterStore[homeName] = renderRosterContent(homeName, homeBullpen, homeRows, getBenchPlayers(liveData.boxscore.teams.home, homeName));
-      sprayStore[awayName] = renderSprayChart(away.battedBalls, awayName);
-      sprayStore[homeName] = renderSprayChart(home.battedBalls, homeName);
 
       // Text for the always-visible compact score strip. The venue header,
       // inning-by-inning box score, and top-play highlights all live in the
@@ -9006,14 +9315,6 @@
         venueHtml: renderVenueHeader(gameData.venue && gameData.venue.name, venue, undefined, renderStateBadge({ state, detailedState }))
       };
 
-      // preserve horizontal scroll position of each team's innings grid --
-      // the rebuild below replaces the whole subtree, which would otherwise
-      // snap every table-scroll back to scrollLeft 0 on each poll
-      const scrollLefts = Array.from(body.querySelectorAll('.table-scroll')).map(el => el.scrollLeft);
-      // The rebuild also drops keyboard focus to <body>; put it back on the
-      // same control in the new grid.
-      const focusSelector = focusedControlSelector(body);
-
       // Lives in the fixed bottom bar (#scoreBottomBar) below the wide
       // breakpoint, not in .sheet -- see .score-bottom-bar for why -- and in
       // #sidebarMonsterPanel (the same markup, just also written into the
@@ -9027,24 +9328,39 @@
         <div class="score-strip">${scoreStripHtml}</div>
         ${subLineHtml ? `<div class="score-strip-sub">${subLineHtml}</div>` : ''}
       `;
-      scoreBottomBar.innerHTML = scoreBarHtml;
+      // Between the phone and the sidebar's breakpoint the bar has room for
+      // the at-bat too, as its own card (see updateAtBatTrackers).
+      scoreBottomBar.innerHTML = monsterPanelHtml
+        ? `<div class="bar-row">${monsterPanelHtml}<div class="bar-atbat" id="barAtBat"></div></div>`
+        : scoreBarHtml;
       sidebarMonsterPanel.innerHTML = scoreBarHtml;
 
-      body.innerHTML = `
-        <div class="sheet">
-          ${renderTeamTable(awayName, awayRows.length ? awayRows : placeholderLineupRows(), numInnings, away.pitcherByInning, away.starterPitcherId, columnsPerInning, homePitcherCard, 'away', liveBatterInfo, season, officialDate)}
-          ${renderTeamTable(homeName, homeRows.length ? homeRows : placeholderLineupRows(), numInnings, home.pitcherByInning, home.starterPitcherId, columnsPerInning, awayPitcherCard, 'home', liveBatterInfo, season, officialDate)}
-        </div>
-        <div class="footnote">Source: MLB Stats API${state === 'Final' ? '' : ' &#183; <span class="feed-updated"></span>'}</div>
-      `;
-
-      body.querySelectorAll('.table-scroll').forEach((el, i) => {
-        if (scrollLefts[i]) el.scrollLeft = scrollLefts[i];
+      // Every half-inning played so far, in order, through the one being
+      // played now (which may not have a play of its own yet).
+      const halves = [];
+      allPlays.forEach(pl => {
+        const h = { inning: pl.about.inning, top: pl.about.isTopInning };
+        const prev = halves[halves.length - 1];
+        if (!prev || prev.inning !== h.inning || prev.top !== h.top) halves.push(h);
       });
-      if (focusSelector) {
-        const el = body.querySelector(focusSelector);
-        if (el) el.focus({ preventScroll: true });
+      if (liveHalf) {
+        const at = halves.findIndex(h => h.inning === liveHalf.inning && h.top === liveHalf.top);
+        if (at === -1) halves.push(liveHalf); else halves.length = at + 1;
       }
+      if (!halves.length) halves.push({ inning: 1, top: true });
+
+      const highlights = state === 'Final' && wpa && Object.keys(wpa).length
+        ? buildGameHighlights(allPlays, wpa, gameData, liveData.boxscore) : null;
+      const isLive = state === 'Live' && gameHasStarted;
+      scorecardModel = {
+        gamePk, state, halves, liveHalf, liveBatterInfo, highlights, numInnings, columnsPerInning, season, officialDate,
+        away: { name: awayName, abbr: awayAbbr, nickname: teamNickname(gameData.teams.away), rows: awayRows, pitcherByInning: away.pitcherByInning, starterPitcherId: away.starterPitcherId,
+          pitchingBox: renderPitchingBox(awayStaff, teamNickname(gameData.teams.away), isLive) },
+        home: { name: homeName, abbr: homeAbbr, nickname: teamNickname(gameData.teams.home), rows: homeRows, pitcherByInning: home.pitcherByInning, starterPitcherId: home.starterPitcherId,
+          pitchingBox: renderPitchingBox(homeStaff, teamNickname(gameData.teams.home), isLive) }
+      };
+      syncScorecardView();
+      renderScorecardSheet();
       renderedFeedKey = feedKey;
       renderedFeedLive = state === 'Live';
       markFeedFresh();
@@ -9054,6 +9370,8 @@
       // in pitchStore since the renderTeamTable calls just above are what
       // populate it (see the isLiveCell branch in that cell-building loop).
       updateAtBatTrackers(livePkey);
+      // A finished game's sidebar tells its story instead of an empty tracker.
+      if (state === 'Final') sidebarAtBatEl.innerHTML = renderGameStory(highlights);
 
       if (state === 'Live') scheduleLivePoll(gamePk, startedAt);
 
@@ -9339,7 +9657,8 @@
   // just arrived since the last render of this same popup (see
   // showPitchPopup) -- empty on a fresh open, so nothing glows just from
   // clicking into an at-bat that already has a full pitch history.
-  function renderPitchLocation(pitches, batSide, pitchHand, isComplete, newPitchNums, allowEmpty) {
+  // compact: the wide-mobile bar's card -- no plate, cropped to the zone.
+  function renderPitchLocation(pitches, batSide, pitchHand, isComplete, newPitchNums, allowEmpty, compact) {
     const located = pitches.filter(p => typeof p.px === 'number' && typeof p.pz === 'number');
     if (!located.length && !allowEmpty) return '';
 
@@ -9372,7 +9691,7 @@
     // Same fill/stroke-weight as the zone rect above -- one consistent
     // shading and line weight for both, rather than the plate's own
     // separately-tuned look.
-    svg += `<path d="M ${zoneLeft},${plateY} L ${zoneRight},${plateY} L ${zoneRight},${plateY + plateDepth} L ${cx},${plateY + plateTip} L ${zoneLeft},${plateY + plateDepth} Z" fill="rgba(243,236,219,0.05)" stroke="${PALETTE.ink}" stroke-width="1.4"/>`;
+    if (!compact) svg += `<path d="M ${zoneLeft},${plateY} L ${zoneRight},${plateY} L ${zoneRight},${plateY + plateDepth} L ${cx},${plateY + plateTip} L ${zoneLeft},${plateY + plateDepth} Z" fill="rgba(243,236,219,0.05)" stroke="${PALETTE.ink}" stroke-width="1.4"/>`;
 
     if (batSide === 'L' || batSide === 'R') {
       svg += battersBoxMarker(zoneLeft, zoneRight, zoneTop, zoneBot, batSide);
@@ -9388,12 +9707,14 @@
     });
 
     return `<div class="loc-section">
-      <div class="loc-plot-wrap"><svg viewBox="0 0 200 290" width="225" height="326">${svg}</svg></div>
+      <div class="loc-plot-wrap">${compact
+        ? `<svg viewBox="22 24 166 196" class="loc-compact" style="overflow:visible">${svg}</svg>`
+        : `<svg viewBox="0 0 200 290" width="225" height="326">${svg}</svg>`}</div>
     </div>`;
   }
 
   // Builds the at-bat detail markup shared by the dismissible popup
-  // (#pitchModalBody) and the always-on trackers (#sidebarAtBat/#mobileAtBat)
+  // (#pitchModalBody) and the always-on trackers (#sidebarAtBat/#barAtBat)
   // -- see showPitchPopup and updateAtBatTrackers, the two callers, each of
   // which tracks its own "what's already been rendered" state so a poll
   // refresh only glows the pitch(es) new to *that* consumer.
@@ -9503,7 +9824,7 @@
   // state is needed to find the match. Shared by the popup and the sidebar
   // tracker, each wiring up its own container's rows/dots independently.
   function wirePitchLocationSync(container) {
-    const rows = container.querySelectorAll('table.pitch-table tr[data-num]');
+    const rows = container.querySelectorAll('table.pitch-table tr[data-num], table.cpt tr[data-num]');
     const dots = container.querySelectorAll('.loc-dot[data-num]');
     if (!rows.length || !dots.length) return;
     const setActive = (num, on) => {
@@ -9534,9 +9855,8 @@
   // kept separate so opening the popup for some other at-bat (e.g. a
   // completed one earlier in the game) never fights with what these are
   // tracking live, and vice versa. Shared between the wide sidebar and the
-  // narrow-screen card (the latter is always hidden now -- see .mobile-atbat
-  // -- so at most one of the two is ever visible, and there's no benefit to
-  // tracking their "new pitch" glow separately).
+  // wide-mobile bar's card -- at most one of the two is ever visible, so
+  // there's no benefit to tracking their "new pitch" glow separately.
   let atBatTrackerPkey = null;
   let atBatTrackerLastRenderedPitchNum = 0;
 
@@ -9555,9 +9875,9 @@
   }
 
   // Renders the live/current at-bat (see the livePkey computed in
-  // fetchAndRender) into both always-on trackers -- the wide-screen
-  // #sidebarAtBat column and the narrow-screen #mobileAtBat card, exactly
-  // one of which is visible at a given width. pkey is null whenever there's
+  // fetchAndRender) into both trackers -- the wide-screen #sidebarAtBat
+  // column and the wide-mobile bar's #barAtBat card, at most one of which
+  // is visible at a given width. pkey is null whenever there's
   // no at-bat actually in progress (game not started, between innings/
   // at-bats, or Final) -- see the isLiveCell/liveBatterInfo gating in
   // fetchAndRender for what counts as "in progress" -- in which case
@@ -9566,6 +9886,7 @@
   function updateAtBatTrackers(pkey) {
     const c = pkey ? pitchStore[pkey] : null;
     let html;
+    let newPitchNums = null;
     if (!c) {
       atBatTrackerPkey = null;
       atBatTrackerLastRenderedPitchNum = 0;
@@ -9574,17 +9895,23 @@
       const isRefresh = pkey === atBatTrackerPkey;
       atBatTrackerPkey = pkey;
       const pitches = c.pitches || [];
-      const newPitchNums = new Set();
+      newPitchNums = new Set();
       if (isRefresh) {
         pitches.forEach(p => { if ((p.num || 0) > atBatTrackerLastRenderedPitchNum) newPitchNums.add(p.num); });
       }
       atBatTrackerLastRenderedPitchNum = pitches.reduce((max, p) => Math.max(max, p.num || 0), 0);
       html = renderPitchDetailHtml(c, newPitchNums);
     }
-    [sidebarAtBatEl, mobileAtBatEl].forEach(el => {
-      el.innerHTML = html;
-      wirePitchLocationSync(el);
-    });
+    sidebarAtBatEl.innerHTML = html;
+    wirePitchLocationSync(sidebarAtBatEl);
+    // The wide-mobile bar's card is rebuilt with the bar on every render, so
+    // it's looked up fresh rather than held.
+    const bar = document.getElementById('barAtBat');
+    if (bar) {
+      bar.innerHTML = c ? renderBarAtBatHtml(c, newPitchNums) : '';
+      wirePitchLocationSync(bar);
+      bar.parentNode.classList.toggle('has-atbat', !!c);
+    }
   }
 
   const rosterOverlay = document.getElementById('rosterOverlay');
@@ -9599,19 +9926,6 @@
   }
   function hideRosterModal() {
     closeOverlay(rosterOverlay);
-  }
-
-  const sprayOverlay = document.getElementById('sprayOverlay');
-  const sprayModalBody = document.getElementById('sprayModalBody');
-  const sprayClose = document.getElementById('sprayClose');
-
-  function showSprayModal(team) {
-    const html = sprayStore[team] || '<div class="pitch-header">' + team + '</div><div class="pitch-empty">No batted balls recorded yet.</div>';
-    sprayModalBody.innerHTML = html;
-    openOverlay(sprayOverlay);
-  }
-  function hideSprayModal() {
-    closeOverlay(sprayOverlay);
   }
 
   const teamChartOverlay = document.getElementById('teamChartOverlay');
@@ -12553,6 +12867,12 @@
   // landing, a tab's controls row wrapping -- and sticky things read it
   // (the Scorecard sidebar, the Game Log's header and recent-games column).
   if (tabHeaderEl && typeof ResizeObserver === 'function') new ResizeObserver(syncSidebarOffsets).observe(tabHeaderEl);
+  // The fixed bottom bar's height varies (the board alone, or with the
+  // at-bat card); the sheet reserves exactly that much room under itself
+  // so its last rows can always scroll clear of it.
+  if (typeof ResizeObserver === 'function') new ResizeObserver(() => {
+    if (scoreBottomBar.offsetHeight) mlbRootEl.style.setProperty('--bar-h', scoreBottomBar.offsetHeight + 'px');
+  }).observe(scoreBottomBar);
 
   // onShow runs before Tabs records the tab as current, so the resume (which
   // checks that the Scorecard is on screen) waits a microtask.
@@ -12699,8 +13019,6 @@
     if (target && !e.target.closest('.player-name-btn')) showPitchPopup(target.getAttribute('data-pkey'));
     const rosterBtn = e.target.closest('.roster-btn');
     if (rosterBtn) showRosterModal(rosterBtn.getAttribute('data-team'));
-    const sprayBtn = e.target.closest('.spray-btn');
-    if (sprayBtn) showSprayModal(sprayBtn.getAttribute('data-team'));
     const playerBtn = e.target.closest('.player-name-btn');
     if (playerBtn) {
       // Players of the Game already lives inside the game summary modal --
@@ -12724,21 +13042,6 @@
     }
     if (!e.target.closest('.player-search-wrap')) playerSearchResults.hidden = true;
   });
-  document.addEventListener('change', (e) => {
-    const filterSel = e.target.closest('select.spray-filter');
-    if (filterSel) {
-      const team = filterSel.getAttribute('data-team');
-      const val = filterSel.value;
-      sprayFilterState[team] = val;
-      const card = filterSel.closest('.spray-card');
-      if (card) {
-        card.querySelectorAll('g[data-batter]').forEach(g => {
-          const match = val === 'all' || g.getAttribute('data-batter') === val;
-          g.style.display = match ? '' : 'none';
-        });
-      }
-    }
-  });
   pitchClose.addEventListener('click', hidePitchPopup);
   pitchOverlay.addEventListener('click', (e) => {
     if (e.target === pitchOverlay) hidePitchPopup();
@@ -12746,10 +13049,6 @@
   rosterClose.addEventListener('click', hideRosterModal);
   rosterOverlay.addEventListener('click', (e) => {
     if (e.target === rosterOverlay) hideRosterModal();
-  });
-  sprayClose.addEventListener('click', hideSprayModal);
-  sprayOverlay.addEventListener('click', (e) => {
-    if (e.target === sprayOverlay) hideSprayModal();
   });
   playerClose.addEventListener('click', hidePlayerModal);
   playerOverlay.addEventListener('click', (e) => {
@@ -12764,7 +13063,7 @@
     if (e.target === teamChartOverlay) hideTeamChartModal();
   });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { hidePitchPopup(); hideRosterModal(); hideSprayModal(); hidePlayerModal(); hideGameSummaryModal(); hideTeamChartModal(); hideGameStripModal(); hideClipModal(); playerSearchResults.hidden = true; }
+    if (e.key === 'Escape') { hidePitchPopup(); hideRosterModal(); hidePlayerModal(); hideGameSummaryModal(); hideTeamChartModal(); hideGameStripModal(); hideClipModal(); playerSearchResults.hidden = true; }
   });
 
   // Backgrounding the tab (or the installed PWA) gets setTimeout/setInterval

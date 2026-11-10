@@ -30,7 +30,7 @@ Success is that it stays the app they reach for in those moments instead of the 
 ## Operating Context
 
 - Used mostly on a phone as an installed home-screen app, often during a game. It is also used on desktop and tablet, and both must work well.
-- Five tabs: Scorecard, Highlights, Standings, Team, Players. Popups provide pitch detail, player quick-looks, game summaries, rosters, spray charts and team win/loss charts.
+- Five tabs: Scorecard, Highlights, Standings, Team, Players. On a phone the Scorecard shows one half-inning at a time; wider screens show the full card, one team at a time. Popups provide pitch detail, player quick-looks, game summaries, rosters and team win/loss charts.
 - The phone's Back button behaves like an app's. It undoes the last drill-in (a player, a game opened from elsewhere, a popup) rather than leaving the app.
 
 ## Capabilities and Constraints
