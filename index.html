@@ -2219,9 +2219,10 @@
   }
   .pbox-gsc { padding-left: 16px; border-left: 1px solid var(--paper-line); }
   .pbox-rel { display: flex; flex-direction: column; gap: 6px; padding-left: 26px; border-left: 1px solid var(--paper-line); }
-  /* Three deep, then a new column, so a long bullpen night spreads across
-     instead of running down past the starter's line. */
-  .pbox-rel-list { display: grid; grid-template-rows: repeat(3, auto); grid-auto-flow: column; justify-items: start; gap: 7px 12px; }
+  /* Up to three across, read left to right in the order they entered, so a
+     long bullpen night spreads beside the starter's line instead of running
+     down past it. */
+  .pbox-rel-list { display: grid; grid-template-columns: repeat(3, max-content); justify-items: start; gap: 7px 12px; }
   .sc-half .pbox-body { flex-direction: column; gap: 12px; }
   .sc-half .pbox-starter { width: 100%; padding-bottom: 12px; border-bottom: 1px solid var(--paper-line); }
   .sc-half .pbox-stats { width: 100%; justify-content: space-between; }
@@ -2587,6 +2588,9 @@
     0%, 100% { opacity: 0.55; transform: scale(0.85); }
     50% { opacity: 1; transform: scale(1.25); }
   }
+  @media (prefers-reduced-motion: reduce) {
+    .live-dot { animation: none; }
+  }
   /* Hangs off the diamond's right point, starting halfway down, so a stack
      of three clears the play code without growing the row or the column. */
   .adv-wrap {
@@ -2650,12 +2654,13 @@
   }
   .sub-note { font-size: 10px; color: var(--ink-soft); opacity: 0.85; font-style: italic; }
 
+  /* On the sheet, not the wall: secondary text on the Monster green can't
+     clear contrast (DESIGN.md, the Monster Stays Rule). */
   .footnote {
-    font-size: 10.5px;
-    color: var(--ink);
-    opacity: 0.85;
+    font-size: 11px;
+    color: var(--ink-soft);
     text-align: right;
-    margin-top: 10px;
+    margin-top: 16px;
     font-family: 'Inter', sans-serif;
   }
 
@@ -8946,8 +8951,8 @@
         renderTeamToggle(m, v.side) + `<button class="roster-btn" data-team="${t.name}">Roster</button>`, side !== v.side);
     }).join('');
     body.innerHTML = `
-      <div class="sheet sc-sheet">${m.state === 'Final' ? `<div class="sc-final-story">${renderGameStory(m.highlights)}</div>` : ''}<div class="sc-grid">${grid}</div><div class="sc-half">${renderHalfView(m, v)}</div></div>
-      <div class="footnote">Source: MLB Stats API${m.state === 'Final' ? '' : ` &#183; <span class="feed-updated">${lastFeedOkAt ? `updated ${lastFeedOkAt.toLocaleTimeString()}` : ''}</span>`}</div>
+      <div class="sheet sc-sheet">${m.state === 'Final' ? `<div class="sc-final-story">${renderGameStory(m.highlights)}</div>` : ''}<div class="sc-grid">${grid}</div><div class="sc-half">${renderHalfView(m, v)}</div>
+        <div class="footnote">Source: MLB Stats API${m.state === 'Final' ? '' : ` &#183; <span class="feed-updated">${lastFeedOkAt ? `updated ${lastFeedOkAt.toLocaleTimeString()}` : ''}</span>`}</div></div>
     `;
     body.querySelectorAll('.table-scroll').forEach((el, i) => {
       if (scrollLefts[i]) el.scrollLeft = scrollLefts[i];
