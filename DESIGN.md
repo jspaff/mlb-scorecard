@@ -282,6 +282,9 @@ The scorebook cell: a 40-unit diamond per plate appearance, drawn in SVG.
 - **Fills:** a run scored fills the diamond gold; a strikeout fills it brick red, with the K mirrored for a called third strike.
 - **Code:** the play code is typed in Special Elite at the center, in brick red for an out.
 - **Marks:** outs on the bases get a brick tick; steals, caught stealing and pickoffs get small gold-framed tags. RBIs are gold dots in the corner, one per run.
+- **Runner tags:** each other runner's move ("1>3") in 9px Overpass beside the diamond: board ink on a cream tag, board ink on gold for a run scored, and Brick Red Text in a brick frame for an out. Never cream on gold or brick: neither clears contrast at that size.
+- **Pitching-change plate:** the entering pitcher's nameplate across the top of the cell, 9px.
+- **As a control:** a diamond with pitch detail is a button (focusable, named by its batter and play) that opens the at-bat.
 
 ### Scorecard
 The live game's screen. Wider screens keep the full card; a phone gets its own presentation rather than a squeezed grid.

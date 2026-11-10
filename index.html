@@ -93,6 +93,9 @@
     -ms-overflow-style: none;
   }
   .tab-bar::-webkit-scrollbar { display: none; }
+  /* More tabs past the edge: fade it out, so the row reads as scrollable. */
+  .tab-bar.has-more-right { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent); }
+  .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
   .tab-btn {
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
@@ -256,6 +259,7 @@
     align-items: center;
     justify-content: center;
     height: 100%;
+    min-width: 76px;
     gap: 1px;
     padding: 2px 14px;
   }
@@ -293,6 +297,7 @@
   .date-nav-stacked .date-nav-btn {
     flex: 1;
     width: auto;
+    min-height: 32px;
     padding: 3px 0;
   }
   .date-nav-stacked .date-nav-btn:first-child {
@@ -880,6 +885,7 @@
     transition: opacity 0.12s ease;
   }
   .daily-tile:hover::after, .daily-tile:focus-visible::after { opacity: 0.06; }
+  .tile-more { display: none; }
   .daily-tile:active::after { opacity: 0.16; transition-duration: 0.05s; }
   .daily-tile:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
   .daily-tile.is-live {
@@ -1069,7 +1075,7 @@
        two team rows. */
     .game-strip .daily-tile.is-current {
       display: grid;
-      grid-template-columns: 1fr auto;
+      grid-template-columns: 1fr auto auto;
       align-items: center;
       column-gap: 8px;
       flex: 1 1 auto;
@@ -1082,6 +1088,18 @@
       margin-top: 0;
       text-align: right;
       font-size: 10px;
+    }
+    /* The tile opens every game on the date; a drawn chevron says so. */
+    .game-strip .daily-tile.is-current .tile-more {
+      display: block;
+      grid-column: 3;
+      grid-row: 1 / span 2;
+      width: 7px;
+      height: 7px;
+      margin: 0 2px 4px 2px;
+      border-right: 2px solid var(--ink);
+      border-bottom: 2px solid var(--ink);
+      transform: rotate(45deg);
     }
   }
   #gameStripOverlayBody .daily-tile { border-radius: 0; }
@@ -2156,7 +2174,7 @@
   .bp-recent-label {
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
-    font-size: 7.5px;
+    font-size: 9px;
     letter-spacing: 0.05em;
     text-transform: uppercase;
     color: var(--ink-soft);
@@ -2578,25 +2596,27 @@
   }
   .adv-tag {
     font-family: 'Overpass', sans-serif;
-    font-weight: 600;
-    font-size: 7.5px;
+    font-weight: 700;
+    font-size: 9px;
     line-height: 1.2;
     color: var(--paper);
-    background: rgba(228, 217, 191, 0.85);
-    padding: 0.5px 3px;
+    background: rgba(228, 217, 191, 0.9);
+    padding: 1px 3px 0;
     text-align: center;
     white-space: nowrap;
   }
+  /* Board ink on the gold (cream on it was 2.1:1); an out is the board's
+     own brick text in a brick frame, since nothing reads well enough on a
+     solid brick fill at this size. */
   .adv-tag.scored {
-    color: #fff8ea;
+    color: var(--paper);
     background: var(--gold);
-    font-weight: 700;
-    box-shadow: 0 0 0 0.5px rgba(179,121,26,0.5), 0 1px 2px rgba(0,0,0,0.25);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.25);
   }
   .adv-tag.out {
-    color: #fbf3e3;
-    background: var(--brick);
-    font-weight: 700;
+    color: var(--brick-text);
+    background: var(--paper);
+    box-shadow: inset 0 0 0 1px var(--brick);
   }
   /* Experimental: styled as a clickable plate, same as .player-name-btn
      (see below) -- the compound selector (rather than .pitch-tag alone)
@@ -2610,13 +2630,13 @@
     left: 0;
     width: 52px;
     box-sizing: border-box;
-    font-size: 7px;
-    letter-spacing: 0.01em;
+    font-size: 9px;
+    letter-spacing: 0;
     text-align: center;
-    /* 7px side padding (same as .player-name-btn's own default) clears the
-       corner-peg pseudo-elements (2px in, 3px wide -- see .player-name-btn::
-       before/after) so the text never runs under them at this width. */
-    padding: 1px 7px;
+    /* 5px side padding just clears the corner-peg pseudo-elements (2px in,
+       3px wide -- see .player-name-btn::before/after), leaving the 9px name
+       as much of the 52px as it can get. */
+    padding: 1px 5px;
     /* Matches the Player column's own name plates (table.scorecard-table
        td.ply .player-name-btn below), which override the base translucent
        rgba(243,236,219,0.08) background to this same flat var(--paper-line)
@@ -3766,6 +3786,7 @@
   </div>
   <div class="tab-panel" data-tab-panel="scorecard" id="scorecardPanel">
     <div class="scorecard-layout">
+      <div id="scLive" class="sr-only" aria-live="polite"></div>
       <div id="mlbBody" class="scorecard-main">
         <div class="mlb-status-msg">Loading today's schedule&#8230;</div>
       </div>
@@ -4552,7 +4573,7 @@
       return `<rect x="${labelX - 6.5}" y="${labelY - 4.5}" width="13" height="9" fill="${paper}" stroke="${gold}" stroke-width="0.8"/>`
         + `<text x="${labelX}" y="${labelY + 2.8}" text-anchor="middle" font-family="'Overpass', sans-serif" font-size="6.5" font-weight="700" fill="${gold}">${text}</text>`;
     }
-    let svg = '<svg viewBox="0 0 40 40" width="52" height="52">';
+    let svg = '<svg viewBox="0 0 40 40" width="52" height="52" aria-hidden="true">';
     let labelSvg = '';
     edges.forEach(([name, p1, p2, on]) => {
       if (isK || on) {
@@ -5894,7 +5915,8 @@
     };
     const wrap = (pkey, inner, isLive) => {
       const src = pitchStore[pkey];
-      return `<div class="cell-wrap${hasPitchDetail(src, isLive, m.liveBatterInfo) ? ' clickable' : ''}"${src ? ` data-pkey="${pkey}"` : ''}>${inner}</div>`;
+      const clickable = hasPitchDetail(src, isLive, m.liveBatterInfo);
+      return `<div class="cell-wrap${clickable ? ' clickable' : ''}"${src ? ` data-pkey="${pkey}"` : ''}${clickable ? cellButtonAttrs(src, isLive) : ''}>${inner}</div>`;
     };
 
     const items = [];
@@ -6198,6 +6220,13 @@
     return diamondSVG(0, false, '', false, null, null, false)
       + (abStarted ? '<div class="live-dot" title="At bat now"></div>' : '');
   }
+  // A diamond with pitch detail opens the at-bat popup, so it's a button to
+  // a keyboard and a screen reader too, named by its batter and play.
+  function cellButtonAttrs(src, isLive) {
+    const name = src.batterName || 'Batter';
+    const what = isLive ? 'at bat now' : String(src.playDesc || '').replace(/<[^>]*>/g, '').replace(/&#8230;/g, '...');
+    return ` tabindex="0" role="button" aria-label="${`${name}: ${what}`.replace(/"/g, '&quot;')}"`;
+  }
   function hasPitchDetail(src, isLive, liveBatterInfo) {
     return !!src && !!((src.pitches && src.pitches.length) || (src.events && src.events.length)
       || (isLive && liveBatterInfo && liveBatterInfo.currentInterruption));
@@ -6268,7 +6297,8 @@
             pitchStore[pkey] = pitchSource;
             pitchAttr = ` data-pkey="${pkey}"`;
           }
-          const cellHtml = inner ? `<div class="cell-wrap${hasPitchDetail(pitchSource, isLiveCell, liveBatterInfo) ? ' clickable' : ''}"${pitchAttr}>${inner}</div>` : '';
+          const clickable = hasPitchDetail(pitchSource, isLiveCell, liveBatterInfo);
+          const cellHtml = inner ? `<div class="cell-wrap${clickable ? ' clickable' : ''}"${pitchAttr}${clickable ? cellButtonAttrs(pitchSource, isLiveCell) : ''}>${inner}</div>` : '';
           const cls = 'cell'
             + (r.dividerInnings && r.dividerInnings.has(i) && k === 0 ? ' sub-divider' : '')
             + (c && c.pitcherChanged ? ' pitcher-change' : '')
@@ -6714,6 +6744,7 @@
         ${watermarkHtml}
         ${rowsHtml}
         <div class="daily-tile-state">${stateLabel}</div>
+        <span class="tile-more" aria-hidden="true"></span>
       </div>`;
   }
 
@@ -8733,7 +8764,7 @@
 
   async function loadSchedule(dateStr, preferredGamePk) {
     gameStrip.innerHTML = '';
-    body.innerHTML = '<div class="mlb-status-msg">Fetching schedule for ' + dateStr + '&#8230;</div>';
+    body.innerHTML = `<div class="mlb-status-msg">Loading ${formatShortDate(dateStr)} games&#8230;</div>`;
     scoreBottomBar.innerHTML = '';
     sidebarMonsterPanel.innerHTML = '';
     updateAtBatTrackers(null);
@@ -8923,6 +8954,18 @@
       const el = Array.from(body.querySelectorAll(focusSelector)).find(x => x.offsetParent !== null);
       if (el) el.focus({ preventScroll: true });
     }
+  }
+
+  // Tells a screen reader each play as it completes -- only within one game,
+  // so opening a game (or switching to one) doesn't read out its last play.
+  const scLiveEl = document.getElementById('scLive');
+  let announcedPlays = { gamePk: null, count: 0 };
+  function announceNewPlay(gamePk, allPlays) {
+    const done = allPlays.filter(p => p.about && p.about.isComplete && p.result && p.result.description);
+    if (announcedPlays.gamePk === gamePk && done.length > announcedPlays.count) {
+      scLiveEl.textContent = done[done.length - 1].result.description;
+    }
+    announcedPlays = { gamePk, count: done.length };
   }
 
   body.addEventListener('click', (e) => {
@@ -9329,6 +9372,7 @@
       };
       syncScorecardView();
       renderScorecardSheet();
+      announceNewPlay(gamePk, allPlays);
       renderedFeedKey = feedKey;
       renderedFeedLive = state === 'Live';
       markFeedFresh();
@@ -9395,12 +9439,11 @@
     if (!gamePk || gamePk === String(currentGamePk)) return;
     currentGamePk = gamePk;
     renderGameStrip(dateInput.value, scheduleGames);
-    // Blank the old game's scorecard immediately on click rather than
-    // leaving it on screen until the new one's fetch resolves -- a fast
-    // load just flashes blank for a moment, but a slow one makes it clear
-    // right away that something new is loading instead of leaving the
-    // previous game's grid sitting there looking current.
-    body.innerHTML = '';
+    // Swap the old game's scorecard for a loading plate naming the new one
+    // right away, rather than leaving the previous grid looking current
+    // until the new fetch resolves.
+    const g = (scheduleGames || []).find(x => String(x.gamePk) === String(gamePk));
+    body.innerHTML = `<div class="mlb-status-msg">Loading ${g ? `${teamAbbr(g.teams.away.team)} @ ${teamAbbr(g.teams.home.team)}` : 'the game'}&#8230;</div>`;
     renderedFeedKey = null;
     scoreBottomBar.innerHTML = '';
     sidebarMonsterPanel.innerHTML = '';
@@ -12831,6 +12874,17 @@
     mlbRootEl.style.setProperty('--sidebar-right', rightOffset + 'px');
   }
   window.addEventListener('resize', syncSidebarOffsets);
+  const tabBarEl = document.querySelector('.tab-bar');
+  function syncTabBarFade() {
+    if (!tabBarEl) return;
+    tabBarEl.classList.toggle('has-more-right', tabBarEl.scrollLeft + tabBarEl.clientWidth < tabBarEl.scrollWidth - 2);
+  }
+  if (tabBarEl) {
+    tabBarEl.addEventListener('scroll', syncTabBarFade, { passive: true });
+    window.addEventListener('resize', syncTabBarFade);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(syncTabBarFade);
+    syncTabBarFade();
+  }
   // The header's height also changes without a resize -- web fonts
   // landing, a tab's controls row wrapping -- and sticky things read it
   // (the Scorecard sidebar, the Game Log's header and recent-games column).
@@ -13031,6 +13085,11 @@
     if (e.target === teamChartOverlay) hideTeamChartModal();
   });
   document.addEventListener('keydown', (e) => {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.cell-wrap.clickable[data-pkey]')) {
+      e.preventDefault();
+      showPitchPopup(e.target.getAttribute('data-pkey'));
+      return;
+    }
     if (e.key === 'Escape') { hidePitchPopup(); hideRosterModal(); hidePlayerModal(); hideGameSummaryModal(); hideTeamChartModal(); hideGameStripModal(); hideClipModal(); playerSearchResults.hidden = true; }
   });
 
