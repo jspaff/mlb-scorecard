@@ -3657,6 +3657,14 @@
     .cal-daynum { font-size: 7px; }
     .calendar-day.is-dh .cal-game-opp { font-size: 12px; margin-top: 1px; }
   }
+  /* A phone held sideways: too short for a sticky header and a fixed
+     board both, so they scroll with the page and the card gets the height.
+     The board lands after the card. */
+  @media (max-height: 500px) and (max-width: 1099px) {
+    .tab-header { position: static; box-shadow: none; }
+    .score-bottom-bar { position: static; margin: 18px -18px -18px; box-shadow: none; }
+    #mlbBody { padding-bottom: 0; }
+  }
 </style>
 </head>
 <body>
