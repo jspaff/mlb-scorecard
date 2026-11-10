@@ -18,8 +18,8 @@ Polish notes from poking around the app (captured 2026-11-10). Check an item off
 
 ## Highlights tab
 
-- [ ] **Bigger logo / team name / inning on the video card thumbnails.** (`renderScorebookStill`)
-- [ ] **Rethink the logos on the score boxes.** They're small, and the more detailed or colorful logos look off at that size. Look for something more space-efficient (e.g. a wordmark/abbreviation treatment). (`renderDayGame`)
+- [x] **Bigger logo / team name / inning on the video card thumbnails.** (`renderScorebookStill`)
+- [x] **Rethink the logos on the score boxes.** They're small, and the more detailed or colorful logos look off at that size. Look for something more space-efficient (e.g. a wordmark/abbreviation treatment). (`renderDayGame`)
 
 ## Team tab
 

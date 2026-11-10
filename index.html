@@ -1127,9 +1127,10 @@
   .dg.is-live { border-color: #3fae56; }
   .dg-box { display: flex; gap: 6px; }
   .dg-teams { flex: 1; min-width: 0; }
-  .dg-team { display: grid; grid-template-columns: 16px minmax(0, 1fr) 22px; align-items: center; gap: 5px; height: 21px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11.5px; color: var(--ink); }
-  .dg-team img { width: 16px; height: 16px; }
-  .dg-team b { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 16px; text-align: right; font-variant-numeric: tabular-nums; }
+  /* Lettered like the Monster's own board: no logos (a 16px logo turned
+     the detailed and colorful ones to smudges), the club in Oswald. */
+  .dg-team { display: grid; grid-template-columns: minmax(0, 1fr) 24px; align-items: center; gap: 5px; height: 21px; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 15px; letter-spacing: 0.04em; color: var(--ink); }
+  .dg-team b { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 17px; text-align: right; font-variant-numeric: tabular-nums; }
   .dg-team.is-lost { color: var(--ink-soft); }
   .dg-team.is-lost b { font-weight: 400; }
   .dg-aside { display: flex; flex-direction: column; align-items: flex-end; justify-content: space-between; width: 42px; flex: none; }
@@ -1218,10 +1219,11 @@
   .vc-who { display: flex; align-items: center; justify-content: center; min-width: 0; padding: 9% 0 9% 14%; }
   .vc-photo { height: 100%; aspect-ratio: 4 / 5; width: auto; max-width: 100%; object-fit: cover; object-position: center 18%; display: block; border: 2px solid var(--ink); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45); background: var(--paper-line); }
   .vc-play-side { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4%; min-width: 0; padding: 4% 0; }
-  .vc-where { display: flex; align-items: center; gap: 6px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); white-space: nowrap; }
-  .vc-where img { width: 19px; height: 19px; }
-  .vc-where b { font-weight: inherit; opacity: 0.6; }
-  .vc-dia { position: relative; height: 66%; aspect-ratio: 1; }
+  /* Team and inning in scoreboard lettering, sized to the card. */
+  .vc-where { display: flex; align-items: center; gap: 0.35em; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: clamp(13px, 6.6cqw, 22px); line-height: 1.1; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink); white-space: nowrap; }
+  .vc-where img { width: 1.15em; height: 1.15em; }
+  .vc-where b { font-weight: inherit; opacity: 0.55; }
+  .vc-dia { position: relative; height: 60%; aspect-ratio: 1; }
   .vc-dia svg { width: 100%; height: 100%; display: block; }
   /* RBI dots in the Game Log's proportion to the diamond (5px on 46px). */
   .vc-dia .pp-rc-rbi { top: 4%; left: 2%; gap: 3%; width: 100%; }
@@ -1229,10 +1231,8 @@
   .vc-play { position: absolute; right: 8px; bottom: 8px; display: flex; align-items: center; justify-content: center; width: 36px; height: 27px; font-size: 13px; }
   .vc:hover .vc-play, .vc:focus-visible .vc-play { border-color: var(--gold); }
   @container (max-width: 250px) {
-    .vc-where { font-size: 10px; gap: 4px; }
-    .vc-where img { width: 15px; height: 15px; }
     .vc-play { right: 6px; bottom: 6px; width: 30px; height: 23px; font-size: 11px; }
-    .vc-dia { height: 58%; }
+    .vc-dia { height: 54%; }
   }
   .vc-kicker { padding: 0 2px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); }
   .vc-kicker em { font-style: normal; font-weight: 700; letter-spacing: 0.02em; color: var(--ink-soft); }
@@ -7070,7 +7070,7 @@
     const a = g.teams.away, h = g.teams.home;
     const team = (t, other) => {
       const lost = st.final && t.score < other.score;
-      return `<div class="dg-team${lost ? ' is-lost' : ''}"><img src="${capLogoUrl(t.team.id)}" alt=""><span>${teamAbbr(t.team)}</span><b>${st.started ? (t.score ?? 0) : ''}</b></div>`;
+      return `<div class="dg-team${lost ? ' is-lost' : ''}"><span>${teamAbbr(t.team)}</span><b>${st.started ? (t.score ?? 0) : ''}</b></div>`;
     };
     const recap = media && media.recap;
     const mine = myTeamId() && (a.team.id === myTeamId() || h.team.id === myTeamId());
