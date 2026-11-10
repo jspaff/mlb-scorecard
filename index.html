@@ -4686,6 +4686,10 @@
         } : null;
       }
     }
+    // The strikes each pitch was thrown with, so a foul can be told apart
+    // by what it did to the count (see classifyPitch).
+    let strikesBefore = 0;
+    pitches.forEach(p => { p.preStrikes = strikesBefore; if (p.strikes != null) strikesBefore = p.strikes; });
     return pitches;
   }
 
@@ -5848,7 +5852,7 @@
   function renderCompactPitchTable(pitches) {
     if (!pitches || !pitches.length) return '';
     return `<table class="cpt"><thead><tr><th></th><th>Result</th><th>Pitch</th><th class="r">MPH</th></tr></thead><tbody>${pitches.map(p =>
-      `<tr data-num="${p.num || ''}"><td class="n">${p.num || ''}</td><td class="${RESULT_CLASS(p.result)}">${p.result || ''}</td><td class="t" title="${p.type}">${p.typeCode || ''}</td><td class="r">${p.speed || ''}</td></tr>`).join('')}</tbody></table>`;
+      `<tr data-num="${p.num || ''}"><td class="n">${p.num || ''}</td><td class="${RESULT_CLASS(p)}">${p.result || ''}</td><td class="t" title="${p.type}">${p.typeCode || ''}</td><td class="r">${p.speed || ''}</td></tr>`).join('')}</tbody></table>`;
   }
 
   const HALF_EMPTY_DIAMOND = `<svg class="hv-empty-dia" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3L37 20L20 37L3 20Z" fill="none" stroke="${PALETTE.ink}" stroke-opacity="0.35" stroke-width="1.5"/></svg>`;
@@ -9543,11 +9547,23 @@
     return 'other';
   }
 
-  const RESULT_CLASS = (result) => {
-    switch (classifyResult(result)) {
+  // A pitch's kind with its count in hand: a foul tip is always a strike
+  // (with two, a strikeout), as is a two-strike foul bunt; any other foul
+  // with two strikes changes nothing ('foul-2k'), and one with fewer is a
+  // strike like any other ('foul').
+  function classifyPitch(p) {
+    const kind = classifyResult(p.result || '');
+    if (kind !== 'foul') return kind;
+    if (/foul tip/i.test(p.result)) return 'strike-swinging';
+    if ((p.preStrikes || 0) >= 2) return /bunt/i.test(p.result) ? 'strike-swinging' : 'foul-2k';
+    return 'foul';
+  }
+
+  const RESULT_CLASS = (pitch) => {
+    switch (classifyPitch(pitch)) {
       case 'ball': return 'pitch-result-ball';
       case 'strike-called': case 'strike-swinging': return 'pitch-result-strike';
-      case 'foul': return 'pitch-result-foul';
+      case 'foul': case 'foul-2k': return 'pitch-result-foul';
       case 'inplay-safe': return 'pitch-result-hit';
       case 'inplay-out': return 'pitch-result-out';
       case 'hbp': return 'pitch-result-hbp';
@@ -9563,7 +9579,11 @@
     ball: { hue: PALETTE.ball, hollow: false },
     'strike-called': { hue: PALETTE.brick, hollow: true },
     'strike-swinging': { hue: PALETTE.brick, hollow: false },
-    foul: { hue: PALETTE.ink, hollow: true },
+    // Every foul is cream; one that left the count where it was (two
+    // strikes) is the hollow, lesser mark, the rest filled like the strike
+    // they were.
+    foul: { hue: PALETTE.ink, hollow: false },
+    'foul-2k': { hue: PALETTE.ink, hollow: true },
     'inplay-safe': { hue: PALETTE.gold, hollow: false },
     'inplay-out': { hue: PALETTE.gray, hollow: false },
     hbp: { hue: PALETTE.ball, hollow: true },
@@ -9611,7 +9631,7 @@
   // whichever pitch(es) newly showed up since this popup was last rendered,
   // regardless of whether the at-bat is done -- see showPitchPopup.
   function pitchLocationMarker(p, px, py, ringed, justArrived) {
-    const spec = RESULT_MARKER[classifyResult(p.result)] || RESULT_MARKER.other;
+    const spec = RESULT_MARKER[classifyPitch(p)] || RESULT_MARKER.other;
     let svg = `<g class="loc-dot" data-num="${p.num || ''}">`;
     if (ringed) {
       svg += `<circle cx="${px}" cy="${py}" r="10.5" fill="none" stroke="${spec.hue}" stroke-width="1.2" opacity="0.6"/>`;
@@ -9724,7 +9744,7 @@
         <td class="pnum">${p.num || ''}</td>
         <td title="${p.type}">${p.typeCode || p.type}</td>
         <td class="pspeed">${p.speed || ''}</td>
-        <td class="${RESULT_CLASS(p.result)}">${p.result || ''}${p.hasReview ? ' <span class="abs-tag" title="ABS challenge">ABS</span>' : ''}</td>
+        <td class="${RESULT_CLASS(p)}">${p.result || ''}${p.hasReview ? ' <span class="abs-tag" title="ABS challenge">ABS</span>' : ''}</td>
         <td class="pcount">${before}</td>
       </tr>`;
     }).join('');
