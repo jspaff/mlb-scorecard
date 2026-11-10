@@ -270,7 +270,7 @@ The Defense tab's catch board: one row per Statcast star rating (5 down to 1), e
 An infielder's double plays on the Defense tab, kept the way a scorebook would.
 - **Rows:** one per notation and role (6-4-3 · Started, 4-6-3 · Turned), the notation in Special Elite, the count in a fixed column, most frequent first. A role line above totals Started / Turned / Finished.
 - **Drill-in:** a row opens its plays (date, opponent, batter), each opening its clip.
-- **Highlights** follow it: MLB's own defensive clips of the player, newest first, the latest six until asked for all. Every fielder has them (an outfielder's follow his catch board), and on a wide sheet they stand in a column beside the board and its plays instead of under them.
+- **Highlights** follow it: MLB's own defensive clips of the player, newest first, the latest six until asked for all. Every fielder has them (an outfielder's follow his catch board), and on a wide sheet they stand in a column beside the plays instead of under them, the board above the plays and the two lists' headings level.
 
 ### Award Plates
 - **Shape:** square, 1px Pennant Gold border, gold uppercase label.

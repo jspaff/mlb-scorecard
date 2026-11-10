@@ -3220,11 +3220,14 @@
      Then the catch board, held to a reading width so a row's count stays
      near its lamps on a wide sheet. */
   .pp-def { max-width: 720px; }
-  /* A wide sheet sets the highlights beside the board and its plays
-     rather than under them, their heading level with the board's labels. */
+  /* A wide sheet sets the highlights beside the plays rather than under
+     them: the board heads the left column, and the two lists start level
+     below it. */
   @container (min-width: 1150px) {
     .pp-def { max-width: none; display: grid; grid-template-columns: minmax(0, 720px) minmax(0, 1fr); gap: 0 40px; align-items: start; }
-    .pp-def-side > .pp-cb:first-child { margin-top: 0; }
+    .pp-def-top { grid-column: 1; }
+    .pp-def-main { grid-column: 1; grid-row: 2; }
+    .pp-def-side { grid-column: 2; grid-row: 2; }
   }
   .pp-def-top { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end; gap: 14px 12px; }
   .pp-def-pools { grid-column: 1 / -1; order: -1; justify-self: end; width: max-content; max-width: 100%; }
@@ -12158,7 +12161,8 @@
         + slot('FRV', current.frv != null ? formatSigned(current.frv) : '&#8212;', current.frvRank);
     const below = group.plays === 'catches' ? renderCatchBoard() : group.plays === 'infield' ? renderInfieldPlays() : renderCatcherPlays();
     return `<div class="pp-def">
-      <div class="pp-def-main"><div class="pp-def-top${pools.length > 1 ? '' : ' is-solo'}">${slots}${pools.length > 1 ? toggle : ''}</div>${below}</div>
+      <div class="pp-def-top${pools.length > 1 ? '' : ' is-solo'}">${slots}${pools.length > 1 ? toggle : ''}</div>
+      <div class="pp-def-main">${below}</div>
       <div class="pp-def-side">${renderDefenseHighlights(group)}</div>
     </div>`;
   }
