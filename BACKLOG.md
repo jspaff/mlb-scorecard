@@ -23,7 +23,7 @@ Polish notes from poking around the app (captured 2026-11-10). Check an item off
 
 ## Team tab
 
-- [ ] **Overview feels empty — add content.** Video highlights for the team could be a fun fit. (`renderTeamOverview`)
+- [x] **Overview feels empty — add content.** Video highlights for the team could be a fun fit. (`renderTeamOverview`)
 - [x] **Games-over-.500 chart: replace the "Current … Best … Worst …" caption.** Reads as generic. Possibly drop it and mark the high and low points on the line itself. Applies everywhere the chart appears (Team Overview and the Standings popup). (`renderWinLossSvg`)
 
 ## Player profile

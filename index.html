@@ -1704,30 +1704,44 @@
   .tn-score b { font-weight: 400; color: var(--ink-soft); margin: 0 3px; }
   .tn-state { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); }
   .tn-go { grid-area: go; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); }
-  .tn.is-compact { padding: 8px 12px; gap: 2px 12px; }
-  .tn.is-compact .tn-opp { font-size: 18px; } .tn.is-compact .tn-opp img { width: 22px; height: 22px; }
-  .tm-next-slot { margin-left: auto; min-width: 0; flex: 0 1 300px; }
-  /* Leaders */
-  .tl-sub { margin: 4px 0 10px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); }
-  .tl-sub em { font-style: normal; color: var(--ink-soft); margin-left: 6px; }
-  .tl-cols { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px 40px; }
-  @container (min-width: 760px) { .tl-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-  .tl-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-  .tl-card { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; text-align: center; }
-  .tl-card .dcf-print { width: 84px; }
-  .tl-card .player-name-btn { max-width: 100%; }
-  .tl-card-line { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; line-height: 1.35; color: var(--ink); font-variant-numeric: tabular-nums; }
-  .tl-board { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px 8px; margin-bottom: 14px; }
-  .tl-tile { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
-  .tl-tile .pp-slot { align-self: stretch; font-size: 26px; line-height: 1.5; }
-  .tl-tile .player-name-btn { max-width: 100%; }
-  .tl-row { display: grid; grid-template-columns: 14px 34px auto minmax(0, 1fr); align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px dashed var(--paper-line); }
-  .tl-rank { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 15px; color: var(--gold); }
-  .tl-face { width: 34px; height: 42px; object-fit: cover; border: 2px solid var(--ink); background: var(--paper-line); }
-  .tl-line { justify-self: end; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11.5px; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .tl-row + .tl-sub { margin-top: 16px; }
-  .tm-split { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0 40px; }
-  @container (min-width: 1000px) { .tov3 .tm-split { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); } .tov3 .tm-split .tm-pair { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .tm-next { margin-top: 20px; }
+  .tm-next:empty { display: none; }
+  /* Leaders: a ranked board per side, punchier than a list -- a gold
+     rank, the print, plate and line, and the stat they're ranked by in a
+     scoreboard slot. */
+  .tl-side + .tl-side { margin-top: 18px; }
+  .tl-sub { margin: 2px 0 6px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); }
+  .tl-row { display: grid; grid-template-columns: 20px 52px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px dashed var(--paper-line); }
+  .tl-rank { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 24px; line-height: 1; color: var(--gold); text-align: center; }
+  .tl-row .dcf-print { width: 52px; }
+  .tl-who { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; }
+  .tl-who .player-name-btn { max-width: 100%; font-size: 12px; }
+  .tl-line { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11.5px; line-height: 1.35; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .tl-key { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 84px; }
+  .tl-key .pp-slot { align-self: stretch; font-size: 28px; line-height: 1.45; }
+  /* Recent and Up Next read at a glance. */
+  .tm .tm-g { padding: 10px 4px; grid-template-columns: 58px minmax(0, 1fr) auto; }
+  .tm .tm-g-date { font-size: 12px; }
+  .tm .tm-g-opp { font-size: 19px; gap: 8px; }
+  .tm .tm-g-opp img { width: 24px; height: 24px; }
+  .tm .tm-g-at { font-size: 11px; }
+  .tm .tm-g-wl { font-size: 12px; }
+  .tm .tm-g-score { font-size: 22px; min-width: 48px; }
+  .tm .tm-g-when { font-size: 12px; }
+  /* Season Highlights: one row that scrolls, at any width. */
+  .tm-moments .dp-row { grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: minmax(230px, 80%); overflow-x: auto; }
+  @container (min-width: 700px) { .tm-moments .dp-row { grid-auto-columns: 280px; } }
+  /* Phone: one column, the next game first. */
+  .tm-split { display: flex; flex-direction: column; }
+  .tm-split > .tm-col { display: contents; }
+  .tm-split .tm-next { order: -1; }
+  @container (min-width: 1000px) {
+    .tm-split { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 0 44px; align-items: start; }
+    .tm-split > .tm-col { display: block; min-width: 0; }
+    .tm-split .tm-next { margin-top: 0; }
+    .tm-split .tm-pair { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 28px; }
+  }
+  .tm .tm-pair.is-one { grid-template-columns: minmax(0, 1fr); }
   .tm-roster-title { margin-bottom: 12px; }
   .tm-stats:first-child { margin-top: 0; }
   /* Stat columns at a fixed compact width, so on a wide sheet they read as
@@ -7280,8 +7294,14 @@
     return { moments, defense, reels };
   }
 
+  // Keys carry their page's prefix ('d' the Highlights tab, 't' the Team
+  // tab), so each page clears only its own when it redraws.
+  let dayClipSeq = 0;
+  function clearDayClips(prefix) {
+    Object.keys(dayClips).forEach(k => { if (k[0] === prefix) delete dayClips[k]; });
+  }
   function dayVideoKey(item) {
-    const key = `c${Object.keys(dayClips).length}`;
+    const key = `${item.clipPrefix || 'd'}${dayClipSeq++}`;
     dayClips[key] = item.clip ? item.clip : { playId: item.playId, matchup: item.meta || matchupOf(item.g), title: item.title };
     return key;
   }
@@ -7340,7 +7360,7 @@
   function renderDay() {
     if (!dayData) return '';
     const { dateStr, games, media, stats, season } = dayData;
-    dayClips = {};
+    clearDayClips('d');
     const homeRuns = stats.flatMap(s => s.homeRuns);
     const starts = stats.flatMap(s => s.starts);
     const sec = buildDaySections(dayData);
@@ -7684,7 +7704,7 @@
     const chart = played.length ? `<section class="tm-sec">
         <div class="pp-skg-head"><span>Games Over .500</span></div>
         <div class="tm-narrow">${renderWinLossSvg(`teamTabClipN${teamId}`, played)}</div>
-        <div class="tm-wide">${renderWinLossSvg(`teamTabClipW${teamId}`, played, { width: 900, height: 170 })}</div>
+        <div class="tm-wide">${renderWinLossSvg(`teamTabClipW${teamId}`, played, { width: 640, height: 200 })}</div>
       </section>` : '';
 
     const gameList = (title, list) => list.length ? `<section class="tm-sec">
@@ -7700,34 +7720,21 @@
           <div class="tm-place">${seasonLabel}${place ? ` &#183; ${place}` : ''}</div>
           ${champs}
         </div>
-        ${TOV.v === 2 ? '<div class="tm-next-slot" id="tmNext"></div>' : ''}
       </div>`;
-    const sec = (title, id, extra = '') => `<section class="tm-sec${extra}"><div class="pp-skg-head"><span>${title}</span></div><div id="${id}"></div></section>`;
-    const pair = `<div class="tm-pair">${gameList('Recent', recent)}${gameList('Up Next', upcoming)}</div>`;
-    if (TOV.v === 3) {
-      return `<div class="sheet tm tov3">${head}
-        ${sec('Season Highlights', 'tmMoments')}
-        <div class="tm-split">
-          <div class="tm-col">${board}${chart}${pair}</div>
-          <div class="tm-col"><div class="tm-sec" id="tmNext"></div>${sec('Leaders', 'tmLeaders')}</div>
-        </div>
-      </div>`;
-    }
-    return `<div class="sheet tm tov${TOV.v}">${head}
-      ${TOV.v === 1 ? '<div class="tm-sec" id="tmNext"></div>' : ''}
-      ${board}
-      ${sec('Season Highlights', 'tmMoments')}
-      ${sec('Leaders', 'tmLeaders')}
-      ${chart}
-      ${pair}
+    const sec = (title, id) => `<section class="tm-sec"><div class="pp-skg-head"><span>${title}</span></div><div id="${id}"></div></section>`;
+    // Two columns on a wide sheet: the season (record, chart, games) on
+    // the left, what's next and who's leading on the right; the biggest
+    // plays run in one row under both. On a phone the next game leads.
+    return `<div class="sheet tm">${head}
+      <div class="tm-split">
+        <div class="tm-col">${board}${chart}<div class="tm-pair${recent.length && upcoming.length ? '' : ' is-one'}">${gameList('Recent', recent)}${gameList('Up Next', upcoming)}</div></div>
+        <div class="tm-col tm-side"><div class="tm-next" id="tmNext"></div>${sec('Leaders', 'tmLeaders')}</div>
+      </div>
+      <section class="tm-sec tm-moments"><div class="pp-skg-head"><span>Season Highlights</span></div><div id="tmMoments"></div></section>
     </div>`;
   }
 
   // ---- Overview extras: the season's biggest plays, leaders, next game ----
-  // MOCK: layout variant from ?tov=1|2|3 (and ?tovlive=1 fakes a live next
-  // game) while the versions are compared.
-  const TOV = (() => { try { const q = new URLSearchParams(location.search); return { v: Number(q.get('tov')) || 1, live: q.get('tovlive') === '1' }; } catch (e) { return { v: 1, live: false }; } })();
-
   // The season's biggest swings in his team's favor: every final's win
   // probability (under 1 KB a game) ranks them, then only the games that
   // hold the top few are read in full for their diamonds and clips. At
@@ -7766,7 +7773,7 @@
           title: momentTitle(k),
           label: k.kind ? HR_IMPACT_LABELS[k.kind] : k.event === 'Home Run' ? 'Home run' : k.isOut ? 'Big out' : 'Big hit',
           why: k.runs > 1 ? `${k.runs} runs` : k.runs ? '1 run' : '',
-          teamId: Number(teamId), personId: k.isOut ? k.pitcherId : k.batterId,
+          teamId: Number(teamId), personId: k.isOut ? k.pitcherId : k.batterId, clipPrefix: 't',
           meta: `${fmtShortDate(g.date)} &#183; ${g.isHome ? 'vs' : '@'} ${TEAM_ABBR[g.isHome ? g.awayId : g.homeId] || g.opponentFull}`
         };
       }).filter(Boolean);
@@ -7777,30 +7784,25 @@
     }
   }
 
-  // Leaders among the regulars: hitters with a batting title's share of
-  // the team's games in PA, pitchers with an inning a game (a reliever's
-  // categories, saves, take anyone). Rate stats rank only them; counts
-  // rank everyone.
+  // Leaders among the regulars: hitters with half a batting title's PA
+  // (3.1 a team game) or more, by OPS -- the title's own share where three
+  // have it; pitchers by ERA among starters, a start every ten team games
+  // and 0.4 innings a game, so a hot reliever doesn't lead the staff.
   function buildTeamLeaders(hitting, pitching, teamGames) {
     const n = v => Number(v) || 0;
-    const qualH = (hitting || []).filter(r => n(r.stat.plateAppearances) >= 3.1 * teamGames);
-    const qualP = (pitching || []).filter(r => n(r.stat.inningsPitched) >= teamGames);
-    const best = (rows, stat, low) => rows.slice().sort((a, b) => low ? n(a.stat[stat]) - n(b.stat[stat]) : n(b.stat[stat]) - n(a.stat[stat]))[0];
-    const cat = (label, rows, stat, low, fmt) => { const r = best(rows, stat, low); return r && n(r.stat[stat]) ? { label, r, value: fmt ? fmt(r.stat[stat]) : r.stat[stat] } : (r && low ? { label, r, value: r.stat[stat] } : null); };
-    const regulars = (qualH.length >= 3 ? qualH : (hitting || []).filter(r => n(r.stat.plateAppearances) >= 1.5 * teamGames));
-    const arms = (pitching || []).filter(r => n(r.stat.inningsPitched) >= 0.4 * teamGames);
+    const titled = (hitting || []).filter(r => n(r.stat.plateAppearances) >= 3.1 * teamGames);
+    const regulars = titled.length >= 3 ? titled : (hitting || []).filter(r => n(r.stat.plateAppearances) >= 1.55 * teamGames);
+    const starters = (pitching || []).filter(r => n(r.stat.gamesStarted) >= teamGames / 10 && n(r.stat.inningsPitched) >= 0.4 * teamGames);
     return {
       hitters: regulars.slice().sort((a, b) => n(b.stat.ops) - n(a.stat.ops)).slice(0, 3),
-      pitchers: arms.slice().sort((a, b) => n(a.stat.era) - n(b.stat.era)).slice(0, 3),
-      hitCats: [cat('AVG', qualH, 'avg'), cat('HR', hitting || [], 'homeRuns'), cat('RBI', hitting || [], 'rbi'), cat('SB', hitting || [], 'stolenBases'), cat('OPS', qualH, 'ops')].filter(Boolean),
-      pitchCats: [cat('W', pitching || [], 'wins'), cat('ERA', qualP, 'era', true), cat('K', pitching || [], 'strikeOuts'), cat('SV', pitching || [], 'saves'), cat('WHIP', qualP, 'whip', true)].filter(Boolean)
+      pitchers: starters.slice().sort((a, b) => n(a.stat.era) - n(b.stat.era)).slice(0, 3)
     };
   }
   function leaderLine(r, pitcher) {
     const s = r.stat;
     return pitcher
-      ? [`${s.era} ERA`, `${s.inningsPitched} IP`, `${s.strikeOuts} K`].join(' &#183; ')
-      : [s.avg + '/' + s.obp + '/' + s.slg, `${s.homeRuns} HR`].join(' &#183; ');
+      ? [`${s.wins}-${s.losses}`, `${s.inningsPitched} IP`, `${s.strikeOuts} K`, `${s.whip} WHIP`].join(' &#183; ')
+      : [`${s.avg}/${s.obp}/${s.slg}`, `${s.homeRuns} HR`, `${s.rbi} RBI`].join(' &#183; ');
   }
 
   // The next game: one under way first, else the next on the schedule --
@@ -7814,7 +7816,7 @@
     const first = teamScheduleGames(nextSeason.gamesByDate || {}).find(g => !isCalledOff(g));
     return first ? { g: first, opener: true } : null;
   }
-  function renderNextGame(next, teamId, compact) {
+  function renderNextGame(next) {
     if (!next) return '';
     const g = next.g;
     const oppId = g.isHome ? g.awayId : g.homeId;
@@ -7826,7 +7828,7 @@
     const right = live
       ? `<span class="tn-score">${us ?? 0}<b>-</b>${them ?? 0}</span><span class="tn-state">${g.inningLabel || g.detailedState || ''}</span>`
       : `<span class="tn-day">${day}</span><span class="tn-state">${formatGameTime(g.gameDate)}</span>`;
-    return `<button type="button" class="tn${live ? ' is-live' : ''}${compact ? ' is-compact' : ''}" data-tn-date="${g.date}" data-tn-pk="${g.gamePk}">
+    return `<button type="button" class="tn${live ? ' is-live' : ''}" data-tn-date="${g.date}" data-tn-pk="${g.gamePk}">
         <span class="tn-kicker">${kicker}</span>
         <span class="tn-opp"><span class="tn-at">${g.isHome ? 'vs' : '@'}</span><img src="${capLogoUrl(oppId)}" alt="">${g.opponentFull}</span>
         <span class="tn-right">${right}</span>
@@ -7834,30 +7836,24 @@
       </button>`;
   }
 
-  function renderLeaderCards(leaders, teamId, season) {
-    const card = (r, pitcher) => {
-      storeTeamPlayer(r.id, r.name, r.pos, teamId, season);
-      return `<div class="tl-card">${depthPrint({ id: r.id, name: r.name })}${depthPlate({ id: r.id, name: r.name })}<span class="tl-card-line">${leaderLine(r, pitcher)}</span></div>`;
-    };
-    return `<div class="tl-cols">
-      <div><div class="tl-sub">Hitters <em>by OPS</em></div><div class="tl-cards">${leaders.hitters.map(r => card(r, false)).join('')}</div></div>
-      <div><div class="tl-sub">Pitchers <em>by ERA</em></div><div class="tl-cards">${leaders.pitchers.map(r => card(r, true)).join('')}</div></div>
-    </div>`;
-  }
-  function renderLeaderBoard(leaders, teamId, season) {
-    const tile = c => {
-      storeTeamPlayer(c.r.id, c.r.name, c.r.pos, teamId, season);
-      return `<div class="pp-stat tl-tile"><span class="pp-painted">${c.label}</span><span class="pp-slot">${c.value}</span>${depthPlate({ id: c.r.id, name: c.r.name })}</div>`;
-    };
-    return `<div class="tl-board">${leaders.hitCats.map(tile).join('')}</div><div class="tl-board">${leaders.pitchCats.map(tile).join('')}</div>`;
-  }
+  // Leaders, a ranked board per side: his print and plate, his line under
+  // the plate, and the stat they're ranked by in a slot at the end.
   function renderLeaderRows(leaders, teamId, season) {
-    const row = (r, i, pitcher) => {
-      storeTeamPlayer(r.id, r.name, r.pos, teamId, season);
-      return `<div class="tl-row"><span class="tl-rank">${i + 1}</span><img class="tl-face" src="${headshotUrl(r.id, 120)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">${depthPlate({ id: r.id, name: r.name })}<span class="tl-line">${leaderLine(r, pitcher)}</span></div>`;
+    const side = (title, rows, pitcher) => {
+      if (!rows.length) return '';
+      const key = pitcher ? 'ERA' : 'OPS';
+      return `<div class="tl-side"><div class="tl-sub">${title}</div>${rows.map((r, i) => {
+        storeTeamPlayer(r.id, r.name, r.pos, teamId, season);
+        return `<div class="tl-row">
+          <span class="tl-rank">${i + 1}</span>
+          ${depthPrint({ id: r.id, name: r.name })}
+          <span class="tl-who">${depthPlate({ id: r.id, name: r.name })}<span class="tl-line">${leaderLine(r, pitcher)}</span></span>
+          <span class="tl-key"><span class="pp-painted">${key}</span><span class="pp-slot">${pitcher ? r.stat.era : r.stat.ops}</span></span>
+        </div>`;
+      }).join('')}</div>`;
     };
-    return `<div class="tl-sub">Hitters <em>by OPS</em></div>${leaders.hitters.map((r, i) => row(r, i, false)).join('')}
-      <div class="tl-sub">Pitchers <em>by ERA</em></div>${leaders.pitchers.map((r, i) => row(r, i, true)).join('')}`;
+    const html = side('Hitters', leaders.hitters, false) + side('Starters', leaders.pitchers, true);
+    return html || '<div class="pitch-empty">No regulars yet this season.</div>';
   }
   function renderTeamMoments(items) {
     if (items === undefined) return '<div class="mlb-status-msg">Finding the season&#8217;s biggest plays&#8230;</div>';
@@ -7893,15 +7889,12 @@
     const finals = games.filter(g => g.state === 'Final' && g.homeScore != null && g.awayScore != null);
     const fill = (id, html) => { if (requestId !== teamRequestId) return; const el = document.getElementById(id); if (el) el.innerHTML = html; };
     fill('tmMoments', renderTeamMoments(undefined));
-    getTeamNextGame(teamId, season, games).then(next => {
-      if (next && TOV.live) next = { opener: false, g: { ...next.g, state: 'Live', homeScore: 3, awayScore: 2, inningLabel: '\u25BC 6th' } };
-      fill('tmNext', renderNextGame(next, teamId, TOV.v === 2));
-    });
+    getTeamNextGame(teamId, season, games).then(next => fill('tmNext', renderNextGame(next)));
     Promise.all([getTeamPlayerStats(teamId, season, 'hitting'), getTeamPlayerStats(teamId, season, 'pitching')]).then(([h, pi]) => {
       const leaders = buildTeamLeaders(h, pi, finals.length || 1);
-      fill('tmLeaders', TOV.v === 1 ? renderLeaderCards(leaders, teamId, season) : TOV.v === 2 ? renderLeaderBoard(leaders, teamId, season) : renderLeaderRows(leaders, teamId, season));
+      fill('tmLeaders', renderLeaderRows(leaders, teamId, season));
     });
-    getTeamSeasonMoments(teamId, finals).then(items => fill('tmMoments', renderTeamMoments(items)));
+    getTeamSeasonMoments(teamId, finals).then(items => { clearDayClips('t'); fill('tmMoments', renderTeamMoments(items)); });
   }
 
   // ---- Schedule ----
