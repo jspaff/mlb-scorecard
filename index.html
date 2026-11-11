@@ -504,13 +504,19 @@
     flex-direction: column;
     flex-shrink: 0;
     padding: 6px 11px 9px;
-    border-right: 2px solid var(--ink);
   }
+  /* R/H/E stays pinned at the panel's right edge while extra innings
+     scroll under it, so a narrow popup never hides the final score. The
+     divider rides on this column, not the innings, so it stays with it. */
   .monster-panel-right {
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
     padding: 6px 11px 9px;
+    position: sticky;
+    right: 0;
+    background: var(--paper);
+    border-left: 2px solid var(--ink);
   }
   /* Mirrors .monster-count's own margin/padding/border-top exactly, so the
      two horizontal dividers land on the same line across both columns.
@@ -697,6 +703,8 @@
      the rest of the modal's left-aligned text. */
   .game-summary-game .monster-panel { margin-bottom: 14px; }
   .gs-box-score { text-align: center; }
+  /* The Scorecard's own Final summary, ruled off under the line score. */
+  .gs-story { margin-bottom: 14px; border-top: 1px solid var(--paper-line); }
 
   .badge {
     display: flex;
@@ -722,26 +730,6 @@
     margin-bottom: 10px;
   }
   .gs-weather { color: var(--ink-soft); }
-  .pog-section {
-    margin-top: 14px;
-    padding-top: 12px;
-    border-top: 1px dashed var(--paper-line);
-  }
-  .pog-inning {
-    font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 10px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
-    margin-bottom: 4px;
-  }
-  .pog-description {
-    font-family: 'Inter', sans-serif;
-    font-size: 12.5px;
-    color: var(--ink);
-    line-height: 1.5;
-  }
   .pog-watch {
     display: inline-block;
     margin-top: 6px;
@@ -758,43 +746,12 @@
      pitcher lines, left-aligned like them, at .pog-watch's own original
      size (no overrides needed here). */
   .atbat-watch { display: block; margin-bottom: 4px; }
-  .potg-section {
-    margin-top: 14px;
-    margin-bottom: 16px;
-    padding-top: 12px;
-    border-top: 1px dashed var(--paper-line);
-  }
   .potg-loading {
     font-family: 'Inter', sans-serif;
     font-size: 12px;
     color: var(--ink-soft);
   }
-  .potg-players { display: flex; gap: 10px; margin-top: 8px; }
-  .potg-player {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: 4px;
-  }
-  .potg-headshot {
-    width: 40px;
-    height: 50px;
-    border-radius: 0;
-    object-fit: cover;
-    background: var(--paper-line);
-    border: 1px solid var(--paper-line);
-  }
   .potg-player-name { max-width: 100%; }
-  .potg-stat-line {
-    font-family: 'Oswald', sans-serif;
-    font-weight: 500;
-    font-size: 11.5px;
-    letter-spacing: 0.02em;
-    color: var(--ink);
-  }
   .potg-stat { white-space: nowrap; }
   .modal-cta {
     display: block;
@@ -1127,9 +1084,18 @@
   .dg.is-live { border-color: #3fae56; }
   .dg-box { display: flex; gap: 6px; }
   .dg-teams { flex: 1; min-width: 0; }
-  .dg-team { display: grid; grid-template-columns: 16px minmax(0, 1fr) 22px; align-items: center; gap: 5px; height: 21px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11.5px; color: var(--ink); }
-  .dg-team img { width: 16px; height: 16px; }
-  .dg-team b { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 16px; text-align: right; font-variant-numeric: tabular-nums; }
+  /* Lettered like the Monster's own board: no logos (a 16px logo turned
+     the detailed and colorful ones to smudges), the club in Oswald. */
+  .dg-team { display: grid; grid-template-columns: minmax(0, 1fr) 24px; align-items: center; gap: 5px; height: 21px; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 15px; letter-spacing: 0.04em; color: var(--ink); }
+  .dg-team b { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 17px; text-align: right; font-variant-numeric: tabular-nums; }
+  /* A final's winner, as the game strip marks it: his cap faintly behind
+     the box, sized to the box so a phone's short one isn't swamped. */
+  .dg { position: relative; overflow: hidden; }
+  .dg-box, .dg-story { position: relative; }
+  .dg-wm { position: absolute; right: 52px; top: 50%; transform: translateY(-50%); height: min(76px, 90%); aspect-ratio: 1; width: auto; object-fit: contain; opacity: 0.16; pointer-events: none; }
+  /* Two boxes across a phone are too narrow to clear the runs, so the cap
+     moves into the gap between the clubs and the runs. */
+  @container (max-width: 619px) { .dg-wm { right: 66px; height: 82%; } }
   .dg-team.is-lost { color: var(--ink-soft); }
   .dg-team.is-lost b { font-weight: 400; }
   .dg-aside { display: flex; flex-direction: column; align-items: flex-end; justify-content: space-between; width: 42px; flex: none; }
@@ -1218,10 +1184,13 @@
   .vc-who { display: flex; align-items: center; justify-content: center; min-width: 0; padding: 9% 0 9% 14%; }
   .vc-photo { height: 100%; aspect-ratio: 4 / 5; width: auto; max-width: 100%; object-fit: cover; object-position: center 18%; display: block; border: 2px solid var(--ink); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45); background: var(--paper-line); }
   .vc-play-side { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4%; min-width: 0; padding: 4% 0; }
-  .vc-where { display: flex; align-items: center; gap: 6px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); white-space: nowrap; }
-  .vc-where img { width: 19px; height: 19px; }
-  .vc-where b { font-weight: inherit; opacity: 0.6; }
-  .vc-dia { position: relative; height: 66%; aspect-ratio: 1; }
+  /* Team and inning in scoreboard lettering, sized to the card. */
+  .vc-where { display: flex; align-items: center; gap: 0.35em; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: clamp(15px, 8.6cqw, 28px); line-height: 1.1; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink); white-space: nowrap; }
+  .vc-where img { width: 1.15em; height: 1.15em; }
+  .vc-where b { font-weight: inherit; opacity: 0.55; }
+  .vc-inn { display: inline-flex; align-items: center; gap: 0.14em; }
+  .vc-inn .now-tri { width: 0.46em; height: 0.37em; }
+  .vc-dia { position: relative; height: 56%; aspect-ratio: 1; }
   .vc-dia svg { width: 100%; height: 100%; display: block; }
   /* RBI dots in the Game Log's proportion to the diamond (5px on 46px). */
   .vc-dia .pp-rc-rbi { top: 4%; left: 2%; gap: 3%; width: 100%; }
@@ -1229,10 +1198,8 @@
   .vc-play { position: absolute; right: 8px; bottom: 8px; display: flex; align-items: center; justify-content: center; width: 36px; height: 27px; font-size: 13px; }
   .vc:hover .vc-play, .vc:focus-visible .vc-play { border-color: var(--gold); }
   @container (max-width: 250px) {
-    .vc-where { font-size: 10px; gap: 4px; }
-    .vc-where img { width: 15px; height: 15px; }
     .vc-play { right: 6px; bottom: 6px; width: 30px; height: 23px; font-size: 11px; }
-    .vc-dia { height: 58%; }
+    .vc-dia { height: 52%; }
   }
   .vc-kicker { padding: 0 2px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); }
   .vc-kicker em { font-style: normal; font-weight: 700; letter-spacing: 0.02em; color: var(--ink-soft); }
@@ -1683,7 +1650,6 @@
   .tm-pair { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0 40px; }
   .tm-col { min-width: 0; }
   .tm-sec { margin-top: 20px; min-width: 0; }
-  .tm-chart-note { margin-top: 6px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10.5px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
   .tm-wide { display: none; }
   @container (min-width: 700px) { .tm-wide { display: block; } .tm-narrow { display: none; } }
   .tm-g {
@@ -1722,6 +1688,60 @@
     .tm-pair { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
   .pp-tabs.tm-roster-tabs { margin-top: -6px; }
+  /* Next game: a card that opens the scorecard. */
+  .tn { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'k k' 'opp right' 'go right'; align-items: center; gap: 4px 14px; width: 100%; padding: 12px 14px; text-align: left; color: var(--ink); background: rgba(0, 0, 0, 0.16); border: 1px solid var(--paper-line); cursor: pointer; font: inherit; }
+  .tn:hover, .tn:focus-visible { border-color: var(--gold); outline: none; }
+  .tn.is-live { border-color: #3fae56; }
+  .tn-kicker { grid-area: k; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); }
+  .tn-live { display: inline-flex; align-items: center; gap: 6px; color: #3fae56; }
+  .tn-live i { width: 8px; height: 8px; border-radius: 50%; background: #3fae56; box-shadow: 0 0 6px #3fae56; }
+  .tn-opp { grid-area: opp; display: flex; align-items: center; gap: 8px; min-width: 0; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 24px; line-height: 1.1; white-space: nowrap; overflow: hidden; }
+  .tn-opp img { width: 30px; height: 30px; flex: none; }
+  .tn-at { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 12px; color: var(--ink-soft); }
+  .tn-right { grid-area: right; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+  .tn-day { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 18px; }
+  .tn-score { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 30px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .tn-score b { font-weight: 400; color: var(--ink-soft); margin: 0 3px; }
+  .tn-state { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); }
+  .tn-go { grid-area: go; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); }
+  .tm-next { margin-top: 20px; }
+  .tm-next:empty { display: none; }
+  /* Leaders: a ranked board per side, punchier than a list -- a gold
+     rank, the print, plate and line, and the stat they're ranked by in a
+     scoreboard slot. */
+  .tl-side + .tl-side { margin-top: 18px; }
+  .tl-sub { margin: 2px 0 6px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); }
+  .tl-row { display: grid; grid-template-columns: 20px 52px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px dashed var(--paper-line); }
+  .tl-rank { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 24px; line-height: 1; color: var(--gold); text-align: center; }
+  .tl-row .dcf-print { width: 52px; }
+  .tl-who { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; }
+  .tl-who .player-name-btn { max-width: 100%; font-size: 12px; }
+  .tl-line { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11.5px; line-height: 1.35; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .tl-key { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 84px; }
+  .tl-key .pp-slot { align-self: stretch; font-size: 28px; line-height: 1.45; }
+  /* Recent and Up Next read at a glance. */
+  .tm .tm-g { padding: 10px 4px; grid-template-columns: 58px minmax(0, 1fr) auto; }
+  .tm .tm-g-date { font-size: 12px; }
+  .tm .tm-g-opp { font-size: 19px; gap: 8px; }
+  .tm .tm-g-opp img { width: 24px; height: 24px; }
+  .tm .tm-g-at { font-size: 11px; }
+  .tm .tm-g-wl { font-size: 12px; }
+  .tm .tm-g-score { font-size: 22px; min-width: 48px; }
+  .tm .tm-g-when { font-size: 12px; }
+  /* Season Highlights: one row that scrolls, at any width. */
+  .tm-moments .dp-row { grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: minmax(230px, 80%); overflow-x: auto; }
+  @container (min-width: 700px) { .tm-moments .dp-row { grid-auto-columns: 280px; } }
+  /* Phone: one column, the next game first. */
+  .tm-split { display: flex; flex-direction: column; }
+  .tm-split > .tm-col { display: contents; }
+  .tm-split .tm-next { order: -1; }
+  @container (min-width: 1000px) {
+    .tm-split { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 0 44px; align-items: start; }
+    .tm-split > .tm-col { display: block; min-width: 0; }
+    .tm-split .tm-next { margin-top: 0; }
+    .tm-split .tm-pair { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 28px; }
+  }
+  .tm .tm-pair.is-one { grid-template-columns: minmax(0, 1fr); }
   .tm-roster-title { margin-bottom: 12px; }
   .tm-stats:first-child { margin-top: 0; }
   /* Stat columns at a fixed compact width, so on a wide sheet they read as
@@ -2134,33 +2154,27 @@
      position column; see bullpenRowsHtml). Deliberately no flex-wrap:
      the grid has to stay on the row's one line, not spill onto a second. */
   .bp-row { gap: 6px 10px; }
-  /* Fixed equal-width tracks (not content-sized) so IP/P/Y/2D line up
+  /* Fixed equal-width tracks (not content-sized) so the four columns line up
      the same across every pitcher's row regardless of digit count. */
   .bp-recent {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    width: 116px;
+    column-gap: 4px;
+    width: 136px;
     flex: none;
   }
-  .bp-recent-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
   .bp-recent-value {
+    text-align: center;
     font-family: 'Overpass', sans-serif;
     font-size: 12px;
     font-weight: 700;
+    font-variant-numeric: tabular-nums;
     color: var(--ink);
   }
-  .bp-recent-label {
-    font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 9px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
-  }
+  /* The Pitching title carries the column heads at its right end, over
+     the rows' .bp-recent grid (same width, so they line up). */
+  .bp-title { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
+  .bp-heads { text-align: center; font-size: 9px; letter-spacing: 0.02em; color: var(--ink-soft); white-space: nowrap; }
 
   /* The pitchers' section at the foot of a card (see renderPitchingBox):
      the starter's line, then the relievers by name. Beside the starter on a
@@ -2561,7 +2575,11 @@
     transform: translateZ(0);
   }
   table.scorecard-table td.cell { width: 52px; height: 64px; padding: 3px 1px 7px; }
-  table.scorecard-table td.sub-divider { border-left: 1px dashed rgba(28,58,44,0.3); }
+  /* A substitute's entry: a cream rule down the left of his first inning,
+     with his position and name written up it (see renderTeamTable). */
+  table.scorecard-table td.sub-divider { position: relative; border-left: 2px solid rgba(243, 236, 219, 0.7); }
+  .sub-up { position: absolute; bottom: 4px; max-height: calc(100% - 8px); writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8.5px; line-height: 9px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); pointer-events: none; }
+  .sub-up b { color: var(--ink-soft); font-weight: 800; }
   /* an inset shadow instead of border-top: back when this table used
      border-collapse: collapse (it now uses separate, see above), a real
      border on this cell could get miscollapsed onto the sticky .ply/.pos
@@ -2605,19 +2623,23 @@
   /* Small hung plates, like the nameplates: Board Rule for an advance,
      gold for a run, brick for an out. Cream doesn't clear contrast on gold
      or brick at 9px, so those carry dark ink (near-black on the brick, where
-     even the board's own ink is only 2.9:1). */
+     even the board's own ink is only 2.9:1). One fixed width, sized for
+     the widest move ("B -> H"), so a stack is a column of equal plates. */
   .adv-tag {
     display: flex;
     align-items: center;
     justify-content: center;
+    box-sizing: border-box;
+    width: 26px;
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
     font-size: 9px;
+    font-variant-numeric: tabular-nums;
     line-height: 11px;
     color: var(--ink);
     background: var(--paper-line);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-    padding: 1px 4px 0;
+    padding: 1px 0 0;
     white-space: nowrap;
   }
   .adv-tag.scored { color: var(--paper); background: var(--gold); }
@@ -2625,7 +2647,7 @@
   /* Overpass's figures sit high in their line box (the 1px of top padding
      above balances them), so the arrow is nudged to the figures' middle
      rather than the box's. */
-  .adv-arrow { width: 7px; height: 6px; margin: 0 2px; flex: none; position: relative; top: -0.5px; }
+  .adv-arrow { width: 7px; height: 6px; margin: 0 1.5px; flex: none; position: relative; top: -0.5px; }
   /* Experimental: styled as a clickable plate, same as .player-name-btn
      (see below) -- the compound selector (rather than .pitch-tag alone)
      out-specificities .player-name-btn's own rules so these values win
@@ -3223,6 +3245,15 @@
      Then the catch board, held to a reading width so a row's count stays
      near its lamps on a wide sheet. */
   .pp-def { max-width: 720px; }
+  /* A wide sheet sets the highlights beside the plays rather than under
+     them: the board heads the left column, and the two lists start level
+     below it. */
+  @container (min-width: 1150px) {
+    .pp-def { max-width: none; display: grid; grid-template-columns: minmax(0, 720px) minmax(0, 1fr); gap: 0 40px; align-items: start; }
+    .pp-def-top { grid-column: 1; }
+    .pp-def-main { grid-column: 1; grid-row: 2; }
+    .pp-def-side { grid-column: 2; grid-row: 2; }
+  }
   .pp-def-top { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end; gap: 14px 12px; }
   .pp-def-pools { grid-column: 1 / -1; order: -1; justify-self: end; width: max-content; max-width: 100%; }
   @container (min-width: 520px) {
@@ -3289,7 +3320,7 @@
   .pp-cb-list { padding: 0 0 10px; }
   .pp-cb-head, .pp-cb-catch {
     display: grid;
-    grid-template-columns: 11px 56px 48px 56px minmax(0, 1fr) 8px;
+    grid-template-columns: 11px 56px 48px 56px minmax(0, 1fr) 24px;
     align-items: center;
     gap: 10px;
     padding: 0 4px;
@@ -3310,11 +3341,12 @@
     cursor: pointer;
   }
   .pp-cb-catch:hover { background: rgba(243, 236, 219, 0.08); }
-  .pp-cb-catch:hover .pp-cb-play { color: var(--gold); }
+  .pp-cb-catch:hover .pp-cb-play { border-color: var(--gold); }
   .pp-cb-catch:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
   .pp-cb-tags { display: flex; gap: 4px; justify-content: flex-end; }
   .pp-cb-tag { padding: 2px 4px 1px; border: 1px solid var(--paper-line); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
-  .pp-cb-play { width: 8px; height: 10px; color: var(--ink-soft); }
+  /* The same boxed gold play mark as a score box's recap button. */
+  .pp-cb-play { box-sizing: border-box; width: 24px; height: 18px; padding: 3px 7px; background: rgba(0, 0, 0, 0.22); border: 1px solid var(--paper-line); color: var(--gold); }
 
   /* An infielder's highlights and double-play plays: date, opponent, what
      happened, play mark -- dates and opponents in fixed columns so the
@@ -3322,7 +3354,7 @@
      with the play's notation in the scorekeeper's typewriter face. */
   .pp-pl-row {
     display: grid;
-    grid-template-columns: 48px 58px minmax(0, 1fr) 8px;
+    grid-template-columns: 48px 58px minmax(0, 1fr) 24px;
     align-items: center;
     gap: 10px;
     width: 100%;
@@ -3340,7 +3372,7 @@
     cursor: pointer;
   }
   .pp-pl-row:hover { background: rgba(243, 236, 219, 0.08); }
-  .pp-pl-row:hover .pp-cb-play { color: var(--gold); }
+  .pp-pl-row:hover .pp-cb-play { border-color: var(--gold); }
   .pp-pl-row:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
   .pp-pl-opp { color: var(--ink-soft); white-space: nowrap; }
   .pp-pl-text { font-family: 'Inter', sans-serif; font-weight: 400; font-size: 12.5px; line-height: 1.35; }
@@ -3410,9 +3442,15 @@
      stay in view (just under the sticky tab header, see --tab-header-h)
      while the season scrolls past. Below this width a side column would
      squeeze the log, so the five-across row above takes over. */
+  /* The column is sized to a five-PA card (five 44px diamonds), the
+     usual game, rather than six: a sixth PA shrinks the diamonds a
+     little, and most cards no longer trail empty room. */
   @container (min-width: 1150px) {
-    .pp-gl { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 22px; align-items: start; }
-    .pp-gl .pp-recent { grid-template-columns: 1fr; margin-bottom: 0; position: sticky; top: calc(var(--tab-header-h, 0px) + 12px); }
+    .pp-gl { display: grid; grid-template-columns: 262px minmax(0, 1fr); gap: 22px; align-items: start; }
+    .pp-gl .pp-recent { grid-template-columns: 1fr; gap: 8px; margin-bottom: 0; position: sticky; top: calc(var(--tab-header-h, 0px) + 12px); }
+    .pp-gl .pp-rc { padding: 8px 10px; }
+    .pp-gl .pp-rc-pas { margin-top: 6px; }
+    .pp-gl .pp-rc-pa { flex-basis: 44px; }
   }
   /* A flex column, not a plain block: a <button> centers its content
      vertically by default, and cards in a row are stretched to the
@@ -4561,17 +4599,16 @@
           labelSvg += edgeLabelSvg(midX, midY, special);
         }
       } else if (outEdge === name) {
-        const stopX = p1[0] + (p2[0] - p1[0]) * 0.55;
-        const stopY = p1[1] + (p2[1] - p1[1]) * 0.55;
-        const outLabel = specialMap[name] === 'CS' || specialMap[name] === 'PO' ? specialMap[name] : null;
-        svg += `<line x1="${p1[0]}" y1="${p1[1]}" x2="${stopX}" y2="${stopY}" stroke="${gold}" stroke-width="2.4" stroke-linecap="square"/>`;
-        svg += `<line x1="${stopX}" y1="${stopY}" x2="${p2[0]}" y2="${p2[1]}" stroke="${dim}" stroke-width="1.2" stroke-linecap="square"/>`;
+        // The leg he was put out on, in brick, a touch lighter than the
+        // gold. It starts where the gold's square end stops (half the gold's
+        // 2.4 width past the bag), so the bag he reached stays all gold and
+        // the red never runs into its corner.
         const dx = p2[0] - p1[0], dy = p2[1] - p1[1];
         const len = Math.sqrt(dx * dx + dy * dy) || 1;
-        const px = -dy / len, py = dx / len;
-        const tickLen = 3.4;
-        svg += `<line x1="${stopX - px * tickLen}" y1="${stopY - py * tickLen}" x2="${stopX + px * tickLen}" y2="${stopY + py * tickLen}" stroke="${brick}" stroke-width="2.2" stroke-linecap="butt"/>`;
-        if (outLabel) labelSvg += edgeLabelSvg(stopX, stopY, outLabel);
+        const startX = p1[0] + dx * (1.2 / len), startY = p1[1] + dy * (1.2 / len);
+        const outLabel = specialMap[name] === 'CS' || specialMap[name] === 'PO' ? specialMap[name] : null;
+        svg += `<line x1="${startX}" y1="${startY}" x2="${p2[0]}" y2="${p2[1]}" stroke="${brick}" stroke-width="1.8" stroke-linecap="butt"/>`;
+        if (outLabel) labelSvg += edgeLabelSvg((p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2, outLabel);
       } else {
         svg += `<line x1="${p1[0]}" y1="${p1[1]}" x2="${p2[0]}" y2="${p2[1]}" stroke="${dim}" stroke-width="1.2" stroke-linecap="square"/>`;
       }
@@ -5154,7 +5191,11 @@
         const eventEntry = (r.entryInningByPlayerId && r.entryInningByPlayerId[p.id] !== undefined)
           ? r.entryInningByPlayerId[p.id] : null;
         const entries = [battingEntry, eventEntry].filter(v => v !== null);
-        if (entries.length) r.dividerInnings.add(Math.min(...entries));
+        if (entries.length) {
+          r.dividerInnings.add(Math.min(...entries));
+          r.entryInning = r.entryInning || {};
+          r.entryInning[p.id] = Math.min(...entries);
+        }
       });
     });
 
@@ -5206,10 +5247,19 @@
     const fmt = p => `${p[0].toFixed(2)},${p[1].toFixed(2)}`;
     const poly = pts => pts.map((p, i) => `${i ? 'L' : 'M'} ${fmt(p)}`).join(' ');
 
-    // Generic fence: 400 ft to center falling to 330 down the lines --
-    // one smooth curve, 400 - 70 * (|angle| / 45)^1.22, whose exponent puts
-    // the gaps (22.5 degrees) at 370 ft. Sampled every 1.5 degrees.
-    const fenceFt = a => 400 - 70 * Math.pow(Math.abs(a) / 45, 1.22);
+    // Generic fence: one circular arc through both foul poles (330 ft) and
+    // center field (400 ft), about 380 in the gaps -- the plain ballpark
+    // drawing. A curve defined by distance per angle instead came to a
+    // point in center or flared at the poles. The circle's center sits on
+    // the line to center field, `fenceC` ft out from home; each angle's
+    // distance is where its ray from home meets the circle.
+    const pole = 330 * Math.SQRT1_2;
+    const fenceC = (400 * 400 - 2 * pole * pole) / (2 * (400 - pole));
+    const fenceR = 400 - fenceC;
+    const fenceFt = a => {
+      const bc = fenceC * Math.cos(a * Math.PI / 180);
+      return bc + Math.sqrt(bc * bc + fenceR * fenceR - fenceC * fenceC);
+    };
     const angles = [];
     for (let a = -45; a <= 45.001; a += 1.5) angles.push(a);
     const fence = angles.map(a => polar(a, fenceFt(a)));
@@ -5367,6 +5417,11 @@
     return results;
   }
 
+  // Painted once in the Pitching title, over the same grid as each row's
+  // figures: today's innings and pitches, then pitches the two days before.
+  const BULLPEN_HEADS = `<span class="bp-recent bp-heads">
+    <span title="Innings pitched today">IP</span><span title="Pitches today">PC</span><span title="Pitches yesterday">Yest</span><span title="Pitches two days ago">2 Days</span>
+  </span>`;
   function bullpenRowsHtml(list) {
     if (!list || !list.length) return '<div class="roster-empty">No pitching data available</div>';
     return list.map(p => {
@@ -5380,10 +5435,10 @@
         <span class="roster-order${p.isStarter ? ' roster-order-gold' : ''}">${orderCell}</span>
         <span class="roster-name-col"><button type="button" class="player-name-btn roster-name" data-player-id="${p.id}">${p.name}</button></span>
         <div class="bp-recent">
-          <span class="bp-recent-item"><span class="bp-recent-value">${p.usedToday ? (p.todayIp ?? '0.0') : '&#8212;'}</span><span class="bp-recent-label">IP</span></span>
-          <span class="bp-recent-item"><span class="bp-recent-value">${p.usedToday ? (p.todayPc ?? 0) : '&#8212;'}</span><span class="bp-recent-label">P</span></span>
-          <span class="bp-recent-item"><span class="bp-recent-value">${p.yPitches ?? '&#8212;'}</span><span class="bp-recent-label">Y</span></span>
-          <span class="bp-recent-item"><span class="bp-recent-value">${p.twoPitches ?? '&#8212;'}</span><span class="bp-recent-label">2D</span></span>
+          <span class="bp-recent-value">${p.usedToday ? (p.todayIp ?? '0.0') : ''}</span>
+          <span class="bp-recent-value">${p.usedToday ? (p.todayPc ?? '') : ''}</span>
+          <span class="bp-recent-value">${p.yPitches || ''}</span>
+          <span class="bp-recent-value">${p.twoPitches || ''}</span>
         </div>
       </div>`;
     }).join('');
@@ -5793,7 +5848,7 @@
           ${benchHtml}
         </div>
         <div class="lineup-col">
-          <div class="roster-section-title">Pitching</div>
+          <div class="roster-section-title bp-title"><span>Pitching</span>${bullpenList && bullpenList.length ? BULLPEN_HEADS : ''}</div>
           ${bullpenRowsHtml(bullpenList)}
         </div>
       </div>
@@ -5929,7 +5984,9 @@
 
   // A finished game's story: the play of the game and the players of the
   // game, both picked by win probability (which stays behind the scenes).
-  function renderGameStory(h) {
+  // fullProfile: a name opens the full profile (the game summary popup,
+  // off the Scorecard) rather than the quick look.
+  function renderGameStory(h, { fullProfile = false } = {}) {
     if (!h || (!h.playOfGame && !(h.leaders && h.leaders.length))) {
       return `<div class="sc-story"><div class="hv-desc">Highlights aren't available for this game.</div></div>`;
     }
@@ -5940,7 +5997,7 @@
       </div>` : '';
     const playersHtml = h.leaders && h.leaders.length ? `<div class="story-sec">
         <div class="story-title">Players of the Game</div>
-        <div class="story-players">${h.leaders.map(p => `<div class="story-pl"><span class="story-abbr">${p.teamAbbr || ''}</span><button type="button" class="player-name-btn" data-player-id="${p.id}" title="${p.name}">${p.name}</button>${p.statLine ? `<span class="story-line">${p.statLine}</span>` : ''}</div>`).join('')}</div>
+        <div class="story-players">${h.leaders.map(p => `<div class="story-pl"><span class="story-abbr">${p.teamAbbr || ''}</span><button type="button" class="player-name-btn${fullProfile ? ' potg-player-name' : ''}" data-player-id="${p.id}" title="${p.name}">${p.name}</button>${p.statLine ? `<span class="story-line">${p.statLine}</span>` : ''}</div>`).join('')}</div>
       </div>` : '';
     return `<div class="sc-story">${pogHtml}${playersHtml}</div>`;
   }
@@ -6249,8 +6306,10 @@
         // style.
         return `<button type="button" class="player-name-btn" data-player-id="${p.id}" title="${p.name}">${p.lastName}</button>`;
       }).join('') + `</div>`;
+      const starterId = r.players[0] && r.players[0].id;
+      const entryOf = p => (r.entryInning || {})[p.id];
       const posHtml = `<div class="pos-stack">` + r.players.map((p, i) =>
-        i === 0 ? `<span class="pos-main">${p.pos}</span>` : `<span class="sub-note">${p.pos}</span>`
+        p.id === starterId ? `<span class="pos-main">${p.pos}</span>` : `<span class="sub-note">${p.pos}</span>`
       ).join('') + `</div>`;
       let cells = `<td class="ply">${nameHtml}</td><td class="pos">${posHtml}</td>`;
       for (let i = 1; i <= numInnings; i++) {
@@ -6259,6 +6318,13 @@
         for (let k = 0; k < cols; k++) {
           const c = cellArr[k];
           let inner = c ? renderCellInner(c) : '';
+          // A substitute's entry: the cream rule down the left of the inning
+          // he comes in, his position and name written up it (bottom to
+          // top), side by side when two come in together. On the rule's
+          // right, inside his own column -- the column to its left carries
+          // the previous plate appearance's runner tags.
+          const entering = k === 0 ? r.players.slice(1).filter(p => entryOf(p) === i) : [];
+          const upTheLine = entering.map((p, j) => `<span class="sub-up" style="left:${2 + j * 10}px"><b>${p.pos}</b> ${p.lastName}</span>`).join('');
           const isLiveCell = !c && liveBatterInfo && liveBatterInfo.team === teamKey
             && liveBatterInfo.rowSlot === r.slot && liveBatterInfo.inning === i && liveBatterInfo.slotIndex === k;
           if (isLiveCell) inner += liveCellInner(liveBatterInfo);
@@ -6284,7 +6350,7 @@
             + (r.dividerInnings && r.dividerInnings.has(i) && k === 0 ? ' sub-divider' : '')
             + (c && c.pitcherChanged ? ' pitcher-change' : '')
             + (c && starterPitcherId && c.pitcherId === starterPitcherId ? ' starter-span' : '');
-          cells += `<td class="${cls}">${cellHtml}</td>`;
+          cells += `<td class="${cls}">${upTheLine}${cellHtml}</td>`;
         }
       }
       return `<tr>${cells}</tr>`;
@@ -6471,7 +6537,9 @@
     const minNet = Math.min(0, netValues[troughIdx]);
     const range = Math.max(1, maxNet - minNet);
 
-    const padL = 26, padR = 10, padT = 10, padB = 16;
+    // Room above for the high point's label, below for the low point's
+    // (above the month labels), and on the right for the current mark.
+    const padL = 14, padR = 22, padT = 18, padB = 28;
     const plotW = width - padL - padR;
     const plotH = height - padT - padB;
     const n = played.length;
@@ -6516,16 +6584,25 @@
       svg += `<line x1="${t.x.toFixed(1)}" y1="${padT}" x2="${t.x.toFixed(1)}" y2="${height - padB}" stroke="${ink}" stroke-width="0.5" opacity="0.15"/>`;
       svg += `<text x="${t.x.toFixed(1)}" y="${height - 4}" font-family="Overpass, sans-serif" font-size="7" font-weight="700" letter-spacing="0.04em" fill="${ink}" opacity="0.6">${t.label}</text>`;
     });
-    svg += `<text x="${padL - 4}" y="${(padT + 6).toFixed(1)}" font-family="Overpass, sans-serif" font-weight="700" font-size="8" fill="${ink}" opacity="0.6" text-anchor="end">${maxNet > 0 ? '+' + maxNet : maxNet}</text>`;
-    svg += `<text x="${padL - 4}" y="${(zeroY - 3).toFixed(1)}" font-family="Overpass, sans-serif" font-weight="700" font-size="8" fill="${ink}" opacity="0.6" text-anchor="end">0</text>`;
-    if (minNet < 0) {
-      svg += `<text x="${padL - 4}" y="${height - padB}" font-family="Overpass, sans-serif" font-weight="700" font-size="8" fill="${ink}" opacity="0.6" text-anchor="end">${minNet}</text>`;
-    }
+    svg += `<text x="${padL - 4}" y="${(zeroY + 3).toFixed(1)}" font-family="Overpass, sans-serif" font-weight="700" font-size="8" fill="${ink}" opacity="0.6" text-anchor="end">0</text>`;
     if (n > 1) {
       svg += `<polyline points="${linePts}" fill="none" stroke="${ink}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>`;
     }
+    // The season's high (if it was ever over .500) and low (if ever under)
+    // are marked on the line with their value and date, instead of a
+    // caption; one the team stands at now is left to the current mark.
+    const markLabel = (i, above) => {
+      const x = xFor(i), y = yFor(netValues[i]);
+      const anchor = x < padL + 40 ? 'start' : x > width - padR - 40 ? 'end' : 'middle';
+      const ty = above ? y - 6 : y + 12;
+      return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.2" fill="${PALETTE.paper}" stroke="${ink}" stroke-width="1.2"/>`
+        + `<text x="${x.toFixed(1)}" y="${ty.toFixed(1)}" font-family="Overpass, sans-serif" font-weight="700" font-size="8" fill="${ink}" text-anchor="${anchor}" font-variant-numeric="tabular-nums">${fmtNet(netValues[i])}<tspan fill-opacity="0.6" dx="3">${fmtShortDate(played[i].date)}</tspan></text>`;
+    };
+    if (netValues[peakIdx] > 0 && netValues[peakIdx] !== finalNet) svg += markLabel(peakIdx, true);
+    if (netValues[troughIdx] < 0 && netValues[troughIdx] !== finalNet) svg += markLabel(troughIdx, false);
     const lastX = xFor(n - 1), lastY = yFor(finalNet);
     svg += `<circle cx="${lastX.toFixed(1)}" cy="${lastY.toFixed(1)}" r="3" fill="${finalNet >= 0 ? gold : brick}" stroke="${ink}" stroke-width="1"/>`;
+    svg += `<text x="${(lastX + 5).toFixed(1)}" y="${(lastY + 3).toFixed(1)}" font-family="Overpass, sans-serif" font-weight="700" font-size="8.5" fill="${ink}" font-variant-numeric="tabular-nums">${fmtNet(finalNet)}</text>`;
     svg += '</svg>';
     return svg;
   }
@@ -6534,10 +6611,6 @@
   function fmtShortDate(d) {
     const [, m, dd] = d.split('-').map(Number);
     return `${MONTH_NAMES[m - 1].slice(0, 3)} ${dd}`;
-  }
-  function winLossCaption(played) {
-    const { netValues, peakIdx, troughIdx } = winLossExtremes(played);
-    return `Current: ${fmtNet(netValues[netValues.length - 1])} &#8226; Best: ${fmtNet(netValues[peakIdx])} on ${fmtShortDate(played[peakIdx].date)} &#8226; Worst: ${fmtNet(netValues[troughIdx])} on ${fmtShortDate(played[troughIdx].date)}`;
   }
 
   function renderTeamChartContent(teamId, teamName, season, series, throughDate) {
@@ -6549,8 +6622,7 @@
     const losses = played.length - wins;
     return `<div class="pitch-header">${teamName}</div>
       <div class="pitch-subheader">${season} Season &#8226; ${wins}-${losses}</div>
-      ${renderWinLossSvg(`teamChartClip${teamId}`, played)}
-      <div class="pitch-final-desc">${winLossCaption(played)}</div>`;
+      ${renderWinLossSvg(`teamChartClip${teamId}`, played)}`;
   }
 
   function formatGameTime(iso) {
@@ -7037,12 +7109,14 @@
     const a = g.teams.away, h = g.teams.home;
     const team = (t, other) => {
       const lost = st.final && t.score < other.score;
-      return `<div class="dg-team${lost ? ' is-lost' : ''}"><img src="${capLogoUrl(t.team.id)}" alt=""><span>${teamAbbr(t.team)}</span><b>${st.started ? (t.score ?? 0) : ''}</b></div>`;
+      return `<div class="dg-team${lost ? ' is-lost' : ''}"><span>${teamAbbr(t.team)}</span><b>${st.started ? (t.score ?? 0) : ''}</b></div>`;
     };
+    const winner = st.final && a.score !== h.score ? (a.score > h.score ? a : h).team.id : null;
     const recap = media && media.recap;
     const mine = myTeamId() && (a.team.id === myTeamId() || h.team.id === myTeamId());
     return `
       <div class="dg${st.live ? ' is-live' : ''}${mine ? ' is-my-team' : ''}" data-date="${g.officialDate}" data-game-pk="${g.gamePk}" tabindex="0" role="button">
+        ${winner ? `<img class="dg-wm" src="${capLogoUrl(winner)}" alt="" aria-hidden="true" onerror="this.remove()">` : ''}
         <div class="dg-box">
           <div class="dg-teams">${team(a, h)}${team(h, a)}</div>
           <div class="dg-aside">
@@ -7128,8 +7202,10 @@
   const DAY_WOW_BONUS = 0.1;
   const DAY_ROW = 4;
 
+  // The scorecard's own half-inning triangle (up for the top, down for
+  // the bottom) before the inning, rather than T/B.
   function inningTag(k) {
-    return k.inning ? `${k.isTop ? 'T' : 'B'}${k.inning}` : '';
+    return k.inning ? `<span class="vc-inn" title="${k.isTop ? 'Top' : 'Bottom'} ${k.inning}">${NOW_TRI_SVG(k.isTop)}${k.inning}</span>` : '';
   }
   function matchupOf(g) {
     return g ? `${teamAbbr(g.teams.away.team)} @ ${teamAbbr(g.teams.home.team)}` : '';
@@ -7234,9 +7310,15 @@
     return { moments, defense, reels };
   }
 
+  // Keys carry their page's prefix ('d' the Highlights tab, 't' the Team
+  // tab), so each page clears only its own when it redraws.
+  let dayClipSeq = 0;
+  function clearDayClips(prefix) {
+    Object.keys(dayClips).forEach(k => { if (k[0] === prefix) delete dayClips[k]; });
+  }
   function dayVideoKey(item) {
-    const key = `c${Object.keys(dayClips).length}`;
-    dayClips[key] = item.clip ? item.clip : { playId: item.playId, matchup: matchupOf(item.g), title: item.title };
+    const key = `${item.clipPrefix || 'd'}${dayClipSeq++}`;
+    dayClips[key] = item.clip ? item.clip : { playId: item.playId, matchup: item.meta || matchupOf(item.g), title: item.title };
     return key;
   }
 
@@ -7271,7 +7353,7 @@
   // title and the game. Every card draws its own still -- MLB's photos
   // never show -- so a Savant-only play looks like any other.
   function renderVideoCard(item) {
-    const matchup = item.clip ? item.clip.matchup : matchupOf(item.g);
+    const matchup = item.meta || (item.clip ? item.clip.matchup : matchupOf(item.g));
     return `
       <button type="button" class="vc" data-day-clip="${dayVideoKey(item)}">
         <span class="vc-thumb">${renderScorebookStill(item)}</span>
@@ -7294,7 +7376,7 @@
   function renderDay() {
     if (!dayData) return '';
     const { dateStr, games, media, stats, season } = dayData;
-    dayClips = {};
+    clearDayClips('d');
     const homeRuns = stats.flatMap(s => s.homeRuns);
     const starts = stats.flatMap(s => s.starts);
     const sec = buildDaySections(dayData);
@@ -7638,8 +7720,7 @@
     const chart = played.length ? `<section class="tm-sec">
         <div class="pp-skg-head"><span>Games Over .500</span></div>
         <div class="tm-narrow">${renderWinLossSvg(`teamTabClipN${teamId}`, played)}</div>
-        <div class="tm-wide">${renderWinLossSvg(`teamTabClipW${teamId}`, played, { width: 900, height: 170 })}</div>
-        <div class="tm-chart-note">${winLossCaption(played)}</div>
+        <div class="tm-wide">${renderWinLossSvg(`teamTabClipW${teamId}`, played, { width: 640, height: 200 })}</div>
       </section>` : '';
 
     const gameList = (title, list) => list.length ? `<section class="tm-sec">
@@ -7648,19 +7729,222 @@
       </section>` : '';
 
 
-    return `<div class="sheet tm">
-      <div class="tm-head">
+    const head = `<div class="tm-head">
         <img class="tm-cap" src="${capLogoUrl(teamId)}" alt="">
         <div class="tm-id">
           <div class="tm-name">${name}</div>
           <div class="tm-place">${seasonLabel}${place ? ` &#183; ${place}` : ''}</div>
           ${champs}
         </div>
+      </div>`;
+    const sec = (title, id) => `<section class="tm-sec"><div class="pp-skg-head"><span>${title}</span></div><div id="${id}"></div></section>`;
+    // Two columns on a wide sheet: the season (record, chart, games) on
+    // the left, what's next and who's leading on the right; the biggest
+    // plays run in one row under both. On a phone the next game leads.
+    return `<div class="sheet tm">${head}
+      <div class="tm-split">
+        <div class="tm-col">${board}${chart}<div class="tm-pair${recent.length && upcoming.length ? '' : ' is-one'}">${gameList('Recent', recent)}${gameList('Up Next', upcoming)}</div></div>
+        <div class="tm-col tm-side"><div class="tm-next" id="tmNext"></div>${sec('Leaders', 'tmLeaders')}</div>
       </div>
-      ${board}
-      ${chart}
-      <div class="tm-pair">${gameList('Recent', recent)}${gameList('Up Next', upcoming)}</div>
+      <section class="tm-sec tm-moments"><div class="pp-skg-head"><span>Season Highlights</span></div><div id="tmMoments"></div></section>
     </div>`;
+  }
+
+  // ---- Overview extras: the season's biggest plays, leaders, next game ----
+  // The season's biggest swings in his team's favor: every final's win
+  // probability (under 1 KB a game) ranks them, then only the games that
+  // hold the top few are read in full for their diamonds and clips. At
+  // most two from one game, so one wild night can't fill the row.
+  const TEAM_MOMENTS = 8;
+  const teamMomentsCache = {};
+  async function getTeamSeasonMoments(teamId, finals) {
+    const key = `${teamId}-${finals.length ? finals[finals.length - 1].gamePk : 0}`;
+    if (teamMomentsCache[key]) return teamMomentsCache[key];
+    try {
+      const swings = [];
+      let next = 0;
+      async function worker() {
+        while (next < finals.length) {
+          const g = finals[next++];
+          const signed = await getGameWpaSigned(g.gamePk, true);
+          Object.keys(signed).forEach(i => {
+            const wpa = (g.isHome ? signed[i] : -signed[i]) / 100;
+            if (wpa > 0) swings.push({ g, atBatIndex: Number(i), wpa });
+          });
+        }
+      }
+      await Promise.all(Array.from({ length: SPRAY_FETCH_CONCURRENCY }, worker));
+      swings.sort((a, b) => b.wpa - a.wpa);
+      const perGame = {};
+      const top = swings.filter(m => (perGame[m.g.gamePk] = (perGame[m.g.gamePk] || 0) + 1) <= 2).slice(0, TEAM_MOMENTS);
+      const games = [...new Map(top.map(m => [m.g.gamePk, m.g])).values()];
+      const stats = Object.fromEntries(await Promise.all(games.map(async g =>
+        [g.gamePk, await fetchGameStats(g.gamePk, { id: g.awayId }, { id: g.homeId }, true)])));
+      const items = top.map(m => {
+        const k = ((stats[m.g.gamePk] || {}).keyPlays || []).find(x => x.atBatIndex === m.atBatIndex);
+        if (!k || !k.playId) return null;
+        const g = m.g;
+        return {
+          key: `${g.gamePk}-${k.atBatIndex}`, g, k, wpa: m.wpa, playId: k.playId,
+          title: momentTitle(k),
+          label: k.kind ? HR_IMPACT_LABELS[k.kind] : k.event === 'Home Run' ? 'Home run' : k.isOut ? 'Big out' : 'Big hit',
+          why: k.runs > 1 ? `${k.runs} runs` : k.runs ? '1 run' : '',
+          teamId: Number(teamId), personId: k.isOut ? k.pitcherId : k.batterId, clipPrefix: 't',
+          meta: `${fmtShortDate(g.date)} &#183; ${g.isHome ? 'vs' : '@'} ${TEAM_ABBR[g.isHome ? g.awayId : g.homeId] || g.opponentFull}`
+        };
+      }).filter(Boolean);
+      teamMomentsCache[key] = items;
+      return items;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Leaders among the regulars: hitters with half a batting title's PA
+  // (3.1 a team game) or more, by OPS -- the title's own share where three
+  // have it; pitchers by ERA among starters, a start every ten team games
+  // and 0.4 innings a game, so a hot reliever doesn't lead the staff.
+  function buildTeamLeaders(hitting, pitching, teamGames) {
+    const n = v => Number(v) || 0;
+    const titled = (hitting || []).filter(r => n(r.stat.plateAppearances) >= 3.1 * teamGames);
+    const regulars = titled.length >= 3 ? titled : (hitting || []).filter(r => n(r.stat.plateAppearances) >= 1.55 * teamGames);
+    const starters = (pitching || []).filter(r => n(r.stat.gamesStarted) >= teamGames / 10 && n(r.stat.inningsPitched) >= 0.4 * teamGames);
+    return {
+      hitters: regulars.slice().sort((a, b) => n(b.stat.ops) - n(a.stat.ops)).slice(0, 3),
+      pitchers: starters.slice().sort((a, b) => n(a.stat.era) - n(b.stat.era)).slice(0, 3)
+    };
+  }
+  function leaderLine(r, pitcher) {
+    const s = r.stat;
+    return pitcher
+      ? [`${s.wins}-${s.losses}`, `${s.inningsPitched} IP`, `${s.strikeOuts} K`, `${s.whip} WHIP`].join(' &#183; ')
+      : [`${s.avg}/${s.obp}/${s.slg}`, `${s.homeRuns} HR`, `${s.rbi} RBI`].join(' &#183; ');
+  }
+
+  // The next game: one under way first, else the next on the schedule --
+  // after the last game of a season, next season's opener.
+  async function getTeamNextGame(teamId, season, games) {
+    const ahead = games.filter(g => g.state !== 'Final' && !isCalledOff(g) && !finishedNextGames.has(g.gamePk));
+    const live = ahead.find(g => g.state === 'Live');
+    if (live || ahead.length) return { g: live || ahead[0], opener: false };
+    if (Number(season) !== Number(await getDefaultListSeason())) return null;
+    const nextSeason = await fetchTeamSchedule(teamId, Number(season) + 1);
+    const first = teamScheduleGames(nextSeason.gamesByDate || {}).find(g => !isCalledOff(g));
+    return first ? { g: first, opener: true } : null;
+  }
+  function renderNextGame(next) {
+    if (!next) return '';
+    const g = next.g;
+    const oppId = g.isHome ? g.awayId : g.homeId;
+    const live = g.state === 'Live';
+    const us = g.isHome ? g.homeScore : g.awayScore, them = g.isHome ? g.awayScore : g.homeScore;
+    const when = new Date(g.gameDate);
+    const day = when.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+    const kicker = live ? '<span class="tn-live"><i></i>Live</span>' : next.opener ? 'Opening Day' : 'Next Game';
+    const right = live
+      ? `<span class="tn-score">${us ?? 0}<b>-</b>${them ?? 0}</span><span class="tn-state">${g.inningLabel || g.detailedState || ''}</span>`
+      : `<span class="tn-day">${day}</span><span class="tn-state">${formatGameTime(g.gameDate)}</span>`;
+    return `<button type="button" class="tn${live ? ' is-live' : ''}" data-tn-date="${g.date}" data-tn-pk="${g.gamePk}">
+        <span class="tn-kicker">${kicker}</span>
+        <span class="tn-opp"><span class="tn-at">${g.isHome ? 'vs' : '@'}</span><img src="${capLogoUrl(oppId)}" alt="">${g.opponentFull}</span>
+        <span class="tn-right">${right}</span>
+        <span class="tn-go">${live ? 'Follow live' : 'Scorecard'} &#8594;</span>
+      </button>`;
+  }
+
+  // Leaders, a ranked board per side: his print and plate, his line under
+  // the plate, and the stat they're ranked by in a slot at the end.
+  // The next-game card follows a game under way -- or due within half an
+  // hour -- every 20s while the Overview is on screen. A tick that comes
+  // due anywhere else pauses (the tab's onShow and catchUpAfterResume pick
+  // it up again); once the game is final the Overview reloads, so it joins
+  // Recent and the card moves on to the next one.
+  const TEAM_NEXT_POLL_MS = 20000;
+  const finishedNextGames = new Set();
+  let teamNextPollTimer = null;
+  let teamNextPolled = null;
+  function armTeamNextPoll(requestId, next) {
+    clearTimeout(teamNextPollTimer);
+    teamNextPollTimer = null;
+    teamNextPolled = null;
+    if (!next || next.opener) return;
+    const g = next.g;
+    if (g.state !== 'Live' && new Date(g.gameDate).getTime() - Date.now() > 30 * 60 * 1000) return;
+    teamNextPolled = { requestId, next };
+    // A live game's inning isn't on the schedule, so the first tick is now.
+    teamNextPollTimer = setTimeout(pollTeamNext, g.state === 'Live' ? 0 : TEAM_NEXT_POLL_MS);
+  }
+  async function pollTeamNext() {
+    teamNextPollTimer = null;
+    const polled = teamNextPolled;
+    if (!polled || polled.requestId !== teamRequestId) return;
+    if (document.hidden || Tabs.current() !== 'team' || teamTab.view !== 'overview') return;
+    const live = await getNextGameLive(polled.next.g.gamePk);
+    if (polled !== teamNextPolled || polled.requestId !== teamRequestId) return;
+    if (live && live.state === 'Final') {
+      // The schedule is cached for minutes and would still call the game
+      // live, so it's dropped, and the game is remembered as over in case
+      // a fresh copy lags too -- either way the card can't keep reloading.
+      finishedNextGames.add(polled.next.g.gamePk);
+      delete scheduleCache[`${teamTab.teamId}-${teamTab.season}`];
+      loadTeamTab();
+      return;
+    }
+    if (live) {
+      polled.next = { ...polled.next, g: { ...polled.next.g, ...live } };
+      const el = document.getElementById('tmNext');
+      if (el) el.innerHTML = renderNextGame(polled.next);
+    }
+    teamNextPollTimer = setTimeout(pollTeamNext, TEAM_NEXT_POLL_MS);
+  }
+  // Deferred a tick: the tab's onShow runs before Tabs marks it current.
+  function resumeTeamNextPoll() {
+    if (teamNextPolled && !teamNextPollTimer) teamNextPollTimer = setTimeout(pollTeamNext, 0);
+  }
+  // One game's state, score and inning, fresh past the browser's cache (a
+  // failure isn't cached: the next tick just tries again).
+  async function getNextGameLive(gamePk) {
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&gamePk=${gamePk}&hydrate=linescore&fields=dates,games,status,abstractGameState,detailedState,teams,away,home,score,linescore,currentInning,inningState,isTopInning`, { cache: 'no-cache' });
+      if (!res.ok) return null;
+      const data = await res.json();
+      const g = data.dates && data.dates[0] && data.dates[0].games && data.dates[0].games[0];
+      if (!g) return null;
+      const ls = g.linescore || {};
+      const half = { Top: 'Top', Bottom: 'Bot', Middle: 'Mid', End: 'End' }[ls.inningState] || '';
+      return {
+        state: g.status.abstractGameState,
+        detailedState: g.status.detailedState,
+        homeScore: g.teams.home.score,
+        awayScore: g.teams.away.score,
+        inningLabel: ls.currentInning ? `${half} ${ordinalSuffix(ls.currentInning)}`.trim() : ''
+      };
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function renderLeaderRows(leaders, teamId, season) {
+    const side = (title, rows, pitcher) => {
+      if (!rows.length) return '';
+      const key = pitcher ? 'ERA' : 'OPS';
+      return `<div class="tl-side"><div class="tl-sub">${title}</div>${rows.map((r, i) => {
+        storeTeamPlayer(r.id, r.name, r.pos, teamId, season);
+        return `<div class="tl-row">
+          <span class="tl-rank">${i + 1}</span>
+          ${depthPrint({ id: r.id, name: r.name })}
+          <span class="tl-who">${depthPlate({ id: r.id, name: r.name })}<span class="tl-line">${leaderLine(r, pitcher)}</span></span>
+          <span class="tl-key"><span class="pp-painted">${key}</span><span class="pp-slot">${pitcher ? r.stat.era : r.stat.ops}</span></span>
+        </div>`;
+      }).join('')}</div>`;
+    };
+    const html = side('Hitters', leaders.hitters, false) + side('Starters', leaders.pitchers, true);
+    return html || '<div class="pitch-empty">No regulars yet this season.</div>';
+  }
+  function renderTeamMoments(items) {
+    if (items === undefined) return '<div class="mlb-status-msg">Finding the season&#8217;s biggest plays&#8230;</div>';
+    if (!items || !items.length) return '<div class="pitch-empty">No plays yet this season.</div>';
+    return `<div class="dp-row">${items.map(renderVideoCard).join('')}</div>`;
   }
 
   // Same running tally getTeamWinLossSeries keeps, from games already in hand.
@@ -7687,6 +7971,20 @@
     const october = record && record.final ? await getTeamPostseasonResult(teamId, season) : null;
     if (requestId !== teamRequestId) return;
     teamBody.innerHTML = renderTeamOverview(teamId, season, record, schedule, october);
+    const games = teamScheduleGames(schedule.gamesByDate).filter(g => !isCalledOff(g));
+    const finals = games.filter(g => g.state === 'Final' && g.homeScore != null && g.awayScore != null);
+    const fill = (id, html) => { if (requestId !== teamRequestId) return; const el = document.getElementById(id); if (el) el.innerHTML = html; };
+    fill('tmMoments', renderTeamMoments(undefined));
+    getTeamNextGame(teamId, season, games).then(next => {
+      if (requestId !== teamRequestId) return;
+      fill('tmNext', renderNextGame(next));
+      armTeamNextPoll(requestId, next);
+    });
+    Promise.all([getTeamPlayerStats(teamId, season, 'hitting'), getTeamPlayerStats(teamId, season, 'pitching')]).then(([h, pi]) => {
+      const leaders = buildTeamLeaders(h, pi, finals.length || 1);
+      fill('tmLeaders', renderLeaderRows(leaders, teamId, season));
+    });
+    getTeamSeasonMoments(teamId, finals).then(items => { clearDayClips('t'); fill('tmMoments', renderTeamMoments(items)); });
   }
 
   // ---- Schedule ----
@@ -8148,6 +8446,14 @@
       loadTeamTab();
       return;
     }
+    const clipBtn = e.target.closest('[data-day-clip]');
+    if (clipBtn) {
+      const clip = dayClips[clipBtn.dataset.dayClip];
+      if (clip && clip.playId) showClipModal(clip.playId, { head: `<div class="cv-head"><span class="cv-result">${clip.matchup}</span></div>` });
+      return;
+    }
+    const nextBtn = e.target.closest('[data-tn-pk]');
+    if (nextBtn) { jumpToScorecardGame(nextBtn.dataset.tnDate, nextBtn.dataset.tnPk); return; }
     const tile = e.target.closest('.calendar-day.is-game, .tm-g');
     if (tile) openTeamTile(tile);
   });
@@ -8200,7 +8506,7 @@
     // Top play/players highlights only make sense once a game is over --
     // a Live game's WPA swings are still in motion.
     const wpaHtml = game.state === 'Final'
-      ? `<div class="pog-section" id="wpaLeaders-${game.gamePk}"><div class="potg-loading">Loading game highlights&#8230;</div></div>`
+      ? `<div class="gs-story" id="wpaLeaders-${game.gamePk}"><div class="sc-story"><div class="story-sec"><div class="potg-loading">Loading game highlights&#8230;</div></div></div></div>`
       : '';
 
     const ctaHtml = `<button type="button" class="modal-cta" data-date="${dateStr}" data-game-pk="${game.gamePk}">View Full Scorecard &#8594;</button>`;
@@ -8504,44 +8810,6 @@
     }
   }
 
-  function renderPlayOfGame(playOfGame) {
-    if (!playOfGame) return '';
-    const watchHtml = playOfGame.videoUrl
-      ? `<a class="pog-watch" ${clipWatchAttrs(playOfGame.videoUrl, 'Play of the Game')}>Watch &#9654;</a>`
-      : '';
-    return `
-      <div class="pog-section">
-        <div class="gs-game-label">Play of the Game</div>
-        ${playOfGame.inningLabel ? `<div class="pog-inning">${playOfGame.inningLabel}</div>` : ''}
-        <div class="pog-description">${playOfGame.description}</div>
-        ${watchHtml}
-      </div>`;
-  }
-
-  function renderPlayersOfTheGame(leaders) {
-    if (!leaders.length) return '';
-    const players = leaders.map(p => {
-      return `
-        <div class="potg-player">
-          <img class="potg-headshot" src="${headshotUrl(p.id)}" alt="" loading="lazy" onerror="this.style.display='none'">
-          <button type="button" class="player-name-btn potg-player-name" data-player-id="${p.id}" title="${p.name}">${p.lastName}</button>
-          ${p.statLine ? `<div class="potg-stat-line">${p.statLine}</div>` : ''}
-        </div>`;
-    }).join('');
-    return `
-      <div class="potg-section">
-        <div class="gs-game-label">Players of the Game</div>
-        <div class="potg-players">${players}</div>
-      </div>`;
-  }
-
-  function renderGameHighlights(playOfGame, leaders) {
-    if (!playOfGame && !leaders.length) {
-      return `<div class="pog-section"><div class="potg-loading">Highlights unavailable for this game.</div></div>`;
-    }
-    return renderPlayOfGame(playOfGame) + renderPlayersOfTheGame(leaders);
-  }
-
   // getVenueInfo is cached by venue id, so this is cheap on repeat opens of
   // the same park -- swaps the name-only placeholder for the full name+city
   // once the detailed /v1/venues record resolves.
@@ -8558,7 +8826,7 @@
     if (requestId !== gameSummaryRequestId) return;
     if (includeHighlights) {
       const wpaEl = document.getElementById(`wpaLeaders-${game.gamePk}`);
-      if (wpaEl) wpaEl.outerHTML = renderGameHighlights(playOfGame, leaders);
+      if (wpaEl) wpaEl.innerHTML = renderGameStory({ playOfGame, leaders }, { fullProfile: true });
     }
     if (!game.linescore) {
       const boxEl = document.getElementById(`boxScore-${game.gamePk}`);
@@ -9983,10 +10251,23 @@
     }
 
     // history: false when restoring a tab from Back (popstate), where the
-    // browser has already set the URL; a tab-bar switch replaces the
-    // current entry rather than pushing one (see navPush).
+    // browser has already set the URL. A tab-bar switch replaces the
+    // current entry rather than pushing one (see navPush) -- except over a
+    // drill-in (a profile, a game opened from elsewhere), which it would
+    // erase: that one is kept and the switch pushes above it, noting the
+    // tab it left (`over`). Tapping that tab again steps back to it rather
+    // than stacking a second entry for the same screen.
     function switchTo(id, { history: touchHistory = true } = {}) {
+      const here = (touchHistory && history.state) || {};
+      if (touchHistory && here.over === id && id !== active) {
+        try { history.back(); return; } catch (e) {}
+      }
       if (!tabs[id] || id === active) return;
+      // Before the panels change, so the entry left keeps its own scroll.
+      if (touchHistory) {
+        if (here.profile || here.game) navPush({ tab: id, over: here.tab });
+        else try { history.replaceState({ tab: id, ...(here.over ? { over: here.over } : {}) }, '', '#' + id); } catch (e) {}
+      }
       tabBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === id));
       tabPanels.forEach(p => { p.hidden = p.dataset.tabPanel !== id; });
       tabControls.forEach(c => { c.hidden = c.dataset.tabControls !== id; });
@@ -9994,9 +10275,6 @@
       if (!tab.initialized) { if (tab.init) tab.init(); tab.initialized = true; }
       if (tab.onShow) tab.onShow();
       active = id;
-      if (touchHistory) {
-        try { history.replaceState({ tab: id }, '', '#' + id); } catch (e) {}
-      }
     }
 
     function init(defaultId) {
@@ -10040,7 +10318,9 @@
     if (st.tab === 'players') {
       if (st.profile) {
         if (playersView !== 'profile' || Number(lastProfilePerson && lastProfilePerson.id) !== st.profile) {
-          showPlayerProfile({ id: st.profile, fullName: '' }, { history: false });
+          showPlayerProfile({ id: st.profile, fullName: '' }, { history: false, tab: st.profileTab || 'ov' });
+        } else if ((st.profileTab || 'ov') !== profileTab) {
+          showProfileTab(st.profileTab || 'ov');
         }
       } else if (playersView === 'profile') {
         showPlayerList();
@@ -10190,12 +10470,13 @@
     if (e.target.closest('.pp-back')) { leaveProfileForList(); return; }
     const tab = e.target.closest('.pp-tab');
     if (tab) {
-      profileTab = tab.dataset.ppTab;
-      rerenderPlayerProfile();
-      ensureProfileRecent();
-      ensureProfileDefense();
-      ensureProfileSpray();
-      ensureProfileArsenal();
+      // A switch within the profile, so it replaces the entry rather than
+      // pushing one -- but the entry keeps it, so Back to this player
+      // lands on the same tab.
+      try {
+        if (history.state && history.state.profile) history.replaceState({ ...history.state, profileTab: tab.dataset.ppTab }, '', location.hash);
+      } catch (err) {}
+      showProfileTab(tab.dataset.ppTab);
       return;
     }
     const arsSide = e.target.closest('[data-ars-side]');
@@ -11758,7 +12039,8 @@
   // starts at .500 (lower only if a split dips under it); a pitcher's,
   // whose opponents' OPS runs far lower, is fit to his own range. Both
   // ends are labelled under the bars, since a truncated bar's length is
-  // only meaningful against them.
+  // only meaningful against them. A pitcher's scale runs high to low, so
+  // for both a longer bar is the better split.
   const SPLIT_MONTHS = ['May', 'June', 'July', 'August', 'September'];
   function renderProfileSplits(splits, pitcher, seasonStat) {
     const marApr = [splits.March, splits.April].filter(Boolean);
@@ -11776,7 +12058,7 @@
     const fitLo = Math.max(0, Math.floor((Math.min(...values) - 0.05) * 10) / 10);
     const lo = pitcher ? fitLo : Math.min(0.5, fitLo);
     const hi = Math.max(lo + 0.3, Math.ceil((Math.max(...values) + 0.05) * 10) / 10);
-    const pct = v => `${Math.max(0, Math.min(100, ((v - lo) / (hi - lo)) * 100)).toFixed(1)}%`;
+    const pct = v => `${Math.max(0, Math.min(100, ((pitcher ? hi - v : v - lo) / (hi - lo)) * 100)).toFixed(1)}%`;
     const tick = v => formatRate(v, 1);
     const mark = seasonValue ? `<i class="pp-sb-season" style="left:${pct(seasonValue)}"></i>` : '';
     const sampleLabel = pitcher ? 'BF' : 'PA';
@@ -11791,7 +12073,7 @@
           <span class="pp-ssample">${r.sample ?? 0} ${sampleLabel}</span>
         </div>`).join('')}
       </div>`).join('')}
-      <div class="pp-srow pp-saxis" aria-hidden="true"><span></span><span class="pp-saxis-ends"><span>${tick(lo)}</span><span>${tick(hi)}</span></span><span></span><span></span></div>
+      <div class="pp-srow pp-saxis" aria-hidden="true"><span></span><span class="pp-saxis-ends"><span>${tick(pitcher ? hi : lo)}</span><span>${tick(pitcher ? lo : hi)}</span></span><span></span><span></span></div>
     </div>`;
   }
 
@@ -11884,7 +12166,7 @@
       plays: 'catcher'
     }
   };
-  const SWEEP_POSITIONS = { infield: ['3', '4', '5', '6'], catcher: ['2'] };
+  const SWEEP_POSITIONS = { outfield: ['7', '8', '9'], infield: ['3', '4', '5', '6'], catcher: ['2'] };
   function defenseGroupFor(person) {
     const type = person && person.primaryPosition && person.primaryPosition.type;
     return DEFENSE_GROUPS[type] || null;
@@ -12114,7 +12396,11 @@
       : slot('OAA', formatSigned(current.row.oaa), current.rank)
         + slot('FRV', current.frv != null ? formatSigned(current.frv) : '&#8212;', current.frvRank);
     const below = group.plays === 'catches' ? renderCatchBoard() : group.plays === 'infield' ? renderInfieldPlays() : renderCatcherPlays();
-    return `<div class="pp-def"><div class="pp-def-top${pools.length > 1 ? '' : ' is-solo'}">${slots}${pools.length > 1 ? toggle : ''}</div>${below}</div>`;
+    return `<div class="pp-def">
+      <div class="pp-def-top${pools.length > 1 ? '' : ' is-solo'}">${slots}${pools.length > 1 ? toggle : ''}</div>
+      <div class="pp-def-main">${below}</div>
+      <div class="pp-def-side">${renderDefenseHighlights(group)}</div>
+    </div>`;
   }
 
   // Each catch chance is a lamp in its star row: lit for a catch, a dark
@@ -12436,8 +12722,19 @@
     const dpHtml = dps.length
       ? `<div class="pp-cb-routine pp-dp-roles">${roles.map(([r, n]) => `${r} <span>${n}</span>`).join('')}</div>${rows}`
       : `<div class="pitch-empty">No ${lastProfileSeason} double plays.</div>`;
-    return `<div class="pp-cb"><span class="pp-painted pp-cb-title">Double Plays <span class="pp-dp-total">${dps.length || ''}</span></span>${dpHtml}</div>
-      ${renderHighlightsSection(data, inPool)}`;
+    return `<div class="pp-cb"><span class="pp-painted pp-cb-title">Double Plays <span class="pp-dp-total">${dps.length || ''}</span></span>${dpHtml}</div>`;
+  }
+
+  // MLB's highlight clips of him, beside his plays on a wide sheet and
+  // under them on a narrower one. They follow the position toggle (the
+  // group's own "All" pool takes every clip). An infielder's or a
+  // catcher's plays already show the sweep's progress, so only an
+  // outfielder's column shows it here.
+  function renderDefenseHighlights(group) {
+    const data = lastProfilePlays;
+    if (!data) return group.plays === 'catches' ? renderPlaysStatus(data) : '';
+    const inPool = pos => profileDefensePool === 'of' || profileDefensePool === 'if' || pos === profileDefensePool;
+    return renderHighlightsSection(data, group.plays === 'catcher' ? () => true : inPool);
   }
 
   // A lamp board like the outfield catch board, for a catcher's plays:
@@ -12490,7 +12787,6 @@
         : `<div class="pitch-empty">No ${lastProfileSeason} challenges.</div>`;
       sections.push(`<div class="pp-cb"><span class="pp-painted pp-cb-title">ABS Challenges <span class="pp-dp-total">${challenges.length ? `${won}/${challenges.length}` : ''}</span></span>${chalHtml}</div>`);
     }
-    sections.push(renderHighlightsSection(data, () => true));
     return sections.join('');
   }
 
@@ -12533,7 +12829,13 @@
   function renderPlayerProfile(person) {
     const pitcher = isPitcher(person);
     const tabs = profileTabsFor(pitcher, lastProfileDetail, person);
-    if (!tabs.some(([id]) => id === profileTab)) profileTab = 'ov';
+    // Which tabs exist depends on his position and season, which a first
+    // draw may not know yet -- so a tab asked for by history (Defense,
+    // Arsenal, Starts) waits for them, showing Overview meanwhile, and is
+    // only dropped once it's certain he doesn't have it.
+    const hasTab = tabs.some(([id]) => id === profileTab);
+    if (!hasTab && lastProfileDetail !== undefined && person.primaryPosition) profileTab = 'ov';
+    const shownTab = hasTab ? profileTab : 'ov';
     const team = person.currentTeam && person.currentTeam.name;
     const pos = person.primaryPosition && person.primaryPosition.name;
     const ident = [team, pos].filter(Boolean).map((t, i) => (i ? `<span class="pp-sep">&#183;</span><span class="pp-pos">${t}</span>` : t)).join('');
@@ -12572,8 +12874,8 @@
         </div>
         ${bio ? `<div class="pp-narrow pp-vitals-narrow">${bio}</div>` : ''}
         <div class="pp-narrow">${awardsHtml}</div>
-        <div class="pp-tabs" role="tablist">${tabs.map(([id, label]) => `<button type="button" class="pp-tab" role="tab" data-pp-tab="${id}" aria-selected="${id === profileTab}">${label}</button>`).join('')}</div>
-        <div class="pp-panel" role="tabpanel">${renderProfileTabBody(profileTab, pitcher)}</div>
+        <div class="pp-tabs" role="tablist">${tabs.map(([id, label]) => `<button type="button" class="pp-tab" role="tab" data-pp-tab="${id}" aria-selected="${id === shownTab}">${label}</button>`).join('')}</div>
+        <div class="pp-panel" role="tabpanel">${renderProfileTabBody(shownTab, pitcher)}</div>
       </div>
     </div>`;
   }
@@ -12633,21 +12935,23 @@
         lastProfileCatches = catches;
         rerenderPlayerProfile();
       });
-    } else {
-      // Progress is written straight into the status line rather than by
-      // re-rendering the whole profile once per game.
-      const onProgress = (done, total) => {
-        if (requestId !== playerProfileRequestId) return;
-        lastProfilePlaysProgress = { done, total };
-        const el = playersBody.querySelector('.pp-plays-progress');
-        if (el) el.textContent = `Loading plays\u2026 ${done}/${total} games`;
-      };
-      getSeasonFieldingPlays(personId, season, group.plays, onProgress).then(plays => {
-        if (requestId !== playerProfileRequestId) return;
-        lastProfilePlays = plays;
-        rerenderPlayerProfile();
-      });
     }
+    // Every group sweeps his games for MLB's highlight clips of him; an
+    // infielder's and a catcher's plays come out of the same sweep. An
+    // outfielder's catches come from Savant above instead.
+    // Progress is written straight into the status line rather than by
+    // re-rendering the whole profile once per game.
+    const onProgress = (done, total) => {
+      if (requestId !== playerProfileRequestId) return;
+      lastProfilePlaysProgress = { done, total };
+      const el = playersBody.querySelector('.pp-plays-progress');
+      if (el) el.textContent = `Loading plays\u2026 ${done}/${total} games`;
+    };
+    getSeasonFieldingPlays(personId, season, group.plays === 'catches' ? 'outfield' : group.plays, onProgress).then(plays => {
+      if (requestId !== playerProfileRequestId) return;
+      lastProfilePlays = plays;
+      rerenderPlayerProfile();
+    });
     const def = Number(season) < STATCAST_FIRST_SEASON ? {} : await buildProfileDefense(personId, season, group);
     if (requestId !== playerProfileRequestId) return;
     lastProfileDefense = def;
@@ -12684,6 +12988,15 @@
     if (requestId !== playerProfileRequestId) return;
     lastProfileArsenal = buildProfileArsenal(personId, hand, season, league, log);
     rerenderPlayerProfile();
+  }
+
+  function showProfileTab(id) {
+    profileTab = id;
+    rerenderPlayerProfile();
+    ensureProfileRecent();
+    ensureProfileDefense();
+    ensureProfileSpray();
+    ensureProfileArsenal();
   }
 
   function ensureProfileRecent() {
@@ -12754,7 +13067,7 @@
   // pushed one (jumpToPlayerProfile, before switching tabs). from/depth
   // record whether it was opened from the list and how many players deep,
   // for leaveProfileForList.
-  async function showPlayerProfile(rawPerson, { history: pushHistory = true } = {}) {
+  async function showPlayerProfile(rawPerson, { history: pushHistory = true, tab = 'ov' } = {}) {
     // Normalized once, here, since callers don't agree on type: search
     // results carry a numeric id straight from the API, but a dataset
     // attribute (jumpToPlayerProfile, showPlayerModal) is always a string.
@@ -12772,7 +13085,7 @@
     }
     playersView = 'profile';
     syncPlayerToggle();
-    profileTab = 'ov';
+    profileTab = tab;
     lastProfilePerson = person;
     lastProfileCareerSplits = null;
     lastProfileAwardTags = [];
@@ -12824,6 +13137,7 @@
     if (!pitcher) playerSprayState.season = season;
     loadProfileSeason(person.id, season, pitcher, requestId);
     ensureProfileDefense();
+    ensureProfileArsenal();
     await profileAwardsReady;
     if (requestId !== playerProfileRequestId) return;
     rerenderPlayerProfile();
@@ -12928,7 +13242,7 @@
     if (final && standingsView === 'division') setStandingsView('postseason');
     loadStandings();
   } });
-  Tabs.register('team', { init: initTeamTab });
+  Tabs.register('team', { init: initTeamTab, onShow: resumeTeamNextPoll });
   // onShow keeps --tab-header-h current for this tab's own header height
   // (its controls row differs from the Scorecard's), which the Game Log's
   // sticky recent-games column reads.
@@ -13137,6 +13451,7 @@
     if (now - lastResumeCatchUp < 1000) return;
     lastResumeCatchUp = now;
     resumeScorecardPolls(true);
+    resumeTeamNextPoll();
     if (dailyPollTimer) {
       clearTimeout(dailyPollTimer);
       dailyPollTimer = null;
