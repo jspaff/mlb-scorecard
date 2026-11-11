@@ -2575,14 +2575,9 @@
     transform: translateZ(0);
   }
   table.scorecard-table td.cell { width: 52px; height: 64px; padding: 3px 1px 7px; }
-  table.scorecard-table td.sub-divider { border-left: 1px dashed rgba(28,58,44,0.3); }
-  /* MOCK substitution treatments */
-  .sub-v1 table.scorecard-table td.sub-divider, .sub-v2 table.scorecard-table td.sub-divider, .sub-v3 table.scorecard-table td.sub-divider { border-left: 2px solid rgba(243, 236, 219, 0.7); }
-  .sub-inn { margin-left: 3px; font-weight: 800; font-style: normal; color: var(--ink); }
-  .sub-plate { position: absolute; left: 0; bottom: -6px; width: 52px; box-sizing: border-box; padding: 1px 3px 0; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8.5px; line-height: 11px; letter-spacing: 0.02em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink); background: var(--paper); border: 1px solid var(--ink); }
-  .sub-by { position: absolute; left: 0; bottom: -5px; width: 52px; text-align: center; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8.5px; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink-soft); }
-  .sub-v4 table.scorecard-table tr.sub-line td { border-top: 1px dotted rgba(243, 236, 219, 0.25); }
-  .sub-v5 table.scorecard-table td.sub-divider, .sub-v6 table.scorecard-table td.sub-divider { position: relative; border-left: 2px solid rgba(243, 236, 219, 0.7); }
+  /* A substitute's entry: a cream rule down the left of his first inning,
+     with his position and name written up it (see renderTeamTable). */
+  table.scorecard-table td.sub-divider { position: relative; border-left: 2px solid rgba(243, 236, 219, 0.7); }
   .sub-up { position: absolute; bottom: 4px; max-height: calc(100% - 8px); writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8.5px; line-height: 9px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); pointer-events: none; }
   .sub-up b { color: var(--ink-soft); font-weight: 800; }
   /* an inset shadow instead of border-top: back when this table used
@@ -4604,17 +4599,16 @@
           labelSvg += edgeLabelSvg(midX, midY, special);
         }
       } else if (outEdge === name) {
-        const stopX = p1[0] + (p2[0] - p1[0]) * 0.55;
-        const stopY = p1[1] + (p2[1] - p1[1]) * 0.55;
-        const outLabel = specialMap[name] === 'CS' || specialMap[name] === 'PO' ? specialMap[name] : null;
-        svg += `<line x1="${p1[0]}" y1="${p1[1]}" x2="${stopX}" y2="${stopY}" stroke="${gold}" stroke-width="2.4" stroke-linecap="square"/>`;
-        svg += `<line x1="${stopX}" y1="${stopY}" x2="${p2[0]}" y2="${p2[1]}" stroke="${dim}" stroke-width="1.2" stroke-linecap="square"/>`;
+        // The leg he was put out on, in brick, a touch lighter than the
+        // gold. It starts where the gold's square end stops (half the gold's
+        // 2.4 width past the bag), so the bag he reached stays all gold and
+        // the red never runs into its corner.
         const dx = p2[0] - p1[0], dy = p2[1] - p1[1];
         const len = Math.sqrt(dx * dx + dy * dy) || 1;
-        const px = -dy / len, py = dx / len;
-        const tickLen = 3.4;
-        svg += `<line x1="${stopX - px * tickLen}" y1="${stopY - py * tickLen}" x2="${stopX + px * tickLen}" y2="${stopY + py * tickLen}" stroke="${brick}" stroke-width="2.2" stroke-linecap="butt"/>`;
-        if (outLabel) labelSvg += edgeLabelSvg(stopX, stopY, outLabel);
+        const startX = p1[0] + dx * (1.2 / len), startY = p1[1] + dy * (1.2 / len);
+        const outLabel = specialMap[name] === 'CS' || specialMap[name] === 'PO' ? specialMap[name] : null;
+        svg += `<line x1="${startX}" y1="${startY}" x2="${p2[0]}" y2="${p2[1]}" stroke="${brick}" stroke-width="1.8" stroke-linecap="butt"/>`;
+        if (outLabel) labelSvg += edgeLabelSvg((p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2, outLabel);
       } else {
         svg += `<line x1="${p1[0]}" y1="${p1[1]}" x2="${p2[0]}" y2="${p2[1]}" stroke="${dim}" stroke-width="1.2" stroke-linecap="square"/>`;
       }
@@ -6281,9 +6275,6 @@
   }
   const NOW_TRI_SVG = top => `<svg class="now-tri" viewBox="0 0 10 8" aria-hidden="true"><path d="${top ? 'M5 0L10 8H0Z' : 'M0 0H10L5 8Z'}" fill="currentColor"/></svg>`;
 
-  // MOCK: batter-substitution treatments from ?sub=1..4 while they're
-  // compared (0, the default, is what shipped before).
-  const SUBV = (() => { try { return Number(new URLSearchParams(location.search).get('sub')) || 0; } catch (e) { return 0; } })();
   function renderTeamTable(teamName, rows, numInnings, pitcherByInning, starterPitcherId, columnsPerInning, pitchingBoxHtml, teamKey, liveBatterInfo, season, gameDate, headerControlsHtml, hidden) {
     let head = `<tr><th class="ply">Player</th><th class="pos">Pos</th>`;
     for (let i = 1; i <= numInnings; i++) {
@@ -6296,7 +6287,7 @@
     }
     head += `</tr>`;
 
-    const rowHtml = (r, players, onlyId, trCls, withLive) => {
+    const bodyRows = rows.map(r => {
       // Both stacks use a flex column (see .ply-stack/.pos-stack) instead of
       // <br>-joined inline content -- a <button>'s line-height doesn't
       // reliably inherit from an ancestor the way plain text's does (browser
@@ -6305,7 +6296,7 @@
       // sync no matter how carefully the <br> and text line-heights were
       // tuned to match. flex + gap sidesteps that entirely: the gap between
       // entries is explicit and independent of what's inside them.
-      const nameHtml = `<div class="ply-stack">` + players.map((p, i) => {
+      const nameHtml = `<div class="ply-stack">` + r.players.map((p, i) => {
         if (!p.id) return '';
         playerStore[p.id] = { id: p.id, name: p.name, pos: p.pos, team: teamName, season, gameDate, todayStats: p.stats };
         // A substitute's name button renders exactly like the starter's --
@@ -6317,26 +6308,24 @@
       }).join('') + `</div>`;
       const starterId = r.players[0] && r.players[0].id;
       const entryOf = p => (r.entryInning || {})[p.id];
-      const posHtml = `<div class="pos-stack">` + players.map((p, i) =>
-        p.id === starterId ? `<span class="pos-main">${p.pos}</span>`
-          : `<span class="sub-note">${p.pos}${SUBV === 1 && entryOf(p) ? `<b class="sub-inn">${entryOf(p)}</b>` : ''}</span>`
+      const posHtml = `<div class="pos-stack">` + r.players.map((p, i) =>
+        p.id === starterId ? `<span class="pos-main">${p.pos}</span>` : `<span class="sub-note">${p.pos}</span>`
       ).join('') + `</div>`;
       let cells = `<td class="ply">${nameHtml}</td><td class="pos">${posHtml}</td>`;
       for (let i = 1; i <= numInnings; i++) {
         const cols = (columnsPerInning && columnsPerInning[i]) || 1;
         const cellArr = r.cells[i] || [];
         for (let k = 0; k < cols; k++) {
-          let c = cellArr[k];
-          if (onlyId && c && c.playerId !== onlyId) c = null;
+          const c = cellArr[k];
           let inner = c ? renderCellInner(c) : '';
-          if (SUBV === 3 && c && c.playerId !== starterId) {
-            const who = r.players.find(p => p.id === c.playerId);
-            if (who) inner += `<span class="sub-by">${who.lastName}</span>`;
-          }
-          const entering = (SUBV === 2 || SUBV === 5 || SUBV === 6) && k === 0 ? r.players.slice(1).filter(p => entryOf(p) === i) : [];
-          if (entering.length && SUBV === 2) inner += `<span class="sub-plate">${entering.map(p => `${p.pos} ${p.lastName}`).join(' &#183; ')}</span>`;
-          const upTheLine = SUBV === 5 || SUBV === 6 ? entering.map((p, j) => `<span class="sub-up" style="left:${SUBV === 5 ? 2 + j * 10 : -12 - j * 10}px"><b>${p.pos}</b> ${p.lastName}</span>`).join('') : '';
-          const isLiveCell = withLive && !c && liveBatterInfo && liveBatterInfo.team === teamKey
+          // A substitute's entry: the cream rule down the left of the inning
+          // he comes in, his position and name written up it (bottom to
+          // top), side by side when two come in together. On the rule's
+          // right, inside his own column -- the column to its left carries
+          // the previous plate appearance's runner tags.
+          const entering = k === 0 ? r.players.slice(1).filter(p => entryOf(p) === i) : [];
+          const upTheLine = entering.map((p, j) => `<span class="sub-up" style="left:${2 + j * 10}px"><b>${p.pos}</b> ${p.lastName}</span>`).join('');
+          const isLiveCell = !c && liveBatterInfo && liveBatterInfo.team === teamKey
             && liveBatterInfo.rowSlot === r.slot && liveBatterInfo.inning === i && liveBatterInfo.slotIndex === k;
           if (isLiveCell) inner += liveCellInner(liveBatterInfo);
           let pitchAttr = '';
@@ -6358,20 +6347,13 @@
           const clickable = hasPitchDetail(pitchSource, isLiveCell, liveBatterInfo);
           const cellHtml = inner ? `<div class="cell-wrap${clickable ? ' clickable' : ''}"${pitchAttr}${clickable ? cellButtonAttrs(pitchSource, isLiveCell) : ''}>${inner}</div>` : '';
           const cls = 'cell'
-            + (SUBV !== 4 && r.dividerInnings && r.dividerInnings.has(i) && k === 0 ? ' sub-divider' : '')
+            + (r.dividerInnings && r.dividerInnings.has(i) && k === 0 ? ' sub-divider' : '')
             + (c && c.pitcherChanged ? ' pitcher-change' : '')
             + (c && starterPitcherId && c.pitcherId === starterPitcherId ? ' starter-span' : '');
           cells += `<td class="${cls}">${upTheLine}${cellHtml}</td>`;
         }
       }
-      return `<tr${trCls ? ` class="${trCls}"` : ''}>${cells}</tr>`;
-    };
-    // Variant 4: each player in the slot on a line of his own, holding only
-    // his plate appearances; the live batter's placeholder rides on the
-    // slot's latest line.
-    const bodyRows = rows.map(r => {
-      if (SUBV !== 4 || r.players.length < 2) return rowHtml(r, r.players, null, '', true);
-      return r.players.map((p, idx) => rowHtml(r, [p], p.id, idx ? 'sub-line' : 'has-subs', idx === r.players.length - 1)).join('');
+      return `<tr>${cells}</tr>`;
     }).join('');
 
     return `<div class="team-block" data-side="${teamKey}"${hidden ? ' hidden' : ''}>

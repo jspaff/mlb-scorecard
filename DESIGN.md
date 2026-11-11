@@ -282,9 +282,10 @@ The scorebook cell: a 40-unit diamond per plate appearance, drawn in SVG.
 - **Paths:** the bases the batter reached are drawn in gold; unreached paths are faint cream.
 - **Fills:** a run scored fills the diamond gold; a strikeout fills it brick red, with the K mirrored for a called third strike.
 - **Code:** the play code is typed in Special Elite at the center, in brick red for an out.
-- **Marks:** outs on the bases get a brick tick; steals, caught stealing and pickoffs get small gold-framed tags. RBIs are gold dots in the corner, one per run.
+- **Marks:** a runner put out on the bases gets the whole leg he was out on in brick, a touch lighter than the gold (1.8 to the gold's 2.4), starting where the gold's square end stops so the last bag he reached stays all gold and the two colors never share a corner; steals, caught stealing and pickoffs get small gold-framed tags beside the leg. RBIs are gold dots in the corner, one per run.
 - **Runner tags:** each other runner's move, as small hung plates stacked off the diamond's right point from halfway down, so they never cover the play code or grow the row (under the diamond in the phone's half-inning view): the base he left, a drawn arrow centered on the figures, and the base he reached ("1 → 3", "2 → H", "1 → X"), 9px Overpass, every plate one fixed width so a stack lines up. An advance is cream on Board Rule, a run board ink on gold, an out Brick Ink on solid Brick Red. Never cream on gold or brick: neither clears contrast at that size.
 - **Pitching-change plate:** the entering pitcher's nameplate across the top of the cell, 9px.
+- **Substitutions:** a substitute's entry is a cream rule down the left of the inning he comes in, with his position (Faded Cream) and name written up it, bottom to top, on the rule's right, inside his own column (the column to its left carries the previous plate appearance's runner tags). Two who enter together stand side by side. His name and position also stack under the starter's in the Player and Pos columns.
 - **As a control:** a diamond with pitch detail is a button (focusable, named by its batter and play) that opens the at-bat.
 
 ### Scorecard

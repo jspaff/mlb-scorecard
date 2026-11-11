@@ -5,8 +5,8 @@ Polish notes from poking around the app (captured 2026-11-10). Check an item off
 ## Scorecard
 
 - [x] **Base advancement tags: narrower, and one standard width.** They're a touch wide, and stacked tags of different widths look ragged — make every tag the same width so a stack lines up. (`.adv-tag` CSS, `renderCellInner`)
-- [ ] **Rethink the "out on the bases" mark.** The idea — a runner's line cut off by something red — is right, but the current drawing doesn't land. Explore a better treatment. (`diamondSVG`, its `isOut`/`outEdge` handling)
-- [ ] **Show batter substitutions on the scorecard.** Long-parked: find a clean, scorebook-true way to show pinch hitters / pinch runners / defensive subs in the batting grid. (`buildTeamRows`, `renderTeamTable`; substitution detection near the `looksLikeSub` pass)
+- [x] **Rethink the "out on the bases" mark.** The idea — a runner's line cut off by something red — is right, but the current drawing doesn't land. Explore a better treatment. (`diamondSVG`, its `isOut`/`outEdge` handling)
+- [x] **Show batter substitutions on the scorecard.** Long-parked: find a clean, scorebook-true way to show pinch hitters / pinch runners / defensive subs in the batting grid. (`buildTeamRows`, `renderTeamTable`; substitution detection near the `looksLikeSub` pass)
 
 ## Roster popup (bullpen)
 
