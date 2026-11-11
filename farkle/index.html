@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14432f">
+<title>Farkle</title>
+<style>
+  :root {
+    --felt: #1b5a3f;
+    --felt-dark: #14432f;
+    --rail: #5a3a22;
+    --ink: #1d1d1b;
+    --paper: #f6f0e1;
+    --gold: #d9a933;
+    --brick: #b4442f;
+    --muted: #8a8577;
+    --die: #fbf8f1;
+    --pip: #1d1d1b;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--felt-dark);
+    color: var(--paper);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    min-height: 100vh;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 16px 16px calc(24px + env(safe-area-inset-bottom)); }
+  header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  h1 { font-family: Georgia, "Times New Roman", serif; font-size: 28px; letter-spacing: .04em; margin: 0; color: var(--gold); }
+  .link-btn { background: none; border: 1px solid rgba(246,240,225,.35); color: var(--paper); padding: 6px 12px; font: inherit; font-size: 14px; border-radius: 6px; cursor: pointer; }
+  .link-btn:hover { border-color: var(--paper); }
+
+  /* Setup */
+  .setup { background: var(--paper); color: var(--ink); border-radius: 10px; padding: 20px; }
+  .setup h2 { margin: 0 0 16px; font-family: Georgia, serif; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: #555; margin-bottom: 4px; }
+  .field input, .field select { width: 100%; font: inherit; font-size: 17px; padding: 10px 12px; border: 1px solid #bbb; border-radius: 6px; background: #fff; color: var(--ink); }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* Scoreboard */
+  .scores { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
+  .pcard { background: rgba(0,0,0,.22); border: 2px solid transparent; border-radius: 10px; padding: 10px 12px; transition: border-color .2s, background .2s; }
+  .pcard.active { border-color: var(--gold); background: rgba(0,0,0,.35); }
+  .pname { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: .85; }
+  .pcard.active .pname { color: var(--gold); opacity: 1; }
+  .pscore { font-family: Georgia, serif; font-size: 32px; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .bar { height: 5px; background: rgba(255,255,255,.12); border-radius: 3px; margin-top: 6px; overflow: hidden; }
+  .bar > span { display: block; height: 100%; background: var(--gold); transition: width .4s; }
+  .ptag { font-size: 12px; color: var(--gold); min-height: 16px; margin-top: 4px; }
+
+  /* Table */
+  .table { background: radial-gradient(ellipse at center, #22704f 0%, var(--felt) 70%); border: 8px solid var(--rail); border-radius: 16px; padding: 14px; box-shadow: inset 0 0 30px rgba(0,0,0,.35); }
+  .turnline { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 10px; }
+  .turnline .who { font-weight: 600; }
+  .turnline .tt { font-family: Georgia, serif; font-size: 22px; font-variant-numeric: tabular-nums; }
+  .turnline .tt small { font-family: system-ui, sans-serif; font-size: 13px; opacity: .8; }
+  .tray { min-height: 44px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px; border: 1px dashed rgba(246,240,225,.3); border-radius: 8px; margin-bottom: 14px; }
+  .tray .empty { font-size: 13px; opacity: .6; padding: 0 4px; }
+  .tray .group { display: flex; gap: 3px; padding: 3px; background: rgba(0,0,0,.18); border-radius: 6px; }
+  .dice { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; min-height: 64px; }
+
+  .die { aspect-ratio: 1; width: 100%; background: var(--die); border: none; border-radius: 14%; padding: 14%; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); box-shadow: 0 3px 0 #c9c0aa, 0 5px 10px rgba(0,0,0,.35); cursor: pointer; transition: transform .12s, box-shadow .12s, outline-color .12s; outline: 3px solid transparent; outline-offset: 2px; }
+  .die i { width: 70%; height: 70%; margin: auto; border-radius: 50%; background: var(--pip); visibility: hidden; }
+  .die i.on { visibility: visible; }
+  .die.sel { transform: translateY(-6px); outline-color: var(--gold); box-shadow: 0 9px 0 #c9c0aa, 0 12px 16px rgba(0,0,0,.35); }
+  .die.dead { opacity: .55; }
+  .die:disabled { cursor: default; }
+  .die:focus-visible { outline-color: #fff; }
+  .die.mini { width: 26px; padding: 4px; box-shadow: none; cursor: default; border-radius: 4px; }
+  .die.rolling { animation: tumble .45s ease-out; }
+  @keyframes tumble {
+    0% { transform: rotate(-30deg) scale(.85); }
+    50% { transform: rotate(20deg) scale(1.05); }
+    100% { transform: rotate(0) scale(1); }
+  }
+  @media (prefers-reduced-motion: reduce) { .die.rolling { animation: none; } .die, .bar > span { transition: none; } }
+
+  .msg { min-height: 24px; text-align: center; margin: 14px 0 4px; font-size: 15px; }
+  .msg.farkle { color: #ffb4a6; font-family: Georgia, serif; font-size: 26px; font-weight: bold; letter-spacing: .05em; }
+  .msg.good { color: var(--gold); }
+  .msg.warn { color: #ffd4c9; }
+
+  .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+  .btn { font: inherit; font-size: 17px; font-weight: 700; padding: 14px 10px; border-radius: 10px; border: none; cursor: pointer; letter-spacing: .02em; }
+  .btn.primary { background: var(--gold); color: var(--ink); }
+  .btn.secondary { background: var(--paper); color: var(--ink); }
+  .btn.danger { background: var(--brick); color: #fff; }
+  .btn.wide { grid-column: 1 / -1; }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn small { display: block; font-size: 12px; font-weight: 500; opacity: .8; }
+
+  details { margin-top: 16px; background: rgba(0,0,0,.2); border-radius: 10px; padding: 10px 14px; }
+  summary { cursor: pointer; font-weight: 600; }
+  .rules { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 14px; }
+  .rules td { padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,.08); }
+  .rules td:last-child { text-align: right; font-variant-numeric: tabular-nums; color: var(--gold); }
+  .note { font-size: 13px; opacity: .8; line-height: 1.45; }
+  .log { list-style: none; padding: 0; margin: 8px 0 0; font-size: 14px; max-height: 220px; overflow: auto; }
+  .log li { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,.08); }
+  .log .f { color: #ffb4a6; }
+
+  .over { text-align: center; padding: 10px 0 4px; }
+  .over h2 { font-family: Georgia, serif; color: var(--gold); font-size: 30px; margin: 0 0 6px; }
+
+  @media (max-width: 380px) {
+    .dice { gap: 5px; }
+    .pscore { font-size: 26px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>FARKLE</h1>
+    <button class="link-btn" id="newGameBtn" hidden>New game</button>
+  </header>
+  <main id="app"></main>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  const STORAGE_KEY = 'farkle-state';
+  const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+  const app = document.getElementById('app');
+  const newGameBtn = document.getElementById('newGameBtn');
+
+  let state = load();
+  let rolling = false;
+
+  // ---------- Scoring ----------
+
+  function countsOf(values) {
+    const c = [0, 0, 0, 0, 0, 0, 0];
+    values.forEach((v) => { c[v]++; });
+    return c;
+  }
+
+  function kindValue(face, k) {
+    if (k === 3) return face === 1 ? 1000 : face * 100;
+    if (k === 4) return 1000;
+    if (k === 5) return 2000;
+    return 3000;
+  }
+
+  // Best score that uses every one of these dice, or -1 if some die can't score.
+  const memo = new Map();
+  function bestScore(c) {
+    const key = c.join('');
+    if (memo.has(key)) return memo.get(key);
+    let total = 0;
+    for (let f = 1; f <= 6; f++) total += c[f];
+    if (total === 0) return 0;
+    let best = -1;
+    if (total === 6) {
+      const faces = c.slice(1);
+      if (faces.every((n) => n === 1)) best = Math.max(best, 1500);
+      if (faces.filter((n) => n === 2).length === 3) best = Math.max(best, 1500);
+      if (faces.includes(4) && faces.includes(2)) best = Math.max(best, 1500);
+      if (faces.filter((n) => n === 3).length === 2) best = Math.max(best, 2500);
+    }
+    for (let f = 1; f <= 6; f++) {
+      for (let k = 3; k <= c[f]; k++) {
+        const next = c.slice(); next[f] -= k;
+        const r = bestScore(next);
+        if (r >= 0) best = Math.max(best, kindValue(f, k) + r);
+      }
+    }
+    [[1, 100], [5, 50]].forEach(([f, v]) => {
+      if (c[f] > 0) {
+        const next = c.slice(); next[f]--;
+        const r = bestScore(next);
+        if (r >= 0) best = Math.max(best, v + r);
+      }
+    });
+    memo.set(key, best);
+    return best;
+  }
+
+  function canScore(values) {
+    const c = countsOf(values);
+    if (c[1] || c[5]) return true;
+    if (c.some((n) => n >= 3)) return true;
+    return values.length === 6 && c.filter((n) => n === 2).length === 3;
+  }
+
+  function selectionScore() {
+    if (!state || !state.selected.length) return 0;
+    const s = bestScore(countsOf(state.selected.map((i) => state.dice[i])));
+    return s > 0 ? s : -1;
+  }
+
+  // ---------- State ----------
+
+  function newGame(names, target, entry) {
+    return {
+      players: names.map((name) => ({ name, score: 0 })),
+      current: 0,
+      target,
+      entry,
+      turnTotal: 0,
+      dice: [],
+      selected: [],
+      setAside: [],
+      phase: 'start', // start | rolled | farkle | over
+      finalRound: null,
+      log: [],
+      message: '',
+    };
+  }
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+      const s = JSON.parse(raw);
+      return s && Array.isArray(s.players) && s.players.length === 2 ? s : null;
+    } catch (e) { return null; }
+  }
+
+  function save() {
+    try {
+      if (state) localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      else localStorage.removeItem(STORAGE_KEY);
+    } catch (e) { /* storage unavailable */ }
+  }
+
+  function randomDie() { return 1 + Math.floor(Math.random() * 6); }
+
+  function roll() {
+    if (rolling) return;
+    let n;
+    if (state.phase === 'start') {
+      n = 6;
+    } else if (state.phase === 'rolled') {
+      const sel = selectionScore();
+      if (sel <= 0) return;
+      state.turnTotal += sel;
+      state.setAside.push(state.selected.map((i) => state.dice[i]).sort());
+      n = state.dice.length - state.selected.length;
+      if (n === 0) {
+        n = 6;
+        state.setAside = [];
+        state.hotDice = true;
+      }
+    } else return;
+
+    state.dice = Array.from({ length: n }, randomDie);
+    state.selected = [];
+    state.message = '';
+
+    if (!canScore(state.dice)) {
+      state.phase = 'farkle';
+      state.log.unshift({ name: state.players[state.current].name, text: 'Farkle', lost: state.turnTotal });
+      state.turnTotal = 0;
+      state.hotDice = false;
+    } else {
+      state.phase = 'rolled';
+      if (state.hotDice) state.message = 'Hot dice! All six are back.';
+      state.hotDice = false;
+    }
+    save();
+    animateRoll();
+  }
+
+  function bankTotal() {
+    const sel = selectionScore();
+    return sel > 0 ? state.turnTotal + sel : -1;
+  }
+
+  function canBank() {
+    if (state.phase !== 'rolled') return false;
+    const t = bankTotal();
+    if (t <= 0) return false;
+    const p = state.players[state.current];
+    return !(p.score === 0 && t < state.entry);
+  }
+
+  function bank() {
+    if (rolling || !canBank()) return;
+    const t = bankTotal();
+    const p = state.players[state.current];
+    p.score += t;
+    state.log.unshift({ name: p.name, text: `Banked ${t.toLocaleString()}`, total: p.score });
+    endTurn();
+  }
+
+  function endTurn() {
+    const p = state.players[state.current];
+    if (state.finalRound === null && p.score >= state.target) {
+      state.finalRound = state.current;
+    }
+    const next = 1 - state.current;
+    state.turnTotal = 0;
+    state.dice = [];
+    state.selected = [];
+    state.setAside = [];
+    if (state.finalRound !== null && next === state.finalRound) {
+      state.phase = 'over';
+      state.message = '';
+    } else {
+      state.current = next;
+      state.phase = 'start';
+      state.message = state.finalRound !== null
+        ? `${p.name} reached ${state.target.toLocaleString()}! ${state.players[next].name} gets one last turn.`
+        : '';
+    }
+    save();
+    render();
+  }
+
+  function toggleDie(i) {
+    if (rolling || state.phase !== 'rolled') return;
+    const at = state.selected.indexOf(i);
+    if (at >= 0) state.selected.splice(at, 1);
+    else state.selected.push(i);
+    save();
+    render();
+  }
+
+  function animateRoll() {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) { render(); return; }
+    rolling = true;
+    const finalDice = state.dice.slice();
+    let ticks = 0;
+    const spin = setInterval(() => {
+      state.dice = finalDice.map(randomDie);
+      render(true);
+      if (++ticks >= 6) {
+        clearInterval(spin);
+        state.dice = finalDice;
+        rolling = false;
+        render(true);
+      }
+    }, 70);
+  }
+
+  // ---------- Rendering ----------
+
+  function dieHTML(v, opts) {
+    const o = opts || {};
+    const pips = Array.from({ length: 9 }, (_, k) => `<i class="${PIPS[v].includes(k) ? 'on' : ''}"></i>`).join('');
+    const cls = ['die', o.mini && 'mini', o.sel && 'sel', o.dead && 'dead', o.rolling && 'rolling'].filter(Boolean).join(' ');
+    if (o.mini) return `<span class="${cls}" aria-hidden="true">${pips}</span>`;
+    return `<button type="button" class="${cls}" data-i="${o.i}" aria-pressed="${!!o.sel}" aria-label="Die showing ${v}${o.sel ? ', selected' : ''}" ${o.disabled ? 'disabled' : ''}>${pips}</button>`;
+  }
+
+  function el(tag, text) {
+    const e = document.createElement(tag);
+    if (text != null) e.textContent = text;
+    return e;
+  }
+
+  function renderSetup() {
+    newGameBtn.hidden = true;
+    app.innerHTML = `
+      <form class="setup" id="setupForm">
+        <h2>New game</h2>
+        <div class="row2">
+          <div class="field"><label for="p1">Player 1</label><input id="p1" maxlength="20" placeholder="Player 1" autocomplete="off"></div>
+          <div class="field"><label for="p2">Player 2</label><input id="p2" maxlength="20" placeholder="Player 2" autocomplete="off"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label for="target">Play to</label>
+            <select id="target"><option value="5000">5,000</option><option value="10000" selected>10,000</option></select></div>
+          <div class="field"><label for="entry">To get on the board</label>
+            <select id="entry"><option value="0">Any score</option><option value="350">350</option><option value="500" selected>500</option><option value="1000">1,000</option></select></div>
+        </div>
+        <button class="btn primary" style="width:100%" type="submit">Start game</button>
+      </form>`;
+    document.getElementById('setupForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const n1 = document.getElementById('p1').value.trim() || 'Player 1';
+      const n2 = document.getElementById('p2').value.trim() || 'Player 2';
+      state = newGame([n1, n2], +document.getElementById('target').value, +document.getElementById('entry').value);
+      save();
+      render();
+    });
+  }
+
+  function render(fromRoll) {
+    if (!state) { renderSetup(); return; }
+    newGameBtn.hidden = false;
+    const cur = state.players[state.current];
+    const sel = selectionScore();
+
+    // Names are user-typed, so they're only ever set through textContent.
+    app.innerHTML = `
+      <section class="scores" aria-label="Scores">
+        ${state.players.map((p, i) => `
+          <div class="pcard ${i === state.current && state.phase !== 'over' ? 'active' : ''}">
+            <div class="pname" data-name="${i}"></div>
+            <div class="pscore">${p.score.toLocaleString()}</div>
+            <div class="bar"><span style="width:${Math.min(100, p.score / state.target * 100)}%"></span></div>
+            <div class="ptag">${p.score === 0 && state.entry ? `Needs ${state.entry} to get on` : (state.finalRound === i ? 'Hit the target' : '')}</div>
+          </div>`).join('')}
+      </section>
+      <section class="table" id="table"></section>
+      <details>
+        <summary>Scoring</summary>
+        <table class="rules">
+          <tr><td>Each 1</td><td>100</td></tr>
+          <tr><td>Each 5</td><td>50</td></tr>
+          <tr><td>Three 1s</td><td>1,000</td></tr>
+          <tr><td>Three of a kind (2–6)</td><td>face × 100</td></tr>
+          <tr><td>Four of a kind</td><td>1,000</td></tr>
+          <tr><td>Five of a kind</td><td>2,000</td></tr>
+          <tr><td>Six of a kind</td><td>3,000</td></tr>
+          <tr><td>1–6 straight</td><td>1,500</td></tr>
+          <tr><td>Three pairs</td><td>1,500</td></tr>
+          <tr><td>Four of a kind + a pair</td><td>1,500</td></tr>
+          <tr><td>Two triplets</td><td>2,500</td></tr>
+        </table>
+        <p class="note">Roll, then tap the scoring dice you want to keep. Roll the rest to push your luck, or bank your points. A roll with nothing that scores is a Farkle — you lose everything from that turn. Score with all six dice and you get them all back (hot dice). Once someone reaches ${state.target.toLocaleString()}, the other player gets one last turn. Combos only count within a single roll.</p>
+      </details>
+      <details ${state.log.length ? '' : 'hidden'}>
+        <summary>Turn log</summary>
+        <ul class="log" id="log"></ul>
+      </details>`;
+
+    app.querySelectorAll('[data-name]').forEach((n) => { n.textContent = state.players[+n.dataset.name].name; });
+
+    const table = document.getElementById('table');
+
+    if (state.phase === 'over') {
+      const [a, b] = state.players;
+      const tie = a.score === b.score;
+      const winner = a.score > b.score ? a : b;
+      table.innerHTML = `<div class="over"><h2 id="winTitle"></h2><p id="winLine"></p></div>
+        <div class="actions"><button class="btn secondary" id="rematch">Rematch</button><button class="btn primary" id="fresh">New players</button></div>`;
+      document.getElementById('winTitle').textContent = tie ? "It's a tie!" : `${winner.name} wins!`;
+      document.getElementById('winLine').textContent = `${a.name} ${a.score.toLocaleString()} – ${b.name} ${b.score.toLocaleString()}`;
+      document.getElementById('rematch').onclick = () => {
+        state = newGame(state.players.map((p) => p.name), state.target, state.entry);
+        save(); render();
+      };
+      document.getElementById('fresh').onclick = () => { state = null; save(); render(); };
+    } else {
+      const shownTotal = state.turnTotal + (sel > 0 ? sel : 0);
+      const tray = state.setAside.length
+        ? state.setAside.map((g) => `<span class="group">${g.map((v) => dieHTML(v, { mini: true })).join('')}</span>`).join('')
+        : '<span class="empty">Kept dice go here</span>';
+
+      let msg = state.message;
+      let msgClass = state.message.startsWith('Hot') ? 'good' : '';
+      if (state.phase === 'farkle') { msg = 'FARKLE!'; msgClass = 'farkle'; }
+      else if (state.phase === 'start') { msg = msg || 'Roll to start your turn.'; }
+      else if (state.phase === 'rolled' && !rolling) {
+        if (!state.selected.length) msg = msg || 'Tap the scoring dice you want to keep.';
+        else if (sel < 0) { msg = "Every kept die has to score."; msgClass = 'warn'; }
+        else if (cur.score === 0 && state.turnTotal + sel < state.entry) {
+          msg = `Keep going — you need ${state.entry} to get on the board.`; msgClass = 'warn';
+        } else { msg = `Keeping ${sel.toLocaleString()}`; msgClass = 'good'; }
+      }
+
+      const remaining = state.dice.length - state.selected.length;
+      const rollLabel = state.phase === 'start' ? 'Roll'
+        : `Roll ${remaining === 0 ? 6 : remaining}`;
+
+      table.innerHTML = `
+        <div class="turnline">
+          <span class="who" id="who"></span>
+          <span class="tt">${shownTotal.toLocaleString()} <small>this turn</small></span>
+        </div>
+        <div class="tray" aria-label="Dice kept this turn">${tray}</div>
+        <div class="dice" id="dice" aria-label="Rolled dice">
+          ${state.dice.map((v, i) => dieHTML(v, {
+            i,
+            sel: state.selected.includes(i),
+            dead: state.phase === 'farkle',
+            rolling: fromRoll && rolling,
+            disabled: state.phase !== 'rolled' || rolling,
+          })).join('')}
+        </div>
+        <div class="msg ${msgClass}" role="status" aria-live="polite">${msg ? '' : ''}</div>
+        <div class="actions">
+          ${state.phase === 'farkle'
+            ? `<button class="btn danger wide" id="nextBtn">Pass to ${'<span id="nextName"></span>'}</button>`
+            : `<button class="btn primary" id="rollBtn" ${state.phase === 'rolled' && sel <= 0 || rolling ? 'disabled' : ''}>${rollLabel}</button>
+               <button class="btn secondary" id="bankBtn" ${canBank() && !rolling ? '' : 'disabled'}>Bank${state.phase === 'rolled' && sel > 0 ? `<small>${(state.turnTotal + sel).toLocaleString()}</small>` : ''}</button>`}
+        </div>`;
+
+      document.getElementById('who').textContent = `${cur.name}'s turn`;
+      table.querySelector('.msg').textContent = rolling ? '' : msg;
+      if (state.phase === 'farkle') {
+        document.getElementById('nextName').textContent = state.players[1 - state.current].name;
+        document.getElementById('nextBtn').onclick = endTurn;
+      } else {
+        document.getElementById('rollBtn').onclick = roll;
+        document.getElementById('bankBtn').onclick = bank;
+      }
+      document.getElementById('dice').addEventListener('click', (e) => {
+        const d = e.target.closest('.die');
+        if (d && !d.disabled) toggleDie(+d.dataset.i);
+      });
+    }
+
+    const log = document.getElementById('log');
+    if (log) {
+      state.log.slice(0, 40).forEach((entry) => {
+        const li = el('li');
+        li.appendChild(el('span', entry.name));
+        const right = el('span', entry.lost != null
+          ? `Farkle${entry.lost ? ` (lost ${entry.lost.toLocaleString()})` : ''}`
+          : `${entry.text} → ${entry.total.toLocaleString()}`);
+        if (entry.lost != null) right.className = 'f';
+        li.appendChild(right);
+        log.appendChild(li);
+      });
+    }
+  }
+
+  newGameBtn.addEventListener('click', () => {
+    if (state && state.phase !== 'over' && !confirm('Abandon this game and start a new one?')) return;
+    state = null;
+    save();
+    render();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
