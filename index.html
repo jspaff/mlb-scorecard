@@ -1728,9 +1728,56 @@
   .tm .tm-g-wl { font-size: 12px; }
   .tm .tm-g-score { font-size: 22px; min-width: 48px; }
   .tm .tm-g-when { font-size: 12px; }
-  /* Season Highlights: one row that scrolls, at any width. */
+  /* Season Highlights: each row scrolls on its own, at any width. */
   .tm-moments .dp-row { grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: minmax(230px, 80%); overflow-x: auto; }
   @container (min-width: 700px) { .tm-moments .dp-row { grid-auto-columns: 280px; } }
+  .tmh-head { align-items: center; flex-wrap: wrap; }
+  .tmh-head .view-toggle-btn, .tmh-channels .view-toggle-btn { padding: 5px 10px; font-size: 9.5px; }
+  .tmh-channels { margin-bottom: 10px; overflow-x: auto; }
+  .tmh-channels .view-toggle-btn { flex: none; }
+  .tmh-sub { margin: 4px 0 8px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); }
+  .tmh-shelf + .tmh-shelf { margin-top: 16px; }
+  .tmh-wait { padding: 14px 0; }
+  .vc-stack { display: flex; flex-direction: column; gap: 6px; min-width: 0; scroll-snap-align: start; }
+  .vc-stack > .vc { flex: 1; }
+  .vc-alt, .tmh-wbtn { padding: 5px 8px; background: transparent; border: 1px solid var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); text-align: left; cursor: pointer; }
+  .vc-alt:hover, .vc-alt:focus-visible, .tmh-wbtn:hover, .tmh-wbtn:focus-visible { color: var(--ink); border-color: var(--gold); outline: none; }
+  /* The reel stills. */
+  .vc-who-cap img { width: 72%; height: auto; }
+  .vc-line { display: grid; grid-template-columns: repeat(2, auto); gap: 0.15em 0.8em; margin-bottom: 14%; font-size: clamp(13px, 6.6cqw, 22px); }
+  .vc-line span { display: flex; align-items: baseline; gap: 0.25em; }
+  .vc-line b { font-family: 'Oswald', sans-serif; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ink); }
+  .vc-line i { font-style: normal; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 0.48em; letter-spacing: 0.08em; color: var(--ink-soft); }
+  .vc-final { display: flex; align-items: center; gap: 0.15em; font-family: 'Oswald', sans-serif; font-weight: 600; font-size: clamp(22px, 13cqw, 44px); line-height: 1; font-variant-numeric: tabular-nums; color: var(--ink); }
+  .vc-final b { font-weight: 400; color: var(--ink-soft); }
+  .vc-wl { margin-right: 0.25em; font-size: 0.5em; color: var(--gold); }
+  .vc-wl.is-loss { color: var(--brick); }
+  .vc-card-win { display: flex; flex-direction: column; padding: 5% 6% 6%; gap: 4%; }
+  .vc-win-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-right: 0; }
+  .vc-card-win .vc-final { font-size: clamp(20px, 11cqw, 40px); }
+  .vc-wp { flex: 1; width: 82%; min-height: 0; overflow: visible; }
+  .vc-wp polyline { fill: none; stroke: var(--ink); stroke-width: 1.6; stroke-linejoin: round; }
+  .vc-wp-mid { stroke: var(--paper-line); stroke-width: 1; stroke-dasharray: 3 3; }
+  .vc-wp-low, .vc-wp-end { stroke-width: 7; stroke-linecap: round; }
+  .vc-wp-low { stroke: var(--brick); }
+  .vc-wp-end { stroke: var(--gold); }
+  /* Feature: the best win large, the other wins as rows beside it on a
+     wide sheet and under it on a phone. */
+  .tmh-feature { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; margin-bottom: 18px; }
+  .tmh-hero .vc-title { font-size: 17px; }
+  .tmh-hero .vc-kicker { font-size: 10px; }
+  @container (min-width: 700px) {
+    .tmh-feature { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); align-items: start; gap: 28px; }
+  }
+  .tmh-wrow { display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 9px 0; border-bottom: 1px dashed var(--paper-line); }
+  .tmh-wdate { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); }
+  .tmh-wline { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .tmh-wscore { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 16px; font-variant-numeric: tabular-nums; }
+  .tmh-wline .vc-kicker { padding: 0; }
+  .tmh-wbtns { display: flex; flex-direction: column; gap: 4px; }
+  .tmh-short { display: none; }
+  @container (min-width: 520px) { .tmh-wbtns { flex-direction: row; } }
+  @container (max-width: 519px) { .tmh-long { display: none; } .tmh-short { display: inline; } }
   /* Phone: one column, the next game first. */
   .tm-split { display: flex; flex-direction: column; }
   .tm-split > .tm-col { display: contents; }
@@ -7356,7 +7403,7 @@
     const matchup = item.meta || (item.clip ? item.clip.matchup : matchupOf(item.g));
     return `
       <button type="button" class="vc" data-day-clip="${dayVideoKey(item)}">
-        <span class="vc-thumb">${renderScorebookStill(item)}</span>
+        <span class="vc-thumb">${((item.kind && HIGHLIGHT_STILLS[item.kind]) || renderScorebookStill)(item)}</span>
         <span class="vc-kicker">${item.label || '&nbsp;'}${item.why ? ` <em>${item.why}</em>` : ''}</span>
         <span class="vc-title">${item.title}</span>
         <span class="dp-meta">${matchup}</span>
@@ -7746,7 +7793,7 @@
         <div class="tm-col">${board}${chart}<div class="tm-pair${recent.length && upcoming.length ? '' : ' is-one'}">${gameList('Recent', recent)}${gameList('Up Next', upcoming)}</div></div>
         <div class="tm-col tm-side"><div class="tm-next" id="tmNext"></div>${sec('Leaders', 'tmLeaders')}</div>
       </div>
-      <section class="tm-sec tm-moments"><div class="pp-skg-head"><span>Season Highlights</span></div><div id="tmMoments"></div></section>
+      <section class="tm-sec tm-moments" id="tmMoments"></section>
     </div>`;
   }
 
@@ -7798,6 +7845,183 @@
     } catch (e) {
       return null;
     }
+  }
+
+  // ---- Season Highlights: MLB's game videos ----
+  // The schedule's highlights hydrate, a month at a time (about 200 KB
+  // over the wire each), gives every game's recap, condensed game and
+  // MLB's reels: a starter's outing, a big night at the plate, a rally.
+  // Only what's kept per clip survives the parse. A season over is cached
+  // for the session; one in progress is keyed by its latest final, and a
+  // month that fails isn't cached at all.
+  const TEAM_REEL_PITCHING = ['highlight-reel-starting-pitching', 'highlight-reel-pitching'];
+  const TEAM_REEL_NIGHT = ['highlight-reel-team', 'highlight-reel-rally', 'performance', 'highlight-reel-offense'];
+  const teamMediaCache = {};
+  async function getTeamSeasonMedia(teamId, season, finals) {
+    const key = `${teamId}-${season}-${finals.length ? finals[finals.length - 1].gamePk : 0}`;
+    if (teamMediaCache[key]) return teamMediaCache[key];
+    const months = [...new Set(finals.map(g => g.date.slice(0, 7)))];
+    let failed = false;
+    const byPk = {};
+    await Promise.all(months.map(async ym => {
+      const [y, m] = ym.split('-').map(Number);
+      const end = `${ym}-${String(new Date(y, m, 0).getDate()).padStart(2, '0')}`;
+      try {
+        const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&teamId=${teamId}&season=${season}&gameType=R&startDate=${ym}-01&endDate=${end}&hydrate=game(content(highlights(highlights)))&fields=dates,games,gamePk,content,highlights,items,headline,duration,keywordsAll,type,value,playbacks,name,url`);
+        if (!res.ok) { failed = true; return; }
+        const data = await res.json();
+        (data.dates || []).forEach(d => d.games.forEach(g => { byPk[g.gamePk] = buildTeamGameMedia(g, teamId); }));
+      } catch (e) {
+        failed = true;
+      }
+    }));
+    if (!failed) teamMediaCache[key] = byPk;
+    return byPk;
+  }
+  function buildTeamGameMedia(g, teamId) {
+    const items = (g.content && g.content.highlights && g.content.highlights.highlights && g.content.highlights.highlights.items) || [];
+    const out = { recap: null, condensed: null, reels: [], walkoff: false };
+    items.forEach(item => {
+      const kw = item.keywordsAll || [];
+      const tags = kw.filter(k => k.type === 'taxonomy').map(k => k.value);
+      const teams = kw.filter(k => k.type === 'team_id').map(k => Number(k.value));
+      const players = [...new Set(kw.filter(k => k.type === 'player_id').map(k => Number(k.value)))];
+      const mp4 = highlightMp4(item);
+      if (!mp4) return;
+      const clip = { mp4, title: (item.headline || '').trim(), mins: clipMinutes(item.duration), tags, players };
+      if (tags.includes('game-recap')) out.recap = out.recap || clip;
+      else if (tags.includes('condensed-game')) out.condensed = out.condensed || clip;
+      else if (teams.includes(Number(teamId))) {
+        if (tags.includes('walk-off')) out.walkoff = true;
+        if ([...TEAM_REEL_PITCHING, ...TEAM_REEL_NIGHT].some(t => tags.includes(t))) out.reels.push(clip);
+      }
+    });
+    return out;
+  }
+  function clipMinutes(duration) {
+    const [h, m, s] = String(duration || '').split(':').map(Number);
+    const total = (h || 0) * 60 + (m || 0) + (s || 0) / 60;
+    return total ? Math.max(1, Math.round(total)) : 0;
+  }
+  function teamGameClip(c, g) {
+    return { mp4: c.mp4, title: c.title, date: g.date, gamePk: g.gamePk, matchup: `${TEAM_ABBR[g.awayId] || ''} @ ${TEAM_ABBR[g.homeId] || ''}` };
+  }
+  function teamGameMeta(g) {
+    return `${fmtShortDate(g.date)} &#183; ${g.isHome ? 'vs' : '@'} ${TEAM_ABBR[g.isHome ? g.awayId : g.homeId] || g.opponentFull}`;
+  }
+  function teamGameResult(g) {
+    const us = g.isHome ? g.homeScore : g.awayScore, them = g.isHome ? g.awayScore : g.homeScore;
+    return { us, them, won: us > them };
+  }
+
+  // On the Mound: MLB's reel of each start, ranked by the start's Game
+  // Score from the pitcher's own game log (only the pitchers with a reel
+  // are fetched, a few small requests). A traded arm's starts elsewhere
+  // don't count, and nobody takes more than two spots.
+  const TEAM_STARTS = 8;
+  async function getTeamSeasonStarts(teamId, season, finals, media) {
+    const cands = [];
+    finals.forEach(g => {
+      const m = media[g.gamePk];
+      if (!m) return;
+      const reel = m.reels.find(c => c.tags.includes(TEAM_REEL_PITCHING[0])) || m.reels.find(c => c.tags.includes(TEAM_REEL_PITCHING[1]));
+      if (reel && reel.players.length === 1) cands.push({ g, reel, personId: reel.players[0] });
+    });
+    const ids = [...new Set(cands.map(c => c.personId))];
+    const logs = Object.fromEntries(await Promise.all(ids.map(async id => [id, await getPitcherGameLog(id, season)])));
+    const perPitcher = {};
+    return cands.map(c => {
+      const split = (logs[c.personId] || []).find(s => s.game && s.game.gamePk === c.g.gamePk && s.team && s.team.id === Number(teamId));
+      if (!split || !Number(split.stat.gamesStarted)) return null;
+      const s = split.stat;
+      return {
+        key: `s-${c.g.gamePk}`, kind: 'start', g: c.g, personId: c.personId, teamId: Number(teamId),
+        clip: teamGameClip(c.reel, c.g), clipPrefix: 't', title: c.reel.title,
+        gsc: gameScoreOf(s), line: { ip: s.inningsPitched, h: s.hits, r: s.runs, k: s.strikeOuts },
+        meta: teamGameMeta(c.g)
+      };
+    }).filter(Boolean)
+      .sort((a, b) => b.gsc - a.gsc)
+      .filter(x => (perPitcher[x.personId] = (perPitcher[x.personId] || 0) + 1) <= 2)
+      .slice(0, TEAM_STARTS)
+      .map(x => ({ ...x, label: 'Game Score', why: String(x.gsc) }));
+  }
+
+  // Big Nights: MLB's offense and team reels, at most one a game, ranked
+  // by what the headline counts ("three-homer, seven-RBI game", "score six
+  // in the 8th"), a team reel or rally ahead of one man's night, a win
+  // ahead of a loss.
+  const TEAM_NIGHTS = 8;
+  const NIGHT_NUMS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, multi: 2 };
+  const NIGHT_WEIGHTS = { homer: 4, 'home run': 4, hr: 4, rbi: 1, hit: 1.5, run: 1.2 };
+  function nightWeight(clip, won) {
+    const t = clip.title.toLowerCase();
+    let w = won ? 3 : 0;
+    const re = /\b(\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|multi)[\s-]+(homer|home run|hr|rbi|hit|run)s?\b/g;
+    let m;
+    while ((m = re.exec(t))) w += (NIGHT_NUMS[m[1]] || Number(m[1]) || 0) * NIGHT_WEIGHTS[m[2]];
+    const scored = /\bscores?\s+(\w+)\s+(?:runs?\s+)?in\b/.exec(t);
+    if (scored) w += (NIGHT_NUMS[scored[1]] || Number(scored[1]) || 0) * NIGHT_WEIGHTS.run;
+    if (clip.tags.includes('highlight-reel-team')) w += 5;
+    if (clip.tags.includes('highlight-reel-rally')) w += 3;
+    if (clip.tags.includes('performance')) w += 2;
+    return w;
+  }
+  function buildTeamNights(teamId, finals, media) {
+    const nights = [];
+    finals.forEach(g => {
+      const m = media[g.gamePk];
+      if (!m) return;
+      const { us, them, won } = teamGameResult(g);
+      const best = m.reels.filter(c => TEAM_REEL_NIGHT.some(t => c.tags.includes(t)))
+        .map(c => ({ c, w: nightWeight(c, won) })).sort((a, b) => b.w - a.w)[0];
+      if (!best) return;
+      const team = best.c.tags.includes('highlight-reel-team') || best.c.tags.includes('highlight-reel-rally') || best.c.players.length !== 1;
+      nights.push({
+        key: `n-${g.gamePk}`, kind: 'night', g, weight: best.w, clip: teamGameClip(best.c, g), clipPrefix: 't',
+        title: best.c.title, personId: team ? null : best.c.players[0], teamId: Number(teamId),
+        us, them, won, label: team ? 'Team' : 'Big night', why: '', meta: teamGameMeta(g)
+      });
+    });
+    return nights.sort((a, b) => b.weight - a.weight).slice(0, TEAM_NIGHTS);
+  }
+
+  // Best Wins: every win's path from its win probability (already in hand
+  // from the plays' sweep, so nothing is refetched), ranked by how far down
+  // the team was, a walk-off counting for more. Each plays MLB's recap,
+  // with the condensed game a tap away.
+  const TEAM_WINS = 4;
+  async function buildTeamWins(teamId, finals, media) {
+    const wins = finals.filter(g => teamGameResult(g).won && media[g.gamePk] && media[g.gamePk].recap);
+    const scored = await Promise.all(wins.map(async g => {
+      const signed = await getGameWpaSigned(g.gamePk, true);
+      const adds = Object.keys(signed).map(Number).sort((a, b) => a - b).map(i => (g.isHome ? signed[i] : -signed[i]));
+      if (!adds.length) return null;
+      // A win ends at 100, so the start is whatever the swings didn't add.
+      let wp = 100 - adds.reduce((s, x) => s + x, 0);
+      const path = [wp];
+      adds.forEach(x => { wp += x; path.push(Math.max(0, Math.min(100, wp))); });
+      const low = Math.min(...path);
+      const walkoff = media[g.gamePk].walkoff;
+      return { g, path, low, walkoff, drama: (100 - low) + (walkoff ? 20 : 0) };
+    }));
+    return scored.filter(Boolean).sort((a, b) => b.drama - a.drama).slice(0, TEAM_WINS).map(w => {
+      const m = media[w.g.gamePk];
+      const { us, them } = teamGameResult(w.g);
+      const opp = TEAM_NICKNAMES[w.g.isHome ? w.g.awayId : w.g.homeId] || w.g.opponentFull;
+      const low = Math.round(w.low);
+      return {
+        key: `w-${w.g.gamePk}`, kind: 'win', g: w.g, path: w.path, low, us, them,
+        clip: teamGameClip(m.recap, w.g), clipPrefix: 't', mins: m.recap.mins,
+        condensed: m.condensed ? { clip: teamGameClip(m.condensed, w.g), mins: m.condensed.mins } : null,
+        // Recaps were titled "Yankees vs. Padres Highlights" until 2026;
+        // since then the headline tells the story.
+        title: /highlights\s*$/i.test(m.recap.title) ? `${TEAM_NICKNAMES[teamId] || ''} ${us}, ${opp} ${them}` : m.recap.title,
+        label: w.walkoff ? 'Walk-off' : low <= 25 ? 'Comeback' : 'Big win',
+        why: low < 50 ? `down to ${low}% to win` : '',
+        teamId: Number(teamId), meta: teamGameMeta(w.g)
+      };
+    });
   }
 
   // Leaders among the regulars: hitters with half a batting title's PA
@@ -7941,11 +8165,127 @@
     const html = side('Hitters', leaders.hitters, false) + side('Starters', leaders.pitchers, true);
     return html || '<div class="pitch-empty">No regulars yet this season.</div>';
   }
-  function renderTeamMoments(items) {
-    if (items === undefined) return '<div class="mlb-status-msg">Finding the season&#8217;s biggest plays&#8230;</div>';
-    if (!items || !items.length) return '<div class="pitch-empty">No plays yet this season.</div>';
-    return `<div class="dp-row">${items.map(renderVideoCard).join('')}</div>`;
+  // ---- Season Highlights: the four kinds, and the ways to show them ----
+  // Each kind fills in as its data lands (undefined while loading, null or
+  // [] when there's nothing), and every redraw is from what's in hand.
+  // The takes are the layouts on trial: Shelves (a row per kind),
+  // Channels (one row, a toggle for the kind) and Feature (the best win
+  // up top, the rest of the wins beside it, one mixed row under).
+  const HIGHLIGHT_KINDS = [
+    { id: 'plays', title: 'Biggest Plays', short: 'Plays', wait: 'Finding the season&#8217;s biggest plays&#8230;' },
+    { id: 'starts', title: 'On the Mound', short: 'Mound', wait: 'Finding the best starts&#8230;' },
+    { id: 'nights', title: 'Big Nights', short: 'Nights', wait: 'Finding the big nights&#8230;' },
+    { id: 'wins', title: 'Best Wins', short: 'Wins', wait: 'Finding the best wins&#8230;' }
+  ];
+  const HIGHLIGHT_TAKES = [['shelves', 'Shelves'], ['channels', 'Channels'], ['feature', 'Feature']];
+  let teamHighlights = { requestId: 0 };
+  teamTab.highlightsTake = 'shelves';
+  teamTab.highlightsChannel = 'plays';
+
+  function drawTeamHighlights() {
+    if (teamHighlights.requestId !== teamRequestId) return;
+    const el = document.getElementById('tmMoments');
+    if (!el) return;
+    clearDayClips('t');
+    el.innerHTML = renderTeamHighlights(teamHighlights);
   }
+  function renderTeamHighlights(h) {
+    const take = teamTab.highlightsTake;
+    const toggle = `<div class="view-toggle tmh-takes" role="group" aria-label="Layout">${HIGHLIGHT_TAKES.map(([id, label]) =>
+      `<button type="button" class="view-toggle-btn${id === take ? ' active' : ''}" data-hl-take="${id}" aria-pressed="${id === take}">${label}</button>`).join('')}</div>`;
+    const head = `<div class="pp-skg-head tmh-head"><span>Season Highlights</span>${toggle}</div>`;
+    const live = HIGHLIGHT_KINDS.filter(k => h[k.id] === undefined || (h[k.id] && h[k.id].length));
+    if (!live.length) return `${head}<div class="pitch-empty">No highlights yet this season.</div>`;
+    const row = items => `<div class="dp-row">${items.map(renderTeamCard).join('')}</div>`;
+    const wait = k => `<div class="mlb-status-msg tmh-wait">${k.wait}</div>`;
+    if (take === 'channels') {
+      const on = live.find(k => k.id === teamTab.highlightsChannel) || live[0];
+      const tabs = `<div class="view-toggle tmh-channels" role="group" aria-label="Highlights">${live.map(k =>
+        `<button type="button" class="view-toggle-btn${k === on ? ' active' : ''}" data-hl-channel="${k.id}" aria-pressed="${k === on}"><span class="tmh-long">${k.title}</span><span class="tmh-short">${k.short}</span></button>`).join('')}</div>`;
+      return `${head}${tabs}${h[on.id] === undefined ? wait(on) : row(h[on.id])}`;
+    }
+    if (take === 'feature') {
+      const wins = h.wins || [];
+      const hero = wins[0];
+      const side = wins.slice(1);
+      const top = hero
+        ? `<div class="tmh-feature"><div class="tmh-hero">${renderTeamCard(hero)}</div>${side.length ? `<div class="tmh-wins"><div class="tmh-sub">More Best Wins</div>${side.map(renderWinRow).join('')}</div>` : ''}</div>`
+        : h.wins === undefined ? wait(HIGHLIGHT_KINDS[3]) : '';
+      // One of each kind in turn, so the row reads as the whole season.
+      const lists = ['plays', 'starts', 'nights'].map(id => (h[id] || []).map(x => ({ ...x, label: x.kind === 'start' ? `Gem &#183; GSc ${x.gsc}` : x.label, why: x.kind === 'start' ? '' : x.why })));
+      const mixed = [];
+      for (let i = 0; mixed.length < 12 && lists.some(l => l[i]); i++) lists.forEach(l => { if (l[i] && mixed.length < 12) mixed.push(l[i]); });
+      const loading = ['plays', 'starts', 'nights'].some(id => h[id] === undefined);
+      return `${head}${top}<div class="tmh-sub">The Season in Clips</div>${mixed.length ? row(mixed) : ''}${loading ? `<div class="mlb-status-msg tmh-wait">Gathering the season&#8217;s clips&#8230;</div>` : ''}`;
+    }
+    return head + live.map(k => `<div class="tmh-shelf"><div class="tmh-sub">${k.title}</div>${h[k.id] === undefined ? wait(k) : row(h[k.id])}</div>`).join('');
+  }
+  function renderTeamCard(item) {
+    const card = renderVideoCard(item);
+    if (!item.condensed) return card;
+    const mins = item.condensed.mins ? ` &#183; ${item.condensed.mins} min` : '';
+    return `<div class="vc-stack">${card}<button type="button" class="vc-alt" data-day-clip="${dayVideoKey({ clip: item.condensed.clip, clipPrefix: 't' })}">Condensed game${mins} &#9654;</button></div>`;
+  }
+  function renderWinRow(w) {
+    return `<div class="tmh-wrow">
+        <span class="tmh-wdate">${fmtShortDate(w.g.date)}</span>
+        <span class="tmh-wline"><span class="tmh-wscore">${w.g.isHome ? 'vs' : '@'} ${TEAM_ABBR[w.g.isHome ? w.g.awayId : w.g.homeId] || ''} ${w.us}-${w.them}</span><span class="vc-kicker">${w.label}${w.why ? ` <em>${w.why}</em>` : ''}</span></span>
+        <span class="tmh-wbtns"><button type="button" class="tmh-wbtn" data-day-clip="${dayVideoKey(w)}">Recap &#9654;</button>${w.condensed ? `<button type="button" class="tmh-wbtn" data-day-clip="${dayVideoKey({ clip: w.condensed.clip, clipPrefix: 't' })}">Condensed &#9654;</button>` : ''}</span>
+      </div>`;
+  }
+
+  // Stills for MLB's reels, which have no one play to draw: a start is
+  // the pitcher's print and his line; a big night the hitter's print (or
+  // the cap, for the team's) and the final; a win the final over the
+  // game's win probability, its low point in brick and the finish in gold.
+  function vcOpp(g) {
+    const oppId = g.isHome ? g.awayId : g.homeId;
+    return `<span class="vc-where"><b>${g.isHome ? 'vs' : '@'}</b><img src="${capLogoUrl(oppId)}" alt="">${TEAM_ABBR[oppId] || ''}</span>`;
+  }
+  function vcPrint(item) {
+    return item.personId
+      ? `<span class="vc-who"><img class="vc-photo" src="${headshotUrl(item.personId, 240)}" alt="" onerror="this.style.visibility='hidden'"></span>`
+      : `<span class="vc-who vc-who-cap"><img src="${capLogoUrl(item.teamId)}" alt=""></span>`;
+  }
+  function renderStartStill(item) {
+    const cell = (v, k) => `<span><b>${v ?? 0}</b><i>${k}</i></span>`;
+    const l = item.line;
+    return `<span class="vc-card">${vcPrint(item)}
+        <span class="vc-play-side">${vcOpp(item.g)}
+          <span class="vc-line">${cell(l.ip, 'IP')}${cell(l.h, 'H')}${cell(l.r, 'R')}${cell(l.k, 'K')}</span>
+        </span>
+        <span class="dg-recap vc-play">&#9654;</span>
+      </span>`;
+  }
+  function renderNightStill(item) {
+    return `<span class="vc-card">${vcPrint(item)}
+        <span class="vc-play-side">${vcOpp(item.g)}
+          <span class="vc-final"><span class="vc-wl${item.won ? '' : ' is-loss'}">${item.won ? 'W' : 'L'}</span>${item.us}<b>-</b>${item.them}</span>
+        </span>
+        <span class="dg-recap vc-play">&#9654;</span>
+      </span>`;
+  }
+  function renderWinStill(item) {
+    const n = item.path.length - 1 || 1;
+    const pt = (v, i) => `${(i / n * 100).toFixed(2)},${(100 - v).toFixed(2)}`;
+    const lowAt = item.path.indexOf(Math.min(...item.path));
+    // A zero-length line with a round cap stays a round dot however the
+    // unscaled-aspect SVG is stretched.
+    const dot = (i, cls) => {
+      const [x, y] = pt(item.path[i], i).split(',');
+      return `<line class="${cls}" x1="${x}" y1="${y}" x2="${x}" y2="${y}" vector-effect="non-scaling-stroke"/>`;
+    };
+    return `<span class="vc-card vc-card-win">
+        <span class="vc-win-top">${vcOpp(item.g)}<span class="vc-final"><span class="vc-wl">W</span>${item.us}<b>-</b>${item.them}</span></span>
+        <svg class="vc-wp" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <line class="vc-wp-mid" x1="0" y1="50" x2="100" y2="50" vector-effect="non-scaling-stroke"/>
+          <polyline points="${item.path.map(pt).join(' ')}" vector-effect="non-scaling-stroke"/>
+          ${dot(lowAt, 'vc-wp-low')}${dot(n, 'vc-wp-end')}
+        </svg>
+        <span class="dg-recap vc-play">&#9654;</span>
+      </span>`;
+  }
+  const HIGHLIGHT_STILLS = { start: renderStartStill, night: renderNightStill, win: renderWinStill };
 
   // Same running tally getTeamWinLossSeries keeps, from games already in hand.
   function getTeamWinLossFromGames(finals) {
@@ -7974,7 +8314,18 @@
     const games = teamScheduleGames(schedule.gamesByDate).filter(g => !isCalledOff(g));
     const finals = games.filter(g => g.state === 'Final' && g.homeScore != null && g.awayScore != null);
     const fill = (id, html) => { if (requestId !== teamRequestId) return; const el = document.getElementById(id); if (el) el.innerHTML = html; };
-    fill('tmMoments', renderTeamMoments(undefined));
+    teamHighlights = { requestId };
+    drawTeamHighlights();
+    const land = (id, items) => { if (teamHighlights.requestId === requestId) { teamHighlights[id] = items; drawTeamHighlights(); } };
+    // Best Wins reads each final's win probability, which the plays' sweep
+    // has just cached, so it waits for that rather than fetching it twice.
+    const playsP = getTeamSeasonMoments(teamId, finals).then(items => land('plays', items));
+    getTeamSeasonMedia(teamId, season, finals).then(media => {
+      if (teamHighlights.requestId !== requestId) return;
+      land('nights', buildTeamNights(teamId, finals, media));
+      getTeamSeasonStarts(teamId, season, finals, media).then(items => land('starts', items)).catch(() => land('starts', null));
+      playsP.then(() => buildTeamWins(teamId, finals, media)).then(items => land('wins', items)).catch(() => land('wins', null));
+    });
     getTeamNextGame(teamId, season, games).then(next => {
       if (requestId !== teamRequestId) return;
       fill('tmNext', renderNextGame(next));
@@ -7984,7 +8335,6 @@
       const leaders = buildTeamLeaders(h, pi, finals.length || 1);
       fill('tmLeaders', renderLeaderRows(leaders, teamId, season));
     });
-    getTeamSeasonMoments(teamId, finals).then(items => { clearDayClips('t'); fill('tmMoments', renderTeamMoments(items)); });
   }
 
   // ---- Schedule ----
@@ -8446,10 +8796,16 @@
       loadTeamTab();
       return;
     }
+    const take = e.target.closest('[data-hl-take]');
+    if (take) { teamTab.highlightsTake = take.dataset.hlTake; drawTeamHighlights(); return; }
+    const channel = e.target.closest('[data-hl-channel]');
+    if (channel) { teamTab.highlightsChannel = channel.dataset.hlChannel; drawTeamHighlights(); return; }
     const clipBtn = e.target.closest('[data-day-clip]');
     if (clipBtn) {
       const clip = dayClips[clipBtn.dataset.dayClip];
-      if (clip && clip.playId) showClipModal(clip.playId, { head: `<div class="cv-head"><span class="cv-result">${clip.matchup}</span></div>` });
+      const head = clip ? `<div class="cv-head"><span class="cv-result">${clip.matchup}</span></div>` : '';
+      if (clip && clip.mp4) showClipModal(null, { head, clip });
+      else if (clip && clip.playId) showClipModal(clip.playId, { head });
       return;
     }
     const nextBtn = e.target.closest('[data-tn-pk]');
