@@ -1732,16 +1732,12 @@
   .tm-moments .dp-row { grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: minmax(230px, 80%); overflow-x: auto; }
   @container (min-width: 700px) { .tm-moments .dp-row { grid-auto-columns: 280px; } }
   .tmh-head { align-items: center; flex-wrap: wrap; }
-  .tmh-head .view-toggle-btn, .tmh-channels .view-toggle-btn { padding: 5px 10px; font-size: 9.5px; }
-  .tmh-channels { margin-bottom: 10px; overflow-x: auto; }
-  .tmh-channels .view-toggle-btn { flex: none; }
-  .tmh-sub { margin: 4px 0 8px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); }
-  .tmh-shelf + .tmh-shelf { margin-top: 16px; }
+  .tmh-head .view-toggle-btn { padding: 5px 10px; font-size: 9.5px; }
   .tmh-wait { padding: 14px 0; }
   .vc-stack { display: flex; flex-direction: column; gap: 6px; min-width: 0; scroll-snap-align: start; }
   .vc-stack > .vc { flex: 1; }
-  .vc-alt, .tmh-wbtn { padding: 5px 8px; background: transparent; border: 1px solid var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); text-align: left; cursor: pointer; }
-  .vc-alt:hover, .vc-alt:focus-visible, .tmh-wbtn:hover, .tmh-wbtn:focus-visible { color: var(--ink); border-color: var(--gold); outline: none; }
+  .vc-alt { padding: 5px 8px; background: transparent; border: 1px solid var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); text-align: left; cursor: pointer; }
+  .vc-alt:hover, .vc-alt:focus-visible { color: var(--ink); border-color: var(--gold); outline: none; }
   /* The reel stills. */
   .vc-who-cap img { width: 72%; height: auto; }
   .vc-line { display: grid; grid-template-columns: repeat(2, auto); gap: 0.15em 0.8em; margin-bottom: 14%; font-size: clamp(13px, 6.6cqw, 22px); }
@@ -1761,23 +1757,72 @@
   .vc-wp-low, .vc-wp-end { stroke-width: 7; stroke-linecap: round; }
   .vc-wp-low { stroke: var(--brick); }
   .vc-wp-end { stroke: var(--gold); }
-  /* Feature: the best win large, the other wins as rows beside it on a
-     wide sheet and under it on a phone. */
-  .tmh-feature { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; margin-bottom: 18px; }
-  .tmh-hero .vc-title { font-size: 17px; }
-  .tmh-hero .vc-kicker { font-size: 10px; }
+  /* The stream's month jumps: a chip a month with its clip count. */
+  .hs-jump { display: flex; gap: 6px; overflow-x: auto; margin: 0 0 6px; padding-bottom: 4px; }
+  .hs-jump button { flex: none; display: inline-flex; align-items: baseline; gap: 5px; padding: 5px 9px; background: transparent; border: 1px solid var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); cursor: pointer; }
+  .hs-jump button b { font-weight: 700; color: var(--gold); letter-spacing: 0; }
+  .hs-jump button:hover, .hs-jump button:focus-visible { color: var(--ink); border-color: var(--gold); outline: none; }
+  .hs-month { display: flex; justify-content: space-between; align-items: baseline; margin: 18px 0 2px; padding-bottom: 4px; border-bottom: 1px solid var(--paper-line); font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 22px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink); scroll-margin-top: calc(var(--tab-header-h, 0px) + 12px); }
+  .hs-month em { font-style: normal; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10.5px; letter-spacing: 0.02em; text-transform: none; color: var(--ink-soft); }
+  /* Timeline: day, still, words, play mark. */
+  .hs-row { border-bottom: 1px dashed var(--paper-line); }
+  .hs-main { display: grid; grid-template-columns: 30px 112px minmax(0, 1fr); align-items: center; gap: 12px; width: 100%; padding: 10px 0; background: none; border: none; text-align: left; color: var(--ink); cursor: pointer; }
+  .hs-main:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .hs-date { display: flex; flex-direction: column; align-items: center; line-height: 1; }
+  .hs-date b { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 22px; font-variant-numeric: tabular-nums; }
+  .hs-date i { font-style: normal; margin-top: 3px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+  .hs-thumb { position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden; border: 1px solid var(--paper-line); container-type: inline-size; }
+  .hs-main:hover .hs-thumb, .hs-main:focus-visible .hs-thumb { border-color: var(--gold); }
+  .hs-thumb .vc-play { display: none; }
+  .hs-thumb .vc-where { font-size: 9.5cqw; }
+  .hs-thumb .vc-line { font-size: 7.6cqw; margin-bottom: 0; }
+  .hs-thumb .vc-final { font-size: 14cqw; }
+  .hs-thumb .vc-card-win .vc-final { font-size: 12cqw; }
+  .hs-thumb .vc-photo { border-width: 1px; box-shadow: none; }
+  .hs-thumb .vc-wp-low, .hs-thumb .vc-wp-end { stroke-width: 4; }
+  .hs-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .hs-text .vc-kicker { padding: 0; }
+  .hs-title { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 15px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .hs-main:hover .hs-title { color: var(--gold); }
+  .hs-game { display: flex; align-items: center; gap: 4px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10.5px; color: var(--ink-soft); }
+  .hs-game img { width: 13px; height: 13px; }
+  .hs-game b { margin-left: 6px; font-weight: 800; color: var(--gold); }
+  .hs-game b.is-loss { color: var(--brick-text); }
+  .hs-go { display: none; }
+  .hs-alt { margin: -4px 0 10px 154px; padding: 4px 8px; background: transparent; border: 1px solid var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); cursor: pointer; }
+  .hs-alt:hover, .hs-alt:focus-visible { color: var(--ink); border-color: var(--gold); outline: none; }
   @container (min-width: 700px) {
-    .tmh-feature { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); align-items: start; gap: 28px; }
+    .hs-main { grid-template-columns: 36px 168px minmax(0, 1fr) auto; gap: 16px; }
+    .hs-go { display: grid; place-items: center; width: 34px; height: 26px; font-size: 12px; }
+    .hs-main:hover .hs-go { border-color: var(--gold); }
+    .hs-title { font-size: 17px; }
+    .hs-alt { margin-left: 220px; }
   }
-  .tmh-wrow { display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 9px 0; border-bottom: 1px dashed var(--paper-line); }
-  .tmh-wdate { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); }
-  .tmh-wline { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-  .tmh-wscore { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 16px; font-variant-numeric: tabular-nums; }
-  .tmh-wline .vc-kicker { padding: 0; }
-  .tmh-wbtns { display: flex; flex-direction: column; gap: 4px; }
-  .tmh-short { display: none; }
-  @container (min-width: 520px) { .tmh-wbtns { flex-direction: row; } }
-  @container (max-width: 519px) { .tmh-long { display: none; } .tmh-short { display: inline; } }
+  @container (min-width: 1000px) {
+    .hs-rows { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 32px; }
+  }
+  /* Reel: one swipe row, a gold month marker standing up between months. */
+  .hs-reel { display: flex; align-items: flex-start; gap: 10px; overflow-x: auto; scroll-snap-type: x proximity; padding: 8px 0 6px; }
+  .hs-reel > .vc, .hs-reel > .vc-stack { flex: 0 0 min(76%, 250px); }
+  .hs-tick { flex: none; align-self: stretch; display: flex; padding: 4px 2px 4px 6px; border-left: 2px solid var(--gold); scroll-snap-align: start; }
+  .hs-tick span { writing-mode: vertical-rl; transform: rotate(180deg); font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 18px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); }
+  /* Log: a ledger line a game, a tagged line a clip. */
+  .hs-lgame { margin-top: 8px; }
+  .hs-lhead { display: grid; grid-template-columns: 50px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 6px 0 4px; border-bottom: 1px solid var(--paper-line); }
+  .hs-ldate { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); }
+  .hs-lopp { display: flex; align-items: center; gap: 5px; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 16px; }
+  .hs-lopp img { width: 17px; height: 17px; }
+  .hs-lres { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 16px; font-variant-numeric: tabular-nums; color: var(--gold); }
+  .hs-lres.is-loss { color: var(--brick-text); }
+  .hs-entry { display: grid; grid-template-columns: 78px minmax(0, 1fr) auto; align-items: center; gap: 10px; width: 100%; padding: 7px 0 7px 50px; background: none; border: none; border-bottom: 1px dashed var(--paper-line); text-align: left; color: var(--ink); cursor: pointer; }
+  .hs-badge { justify-self: start; padding: 3px 5px 2px; border: 1px solid var(--gold); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); white-space: nowrap; }
+  .hs-entry.is-alt .hs-badge { border-color: var(--paper-line); color: var(--ink-soft); }
+  .hs-etitle { font-family: 'Oswald', sans-serif; font-weight: 400; font-size: 14.5px; line-height: 1.3; }
+  .hs-etitle em { font-style: normal; margin-left: 4px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10.5px; color: var(--ink-soft); }
+  .hs-eplay { font-size: 11px; color: var(--gold); }
+  .hs-entry:hover .hs-etitle, .hs-entry:focus-visible .hs-etitle { color: var(--gold); }
+  .hs-entry:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+  @container (max-width: 519px) { .hs-entry { padding-left: 0; } }
   /* Phone: one column, the next game first. */
   .tm-split { display: flex; flex-direction: column; }
   .tm-split > .tm-col { display: contents; }
@@ -7802,7 +7847,7 @@
   // probability (under 1 KB a game) ranks them, then only the games that
   // hold the top few are read in full for their diamonds and clips. At
   // most two from one game, so one wild night can't fill the row.
-  const TEAM_MOMENTS = 8;
+  const TEAM_MOMENTS = 10;
   const teamMomentsCache = {};
   async function getTeamSeasonMoments(teamId, finals) {
     const key = `${teamId}-${finals.length ? finals[finals.length - 1].gamePk : 0}`;
@@ -7918,7 +7963,7 @@
   // Score from the pitcher's own game log (only the pitchers with a reel
   // are fetched, a few small requests). A traded arm's starts elsewhere
   // don't count, and nobody takes more than two spots.
-  const TEAM_STARTS = 8;
+  const TEAM_STARTS = 10;
   async function getTeamSeasonStarts(teamId, season, finals, media) {
     const cands = [];
     finals.forEach(g => {
@@ -7951,7 +7996,7 @@
   // by what the headline counts ("three-homer, seven-RBI game", "score six
   // in the 8th"), a team reel or rally ahead of one man's night, a win
   // ahead of a loss.
-  const TEAM_NIGHTS = 8;
+  const TEAM_NIGHTS = 10;
   const NIGHT_NUMS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, multi: 2 };
   const NIGHT_WEIGHTS = { homer: 4, 'home run': 4, hr: 4, rbi: 1, hit: 1.5, run: 1.2 };
   function nightWeight(clip, won) {
@@ -7990,7 +8035,7 @@
   // from the plays' sweep, so nothing is refetched), ranked by how far down
   // the team was, a walk-off counting for more. Each plays MLB's recap,
   // with the condensed game a tap away.
-  const TEAM_WINS = 4;
+  const TEAM_WINS = 6;
   async function buildTeamWins(teamId, finals, media) {
     const wins = finals.filter(g => teamGameResult(g).won && media[g.gamePk] && media[g.gamePk].recap);
     const scored = await Promise.all(wins.map(async g => {
@@ -8165,22 +8210,17 @@
     const html = side('Hitters', leaders.hitters, false) + side('Starters', leaders.pitchers, true);
     return html || '<div class="pitch-empty">No regulars yet this season.</div>';
   }
-  // ---- Season Highlights: the four kinds, and the ways to show them ----
+  // ---- Season Highlights: one stream, in date order ----
   // Each kind fills in as its data lands (undefined while loading, null or
-  // [] when there's nothing), and every redraw is from what's in hand.
-  // The takes are the layouts on trial: Shelves (a row per kind),
-  // Channels (one row, a toggle for the kind) and Feature (the best win
-  // up top, the rest of the wins beside it, one mixed row under).
-  const HIGHLIGHT_KINDS = [
-    { id: 'plays', title: 'Biggest Plays', short: 'Plays', wait: 'Finding the season&#8217;s biggest plays&#8230;' },
-    { id: 'starts', title: 'On the Mound', short: 'Mound', wait: 'Finding the best starts&#8230;' },
-    { id: 'nights', title: 'Big Nights', short: 'Nights', wait: 'Finding the big nights&#8230;' },
-    { id: 'wins', title: 'Best Wins', short: 'Wins', wait: 'Finding the best wins&#8230;' }
-  ];
-  const HIGHLIGHT_TAKES = [['shelves', 'Shelves'], ['channels', 'Channels'], ['feature', 'Feature']];
+  // [] when there's nothing); the stream is every kind merged by date and
+  // redrawn from what's in hand. The takes are the layouts on trial:
+  // Timeline (a month at a time, a row per clip), Reel (one swipe row with
+  // month markers) and Log (a scorebook ledger, by game, no pictures).
+  const HIGHLIGHT_KINDS = ['plays', 'starts', 'nights', 'wins'];
+  const HIGHLIGHT_KIND_ORDER = { win: 0, start: 1, night: 2, play: 3 };
+  const HIGHLIGHT_TAKES = [['timeline', 'Timeline'], ['reel', 'Reel'], ['log', 'Log']];
   let teamHighlights = { requestId: 0 };
-  teamTab.highlightsTake = 'shelves';
-  teamTab.highlightsChannel = 'plays';
+  teamTab.highlightsTake = 'timeline';
 
   function drawTeamHighlights() {
     if (teamHighlights.requestId !== teamRequestId) return;
@@ -8189,36 +8229,51 @@
     clearDayClips('t');
     el.innerHTML = renderTeamHighlights(teamHighlights);
   }
+  // A game's own clips stay together: its recap first, then the start,
+  // the night, and its plays in the order they happened.
+  function buildHighlightStream(h) {
+    // A walk-off is the end of its game's recap, so with the recap in the
+    // stream the play would be the same moment twice.
+    const recapped = new Set((h.wins || []).map(w => w.g.gamePk));
+    return HIGHLIGHT_KINDS.flatMap(id => (h[id] || []).filter(x => !(x.k && x.k.kind === 'walkoff' && recapped.has(x.g.gamePk))).map(x => {
+      const kind = x.kind || 'play';
+      const { us, them, won } = teamGameResult(x.g);
+      const item = { ...x, kind, result: `${won ? 'W' : 'L'} ${us}-${them}`, won };
+      if (kind === 'start') return { ...item, label: 'On the mound', why: `GSc ${x.gsc}`, badge: `GSc ${x.gsc}` };
+      if (kind === 'night') return { ...item, label: x.label === 'Team' ? 'Team night' : 'Big night', badge: x.label === 'Team' ? 'Team' : 'Big night' };
+      if (kind === 'win') return { ...item, badge: 'Recap' };
+      return { ...item, badge: x.label };
+    })).sort((a, b) => a.g.date.localeCompare(b.g.date) || a.g.gamePk - b.g.gamePk
+      || HIGHLIGHT_KIND_ORDER[a.kind] - HIGHLIGHT_KIND_ORDER[b.kind] || (a.k ? a.k.atBatIndex : 0) - (b.k ? b.k.atBatIndex : 0));
+  }
+  function highlightMonths(stream) {
+    const months = [];
+    stream.forEach(x => {
+      const ym = x.g.date.slice(0, 7);
+      if (!months.length || months[months.length - 1].ym !== ym) months.push({ ym, name: MONTH_NAMES[Number(ym.slice(5)) - 1], items: [] });
+      months[months.length - 1].items.push(x);
+    });
+    return months;
+  }
   function renderTeamHighlights(h) {
     const take = teamTab.highlightsTake;
     const toggle = `<div class="view-toggle tmh-takes" role="group" aria-label="Layout">${HIGHLIGHT_TAKES.map(([id, label]) =>
       `<button type="button" class="view-toggle-btn${id === take ? ' active' : ''}" data-hl-take="${id}" aria-pressed="${id === take}">${label}</button>`).join('')}</div>`;
+    const stream = buildHighlightStream(h);
+    const pending = HIGHLIGHT_KINDS.some(id => h[id] === undefined);
     const head = `<div class="pp-skg-head tmh-head"><span>Season Highlights</span>${toggle}</div>`;
-    const live = HIGHLIGHT_KINDS.filter(k => h[k.id] === undefined || (h[k.id] && h[k.id].length));
-    if (!live.length) return `${head}<div class="pitch-empty">No highlights yet this season.</div>`;
-    const row = items => `<div class="dp-row">${items.map(renderTeamCard).join('')}</div>`;
-    const wait = k => `<div class="mlb-status-msg tmh-wait">${k.wait}</div>`;
-    if (take === 'channels') {
-      const on = live.find(k => k.id === teamTab.highlightsChannel) || live[0];
-      const tabs = `<div class="view-toggle tmh-channels" role="group" aria-label="Highlights">${live.map(k =>
-        `<button type="button" class="view-toggle-btn${k === on ? ' active' : ''}" data-hl-channel="${k.id}" aria-pressed="${k === on}"><span class="tmh-long">${k.title}</span><span class="tmh-short">${k.short}</span></button>`).join('')}</div>`;
-      return `${head}${tabs}${h[on.id] === undefined ? wait(on) : row(h[on.id])}`;
+    const wait = pending ? `<div class="mlb-status-msg tmh-wait">${stream.length ? 'Gathering more clips' : 'Gathering the season&#8217;s clips'}&#8230;</div>` : '';
+    if (!stream.length) return `${head}${wait || '<div class="pitch-empty">No highlights yet this season.</div>'}`;
+    const months = highlightMonths(stream);
+    const jump = months.length > 1
+      ? `<div class="hs-jump">${months.map(m => `<button type="button" data-hl-month="${m.ym}">${m.name.slice(0, 3)}<b>${m.items.length}</b></button>`).join('')}</div>`
+      : '';
+    if (take === 'reel') {
+      const cells = months.flatMap(m => [`<div class="hs-tick" id="hsm-${m.ym}"><span>${m.name}</span></div>`, ...m.items.map(renderTeamCard)]);
+      return `${head}${jump}<div class="hs-reel">${cells.join('')}</div>${wait}`;
     }
-    if (take === 'feature') {
-      const wins = h.wins || [];
-      const hero = wins[0];
-      const side = wins.slice(1);
-      const top = hero
-        ? `<div class="tmh-feature"><div class="tmh-hero">${renderTeamCard(hero)}</div>${side.length ? `<div class="tmh-wins"><div class="tmh-sub">More Best Wins</div>${side.map(renderWinRow).join('')}</div>` : ''}</div>`
-        : h.wins === undefined ? wait(HIGHLIGHT_KINDS[3]) : '';
-      // One of each kind in turn, so the row reads as the whole season.
-      const lists = ['plays', 'starts', 'nights'].map(id => (h[id] || []).map(x => ({ ...x, label: x.kind === 'start' ? `Gem &#183; GSc ${x.gsc}` : x.label, why: x.kind === 'start' ? '' : x.why })));
-      const mixed = [];
-      for (let i = 0; mixed.length < 12 && lists.some(l => l[i]); i++) lists.forEach(l => { if (l[i] && mixed.length < 12) mixed.push(l[i]); });
-      const loading = ['plays', 'starts', 'nights'].some(id => h[id] === undefined);
-      return `${head}${top}<div class="tmh-sub">The Season in Clips</div>${mixed.length ? row(mixed) : ''}${loading ? `<div class="mlb-status-msg tmh-wait">Gathering the season&#8217;s clips&#8230;</div>` : ''}`;
-    }
-    return head + live.map(k => `<div class="tmh-shelf"><div class="tmh-sub">${k.title}</div>${h[k.id] === undefined ? wait(k) : row(h[k.id])}</div>`).join('');
+    if (take === 'log') return `${head}${jump}${months.map(renderHighlightLogMonth).join('')}${wait}`;
+    return `${head}${jump}${months.map(m => `<div class="hs-month" id="hsm-${m.ym}"><span>${m.name}</span><em>${m.items.length} clip${m.items.length === 1 ? '' : 's'}</em></div><div class="hs-rows">${m.items.map(renderHighlightRow).join('')}</div>`).join('')}${wait}`;
   }
   function renderTeamCard(item) {
     const card = renderVideoCard(item);
@@ -8226,12 +8281,45 @@
     const mins = item.condensed.mins ? ` &#183; ${item.condensed.mins} min` : '';
     return `<div class="vc-stack">${card}<button type="button" class="vc-alt" data-day-clip="${dayVideoKey({ clip: item.condensed.clip, clipPrefix: 't' })}">Condensed game${mins} &#9654;</button></div>`;
   }
-  function renderWinRow(w) {
-    return `<div class="tmh-wrow">
-        <span class="tmh-wdate">${fmtShortDate(w.g.date)}</span>
-        <span class="tmh-wline"><span class="tmh-wscore">${w.g.isHome ? 'vs' : '@'} ${TEAM_ABBR[w.g.isHome ? w.g.awayId : w.g.homeId] || ''} ${w.us}-${w.them}</span><span class="vc-kicker">${w.label}${w.why ? ` <em>${w.why}</em>` : ''}</span></span>
-        <span class="tmh-wbtns"><button type="button" class="tmh-wbtn" data-day-clip="${dayVideoKey(w)}">Recap &#9654;</button>${w.condensed ? `<button type="button" class="tmh-wbtn" data-day-clip="${dayVideoKey({ clip: w.condensed.clip, clipPrefix: 't' })}">Condensed &#9654;</button>` : ''}</span>
+  function highlightOpp(g) {
+    const oppId = g.isHome ? g.awayId : g.homeId;
+    return `${g.isHome ? 'vs' : '@'} <img src="${capLogoUrl(oppId)}" alt="">${TEAM_ABBR[oppId] || ''}`;
+  }
+  // Timeline: the day, a small still, why it's here and what it is, and
+  // the game it came from.
+  function renderHighlightRow(x) {
+    const [, , day] = x.g.date.split('-');
+    const still = ((x.kind && HIGHLIGHT_STILLS[x.kind]) || renderScorebookStill)(x);
+    const alt = x.condensed
+      ? `<button type="button" class="hs-alt" data-day-clip="${dayVideoKey({ clip: x.condensed.clip, clipPrefix: 't' })}">Condensed${x.condensed.mins ? ` &#183; ${x.condensed.mins} min` : ''} &#9654;</button>`
+      : '';
+    return `<div class="hs-row hs-${x.kind}">
+        <button type="button" class="hs-main" data-day-clip="${dayVideoKey(x)}">
+          <span class="hs-date"><b>${Number(day)}</b><i>${MONTH_NAMES[Number(x.g.date.slice(5, 7)) - 1].slice(0, 3)}</i></span>
+          <span class="hs-thumb">${still}</span>
+          <span class="hs-text">
+            <span class="vc-kicker">${x.label}${x.why ? ` <em>${x.why}</em>` : ''}</span>
+            <span class="hs-title">${x.title}</span>
+            <span class="hs-game">${highlightOpp(x.g)}<b class="${x.won ? '' : 'is-loss'}">${x.result}</b></span>
+          </span>
+          <span class="dg-recap hs-go">&#9654;</span>
+        </button>${alt}
       </div>`;
+  }
+  // Log: a ledger line per game (date, opponent, final) and under it a
+  // line per clip, its kind in a gold tag.
+  function renderHighlightLogMonth(m) {
+    const games = [];
+    m.items.forEach(x => {
+      if (!games.length || games[games.length - 1].g.gamePk !== x.g.gamePk) games.push({ g: x.g, result: x.result, won: x.won, items: [] });
+      games[games.length - 1].items.push(x);
+    });
+    const entry = (clip, badge, title, cls = '') => `<button type="button" class="hs-entry${cls}" data-day-clip="${dayVideoKey(clip)}"><span class="hs-badge">${badge}</span><span class="hs-etitle">${title}</span><span class="hs-eplay">&#9654;</span></button>`;
+    return `<div class="hs-month" id="hsm-${m.ym}"><span>${m.name}</span><em>${games.length} game${games.length === 1 ? '' : 's'}</em></div>${games.map(gm => `<div class="hs-lgame">
+        <div class="hs-lhead"><span class="hs-ldate">${fmtShortDate(gm.g.date)}</span><span class="hs-lopp">${highlightOpp(gm.g)}</span><span class="hs-lres${gm.won ? '' : ' is-loss'}">${gm.result}</span></div>
+        ${gm.items.map(x => entry(x, x.badge, x.kind === 'win' && x.why ? `${x.title} <em>${x.label}, ${x.why}</em>` : x.title)
+          + (x.condensed ? entry({ clip: x.condensed.clip, clipPrefix: 't' }, 'Full game', `Condensed game${x.condensed.mins ? ` <em>${x.condensed.mins} min</em>` : ''}`, ' is-alt') : '')).join('')}
+      </div>`).join('')}`;
   }
 
   // Stills for MLB's reels, which have no one play to draw: a start is
@@ -8798,8 +8886,14 @@
     }
     const take = e.target.closest('[data-hl-take]');
     if (take) { teamTab.highlightsTake = take.dataset.hlTake; drawTeamHighlights(); return; }
-    const channel = e.target.closest('[data-hl-channel]');
-    if (channel) { teamTab.highlightsChannel = channel.dataset.hlChannel; drawTeamHighlights(); return; }
+    const month = e.target.closest('[data-hl-month]');
+    if (month) {
+      const mark = document.getElementById(`hsm-${month.dataset.hlMonth}`);
+      // The reel scrolls sideways to its marker; the lists scroll the page.
+      if (mark && mark.classList.contains('hs-tick')) mark.parentElement.scrollTo({ left: mark.offsetLeft - mark.parentElement.offsetLeft, behavior: 'smooth' });
+      else if (mark) mark.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
     const clipBtn = e.target.closest('[data-day-clip]');
     if (clipBtn) {
       const clip = dayClips[clipBtn.dataset.dayClip];
