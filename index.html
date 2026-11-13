@@ -1771,12 +1771,22 @@
   .tlc-val { grid-area: val; font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 24px; line-height: 1.05; font-variant-numeric: tabular-nums; color: var(--ink); }
   .tlc-name { grid-area: name; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9.5px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-soft); }
   .tlc:hover .tlc-name, .tlc:focus-visible .tlc-name { color: var(--ink); }
+  /* Beside the division (from 700px) the tiles lie down -- print beside
+     the words -- so the two groups stand no taller than the board's five
+     rows; the board keeps its own height and the tiles take up any rest. */
+  @container tm (min-width: 700px) {
+    .tlc { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: 'print cat' 'print val' 'print name'; justify-items: start; gap: 0 8px; padding: 6px 8px 6px 6px; text-align: left; }
+    .tlc-print { width: 30px; margin: 0; border-width: 1px; box-shadow: none; }
+    .tlc-val { font-size: 20px; }
+    .tlc-name { font-size: 9px; letter-spacing: 0.03em; }
+  }
   @container (min-width: 520px) {
     .tlc-grid { gap: 6px; }
-    .tlc { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: 'print cat' 'print val' 'print name'; justify-items: start; gap: 0 12px; padding: 9px 12px 9px 9px; text-align: left; }
-    .tlc-print { width: 48px; margin: 0; }
-    .tlc-val { font-size: 28px; }
-    .tlc-name { font-size: 10.5px; }
+    .tlc { gap: 0 12px; padding: 4px 12px 4px 7px; }
+    .tlc-print { width: 38px; border-width: 2px; box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4); }
+    .tlc-val { font-size: 24px; line-height: 1; }
+    .tlc-cat, .tlc-name { line-height: 1.25; }
+    .tlc-name { font-size: 10.5px; letter-spacing: 0.05em; }
   }
   /* Season Highlights: each row scrolls on its own, at any width. */
   .tm-moments .dp-row { grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: minmax(230px, 80%); overflow-x: auto; }
@@ -1915,10 +1925,9 @@
     .tm-o-hl { grid-area: hl; }
     .tm-o-next, .tm-o-lead, .tm-o-div, .tm-o-form, .tm-o-ranks { display: flex; flex-direction: column; }
     .tm-o-next > .tn { flex: 1; align-content: center; }
-    #tmLeaders, .tm-o-lead .tlc-group, .tm-o-lead .tlc-grid, .tm-o-div .tdv, .tm-o-ranks .trk, .tm-o-form .gt-row, .tm-o-form #tmRecent { flex: 1; }
+    #tmLeaders, .tm-o-lead .tlc-group, .tm-o-lead .tlc-grid, .tm-o-ranks .trk, .tm-o-form .gt-row, .tm-o-form #tmRecent { flex: 1; }
     .tm-o-form #tmRecent { display: flex; flex-direction: column; }
     .tm-o-lead .tlc-grid { grid-auto-rows: 1fr; }
-    .tm-o-div .tdv { display: flex; flex-direction: column; justify-content: space-between; }
     .tm-o-ranks .trk { grid-auto-rows: 1fr; }
     .tm-o-ranks .trk-cell { justify-content: center; }
     .gt-main { flex: 1; align-content: center; }
