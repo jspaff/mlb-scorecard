@@ -1660,7 +1660,9 @@
   .tm-col { min-width: 0; }
   .tm-sec { margin-top: 20px; min-width: 0; }
   .tm-wide { display: none; }
+  .tm-xwide { display: none; }
   @container (min-width: 700px) { .tm-wide { display: block; } .tm-narrow { display: none; } }
+  @container (min-width: 1000px) { .tm-o .tm-xwide { display: block; } .tm-o .tm-wide { display: none; } }
   @container (min-width: 700px) {
     .tm-cap { width: 72px; height: 72px; }
     .tm-name { font-size: 46px; }
@@ -1764,31 +1766,79 @@
   .vc-wp-low, .vc-wp-end { stroke-width: 7; stroke-linecap: round; }
   .vc-wp-low { stroke: var(--brick); }
   .vc-wp-end { stroke: var(--gold); }
-  /* The stream's month jumps: a chip a month with its clip count. */
+  /* Month chips: the phone's list shows the one that's on; on a wide
+     sheet a chip runs the reel to its month. */
   .hs-jump { display: flex; gap: 6px; overflow-x: auto; margin: 0 0 6px; padding-bottom: 4px; }
-  .hs-jump button { flex: none; display: inline-flex; align-items: baseline; gap: 5px; padding: 5px 9px; background: transparent; border: 1px solid var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); cursor: pointer; }
-  .hs-jump button b { font-weight: 700; color: var(--gold); letter-spacing: 0; }
+  .hs-jump button { flex: none; padding: 6px 11px; background: transparent; border: 1px solid var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); cursor: pointer; }
   .hs-jump button:hover, .hs-jump button:focus-visible { color: var(--ink); border-color: var(--gold); outline: none; }
-  /* Reel: one swipe row, a gold month marker standing up between months. */
-  .hs-reel { display: flex; align-items: flex-start; gap: 10px; overflow-x: auto; scroll-snap-type: x proximity; padding: 8px 0 6px; }
-  .hs-reel > .vc, .hs-reel > .vc-stack { flex: 0 0 min(76%, 250px); }
+  .hs-jump button.is-on { color: var(--ink); background: rgba(217, 169, 26, 0.15); box-shadow: inset 0 -2px 0 var(--gold); }
+  /* Reel (a wide sheet): one swipe row, a gold month marker standing up
+     between months. */
+  .hs-reel { display: none; align-items: flex-start; gap: 10px; overflow-x: auto; scroll-snap-type: x proximity; padding: 8px 0 6px; }
+  .hs-reel > .vc, .hs-reel > .vc-stack { flex: 0 0 250px; }
   .hs-tick { flex: none; align-self: stretch; display: flex; padding: 4px 2px 4px 6px; border-left: 2px solid var(--gold); scroll-snap-align: start; }
   .hs-tick span { writing-mode: vertical-rl; transform: rotate(180deg); font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 18px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); }
-  /* Phone: one column -- the next game, the board, the last games, the
-     division, the chart, the leaders. */
-  .tm-split { display: flex; flex-direction: column; }
-  .tm-split > .tm-col { display: contents; }
-  .tm-split .tm-next { order: -1; }
-  .tm-o-board { order: 1; }
-  .tm-o-recent { order: 2; }
-  .tm-o-up { order: 3; }
-  .tm-o-div { order: 4; }
-  .tm-o-chart { order: 5; }
-  .tm-o-lead { order: 6; }
+  /* List (a phone): one month's clips as rows, a pager to the next. */
+  .hs-list-month { margin: 8px 0 2px; font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 20px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gold); }
+  .hs-row { border-bottom: 1px dashed var(--paper-line); }
+  .hs-main { display: grid; grid-template-columns: 124px minmax(0, 1fr); align-items: center; gap: 12px; width: 100%; padding: 10px 0; background: none; border: 0; text-align: left; color: var(--ink); cursor: pointer; font: inherit; }
+  .hs-main:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .hs-thumb { position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden; border: 1px solid var(--paper-line); container-type: inline-size; }
+  .hs-main:hover .hs-thumb, .hs-main:focus-visible .hs-thumb { border-color: var(--gold); }
+  .hs-thumb .vc-play { display: none; }
+  .hs-thumb .vc-where { font-size: 9.5cqw; }
+  .hs-thumb .vc-line { font-size: 7.6cqw; margin-bottom: 0; }
+  .hs-thumb .vc-final { font-size: 14cqw; }
+  .hs-thumb .vc-card-win .vc-final { font-size: 12cqw; }
+  .hs-thumb .vc-photo { border-width: 1px; box-shadow: none; }
+  .hs-thumb .vc-wp-low, .hs-thumb .vc-wp-end { stroke-width: 4; }
+  .hs-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .hs-text .vc-kicker, .hs-text .dp-meta { padding: 0; }
+  .hs-title { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 15.5px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .hs-main:hover .hs-title { color: var(--gold); }
+  .hs-alt { margin: -4px 0 10px 136px; padding: 4px 8px; background: transparent; border: 1px solid var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); cursor: pointer; }
+  .hs-alt:hover, .hs-alt:focus-visible { color: var(--ink); border-color: var(--gold); outline: none; }
+  .hs-pager { display: flex; justify-content: space-between; gap: 10px; padding-top: 12px; }
+  .hs-page { padding: 8px 12px; background: transparent; border: 1px solid var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); cursor: pointer; }
+  .hs-page:hover, .hs-page:focus-visible { border-color: var(--gold); outline: none; }
+  @container (min-width: 700px) {
+    .hs-reel { display: flex; }
+    .hs-list { display: none; }
+  }
+  /* The Overview, one grid in reading order: head, next game, form,
+     division, leaders, highlights, the season. A phone stacks it; wider,
+     form and division pair up, and from 1000px the next game joins the
+     head's band. */
+  .tm-o { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: 'head' 'next' 'form' 'div' 'lead' 'hl' 'season'; gap: 22px 36px; align-items: start; }
+  .tm-o > .tm-sec, .tm-o > .tm-next, .tm-o > .tm-head { margin: 0; }
+  .tm-o-head { grid-area: head; }
+  .tm-o-next { grid-area: next; }
+  .tm-o-next:empty { display: none; }
+  .tm-o-form { grid-area: form; }
+  .tm-o-div { grid-area: div; }
+  .tm-o-lead { grid-area: lead; }
+  .tm-o-hl { grid-area: hl; }
+  .tm-o-season { grid-area: season; }
+  .tm-up-head { margin-top: 18px; }
+  .tm-o-form .tm-rec { margin-top: 16px; }
+  @container (min-width: 760px) {
+    .tm-o { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: 'head head' 'next next' 'form div' 'lead lead' 'hl hl' 'season season'; }
+    .tl-wrap { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 28px; }
+    .tl-side + .tl-side { margin-top: 0; }
+  }
   @container (min-width: 1000px) {
-    .tm-split { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 0 44px; align-items: start; }
-    .tm-split > .tm-col { display: block; min-width: 0; }
-    .tm-split .tm-next { margin-top: 0; }
+    .tm-o { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); grid-template-areas: 'head next' 'form div' 'lead lead' 'hl hl' 'season season'; align-items: stretch; }
+    .tm-o-head { align-items: center; margin: 0; }
+    .tm-o-next .tn { height: 100%; }
+    .tm-o-next { display: flex; flex-direction: column; justify-content: center; }
+    /* Leaders lie down: the name across the top, the print and the stat
+       side by side under it. */
+    .tl-card { display: grid; grid-template-columns: 48px minmax(0, 1fr); grid-template-areas: 'name name' 'print stat'; align-items: center; gap: 8px 10px; padding: 8px 10px 10px; }
+    .tl-card .player-name-btn { grid-area: name; justify-self: end; }
+    .tl-card .dcf-photo { grid-area: print; }
+    .tl-card .dcf-print { width: 48px; }
+    .tl-card .tl-stat { grid-area: stat; font-size: 30px; line-height: 1.4; }
+    .tl-rank { top: 9px; left: 10px; }
   }
   .tm-roster-title { margin-bottom: 12px; }
   .tm-stats:first-child { margin-top: 0; }
@@ -7788,33 +7838,35 @@
       };
       recBig = `<div class="tm-recbig"><span class="tm-wl">${rec.wins}<b>-</b>${rec.losses}</span><span class="tm-pct">${rec.winningPercentage || ''}</span></div>`;
       const cells = [['Run Diff', fmtNet(rec.runDifferential || 0)], ['Home', split('home')], ['Away', split('away')], ['Last 10', split('lastTen')]];
-      board = `<div class="tm-rec tm-o-board">${cells.map(([k, v]) => `<div class="pp-tot"><span class="pp-sk-name">${k}</span><span class="pp-tot-v">${v}</span></div>`).join('')}</div>`;
+      board = `<div class="tm-rec">${cells.map(([k, v]) => `<div class="pp-tot"><span class="pp-sk-name">${k}</span><span class="pp-tot-v">${v}</span></div>`).join('')}</div>`;
       if (record.division) division = `<section class="tm-sec tm-o-div"><div class="pp-skg-head"><span>${div}</span></div>${renderDivisionTable(record.division, teamId)}</section>`;
     }
     if (october && october.champion) plates.push(plate(`${season} World Series Champions`, true));
     else if (october && october.text) plates.push(plate(october.text));
     if (!final && record && record.rec.streak && record.rec.streak.streakCode) plates.push(plate(`Streak ${record.rec.streak.streakCode}`));
 
-    // Two drawings of one chart, a phone's and a wide sheet's, so its type
-    // stays readable at both sizes (only one shows -- see .tm-wide).
+    // Three drawings of one chart -- a phone's, a wide sheet's and the full
+    // width's -- so its type stays readable at each size (only one shows --
+    // see .tm-wide, .tm-xwide).
     const played = getTeamWinLossFromGames(finals);
-    const chart = played.length ? `<section class="tm-sec tm-o-chart">
+    const chart = played.length ? `<div class="tm-o-chart">
         <div class="pp-skg-head"><span>Games Over .500</span></div>
         <div class="tm-narrow">${renderWinLossSvg(`teamTabClipN${teamId}`, played)}</div>
         <div class="tm-wide">${renderWinLossSvg(`teamTabClipW${teamId}`, played, { width: 640, height: 200 })}</div>
-      </section>` : '';
+        <div class="tm-xwide">${renderWinLossSvg(`teamTabClipX${teamId}`, played, { width: 1120, height: 190 })}</div>
+      </div>` : '';
     const lastWins = recent.filter(g => teamGameResult(g).won).length;
-    const recentSec = recent.length ? `<section class="tm-sec tm-o-recent">
-        <div class="pp-skg-head"><span>Last ${recent.length}</span><em>${lastWins}-${recent.length - lastWins}</em></div>
-        <div id="tmRecent">${renderRecentTiles(recent, null)}</div>
-      </section>` : '';
-    const upSec = upcoming.length ? `<section class="tm-sec tm-o-up">
-        <div class="pp-skg-head"><span>Up Next</span></div>
-        <div class="gt-row">${upcoming.map(g => renderGameTile(g, null)).join('')}</div>
+    const form = recent.length || upcoming.length || board ? `<section class="tm-sec tm-o-form">
+        ${recent.length ? `<div class="pp-skg-head"><span>Last ${recent.length}</span><em>${lastWins}-${recent.length - lastWins}</em></div>
+        <div id="tmRecent">${renderRecentTiles(recent, null)}</div>` : ''}
+        ${upcoming.length ? `<div class="pp-skg-head tm-up-head"><span>Up Next</span></div>
+        <div class="gt-row">${upcoming.map(g => renderGameTile(g, null)).join('')}</div>` : ''}
+        ${board}
       </section>` : '';
     teamRecentShown = recent;
+    const seasonSec = chart ? `<section class="tm-sec tm-o-season">${chart}</section>` : '';
 
-    const head = `<div class="tm-head">
+    const head = `<div class="tm-head tm-o-head">
         <img class="tm-cap" src="${capLogoUrl(teamId)}" alt="">
         <div class="tm-id">
           <div class="tm-kicker">${season} ${final ? 'Final' : 'Season'}</div>
@@ -7823,17 +7875,17 @@
         </div>
         ${recBig}
       </div>`;
-    const sec = (title, id, cls) => `<section class="tm-sec ${cls}"><div class="pp-skg-head"><span>${title}</span></div><div id="${id}"></div></section>`;
-    // Two columns on a wide sheet: the season's shape (board, last games,
-    // chart) on the left; the next game, the division and the leaders on
-    // the right. On a phone, one column in reading order (see .tm-o-*).
-    return `<div class="sheet tm">${head}
-      <div class="tm-split">
-        <div class="tm-col">${board}${recentSec}${upSec}${chart}</div>
-        <div class="tm-col tm-side"><div class="tm-next" id="tmNext"></div>${division}${sec('Leaders', 'tmLeaders', 'tm-o-lead')}</div>
-      </div>
-      <section class="tm-sec tm-moments" id="tmMoments"></section>
-    </div>`;
+    // One grid in reading order: who they are and what's next, how they've
+    // been playing and where they stand, who's leading, the season's clips,
+    // then the season's shape. On a wide sheet the pairs sit side by side
+    // (see .tm-o).
+    return `<div class="sheet tm"><div class="tm-o">${head}
+      <div class="tm-next tm-o-next" id="tmNext"></div>
+      ${form}${division}
+      <section class="tm-sec tm-o-lead"><div class="pp-skg-head"><span>Leaders</span></div><div id="tmLeaders"></div></section>
+      <section class="tm-sec tm-moments tm-o-hl" id="tmMoments"></section>
+      ${seasonSec}
+    </div></div>`;
   }
 
   // ---- Overview extras: the season's biggest plays, leaders, next game ----
@@ -8198,7 +8250,7 @@
       }).join('')}</div></div>`;
     };
     const html = side('Hitters', leaders.hitters, false) + side('Starters', leaders.pitchers, true);
-    return html || '<div class="pitch-empty">No regulars yet this season.</div>';
+    return html ? `<div class="tl-wrap">${html}</div>` : '<div class="pitch-empty">No regulars yet this season.</div>';
   }
   // ---- Season Highlights: one stream, in date order ----
   // Each kind fills in as its data lands (undefined while loading, null or
@@ -8233,11 +8285,15 @@
     })).sort((a, b) => a.g.date.localeCompare(b.g.date) || a.g.gamePk - b.g.gamePk
       || HIGHLIGHT_KIND_ORDER[a.kind] - HIGHLIGHT_KIND_ORDER[b.kind] || (a.k ? a.k.atBatIndex : 0) - (b.k ? b.k.atBatIndex : 0));
   }
+  // March's few games ride with April and October's with September, as
+  // in MLB's own monthly splits, so no month is a single clip.
   function highlightMonths(stream) {
     const months = [];
     stream.forEach(x => {
-      const ym = x.g.date.slice(0, 7);
-      if (!months.length || months[months.length - 1].ym !== ym) months.push({ ym, name: MONTH_NAMES[Number(ym.slice(5)) - 1], items: [] });
+      const m = Math.min(9, Math.max(4, Number(x.g.date.slice(5, 7))));
+      const ym = `${x.g.date.slice(0, 4)}-${String(m).padStart(2, '0')}`;
+      const name = m === 4 ? 'Mar&#8211;Apr' : m === 9 ? 'Sep&#8211;Oct' : MONTH_NAMES[m - 1];
+      if (!months.length || months[months.length - 1].ym !== ym) months.push({ ym, name, short: m === 4 || m === 9 ? name : name.slice(0, 3), items: [] });
       months[months.length - 1].items.push(x);
     });
     return months;
@@ -8245,15 +8301,42 @@
   function renderTeamHighlights(h) {
     const stream = buildHighlightStream(h);
     const pending = HIGHLIGHT_KINDS.some(id => h[id] === undefined);
-    const head = `<div class="pp-skg-head"><span>Season Highlights</span>${stream.length ? `<em>${stream.length} clips</em>` : ''}</div>`;
+    const head = `<div class="pp-skg-head"><span>Season Highlights</span></div>`;
     const wait = pending ? `<div class="mlb-status-msg tmh-wait">${stream.length ? 'Gathering more clips' : 'Gathering the season&#8217;s clips'}&#8230;</div>` : '';
     if (!stream.length) return `${head}${wait || '<div class="pitch-empty">No highlights yet this season.</div>'}`;
     const months = highlightMonths(stream);
+    // A season over opens on its first month, one under way on its latest.
+    const on = months.find(m => m.ym === h.month) || (h.final ? months[0] : months[months.length - 1]);
+    const i = months.indexOf(on);
     const jump = months.length > 1
-      ? `<div class="hs-jump">${months.map(m => `<button type="button" data-hl-month="${m.ym}">${m.name.slice(0, 3)}<b>${m.items.length}</b></button>`).join('')}</div>`
+      ? `<div class="hs-jump" role="group" aria-label="Month">${months.map(m => `<button type="button" data-hl-month="${m.ym}" aria-pressed="${m === on}"${m === on ? ' class="is-on"' : ''}>${m.short}</button>`).join('')}</div>`
       : '';
     const cells = months.flatMap(m => [`<div class="hs-tick" id="hsm-${m.ym}"><span>${m.name}</span></div>`, ...m.items.map(renderTeamCard)]);
-    return `${head}${jump}<div class="hs-reel">${cells.join('')}</div>${wait}`;
+    const page = (m, dir) => m ? `<button type="button" class="hs-page" data-hl-page="${m.ym}">${dir < 0 ? `&#8592; ${m.name}` : `${m.name} &#8594;`}</button>` : '<span></span>';
+    const list = `<div class="hs-list">
+        <div class="hs-list-month">${on.name}</div>
+        ${on.items.map(renderHighlightRow).join('')}
+        ${months.length > 1 ? `<div class="hs-pager">${page(months[i - 1], -1)}${page(months[i + 1], 1)}</div>` : ''}
+      </div>`;
+    return `${head}${jump}<div class="hs-reel">${cells.join('')}</div>${list}${wait}`;
+  }
+  // A phone's row: the still small, then why it's here, what it is and the
+  // game; a best win's condensed game under the words.
+  function renderHighlightRow(x) {
+    const still = ((x.kind && HIGHLIGHT_STILLS[x.kind]) || renderScorebookStill)(x);
+    const alt = x.condensed
+      ? `<button type="button" class="hs-alt" data-day-clip="${dayVideoKey({ clip: x.condensed.clip, clipPrefix: 't' })}">Condensed game${x.condensed.mins ? ` &#183; ${x.condensed.mins} min` : ''} &#9654;</button>`
+      : '';
+    return `<div class="hs-row">
+        <button type="button" class="hs-main" data-day-clip="${dayVideoKey(x)}">
+          <span class="hs-thumb">${still}</span>
+          <span class="hs-text">
+            <span class="vc-kicker">${x.label}${x.why ? ` <em>${x.why}</em>` : ''}</span>
+            <span class="hs-title">${x.title}</span>
+            <span class="dp-meta">${x.meta || ''}</span>
+          </span>
+        </button>${alt}
+      </div>`;
   }
   function renderTeamCard(item) {
     const card = renderVideoCard(item);
@@ -8341,7 +8424,7 @@
     const games = teamScheduleGames(schedule.gamesByDate).filter(g => !isCalledOff(g));
     const finals = games.filter(g => g.state === 'Final' && g.homeScore != null && g.awayScore != null);
     const fill = (id, html) => { if (requestId !== teamRequestId) return; const el = document.getElementById(id); if (el) el.innerHTML = html; };
-    teamHighlights = { requestId };
+    teamHighlights = { requestId, final: !!(record && record.final) };
     drawTeamHighlights();
     const land = (id, items) => { if (teamHighlights.requestId === requestId) { teamHighlights[id] = items; drawTeamHighlights(); } };
     // Best Wins reads each final's win probability, which the plays' sweep
@@ -8832,10 +8915,16 @@
       loadTeamTab();
       return;
     }
-    const month = e.target.closest('[data-hl-month]');
+    // A month chip picks the phone's list and runs the wide sheet's reel
+    // to that month; the list's own pager also brings its top into view.
+    const month = e.target.closest('[data-hl-month], [data-hl-page]');
     if (month) {
-      const mark = document.getElementById(`hsm-${month.dataset.hlMonth}`);
-      if (mark) mark.parentElement.scrollTo({ left: mark.offsetLeft - mark.parentElement.offsetLeft, behavior: 'smooth' });
+      const ym = month.dataset.hlMonth || month.dataset.hlPage;
+      teamHighlights.month = ym;
+      drawTeamHighlights();
+      const mark = document.getElementById(`hsm-${ym}`);
+      if (mark && mark.offsetParent) mark.parentElement.scrollTo({ left: mark.offsetLeft - mark.parentElement.offsetLeft, behavior: 'smooth' });
+      if (month.dataset.hlPage) document.getElementById('tmMoments').scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
     }
     const clipBtn = e.target.closest('[data-day-clip]');
