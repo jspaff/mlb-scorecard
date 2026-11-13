@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-10T14:29:13Z",
+  "generatedAt": "2026-11-13T12:00:00Z",
   "title": "Design System: MLB Scorecard",
   "extensions": {
     "colorMeta": {
@@ -430,6 +430,11 @@
         "name": "The Pressed, Not Raised Rule",
         "body": "Numbers sit in slots pressed into the board; names hang on plates in front of it. Data is never raised on a card.",
         "section": "elevation"
+      },
+      {
+        "name": "The Shared Edge Rule",
+        "body": "Two sections side by side are a pair, and a pair shares its top and bottom edge. Pair sections whose natural heights are close; then the shorter one fills by spreading its own tiles or cells, and a board whose rows mean something (standings) keeps its condensed height and sets the pair's, its partner sized to end on its last row. Never leave one column running short beside another.",
+        "section": "layout"
       }
     ],
     "dos": [
@@ -439,7 +444,8 @@
       "**Do** use Pennant Gold as trim (section titles, active and focus rules) and, within the data, only for top-10% stats, made 5-star catches, quality starts, awards, RBIs and hits.",
       "**Do** use tabular figures for every column of numbers.",
       "**Do** size changeable controls to fixed slots so filters never shift the layout.",
-      "**Do** draw spray charts in the API's own coordinate space (home 125.42, 198.27; 2.495 ft per unit) so fences and batted balls agree."
+      "**Do** draw spray charts in the API's own coordinate space (home 125.42, 198.27; 2.495 ft per unit) so fences and batted balls agree.",
+      "**Do** give sections that sit side by side a shared top and bottom edge (the Shared Edge Rule)."
     ],
     "donts": [
       "**Don't** round corners on plates, cards, buttons or selects. Only slots (2px), bar ends (3px) and dots are rounded.",
