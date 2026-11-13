@@ -1640,7 +1640,7 @@
   .roster-subgroup-title:first-child { margin-top: 0; }
   /* Team tab. The sheet is its own container, so the Overview's pairs
      and the roster's columns follow the sheet's width, not the screen's. */
-  .tm { container-type: inline-size; }
+  .tm { container: tm / inline-size; }
   /* The head: cap, name and the record side by side, the plates in a row
      of their own under the name (under the cap too on a phone, so two
      plates sit side by side rather than stack). */
@@ -1720,11 +1720,12 @@
   .tdv-team { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-left: 4px; font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 17px; letter-spacing: 0.06em; text-transform: uppercase; }
   .tdv-slot { display: block; padding: 3px 0 2px; border-radius: 2px; background: rgba(0, 0, 0, 0.26); box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.5), inset 0 -1px 1px rgba(255, 255, 255, 0.05); text-align: center; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 16px; line-height: 1.25; font-variant-numeric: tabular-nums; color: var(--ink); }
   .tdv-slot.is-soft { color: var(--ink-soft); }
+  .tdv-half { font-style: normal; font-size: 0.85em; }
   .tdv-tagc { text-align: center; }
   .tdv-tag { font-style: normal; padding: 2px 3px 1px; border: 1px solid var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink); }
   .tdv-short { display: none; }
   /* A narrow phone: smaller plates, and Arizona as MLB's own "D-backs". */
-  @container (max-width: 400px) {
+  @container (max-width: 340px) {
     .tdv-row { grid-template-columns: 12px minmax(0, 1fr) 32px 32px 38px 26px; gap: 3px; padding: 3px 2px; }
     .tdv-slot { font-size: 14px; }
     .tdv-team { padding-left: 2px; font-size: 15px; letter-spacing: 0.04em; }
@@ -1758,9 +1759,10 @@
      order -- the print, rank and position in gold, the stat big, the
      surname. A phone stands each tile up (print over the words), so three
      fit across; from 520px the print sits beside them. */
-  .tlc-group + .tlc-group { margin-top: 14px; }
+  #tmLeaders { display: flex; flex-direction: column; gap: 14px; }
+  .tlc-group { display: flex; flex-direction: column; }
   .tlc-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
-  .tlc { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: 'print' 'cat' 'val' 'name'; justify-items: center; align-items: center; gap: 2px; min-width: 0; padding: 8px 4px 7px; background: rgba(0, 0, 0, 0.16); border: 1px solid var(--paper-line); color: var(--ink); text-align: center; font: inherit; cursor: pointer; }
+  .tlc { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: 'print' 'cat' 'val' 'name'; justify-items: center; align-items: center; align-content: center; gap: 2px; min-width: 0; padding: 8px 4px 7px; background: rgba(0, 0, 0, 0.16); border: 1px solid var(--paper-line); color: var(--ink); text-align: center; font: inherit; cursor: pointer; }
   .tlc:hover, .tlc:focus-visible { border-color: var(--gold); outline: none; }
   .tlc-print { grid-area: print; display: block; width: 40px; margin-bottom: 4px; aspect-ratio: 4 / 5; overflow: hidden; border: 2px solid var(--ink); background: var(--paper-line); box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4); }
   .tlc-print img { width: 100%; height: 100%; object-fit: cover; object-position: center 18%; display: block; }
@@ -1886,6 +1888,9 @@
   .trk-head { align-items: center; }
   .trk-head em { font-style: normal; margin-left: 4px; font-weight: 700; letter-spacing: 0.02em; text-transform: none; color: var(--ink-soft); }
   .trk-scope .view-toggle-btn { padding: 4px 9px; font-size: 9.5px; }
+  /* The toggle hangs over the rule rather than heightening the head, so
+     the cells start level with the tiles beside them. */
+  .trk-scope { margin: -7px 0 -4px; }
   .trk { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
   .trk-cell { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px 7px; background: rgba(0, 0, 0, 0.16); border: 1px solid var(--paper-line); }
   .trk-k { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); opacity: 0.85; }
@@ -1893,24 +1898,36 @@
   .trk-rank sup { margin-left: 1px; font-size: 0.45em; vertical-align: super; }
   .trk-rank.is-top { color: var(--gold); }
   .trk-v { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
-  @container (min-width: 700px) and (max-width: 899px) {
-    .tm-o { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: 'head head' 'next div' 'form div' 'lead lead' 'ranks ranks' 'hl hl'; grid-template-rows: auto auto 1fr; gap: 22px 28px; align-items: start; }
-    .tm-o-ranks { grid-area: ranks; }
-    .trk { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  /* From 700px the Overview is rows of pairs, each pair sharing its top
+     and bottom edge: who they are beside the next game, the leaders
+     beside the division, the form beside the ranks, then the clips
+     across both. Every section stretches to its partner's height and
+     spreads its own rows or tiles to fill, so no column runs short. */
+  .tm-o-lead, .tm-o-div { container-type: inline-size; }
+  @container tm (min-width: 700px) {
+    .tm-o { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: 'head head' 'next next' 'lead div' 'form ranks' 'hl hl'; gap: 26px 28px; align-items: stretch; }
     .tm-o-head { grid-area: head; }
     .tm-o-next { grid-area: next; }
-    .tm-o-form { grid-area: form; }
-    .tm-o-div { grid-area: div; }
     .tm-o-lead { grid-area: lead; }
+    .tm-o-div { grid-area: div; }
+    .tm-o-form { grid-area: form; }
+    .tm-o-ranks { grid-area: ranks; }
     .tm-o-hl { grid-area: hl; }
+    .tm-o-next, .tm-o-lead, .tm-o-div, .tm-o-form, .tm-o-ranks { display: flex; flex-direction: column; }
+    .tm-o-next > .tn { flex: 1; align-content: center; }
+    #tmLeaders, .tm-o-lead .tlc-group, .tm-o-lead .tlc-grid, .tm-o-div .tdv, .tm-o-ranks .trk, .tm-o-form .gt-row, .tm-o-form #tmRecent { flex: 1; }
+    .tm-o-form #tmRecent { display: flex; flex-direction: column; }
+    .tm-o-lead .tlc-grid { grid-auto-rows: 1fr; }
+    .tm-o-div .tdv { display: flex; flex-direction: column; justify-content: space-between; }
+    .tm-o-ranks .trk { grid-auto-rows: 1fr; }
+    .tm-o-ranks .trk-cell { justify-content: center; }
+    .gt-main { flex: 1; align-content: center; }
+    /* Out of season the form is one row of tiles, so the ranks go one
+       row too, to stand as tall. */
+    .tm-o:not(:has(.tm-up-head)) .trk { grid-template-columns: repeat(6, minmax(0, 1fr)); }
   }
-  @container (min-width: 900px) {
-    .tm-o { display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(300px, 1fr); grid-template-areas: 'main side' 'hl hl'; gap: 28px 36px; align-items: start; }
-    .tm-o-main, .tm-o-side { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
-    .tm-o-main { grid-area: main; }
-    .tm-o-side { grid-area: side; }
-    .tm-o-hl { grid-area: hl; }
-    .tm-o-head { align-items: flex-start; }
+  @container tm (min-width: 900px) {
+    .tm-o { grid-template-columns: minmax(0, 1.75fr) minmax(300px, 1fr); grid-template-areas: 'head next' 'lead div' 'form ranks' 'hl hl'; gap: 26px 36px; }
   }
   .tm-roster-title { margin-bottom: 12px; }
   .tm-stats:first-child { margin-top: 0; }
@@ -7866,6 +7883,14 @@
     return `<div class="gt-row">${recent.slice().reverse().map(g => renderGameTile(g, media && media[g.gamePk] && media[g.gamePk].recap)).join('')}</div>`;
   }
 
+  // Games back as the Monster hangs them: a half as its own "1/2", the
+  // leader's slot empty.
+  function monsterGamesBack(gb) {
+    const v = parseFloat(gb);
+    if (!v) return '&nbsp;';
+    const whole = Math.floor(v);
+    return `${whole || ''}${v - whole ? '<i class="tdv-half">&#189;</i>' : ''}`;
+  }
   // The division as a small scoreboard in the Monster's style, this team
   // washed in gold. A row opens that team's Overview.
   function renderDivisionTable(records, teamId) {
@@ -7880,7 +7905,7 @@
             <span class="tdv-rank">${r.divisionRank}</span>
             <span class="tdv-team">${r.team.id === 109 ? '<span class="tdv-full">Diamondbacks</span><span class="tdv-short">D-backs</span>' : TEAM_NICKNAMES[r.team.id] || r.team.name}</span>
             <span class="tdv-slot">${r.wins}</span><span class="tdv-slot">${r.losses}</span>
-            <span class="tdv-slot is-soft">${r.gamesBack === '-' ? '&nbsp;' : r.gamesBack}</span>
+            <span class="tdv-slot is-soft">${monsterGamesBack(r.gamesBack)}</span>
             <span class="tdv-tagc">${t ? `<em class="tdv-tag">${t}</em>` : ''}</span>
           </button>`;
         }).join('')}
