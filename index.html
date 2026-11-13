@@ -1650,7 +1650,7 @@
   .tm-head .tm-plates { grid-area: plates; align-self: start; }
   .tm-rside { grid-area: side; }
   .tm-kicker { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); }
-  .tm-name { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 30px; line-height: 1.05; text-transform: uppercase; color: var(--ink); }
+  .tm-name { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: min(30px, 7cqw); line-height: 1.05; text-transform: uppercase; color: var(--ink); }
   .tm-plates { margin: 10px 0 0; gap: 5px; }
   @container (min-width: 700px) { .tm-head { grid-template-areas: 'cap id side' 'cap plates side'; } .tm-head .tm-plates { margin-top: 8px; } }
   /* A plate that isn't a title: the same shape, in the rule's color. */
@@ -1658,13 +1658,20 @@
   .tm-plate .player-award-label { color: var(--ink); }
   /* The record, as big as the name. */
   .tm-rside { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; flex: none; align-self: flex-start; }
-  .tm-recbig { display: flex; flex-direction: column; align-items: flex-end; }
+  .tm-recbig { display: flex; flex-direction: column; align-items: flex-end; padding: 0; background: none; border: 0; color: inherit; font: inherit; }
+  /* The record opens the season game by game; the chevron by the
+     percentage says so, and lights with the record on hover. */
+  button.tm-recbig { cursor: pointer; }
+  button.tm-recbig:focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; }
+  .tm-pct i { margin-left: 5px; font-style: normal; font-size: 1.25em; line-height: 0; color: var(--gold); }
+  button.tm-recbig:hover .tm-wl, button.tm-recbig:hover .tm-pct { color: var(--gold); }
   .tm-wl { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 34px; line-height: 1; font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; }
   .tm-wl b { font-weight: 400; color: var(--ink-soft); margin: 0 2px; }
   .tm-pct { margin-top: 4px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
   .tm-col { min-width: 0; }
   .tm-sec { margin-top: 20px; min-width: 0; }
   .tm-wide { display: none; }
+  @container (max-width: 400px) { .tm-cap { width: 44px; height: 44px; } .tm-wl { font-size: 30px; } .tm-head { gap: 0 10px; } }
   @container (min-width: 700px) { .tm-wide { display: block; } .tm-narrow { display: none; } }
   @container (min-width: 700px) {
     .tm-cap { width: 72px; height: 72px; }
@@ -1711,6 +1718,17 @@
   .tdv-team img { width: 22px; height: 22px; flex: none; }
   .tdv-row > .tdv-gb, .tdv-row > .tdv-l10 { color: var(--ink-soft); }
   .tdv-tag { font-style: normal; padding: 2px 4px 1px; border: 1px solid var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); }
+  /* A narrow phone: tighter columns and type, so "Diamondbacks" fits. */
+  @container (max-width: 400px) {
+    .tdv-row { grid-template-columns: 12px minmax(0, 1fr) 24px 24px 32px 30px 24px; gap: 4px; padding: 6px 2px; }
+    .tdv-row > span:nth-child(n+3) { font-size: 14px; }
+    .tdv-team { gap: 5px; font-size: 15px; }
+    .tdv-team img { width: 18px; height: 18px; }
+    .tdv-rank { font-size: 13px; }
+    .tdv-tag { padding: 1px 2px 0; font-size: 7.5px; letter-spacing: 0.02em; }
+  }
+  .tdv-short { display: none; }
+  @container (max-width: 300px) { .tdv-team img, .tdv-full { display: none; } .tdv-short { display: inline; } }
   .pp-tabs.tm-roster-tabs { margin-top: -6px; }
   /* Next game: a card that opens the scorecard. */
   .tn { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'k k' 'opp right' 'go right'; align-items: center; gap: 4px 14px; width: 100%; padding: 12px 14px; text-align: left; color: var(--ink); background: rgba(0, 0, 0, 0.16); border: 1px solid var(--paper-line); cursor: pointer; font: inherit; }
@@ -1730,55 +1748,63 @@
   .tn-go { grid-area: go; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); }
   .tm-next { margin-top: 20px; }
   .tm-next:empty { display: none; }
-  /* Leaders: three cards a side -- a gold rank, the print, the plate and
-     the stat they're ranked by in a scoreboard slot. Nothing else. */
+  /* Leaders' column heads: the group and the stat they're ranked by. */
   .tl-sub { display: flex; justify-content: space-between; align-items: baseline; margin: 2px 0 8px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); }
   .tl-sub em { font-style: normal; color: var(--ink-soft); }
-  /* Leaders: a podium a side. The leader gets a feature row -- a bigger
-     print, the name and the stat -- and the next two slim rows under it,
-     the stat at the right. A phone puts the sides next to each other and
-     keeps the stat under the name; from 700px it moves to the right. */
-  .tl-wrap { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; }
-  .tl-cards { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
-  .tl-card { position: relative; display: grid; grid-template-columns: 30px minmax(0, 1fr); grid-template-areas: 'print name' 'print stat'; align-items: center; gap: 3px 8px; min-width: 0; padding: 6px 8px 6px 22px; background: rgba(0, 0, 0, 0.16); border: 1px solid var(--paper-line); }
+  /* Leaders. A phone keeps the two sides next to each other, three rows
+     a side: rank, print, plate, and the stat in a slot under the plate.
+     From 520px each side is a podium -- the leader a tall card with a big
+     print, the next two stacked beside him, each half his height. */
+  .tl-wrap { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 10px; }
+  .tl-pod, .tl-rest { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; min-width: 0; }
+  .tl-pod { gap: 4px; }
+  .tl-card { position: relative; display: grid; grid-template-columns: 30px minmax(0, 1fr); grid-template-areas: 'print name' 'print stat'; align-items: center; align-content: center; gap: 4px 7px; min-width: 0; padding: 6px 5px 6px 8px; background: rgba(0, 0, 0, 0.16); border: 1px solid var(--paper-line); }
   .tl-card .dcf-photo { grid-area: print; }
   .tl-card .dcf-print { width: 30px; border-width: 1px; box-shadow: none; }
-  .tl-card .player-name-btn { grid-area: name; justify-self: start; max-width: 100%; font-size: 10px; }
-  .tl-stat { grid-area: stat; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
-  .tl-rank { position: absolute; top: 50%; left: 7px; transform: translateY(-50%); font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 16px; line-height: 1; color: var(--gold); }
-  .tl-card.is-first { grid-template-columns: 36px minmax(0, 1fr); padding: 8px 6px 8px 22px; }
+  .tl-card .player-name-btn { grid-area: name; justify-self: start; max-width: 100%; padding: 2px 5px; font-size: 9.5px; }
+  .tl-stat { grid-area: stat; justify-self: start; padding: 1px 6px; border-radius: 2px; background: rgba(0, 0, 0, 0.22); box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.5), inset 0 -1px 1px rgba(255, 255, 255, 0.05); font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 13px; line-height: 1.25; color: var(--ink); font-variant-numeric: tabular-nums; }
+  /* On a phone the rank rides the print's corner, leaving the plate room. */
+  .tl-rank { position: absolute; top: 3px; left: 3px; z-index: 1; min-width: 14px; padding: 1px 2px; background: var(--paper); font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 13px; line-height: 1; text-align: center; color: var(--gold); }
+  .tl-card.is-first { grid-template-columns: 36px minmax(0, 1fr); background: rgba(0, 0, 0, 0.24); }
   .tl-card.is-first .dcf-print { width: 36px; border-width: 2px; }
-  .tl-card.is-first .tl-rank { font-size: 20px; }
-  @container (min-width: 700px) {
-    .tl-wrap { gap: 0 24px; }
-    .tl-card { grid-template-columns: 34px minmax(0, 1fr) auto; grid-template-areas: 'print name stat'; gap: 0 12px; padding: 6px 12px 6px 30px; }
+  @container (min-width: 520px) {
+    .tl-wrap { gap: 0 16px; }
+    .tl-pod { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 5px; }
+    .tl-rest { grid-template-rows: 1fr 1fr; gap: 5px; }
+    .tl-card { grid-template-columns: 34px minmax(0, 1fr); gap: 5px 10px; padding: 8px 8px 8px 26px; }
     .tl-card .dcf-print { width: 34px; }
-    .tl-card .player-name-btn { font-size: 11px; }
-    .tl-stat { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 17px; color: var(--ink); }
-    .tl-rank { left: 10px; font-size: 18px; }
-    .tl-card.is-first { grid-template-columns: 64px minmax(0, 1fr) auto; padding-top: 10px; padding-bottom: 10px; background: rgba(0, 0, 0, 0.24); }
+    .tl-stat { font-size: 15px; padding: 2px 7px; }
+    .tl-card .player-name-btn { padding: 2px 7px; font-size: 10px; }
+    .tl-rank { top: 8px; left: 9px; min-width: 0; padding: 0; background: none; font-size: 16px; }
+    .tl-card.is-first { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'print' 'name' 'stat'; justify-items: center; gap: 7px; padding: 12px 8px; }
     .tl-card.is-first .dcf-print { width: 64px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.45); }
-    .tl-card.is-first .player-name-btn { font-size: 12.5px; }
-    .tl-card.is-first .tl-stat { font-size: 24px; font-weight: 600; }
-    .tl-card.is-first .tl-rank { font-size: 24px; }
+    .tl-card.is-first .player-name-btn { justify-self: center; font-size: 11px; }
+    .tl-card.is-first .tl-stat { justify-self: center; padding: 3px 10px; font-size: 22px; font-weight: 600; }
+    .tl-card.is-first .tl-rank { top: 9px; left: 10px; font-size: 24px; }
+  }
+  @container (min-width: 900px) {
+    .tl-wrap { gap: 0 20px; }
+    .tl-card.is-first .dcf-print { width: 76px; }
+    .tl-card.is-first .tl-stat { font-size: 26px; }
   }
   /* Season Highlights: each row scrolls on its own, at any width. */
   .tm-moments .dp-row { grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: minmax(230px, 80%); overflow-x: auto; }
   @container (min-width: 700px) { .tm-moments .dp-row { grid-auto-columns: 280px; } }
   .tmh-wait { padding: 14px 0; }
-  .vc-stack { display: flex; flex-direction: column; min-width: 0; scroll-snap-align: start; }
-  .vc-stack > .vc { flex: 1; border-bottom: 0; }
-  .vc-stack .vc-title { min-height: 2.5em; }
-  /* Every clip's footer: its game, and that game's other video. */
-  .vc-foot, .hs-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
-  .vc-foot { padding: 6px 8px; background: rgba(0, 0, 0, 0.18); border: 1px solid var(--paper-line); border-top: 1px dashed var(--paper-line); }
-  .vc-stack:hover .vc, .vc-stack:hover .vc-foot { border-color: var(--gold); }
-  .vc-game { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 9.5px; color: var(--ink-soft); }
-  .vc-game b { font-weight: 800; color: var(--ink); }
-  .vc-game b.is-loss { color: var(--ink-soft); }
-  .vc-foot .vc-alt, .hs-foot .vc-alt { flex: none; padding: 3px 6px; font-size: 8.5px; letter-spacing: 0.04em; }
-  .vc-alt { padding: 5px 8px; background: transparent; border: 1px solid var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); text-align: left; cursor: pointer; }
-  .vc-alt:hover, .vc-alt:focus-visible { color: var(--ink); border-color: var(--gold); outline: none; }
+  /* A highlight card: the title is its button, stretched over the card,
+     and the kicker's video chip sits above that. */
+  .hl-card { position: relative; cursor: default; }
+  .hl-card:hover, .hl-card:has(.hl-hit:focus-visible) { border-color: var(--gold); }
+  .hl-hit { display: block; width: 100%; padding: 0; font: inherit; background: none; border: 0; color: var(--ink); text-align: left; cursor: pointer; }
+  .hl-hit::after { content: ''; position: absolute; inset: 0; }
+  .hl-hit:focus-visible { outline: none; }
+  .vc.hl-card .vc-title { min-height: 2.5em; }
+  .hl-card:hover .vc-play, .hl-card:has(.hl-hit:focus-visible) .vc-play { border-color: var(--gold); }
+  .hl-kick { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 19px; min-width: 0; }
+  .hl-kick-l { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hl-kick-l b { margin-right: 6px; font-weight: 800; color: var(--ink-soft); }
+  .hl-alt { position: relative; z-index: 1; flex: none; padding: 3px 6px 2px; background: transparent; border: 1px solid var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); cursor: pointer; }
+  .hl-alt:hover, .hl-alt:focus-visible { color: var(--ink); border-color: var(--gold); outline: none; }
   /* The reel stills. */
   .vc-who-cap img { width: 72%; height: auto; }
   .vc-line { display: grid; grid-template-columns: repeat(2, auto); gap: 0.15em 0.8em; margin-bottom: 14%; font-size: clamp(13px, 6.6cqw, 22px); }
@@ -1807,16 +1833,17 @@
   /* Reel (a wide sheet): one swipe row, a gold month marker standing up
      between months. */
   .hs-reel { display: none; align-items: stretch; gap: 10px; overflow-x: auto; scroll-snap-type: x proximity; padding: 8px 0 6px; }
-  .hs-reel > .vc, .hs-reel > .vc-stack { flex: 0 0 224px; }
+  .hs-reel > .vc { flex: 0 0 224px; }
   .hs-tick { flex: none; align-self: stretch; display: flex; padding: 4px 2px 4px 6px; border-left: 2px solid var(--gold); scroll-snap-align: start; }
   .hs-tick span { writing-mode: vertical-rl; transform: rotate(180deg); font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 18px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); }
   /* List (a phone): one month's clips as rows, a pager to the next. */
   .hs-list-month { margin: 8px 0 2px; font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 20px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gold); }
   .hs-row { border-bottom: 1px dashed var(--paper-line); }
-  .hs-main { display: grid; grid-template-columns: 124px minmax(0, 1fr); align-items: center; gap: 12px; width: 100%; padding: 10px 0; background: none; border: 0; text-align: left; color: var(--ink); cursor: pointer; font: inherit; }
-  .hs-main:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .hs-row.hl-card { display: grid; grid-template-columns: 124px minmax(0, 1fr); align-items: center; gap: 12px; padding: 10px 0; }
+  .hs-row.hl-card:has(.hl-hit:focus-visible) { outline: 2px solid var(--gold); outline-offset: 2px; }
   .hs-thumb { position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden; border: 1px solid var(--paper-line); container-type: inline-size; }
-  .hs-main:hover .hs-thumb, .hs-main:focus-visible .hs-thumb { border-color: var(--gold); }
+  .hs-row.hl-card:hover { border-color: var(--paper-line); }
+  .hs-row.hl-card:hover .hs-thumb { border-color: var(--gold); }
   .hs-thumb .vc-play { display: none; }
   .hs-thumb .vc-where { font-size: 9.5cqw; }
   .hs-thumb .vc-line { font-size: 7.6cqw; margin-bottom: 0; }
@@ -1826,9 +1853,15 @@
   .hs-thumb .vc-wp-low, .hs-thumb .vc-wp-end { stroke-width: 4; }
   .hs-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
   .hs-text .vc-kicker, .hs-text .dp-meta { padding: 0; }
+  /* A phone's row is too narrow for the chip at the kicker's end; it
+     sits under the title, within the still's height. */
+  .hs-text { display: grid; grid-template-areas: 'kick' 'title' 'alt'; grid-template-columns: minmax(0, 1fr); justify-items: start; }
+  .hs-text .hl-kick { display: contents; }
+  .hs-text .hl-kick-l { grid-area: kick; max-width: 100%; }
+  .hs-text .hl-hit { grid-area: title; }
+  .hs-text .hl-alt { grid-area: alt; margin-top: 3px; }
   .hs-title { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 15.5px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .hs-main:hover .hs-title { color: var(--gold); }
-  .hs-foot { margin: -4px 0 10px 136px; }
+  .hs-row.hl-card:hover .hs-title { color: var(--gold); }
   .hs-pager { display: flex; justify-content: space-between; gap: 10px; padding-top: 12px; }
   .hs-page { padding: 8px 12px; background: transparent; border: 1px solid var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); cursor: pointer; }
   .hs-page:hover, .hs-page:focus-visible { border-color: var(--gold); outline: none; }
@@ -1854,8 +1887,6 @@
   .tm-o-hl { order: 7; }
   .tm-up-head { margin-top: 18px; }
   /* The quiet way to the full chart, under the record. */
-  .tm-o500 { margin-top: 6px; padding: 0; background: none; border: 0; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); cursor: pointer; white-space: nowrap; }
-  .tm-o500:hover, .tm-o500:focus-visible { color: var(--gold); outline: none; }
   /* League ranks: the rank big (gold in the top three), the stat small. */
   .trk-head { align-items: center; }
   .trk-head em { font-style: normal; margin-left: 4px; font-weight: 700; letter-spacing: 0.02em; text-transform: none; color: var(--ink-soft); }
@@ -7503,7 +7534,7 @@
         <span class="vc-thumb">${((item.kind && HIGHLIGHT_STILLS[item.kind]) || renderScorebookStill)(item)}</span>
         <span class="vc-kicker">${item.label || '&nbsp;'}${item.why ? ` <em>${item.why}</em>` : ''}</span>
         <span class="vc-title">${item.title}</span>
-        ${item.noMeta ? '' : `<span class="dp-meta">${matchup}</span>`}
+        <span class="dp-meta">${matchup}</span>
       </button>`;
   }
 
@@ -7763,8 +7794,9 @@
     return null;
   }
 
-  // How the team's October went: its deepest series, won, lost or still
-  // going. null when it didn't make it (or the lookup failed).
+  // How the team's October went, as far as the head says it: a title, a
+  // pennant, or the series it's playing now. An exit says nothing -- null,
+  // as for a team that didn't make it (or a failed lookup).
   async function getTeamPostseasonResult(teamId, season) {
     const raw = await getPostseasonSeries(season);
     if (!raw) return null;
@@ -7776,8 +7808,8 @@
     if (!mine.length) return null;
     const last = mine[0];
     const name = last.title.replace(/ Division Series$/, 'DS').replace(/ Championship Series$/, 'CS');
-    if (last.winnerId === id) return last.id === 'W_1' ? { champion: true } : { text: `Won ${name}` };
-    return { text: last.winnerId ? `Lost ${name}` : `In ${name}` };
+    if (last.id === 'W_1' && last.winnerId) return last.winnerId === id ? { champion: true } : { pennant: true };
+    return last.winnerId ? null : { text: `In ${name}` };
   }
 
   // The quick-look popup reads a name's details from playerStore; an entry
@@ -7836,7 +7868,7 @@
   let teamRecentShown = null;
   function renderRecentTiles(recent, media) {
     clearDayClips('r');
-    return `<div class="gt-row">${recent.map(g => renderGameTile(g, media && media[g.gamePk] && media[g.gamePk].recap)).join('')}</div>`;
+    return `<div class="gt-row">${recent.slice().reverse().map(g => renderGameTile(g, media && media[g.gamePk] && media[g.gamePk].recap)).join('')}</div>`;
   }
 
   // The division as a small standings board, this team washed in gold. A
@@ -7855,7 +7887,7 @@
           const t = tag(r);
           return `<button type="button" class="tdv-row${r.team.id === Number(teamId) ? ' is-this' : ''}" data-team-pick="${r.team.id}">
             <span class="tdv-rank">${r.divisionRank}</span>
-            <span class="tdv-team"><img src="${capLogoUrl(r.team.id)}" alt="">${TEAM_NICKNAMES[r.team.id] || r.team.name}</span>
+            <span class="tdv-team"><img src="${capLogoUrl(r.team.id)}" alt="">${r.team.id === 109 ? '<span class="tdv-full">Diamondbacks</span><span class="tdv-short">D-backs</span>' : TEAM_NICKNAMES[r.team.id] || r.team.name}</span>
             <span>${r.wins}</span><span>${r.losses}</span>
             <span class="tdv-gb">${r.gamesBack === '-' ? '' : r.gamesBack}</span>
             <span class="tdv-l10">${lastTen(r)}</span>
@@ -7886,10 +7918,11 @@
       if (rec.divisionChamp || /[yz]/.test(ci)) plates.push(plate(final ? `${div} Champions` : `Clinched ${div}`, true));
       else if (ci === 'w') plates.push(plate(final ? 'Wild Card' : 'Clinched Wild Card'));
       else if (ci === 'x') plates.push(plate('Clinched a Berth'));
-      recBig = `<div class="tm-recbig"><span class="tm-wl">${rec.wins}<b>-</b>${rec.losses}</span><span class="tm-pct">${rec.winningPercentage || ''}</span></div>`;
+      recBig = `<span class="tm-wl">${rec.wins}<b>-</b>${rec.losses}</span><span class="tm-pct">${rec.winningPercentage || ''}<i>&#8250;</i></span>`;
       if (record.division) division = `<section class="tm-sec tm-o-div"><div class="pp-skg-head"><span>${div}</span></div>${renderDivisionTable(record.division, teamId)}</section>`;
     }
     if (october && october.champion) plates.push(plate(`${season} World Series Champions`, true));
+    else if (october && october.pennant) plates.push(plate(`${record && record.leagueId === 104 ? 'NL' : 'AL'} Pennant`));
     else if (october && october.text) plates.push(plate(october.text));
     if (!final && record && record.rec.streak && record.rec.streak.streakCode) plates.push(plate(`Streak ${record.rec.streak.streakCode}`));
 
@@ -7910,7 +7943,9 @@
           <div class="tm-name">${name}</div>
         </div>
         ${plates.length ? `<div class="player-award-tags tm-plates">${plates.join('')}</div>` : ''}
-        <div class="tm-rside">${recBig}${played.length ? `<button type="button" class="tm-o500" data-team-chart="${teamId}" data-season="${season}">${fmtNet(played[played.length - 1].net)} over .500 &#8250;</button>` : ''}</div>
+        ${recBig ? `<div class="tm-rside">${played.length
+          ? `<button type="button" class="tm-recbig" data-team-chart="${teamId}" data-season="${season}" aria-label="${record.rec.wins} and ${record.rec.losses}, the season game by game">${recBig}</button>`
+          : `<div class="tm-recbig">${recBig}</div>`}</div>` : ''}
       </div>`;
     // Reading order on a phone: who they are, what's next, how they've been
     // playing, where they stand, who's leading, how they rank, the season's
@@ -8339,20 +8374,24 @@
     }
   }
 
-  // Leaders: three cards a side, each just the print, the name and the
-  // stat they're ranked by in a scoreboard slot.
+  // Leaders: a podium a side -- the leader a tall card, the next two
+  // stacked beside him. Each is a rank, the print, the plate and the one
+  // stat they're ranked by in a slot.
   function renderLeaderRows(leaders, teamId, season) {
+    const surname = name => name.split(' ').slice(1).filter(w => !/^(Jr\.?|Sr\.?|II|III|IV)$/.test(w)).join(' ') || name;
     const side = (title, rows, pitcher) => {
       if (!rows.length) return '';
-      return `<div class="tl-side"><div class="tl-sub">${title}<em>${pitcher ? 'ERA' : 'OPS'}</em></div><div class="tl-cards">${rows.map((r, i) => {
+      const card = (r, i) => {
         storeTeamPlayer(r.id, r.name, r.pos, teamId, season);
         return `<div class="tl-card${i === 0 ? ' is-first' : ''}">
           <span class="tl-rank">${i + 1}</span>
           ${depthPrint({ id: r.id, name: r.name })}
-          <button type="button" class="player-name-btn" data-player-id="${r.id}" title="${r.name}">${r.name.split(' ').slice(1).filter(w => !/^(Jr\.?|Sr\.?|II|III|IV)$/.test(w)).join(' ') || r.name}</button>
+          <button type="button" class="player-name-btn" data-player-id="${r.id}" title="${r.name}">${surname(r.name)}</button>
           <span class="tl-stat">${pitcher ? r.stat.era : r.stat.ops}</span>
         </div>`;
-      }).join('')}</div></div>`;
+      };
+      return `<div class="tl-side"><div class="tl-sub">${title}<em>${pitcher ? 'ERA' : 'OPS'}</em></div>
+        <div class="tl-pod">${card(rows[0], 0)}${rows.length > 1 ? `<div class="tl-rest">${rows.slice(1).map((r, i) => card(r, i + 1)).join('')}</div>` : ''}</div></div>`;
     };
     const html = side('Hitters', leaders.hitters, false) + side('Starters', leaders.pitchers, true);
     return html ? `<div class="tl-wrap">${html}</div>` : '<div class="pitch-empty">No regulars yet this season.</div>';
@@ -8425,38 +8464,33 @@
       </div>`;
     return `${head}${jump}<div class="hs-reel">${cells.join('')}</div>${list}${wait}`;
   }
-  // A phone's row: the still small, then why it's here, what it is and the
-  // game; a best win's condensed game under the words.
-  // Every clip carries the same footer: its game (date, opponent, result)
-  // and that game's other video -- MLB's recap, or for a best win (whose
-  // own clip is the recap) the condensed game.
-  function highlightGameLine(x) {
-    return `${fmtShortDate(x.g.date)} &#183; ${x.g.isHome ? 'vs' : '@'} ${TEAM_ABBR[x.g.isHome ? x.g.awayId : x.g.homeId] || ''} &#183; <b class="${x.won ? '' : 'is-loss'}">${x.result}</b>`;
-  }
-  function highlightGameVideo(x, cls) {
+  // Every clip says when (the date leads its kicker) and carries that
+  // game's other video as a chip at the kicker's end: MLB's recap, or for
+  // a best win (whose own clip is the recap) the condensed game. The
+  // title is the clip's button, stretched over the whole card, so the
+  // chip can sit inside the card without a button in a button.
+  function highlightKicker(x) {
     const m = teamHighlights.media && teamHighlights.media[x.g.gamePk];
     const alt = x.kind === 'win' ? (x.condensed && { clip: x.condensed.clip, label: 'Full game' })
       : (m && m.recap && { clip: teamGameClip(m.recap, x.g), label: 'Recap' });
-    return alt ? `<button type="button" class="${cls}" data-day-clip="${dayVideoKey({ clip: alt.clip, clipPrefix: 't' })}">${alt.label} &#9654;</button>` : '';
+    return `<span class="vc-kicker hl-kick">
+        <span class="hl-kick-l"><b>${fmtShortDate(x.g.date)}</b>${x.label}${x.why ? ` <em>${x.why}</em>` : ''}</span>
+        ${alt ? `<button type="button" class="hl-alt" data-day-clip="${dayVideoKey({ clip: alt.clip, clipPrefix: 't' })}">${alt.label} &#9654;</button>` : ''}
+      </span>`;
   }
-  // A phone's row: the still small, then why it's here, what it is and the
-  // game, with the game's other video beside the game line.
+  function highlightStill(x) { return ((x.kind && HIGHLIGHT_STILLS[x.kind]) || renderScorebookStill)(x); }
+  // A phone's row: the still small beside the kicker and the title.
   function renderHighlightRow(x) {
-    const still = ((x.kind && HIGHLIGHT_STILLS[x.kind]) || renderScorebookStill)(x);
-    return `<div class="hs-row">
-        <button type="button" class="hs-main" data-day-clip="${dayVideoKey(x)}">
-          <span class="hs-thumb">${still}</span>
-          <span class="hs-text">
-            <span class="vc-kicker">${x.label}${x.why ? ` <em>${x.why}</em>` : ''}</span>
-            <span class="hs-title">${x.title}</span>
-          </span>
-        </button>
-        <div class="hs-foot"><span class="vc-game">${highlightGameLine(x)}</span>${highlightGameVideo(x, 'vc-alt')}</div>
+    return `<div class="hs-row hl-card">
+        <span class="hs-thumb">${highlightStill(x)}</span>
+        <span class="hs-text">${highlightKicker(x)}<button type="button" class="hl-hit" data-day-clip="${dayVideoKey(x)}"><span class="hs-title">${x.title}</span></button></span>
       </div>`;
   }
-  function renderTeamCard(item) {
-    return `<div class="vc-stack">${renderVideoCard({ ...item, noMeta: true })}
-        <div class="vc-foot"><span class="vc-game">${highlightGameLine(item)}</span>${highlightGameVideo(item, 'vc-alt')}</div>
+  function renderTeamCard(x) {
+    return `<div class="vc hl-card">
+        <span class="vc-thumb">${highlightStill(x)}</span>
+        ${highlightKicker(x)}
+        <button type="button" class="hl-hit" data-day-clip="${dayVideoKey(x)}"><span class="vc-title">${x.title}</span></button>
       </div>`;
   }
   // Stills for MLB's reels, which have no one play to draw: a start is
