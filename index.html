@@ -1670,27 +1670,31 @@
     .tm-pct { font-size: 12px; }
     .tm-rec .pp-tot-v { font-size: 32px; }
   }
-  /* Game tiles: five across, a form guide. */
-  .gt-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
-  .gt { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-  .gt-main { display: flex; flex-direction: column; align-items: center; gap: 5px; width: 100%; padding: 8px 2px 9px; background: rgba(0, 0, 0, 0.16); border: 1px solid var(--paper-line); color: var(--ink); cursor: pointer; font: inherit; }
-  .gt-main:hover, .gt-main:focus-visible { border-color: var(--gold); outline: none; }
-  .gt-date { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; }
-  .gt-opp { display: flex; align-items: center; gap: 3px; }
-  .gt-opp i { font-style: normal; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 9px; color: var(--ink-soft); }
-  .gt-opp img { width: 28px; height: 28px; }
-  .gt-res { display: flex; align-items: baseline; gap: 3px; font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 17px; line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .gt-res b { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; }
+  /* Game tiles: five across, a form guide. A tile is one framed unit;
+     the recap's play mark is a slim strip along its foot. */
+  .gt-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; }
+  .gt { display: flex; flex-direction: column; min-width: 0; background: rgba(0, 0, 0, 0.16); border: 1px solid var(--paper-line); }
+  .gt:hover, .gt:focus-within { border-color: var(--gold); }
+  .gt-main { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 100%; padding: 6px 2px 7px; background: none; border: 0; color: var(--ink); cursor: pointer; font: inherit; }
+  .gt-main:focus-visible, .gt-play:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+  .gt-date { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; }
+  .gt-opp { display: flex; align-items: center; gap: 2px; }
+  .gt-opp i { font-style: normal; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 8.5px; color: var(--ink-soft); }
+  .gt-opp img { width: 22px; height: 22px; }
+  .gt-res { display: flex; align-items: baseline; gap: 2px; font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 15px; line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .gt-res b { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; }
   .gt-res.is-loss { color: var(--ink-soft); }
-  .gt-res.is-note { font-size: 15px; color: var(--ink-soft); }
-  .gt-play { height: 24px; padding: 0; background: rgba(0, 0, 0, 0.22); border: 1px solid var(--paper-line); font-size: 10px; color: var(--gold); cursor: pointer; }
-  .gt-play:hover, .gt-play:focus-visible { border-color: var(--gold); outline: none; }
+  .gt-res.is-note { font-size: 13px; color: var(--ink-soft); }
+  .gt-play { height: 18px; padding: 0; background: rgba(0, 0, 0, 0.18); border: 0; border-top: 1px solid var(--paper-line); font-size: 8px; color: var(--gold); cursor: pointer; }
+  .gt-play:hover { background: rgba(217, 169, 26, 0.15); }
   @container (min-width: 700px) {
     .gt-row { gap: 8px; }
-    .gt-date { font-size: 10px; }
-    .gt-opp img { width: 34px; height: 34px; }
-    .gt-res { font-size: 22px; }
-    .gt-res b { font-size: 11px; }
+    .gt-main { flex-direction: row; justify-content: center; flex-wrap: wrap; gap: 4px 8px; padding: 8px 4px; }
+    .gt-date { flex-basis: 100%; text-align: center; font-size: 9.5px; }
+    .gt-opp img { width: 26px; height: 26px; }
+    .gt-res { font-size: 19px; }
+    .gt-res b { font-size: 10px; }
+    .gt-play { height: 20px; font-size: 9px; }
   }
   /* The division: a small standings board, this team in gold wash. */
   .tdv-row { display: grid; grid-template-columns: 18px minmax(0, 1fr) 32px 32px 40px 34px; align-items: center; gap: 6px; width: 100%; padding: 6px; background: none; border: 0; border-bottom: 1px dashed var(--paper-line); color: var(--ink); text-align: left; font: inherit; cursor: pointer; }
@@ -1726,18 +1730,36 @@
   .tm-next:empty { display: none; }
   /* Leaders: three cards a side -- a gold rank, the print, the plate and
      the stat they're ranked by in a scoreboard slot. Nothing else. */
-  .tl-side + .tl-side { margin-top: 16px; }
   .tl-sub { display: flex; justify-content: space-between; align-items: baseline; margin: 2px 0 8px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); }
   .tl-sub em { font-style: normal; color: var(--ink-soft); }
-  .tl-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-  .tl-card { position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; padding: 12px 6px 8px; background: rgba(0, 0, 0, 0.16); border: 1px solid var(--paper-line); }
-  .tl-rank { position: absolute; top: 5px; left: 7px; font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 20px; line-height: 1; color: var(--gold); }
-  .tl-card .dcf-print { width: 56px; }
-  .tl-card .player-name-btn { max-width: 100%; font-size: 11px; }
-  .tl-card .tl-stat { align-self: stretch; font-size: 28px; line-height: 1.4; }
-  @container (min-width: 700px) {
-    .tl-card .dcf-print { width: 64px; }
-    .tl-card .tl-stat { font-size: 32px; }
+  /* A phone: hitters and starters side by side, each a short ranked list
+     (rank, print, surname, the stat small). A tablet stands the three up
+     as cards; from 1000px all six lie in one row. */
+  .tl-wrap { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; }
+  .tl-side + .tl-side { margin-top: 0; }
+  .tl-cards { display: grid; grid-template-columns: minmax(0, 1fr); gap: 5px; }
+  .tl-card { position: relative; display: flex; align-items: center; gap: 8px; min-width: 0; padding: 6px 8px 6px 22px; background: rgba(0, 0, 0, 0.16); border: 1px solid var(--paper-line); }
+  .tl-rank { position: absolute; top: 50%; left: 7px; transform: translateY(-50%); font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 16px; line-height: 1; color: var(--gold); }
+  .tl-card .dcf-print { width: 30px; border-width: 1px; box-shadow: none; }
+  .tl-who { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; }
+  .tl-card .player-name-btn { max-width: 100%; font-size: 10px; }
+  .tl-stat { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  @container (min-width: 700px) and (max-width: 999px) {
+    .tl-wrap { gap: 0 28px; }
+    .tl-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .tl-card { flex-direction: column; gap: 6px; padding: 10px 4px 8px; }
+    .tl-rank { top: 6px; transform: none; font-size: 17px; }
+    .tl-who { align-items: center; }
+    .tl-card .dcf-print { width: 52px; border-width: 2px; }
+  }
+  @container (min-width: 1000px) {
+    .tl-wrap { gap: 0 28px; }
+    .tl-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .tl-card { gap: 10px; padding: 8px 10px 8px 28px; }
+    .tl-rank { left: 9px; font-size: 18px; }
+    .tl-card .dcf-print { width: 40px; border-width: 2px; }
+    .tl-card .player-name-btn { font-size: 11px; }
+    .tl-stat { font-size: 12px; }
   }
   /* Season Highlights: each row scrolls on its own, at any width. */
   .tm-moments .dp-row { grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: minmax(230px, 80%); overflow-x: auto; }
@@ -1823,22 +1845,12 @@
   .tm-o-form .tm-rec { margin-top: 16px; }
   @container (min-width: 760px) {
     .tm-o { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: 'head head' 'next next' 'form div' 'lead lead' 'hl hl' 'season season'; }
-    .tl-wrap { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 28px; }
-    .tl-side + .tl-side { margin-top: 0; }
   }
   @container (min-width: 1000px) {
     .tm-o { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); grid-template-areas: 'head next' 'form div' 'lead lead' 'hl hl' 'season season'; align-items: stretch; }
     .tm-o-head { align-items: center; margin: 0; }
     .tm-o-next .tn { height: 100%; }
     .tm-o-next { display: flex; flex-direction: column; justify-content: center; }
-    /* Leaders lie down: the name across the top, the print and the stat
-       side by side under it. */
-    .tl-card { display: grid; grid-template-columns: 48px minmax(0, 1fr); grid-template-areas: 'name name' 'print stat'; align-items: center; gap: 8px 10px; padding: 8px 10px 10px; }
-    .tl-card .player-name-btn { grid-area: name; justify-self: end; }
-    .tl-card .dcf-photo { grid-area: print; }
-    .tl-card .dcf-print { width: 48px; }
-    .tl-card .tl-stat { grid-area: stat; font-size: 30px; line-height: 1.4; }
-    .tl-rank { top: 9px; left: 10px; }
   }
   .tm-roster-title { margin-bottom: 12px; }
   .tm-stats:first-child { margin-top: 0; }
@@ -7852,8 +7864,8 @@
     const chart = played.length ? `<div class="tm-o-chart">
         <div class="pp-skg-head"><span>Games Over .500</span></div>
         <div class="tm-narrow">${renderWinLossSvg(`teamTabClipN${teamId}`, played)}</div>
-        <div class="tm-wide">${renderWinLossSvg(`teamTabClipW${teamId}`, played, { width: 640, height: 200 })}</div>
-        <div class="tm-xwide">${renderWinLossSvg(`teamTabClipX${teamId}`, played, { width: 1120, height: 190 })}</div>
+        <div class="tm-wide">${renderWinLossSvg(`teamTabClipW${teamId}`, played, { width: 760, height: 160 })}</div>
+        <div class="tm-xwide">${renderWinLossSvg(`teamTabClipX${teamId}`, played, { width: 1120, height: 150 })}</div>
       </div>` : '';
     const lastWins = recent.filter(g => teamGameResult(g).won).length;
     const form = recent.length || upcoming.length || board ? `<section class="tm-sec tm-o-form">
@@ -8244,8 +8256,7 @@
         return `<div class="tl-card">
           <span class="tl-rank">${i + 1}</span>
           ${depthPrint({ id: r.id, name: r.name })}
-          <button type="button" class="player-name-btn" data-player-id="${r.id}" title="${r.name}">${r.name.split(' ').slice(1).filter(w => !/^(Jr\.?|Sr\.?|II|III|IV)$/.test(w)).join(' ') || r.name}</button>
-          <span class="pp-slot tl-stat">${pitcher ? r.stat.era : r.stat.ops}</span>
+          <span class="tl-who"><button type="button" class="player-name-btn" data-player-id="${r.id}" title="${r.name}">${r.name.split(' ').slice(1).filter(w => !/^(Jr\.?|Sr\.?|II|III|IV)$/.test(w)).join(' ') || r.name}</button><span class="tl-stat">${pitcher ? r.stat.era : r.stat.ops}</span></span>
         </div>`;
       }).join('')}</div></div>`;
     };
@@ -8278,10 +8289,10 @@
       const kind = x.kind || 'play';
       const { us, them, won } = teamGameResult(x.g);
       const item = { ...x, kind, result: `${won ? 'W' : 'L'} ${us}-${them}`, won };
-      if (kind === 'start') return { ...item, label: 'On the mound', why: `GSc ${x.gsc}`, badge: `GSc ${x.gsc}` };
-      if (kind === 'night') return { ...item, label: x.label === 'Team' ? 'Team night' : 'Big night', badge: x.label === 'Team' ? 'Team' : 'Big night' };
-      if (kind === 'win') return { ...item, badge: 'Recap' };
-      return { ...item, badge: x.label };
+      if (kind === 'start') return { ...item, label: 'On the mound', why: '' };
+      if (kind === 'night') return { ...item, label: x.label === 'Team' ? 'Team night' : 'Big night' };
+      if (kind === 'win') return { ...item, why: '' };
+      return item;
     })).sort((a, b) => a.g.date.localeCompare(b.g.date) || a.g.gamePk - b.g.gamePk
       || HIGHLIGHT_KIND_ORDER[a.kind] - HIGHLIGHT_KIND_ORDER[b.kind] || (a.k ? a.k.atBatIndex : 0) - (b.k ? b.k.atBatIndex : 0));
   }
