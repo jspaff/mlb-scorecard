@@ -1641,17 +1641,36 @@
   /* Team tab. The sheet is its own container, so the Overview's pairs
      and the roster's columns follow the sheet's width, not the screen's. */
   .tm { container-type: inline-size; }
-  .tm-head { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
-  .tm-cap { width: 52px; height: 52px; flex: none; }
-  .tm-id { flex: 1; min-width: 0; }
+  /* The head: cap, name and the record side by side, the plates in a row
+     of their own under the name (under the cap too on a phone, so two
+     plates sit side by side rather than stack). */
+  .tm-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: 'cap id side' 'plates plates side'; align-items: center; gap: 0 14px; margin-bottom: 18px; }
+  .tm-cap { grid-area: cap; width: 52px; height: 52px; }
+  .tm-id { grid-area: id; min-width: 0; }
+  .tm-head .tm-plates { grid-area: plates; align-self: start; }
+  .tm-rside { grid-area: side; }
   .tm-kicker { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); }
   .tm-name { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 30px; line-height: 1.05; text-transform: uppercase; color: var(--ink); }
-  .tm-plates { margin: 8px 0 0; gap: 5px; }
+  .tm-plates { margin: 10px 0 0; gap: 5px; }
+  @container (min-width: 700px) { .tm-head { grid-template-areas: 'cap id side' 'cap plates side'; } .tm-head .tm-plates { margin-top: 8px; } }
   /* A plate that isn't a title: the same shape, in the rule's color. */
   .tm-plate { border-color: var(--paper-line); }
   .tm-plate .player-award-label { color: var(--ink); }
   /* The record, as big as the name. */
-  .tm-recbig { display: flex; flex-direction: column; align-items: flex-end; flex: none; align-self: flex-start; }
+  .tm-rside { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; flex: none; align-self: flex-start; }
+  .tm-recbig { display: flex; flex-direction: column; align-items: flex-end; }
+  /* The season's shape, small, under the record; it opens the full chart. */
+  .tm-spark { display: flex; flex-direction: column; align-items: stretch; gap: 3px; width: 128px; padding: 0; background: none; border: 0; color: var(--ink); cursor: pointer; font: inherit; }
+  .tm-spark-k { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); text-align: right; }
+  .tm-spark:hover .tm-spark-k, .tm-spark:focus-visible .tm-spark-k { color: var(--gold); }
+  .tm-spark:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+  .tm-spark-row { display: flex; align-items: center; gap: 7px; }
+  .tm-spark svg { flex: 1; min-width: 0; height: 28px; overflow: visible; }
+  .tm-spark polygon { fill: rgba(217, 169, 26, 0.22); }
+  .tm-spark polyline { fill: none; stroke: var(--ink); stroke-width: 1.5; stroke-linejoin: round; }
+  .tm-spark-zero { stroke: var(--paper-line); stroke-width: 1; stroke-dasharray: 3 3; }
+  .tm-spark-end { stroke: var(--gold); stroke-width: 6; stroke-linecap: round; }
+  .tm-spark-v { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 15px; line-height: 1; font-variant-numeric: tabular-nums; }
   .tm-wl { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 34px; line-height: 1; font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; }
   .tm-wl b { font-weight: 400; color: var(--ink-soft); margin: 0 2px; }
   .tm-pct { margin-top: 4px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
@@ -1660,14 +1679,15 @@
   .tm-col { min-width: 0; }
   .tm-sec { margin-top: 20px; min-width: 0; }
   .tm-wide { display: none; }
-  .tm-xwide { display: none; }
   @container (min-width: 700px) { .tm-wide { display: block; } .tm-narrow { display: none; } }
-  @container (min-width: 1000px) { .tm-o .tm-xwide { display: block; } .tm-o .tm-wide { display: none; } }
   @container (min-width: 700px) {
     .tm-cap { width: 72px; height: 72px; }
     .tm-name { font-size: 46px; }
     .tm-wl { font-size: 54px; }
     .tm-pct { font-size: 12px; }
+    .tm-spark { width: 176px; }
+    .tm-spark svg { height: 36px; }
+    .tm-spark-v { font-size: 18px; }
     .tm-rec .pp-tot-v { font-size: 32px; }
   }
   /* Game tiles: five across, a form guide. A tile is one framed unit;
@@ -1744,7 +1764,7 @@
   .tl-who { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; }
   .tl-card .player-name-btn { max-width: 100%; font-size: 10px; }
   .tl-stat { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
-  @container (min-width: 700px) and (max-width: 999px) {
+  @container (min-width: 700px) and (max-width: 899px) {
     .tl-wrap { gap: 0 28px; }
     .tl-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
     .tl-card { flex-direction: column; gap: 6px; padding: 10px 4px 8px; }
@@ -1752,14 +1772,10 @@
     .tl-who { align-items: center; }
     .tl-card .dcf-print { width: 52px; border-width: 2px; }
   }
-  @container (min-width: 1000px) {
-    .tl-wrap { gap: 0 28px; }
-    .tl-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-    .tl-card { gap: 10px; padding: 8px 10px 8px 28px; }
-    .tl-rank { left: 9px; font-size: 18px; }
-    .tl-card .dcf-print { width: 40px; border-width: 2px; }
-    .tl-card .player-name-btn { font-size: 11px; }
-    .tl-stat { font-size: 12px; }
+  @container (min-width: 900px) {
+    .tl-card { padding: 7px 8px 7px 24px; }
+    .tl-card .dcf-print { width: 34px; }
+    .tl-card .player-name-btn { font-size: 10.5px; }
   }
   /* Season Highlights: each row scrolls on its own, at any width. */
   .tm-moments .dp-row { grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: minmax(230px, 80%); overflow-x: auto; }
@@ -1827,30 +1843,35 @@
     .hs-reel { display: flex; }
     .hs-list { display: none; }
   }
-  /* The Overview, one grid in reading order: head, next game, form,
-     division, leaders, highlights, the season. A phone stacks it; wider,
-     form and division pair up, and from 1000px the next game joins the
-     head's band. */
-  .tm-o { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: 'head' 'next' 'form' 'div' 'lead' 'hl' 'season'; gap: 22px 36px; align-items: start; }
-  .tm-o > .tm-sec, .tm-o > .tm-next, .tm-o > .tm-head { margin: 0; }
-  .tm-o-head { grid-area: head; }
-  .tm-o-next { grid-area: next; }
+  /* The Overview. A phone reads one column: head, next game, form,
+     division, leaders, clips. From 900px it splits into a main column
+     (head, form, clips) and a sidebar (next game, division, leaders), each
+     stacking on its own so neither waits on the other's row heights. */
+  .tm-o { display: flex; flex-direction: column; gap: 22px; }
+  .tm-o-main, .tm-o-side { display: contents; }
+  .tm-o .tm-sec, .tm-o .tm-next, .tm-o .tm-head { margin: 0; }
+  .tm-o-head { order: 1; }
+  .tm-o-next { order: 2; }
   .tm-o-next:empty { display: none; }
-  .tm-o-form { grid-area: form; }
-  .tm-o-div { grid-area: div; }
-  .tm-o-lead { grid-area: lead; }
-  .tm-o-hl { grid-area: hl; }
-  .tm-o-season { grid-area: season; }
+  .tm-o-form { order: 3; }
+  .tm-o-div { order: 4; }
+  .tm-o-lead { order: 5; }
+  .tm-o-hl { order: 6; }
   .tm-up-head { margin-top: 18px; }
   .tm-o-form .tm-rec { margin-top: 16px; }
-  @container (min-width: 760px) {
-    .tm-o { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: 'head head' 'next next' 'form div' 'lead lead' 'hl hl' 'season season'; }
+  @container (min-width: 700px) and (max-width: 899px) {
+    .tm-o { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: 'head head' 'next next' 'form div' 'lead lead' 'hl hl'; gap: 22px 28px; align-items: start; }
+    .tm-o-head { grid-area: head; }
+    .tm-o-next { grid-area: next; }
+    .tm-o-form { grid-area: form; }
+    .tm-o-div { grid-area: div; }
+    .tm-o-lead { grid-area: lead; }
+    .tm-o-hl { grid-area: hl; }
   }
-  @container (min-width: 1000px) {
-    .tm-o { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); grid-template-areas: 'head next' 'form div' 'lead lead' 'hl hl' 'season season'; align-items: stretch; }
-    .tm-o-head { align-items: center; margin: 0; }
-    .tm-o-next .tn { height: 100%; }
-    .tm-o-next { display: flex; flex-direction: column; justify-content: center; }
+  @container (min-width: 900px) {
+    .tm-o { display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(300px, 1fr); gap: 0 36px; align-items: start; }
+    .tm-o-main, .tm-o-side { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+    .tm-o-head { align-items: flex-start; }
   }
   .tm-roster-title { margin-bottom: 12px; }
   .tm-stats:first-child { margin-top: 0; }
@@ -7857,16 +7878,7 @@
     else if (october && october.text) plates.push(plate(october.text));
     if (!final && record && record.rec.streak && record.rec.streak.streakCode) plates.push(plate(`Streak ${record.rec.streak.streakCode}`));
 
-    // Three drawings of one chart -- a phone's, a wide sheet's and the full
-    // width's -- so its type stays readable at each size (only one shows --
-    // see .tm-wide, .tm-xwide).
     const played = getTeamWinLossFromGames(finals);
-    const chart = played.length ? `<div class="tm-o-chart">
-        <div class="pp-skg-head"><span>Games Over .500</span></div>
-        <div class="tm-narrow">${renderWinLossSvg(`teamTabClipN${teamId}`, played)}</div>
-        <div class="tm-wide">${renderWinLossSvg(`teamTabClipW${teamId}`, played, { width: 760, height: 160 })}</div>
-        <div class="tm-xwide">${renderWinLossSvg(`teamTabClipX${teamId}`, played, { width: 1120, height: 150 })}</div>
-      </div>` : '';
     const lastWins = recent.filter(g => teamGameResult(g).won).length;
     const form = recent.length || upcoming.length || board ? `<section class="tm-sec tm-o-form">
         ${recent.length ? `<div class="pp-skg-head"><span>Last ${recent.length}</span><em>${lastWins}-${recent.length - lastWins}</em></div>
@@ -7876,28 +7888,51 @@
         ${board}
       </section>` : '';
     teamRecentShown = recent;
-    const seasonSec = chart ? `<section class="tm-sec tm-o-season">${chart}</section>` : '';
 
     const head = `<div class="tm-head tm-o-head">
         <img class="tm-cap" src="${capLogoUrl(teamId)}" alt="">
         <div class="tm-id">
           <div class="tm-kicker">${season} ${final ? 'Final' : 'Season'}</div>
           <div class="tm-name">${name}</div>
-          ${plates.length ? `<div class="player-award-tags tm-plates">${plates.join('')}</div>` : ''}
         </div>
-        ${recBig}
+        ${plates.length ? `<div class="player-award-tags tm-plates">${plates.join('')}</div>` : ''}
+        <div class="tm-rside">${recBig}${played.length > 1 ? renderSeasonSpark(played, teamId, season) : ''}</div>
       </div>`;
-    // One grid in reading order: who they are and what's next, how they've
-    // been playing and where they stand, who's leading, the season's clips,
-    // then the season's shape. On a wide sheet the pairs sit side by side
-    // (see .tm-o).
-    return `<div class="sheet tm"><div class="tm-o">${head}
-      <div class="tm-next tm-o-next" id="tmNext"></div>
-      ${form}${division}
-      <section class="tm-sec tm-o-lead"><div class="pp-skg-head"><span>Leaders</span></div><div id="tmLeaders"></div></section>
-      <section class="tm-sec tm-moments tm-o-hl" id="tmMoments"></section>
-      ${seasonSec}
+    // Reading order on a phone: who they are, what's next, how they've been
+    // playing, where they stand, who's leading, the season's clips. From
+    // 900px it splits into a main column (head, form, clips) and a sidebar
+    // (next game, division, leaders), each stacking on its own.
+    return `<div class="sheet tm"><div class="tm-o">
+      <div class="tm-o-main">${head}${form}<section class="tm-sec tm-moments tm-o-hl" id="tmMoments"></section></div>
+      <div class="tm-o-side"><div class="tm-next tm-o-next" id="tmNext"></div>${division}
+        <section class="tm-sec tm-o-lead"><div class="pp-skg-head"><span>Leaders</span></div><div id="tmLeaders"></div></section>
+      </div>
     </div></div>`;
+  }
+
+  // The season's shape in one line beside the record: games over .500,
+  // game by game, against a dashed .500 rule, the latest mark gold with its
+  // value. It opens the full chart (the Standings popup's).
+  function renderSeasonSpark(played, teamId, season) {
+    const vals = played.map(p => p.net);
+    const W = 200, H = 50;
+    const max = Math.max(0, ...vals), min = Math.min(0, ...vals), range = Math.max(1, max - min);
+    const x = i => (i / (vals.length - 1) * W).toFixed(1);
+    const y = v => ((max - v) / range * H).toFixed(1);
+    const line = vals.map((v, i) => `${x(i)},${y(v)}`).join(' ');
+    const last = vals[vals.length - 1];
+    return `<button type="button" class="tm-spark" data-team-chart="${teamId}" data-season="${season}" aria-label="Games over .500 chart">
+        <span class="tm-spark-k">Games over .500</span>
+        <span class="tm-spark-row">
+          <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
+            <polygon points="0,${y(0)} ${line} ${W},${y(0)}"/>
+            <line class="tm-spark-zero" x1="0" y1="${y(0)}" x2="${W}" y2="${y(0)}" vector-effect="non-scaling-stroke"/>
+            <polyline points="${line}" vector-effect="non-scaling-stroke"/>
+            <line class="tm-spark-end" x1="${W}" y1="${y(last)}" x2="${W}" y2="${y(last)}" vector-effect="non-scaling-stroke"/>
+          </svg>
+          <span class="tm-spark-v">${last > 0 ? '+' : ''}${last}</span>
+        </span>
+      </button>`;
   }
 
   // ---- Overview extras: the season's biggest plays, leaders, next game ----
@@ -8918,6 +8953,8 @@
       loadTeamTab();
       return;
     }
+    const spark = e.target.closest('[data-team-chart]');
+    if (spark) { showTeamChartModal(Number(spark.dataset.teamChart), TEAM_NICKNAMES[spark.dataset.teamChart] || '', spark.dataset.season); return; }
     const pick = e.target.closest('[data-team-pick]');
     if (pick) {
       if (pick.dataset.teamPick === String(teamTab.teamId)) return;
