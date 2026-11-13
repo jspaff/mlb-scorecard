@@ -1709,7 +1709,7 @@
   /* The division as the Monster's scoreboard: names in white block
      capitals, each number on its own recessed plate. */
   .tdv { display: grid; gap: 4px; }
-  .tdv-row { display: grid; grid-template-columns: 14px minmax(0, 1fr) 36px 36px 40px 40px 28px; align-items: center; gap: 4px; width: 100%; padding: 3px 4px; background: none; border: 0; color: var(--ink); text-align: left; font: inherit; cursor: pointer; }
+  .tdv-row { display: grid; grid-template-columns: 14px minmax(0, 1fr) 40px 40px 44px 30px; align-items: center; gap: 4px; width: 100%; padding: 3px 4px; background: none; border: 0; color: var(--ink); text-align: left; font: inherit; cursor: pointer; }
   .tdv-row:not(.tdv-head):hover .tdv-team { color: var(--gold); }
   .tdv-row:focus-visible { outline: 2px solid var(--gold); outline-offset: 0; }
   .tdv-row.is-this, .tdv-row.is-this:hover { background: rgba(217, 169, 26, 0.13); box-shadow: inset 3px 0 0 var(--gold); cursor: default; }
@@ -1725,7 +1725,7 @@
   .tdv-short { display: none; }
   /* A narrow phone: smaller plates, and Arizona as MLB's own "D-backs". */
   @container (max-width: 400px) {
-    .tdv-row { grid-template-columns: 12px minmax(0, 1fr) 28px 28px 34px 32px 24px; gap: 3px; padding: 3px 2px; }
+    .tdv-row { grid-template-columns: 12px minmax(0, 1fr) 32px 32px 38px 26px; gap: 3px; padding: 3px 2px; }
     .tdv-slot { font-size: 14px; }
     .tdv-team { padding-left: 2px; font-size: 15px; letter-spacing: 0.04em; }
     .tdv-rank { font-size: 13px; }
@@ -1754,22 +1754,28 @@
   /* Leaders' column heads: the group and the stat they're ranked by. */
   .tl-sub { display: flex; justify-content: space-between; align-items: baseline; margin: 2px 0 8px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); }
   .tl-sub em { font-style: normal; color: var(--ink-soft); }
-  /* Leaders: a tile a category, like a scoreboard's leader panel -- the
-     category in gold, the number big, the surname under it, the print
-     beside them. Two across on a phone, four from 520px. */
-  .tlc-group + .tlc-group { margin-top: 12px; }
-  .tlc-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }
-  .tlc { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: 'print cat' 'print val' 'print name'; align-items: center; gap: 0 10px; min-width: 0; padding: 8px 10px 8px 8px; background: rgba(0, 0, 0, 0.16); border: 1px solid var(--paper-line); color: var(--ink); text-align: left; font: inherit; cursor: pointer; }
+  /* Leaders: Top Hitters and Top Pitchers, three tiles a row in rank
+     order -- the print, rank and position in gold, the stat big, the
+     surname. A phone stands each tile up (print over the words), so three
+     fit across; from 520px the print sits beside them. */
+  .tlc-group + .tlc-group { margin-top: 14px; }
+  .tlc-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+  .tlc { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: 'print' 'cat' 'val' 'name'; justify-items: center; align-items: center; gap: 2px; min-width: 0; padding: 8px 4px 7px; background: rgba(0, 0, 0, 0.16); border: 1px solid var(--paper-line); color: var(--ink); text-align: center; font: inherit; cursor: pointer; }
   .tlc:hover, .tlc:focus-visible { border-color: var(--gold); outline: none; }
-  .tlc-print { grid-area: print; display: block; width: 44px; aspect-ratio: 4 / 5; overflow: hidden; border: 2px solid var(--ink); background: var(--paper-line); box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4); }
+  .tlc-print { grid-area: print; display: block; width: 40px; margin-bottom: 4px; aspect-ratio: 4 / 5; overflow: hidden; border: 2px solid var(--ink); background: var(--paper-line); box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4); }
   .tlc-print img { width: 100%; height: 100%; object-fit: cover; object-position: center 18%; display: block; }
-  .tlc-cat { grid-area: cat; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); }
-  .tlc-val { grid-area: val; font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 26px; line-height: 1.05; font-variant-numeric: tabular-nums; color: var(--ink); }
-  .tlc-name { grid-area: name; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); }
+  .tlc-cat { grid-area: cat; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+  .tlc-cat b { margin-right: 5px; color: var(--gold); }
+  .tlc-val { grid-area: val; font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 24px; line-height: 1.05; font-variant-numeric: tabular-nums; color: var(--ink); }
+  .tlc-name { grid-area: name; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9.5px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-soft); }
   .tlc:hover .tlc-name, .tlc:focus-visible .tlc-name { color: var(--ink); }
-  @container (max-width: 400px) { .tlc { gap: 0 8px; padding: 7px 6px; } .tlc-print { width: 36px; } .tlc-val { font-size: 24px; } }
-  @container (min-width: 520px) { .tlc-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; } }
-  @container (min-width: 900px) { .tlc-print { width: 48px; } .tlc-val { font-size: 28px; } }
+  @container (min-width: 520px) {
+    .tlc-grid { gap: 6px; }
+    .tlc { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: 'print cat' 'print val' 'print name'; justify-items: start; gap: 0 12px; padding: 9px 12px 9px 9px; text-align: left; }
+    .tlc-print { width: 48px; margin: 0; }
+    .tlc-val { font-size: 28px; }
+    .tlc-name { font-size: 10.5px; }
+  }
   /* Season Highlights: each row scrolls on its own, at any width. */
   .tm-moments .dp-row { grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: minmax(230px, 80%); overflow-x: auto; }
   @container (min-width: 700px) { .tm-moments .dp-row { grid-auto-columns: 280px; } }
@@ -7864,14 +7870,10 @@
   // washed in gold. A row opens that team's Overview.
   function renderDivisionTable(records, teamId) {
     const rows = (records || []).slice().sort((a, b) => (parseInt(a.divisionRank, 10) || 99) - (parseInt(b.divisionRank, 10) || 99));
-    const lastTen = r => {
-      const t = ((r.records && r.records.splitRecords) || []).find(x => x.type === 'lastTen');
-      return t ? `${t.wins}-${t.losses}` : '';
-    };
     const tag = r => (r.divisionChamp || /[yz]/.test(r.clinchIndicator || '')) ? 'Div'
       : r.clinchIndicator === 'w' ? 'WC' : r.clinchIndicator === 'x' ? 'In' : '';
     return `<div class="tdv">
-        <div class="tdv-row tdv-head"><span></span><span></span><span>W</span><span>L</span><span>GB</span><span>L10</span><span></span></div>
+        <div class="tdv-row tdv-head"><span></span><span></span><span>W</span><span>L</span><span>GB</span><span></span></div>
         ${rows.map(r => {
           const t = tag(r);
           return `<button type="button" class="tdv-row${r.team.id === Number(teamId) ? ' is-this' : ''}" data-team-pick="${r.team.id}">
@@ -7879,7 +7881,6 @@
             <span class="tdv-team">${r.team.id === 109 ? '<span class="tdv-full">Diamondbacks</span><span class="tdv-short">D-backs</span>' : TEAM_NICKNAMES[r.team.id] || r.team.name}</span>
             <span class="tdv-slot">${r.wins}</span><span class="tdv-slot">${r.losses}</span>
             <span class="tdv-slot is-soft">${r.gamesBack === '-' ? '&nbsp;' : r.gamesBack}</span>
-            <span class="tdv-slot is-soft">${lastTen(r) || '&nbsp;'}</span>
             <span class="tdv-tagc">${t ? `<em class="tdv-tag">${t}</em>` : ''}</span>
           </button>`;
         }).join('')}
@@ -8248,42 +8249,20 @@
   // (3.1 a team game) or more, by OPS -- the title's own share where three
   // have it; pitchers by ERA among starters, a start every ten team games
   // and 0.4 innings a game, so a hot reliever doesn't lead the staff.
-  // The team's leader in each of the classic categories. A rate (AVG,
-  // ERA) counts only regulars -- the batting title's 3.1 PA a team game,
-  // else half that early on; the ERA title's inning a game, else half --
-  // and a count that nobody has yet (no saves) is left out.
-  const TEAM_LEADER_CATS = {
-    hitting: [
-      { key: 'homeRuns', label: 'Home Runs' },
-      { key: 'avg', label: 'Average', rate: true },
-      { key: 'rbi', label: 'RBI' },
-      { key: 'stolenBases', label: 'Steals' }
-    ],
-    pitching: [
-      { key: 'wins', label: 'Wins' },
-      { key: 'era', label: 'ERA', rate: true, low: true },
-      { key: 'strikeOuts', label: 'Strikeouts' },
-      { key: 'saves', label: 'Saves' }
-    ]
-  };
+  // The top three hitters by OPS among regulars (the batting title's 3.1
+  // PA a team game, else half that early on) and the top three starters
+  // by ERA.
   function buildTeamLeaders(hitting, pitching, teamGames) {
     const n = v => Number(v) || 0;
-    const qualified = (rows, field, per) => {
-      const full = rows.filter(r => n(r.stat[field]) >= per * teamGames);
-      return full.length ? full : rows.filter(r => n(r.stat[field]) >= per * teamGames / 2);
-    };
-    const lead = (rows, cats, pool) => cats.map(cat => {
-      const from = cat.rate ? pool : rows;
-      const best = from.slice().sort((a, b) => cat.low ? n(a.stat[cat.key]) - n(b.stat[cat.key]) : n(b.stat[cat.key]) - n(a.stat[cat.key]))[0];
-      if (!best || (!cat.rate && !n(best.stat[cat.key]))) return null;
-      return { cat, row: best, value: best.stat[cat.key] };
-    }).filter(Boolean);
-    const h = hitting || [], p = pitching || [];
+    const titled = (hitting || []).filter(r => n(r.stat.plateAppearances) >= 3.1 * teamGames);
+    const regulars = titled.length >= 3 ? titled : (hitting || []).filter(r => n(r.stat.plateAppearances) >= 1.55 * teamGames);
+    const starters = (pitching || []).filter(r => n(r.stat.gamesStarted) >= teamGames / 10 && n(r.stat.inningsPitched) >= 0.4 * teamGames);
     return {
-      hitting: lead(h, TEAM_LEADER_CATS.hitting, qualified(h, 'plateAppearances', 3.1)),
-      pitching: lead(p, TEAM_LEADER_CATS.pitching, qualified(p, 'inningsPitched', 1))
+      hitters: regulars.slice().sort((a, b) => n(b.stat.ops) - n(a.stat.ops)).slice(0, 3),
+      pitchers: starters.slice().sort((a, b) => n(a.stat.era) - n(b.stat.era)).slice(0, 3)
     };
   }
+
 
 
 
@@ -8390,22 +8369,23 @@
     }
   }
 
-  // Leaders: one tile a category -- what it is, the number, who. The
-  // number is the headline; the print and surname say whose it is, and
-  // the whole tile opens his quick look.
+  // Leaders: Top Hitters and Top Pitchers, three tiles each in order --
+  // the print, his rank and position, the one stat they're ranked by big,
+  // and the surname. The whole tile opens his quick look.
   function renderLeaderRows(leaders, teamId, season) {
     const surname = name => name.split(' ').slice(1).filter(w => !/^(Jr\.?|Sr\.?|II|III|IV)$/.test(w)).join(' ') || name;
-    const group = (title, items) => items.length ? `<div class="tlc-group"><div class="tl-sub">${title}</div><div class="tlc-grid">${items.map(({ cat, row, value }) => {
-      storeTeamPlayer(row.id, row.name, row.pos, teamId, season);
-      return `<button type="button" class="tlc" data-player-id="${row.id}" aria-label="${cat.label}: ${row.name}, ${value}">
-          <span class="tlc-print"><img src="${headshotUrl(row.id, 120)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'"></span>
-          <span class="tlc-cat">${cat.label}</span>
+    const group = (title, stat, rows, pitcher) => rows.length ? `<div class="tlc-group"><div class="tl-sub">${title}<em>${stat}</em></div><div class="tlc-grid">${rows.map((r, i) => {
+      storeTeamPlayer(r.id, r.name, r.pos, teamId, season);
+      const value = pitcher ? r.stat.era : r.stat.ops;
+      return `<button type="button" class="tlc" data-player-id="${r.id}" aria-label="${title} ${i + 1}: ${r.name}, ${value} ${stat}">
+          <span class="tlc-print"><img src="${headshotUrl(r.id, 120)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'"></span>
+          <span class="tlc-cat"><b>${i + 1}</b>${pitcher ? 'SP' : r.pos}</span>
           <span class="tlc-val">${value}</span>
-          <span class="tlc-name">${surname(row.name)}</span>
+          <span class="tlc-name">${surname(r.name)}</span>
         </button>`;
     }).join('')}</div></div>` : '';
-    const html = group('Hitting', leaders.hitting) + group('Pitching', leaders.pitching);
-    return html || '<div class="pitch-empty">No leaders yet this season.</div>';
+    const html = group('Top Hitters', 'OPS', leaders.hitters, false) + group('Top Pitchers', 'ERA', leaders.pitchers, true);
+    return html || '<div class="pitch-empty">No regulars yet this season.</div>';
   }
   // ---- Season Highlights: one stream, in date order ----
   // Each kind fills in as its data lands (undefined while loading, null or
