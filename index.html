@@ -1706,29 +1706,32 @@
     .gt-play { height: 20px; font-size: 9px; }
   }
   /* The division: a small standings board, this team in gold wash. */
-  .tdv-row { display: grid; grid-template-columns: 16px minmax(0, 1fr) 30px 30px 36px 38px 30px; align-items: center; gap: 6px; width: 100%; padding: 6px; background: none; border: 0; border-bottom: 1px dashed var(--paper-line); color: var(--ink); text-align: left; font: inherit; cursor: pointer; }
-  .tdv-row > span:nth-child(n+3) { text-align: right; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 16px; font-variant-numeric: tabular-nums; }
-  .tdv-row:not(.tdv-head):hover { background: rgba(243, 236, 219, 0.06); }
-  .tdv-row:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
-  .tdv-row.is-this, .tdv-row.is-this:hover { background: rgba(217, 169, 26, 0.13); cursor: default; }
-  .tdv-head { padding-bottom: 3px; border-bottom: 1px solid var(--paper-line); cursor: default; }
-  .tdv-head > span:nth-child(n+3) { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; color: var(--ink-soft); }
+  /* The division as the Monster's scoreboard: names in white block
+     capitals, each number on its own recessed plate. */
+  .tdv { display: grid; gap: 4px; }
+  .tdv-row { display: grid; grid-template-columns: 14px minmax(0, 1fr) 36px 36px 40px 40px 28px; align-items: center; gap: 4px; width: 100%; padding: 3px 4px; background: none; border: 0; color: var(--ink); text-align: left; font: inherit; cursor: pointer; }
+  .tdv-row:not(.tdv-head):hover .tdv-team { color: var(--gold); }
+  .tdv-row:focus-visible { outline: 2px solid var(--gold); outline-offset: 0; }
+  .tdv-row.is-this, .tdv-row.is-this:hover { background: rgba(217, 169, 26, 0.13); box-shadow: inset 3px 0 0 var(--gold); cursor: default; }
+  .tdv-row.is-this:hover .tdv-team { color: var(--ink); }
+  .tdv-head { padding-top: 0; padding-bottom: 0; cursor: default; }
+  .tdv-head > span { text-align: center; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; color: var(--ink-soft); }
   .tdv-rank { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 15px; color: var(--gold); text-align: center; }
-  .tdv-team { display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden; white-space: nowrap; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 17px; }
-  .tdv-team img { width: 22px; height: 22px; flex: none; }
-  .tdv-row > .tdv-gb, .tdv-row > .tdv-l10 { color: var(--ink-soft); }
-  .tdv-tag { font-style: normal; padding: 2px 4px 1px; border: 1px solid var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); }
-  /* A narrow phone: tighter columns and type, so "Diamondbacks" fits. */
+  .tdv-team { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-left: 4px; font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 17px; letter-spacing: 0.06em; text-transform: uppercase; }
+  .tdv-slot { display: block; padding: 3px 0 2px; border-radius: 2px; background: rgba(0, 0, 0, 0.26); box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.5), inset 0 -1px 1px rgba(255, 255, 255, 0.05); text-align: center; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 16px; line-height: 1.25; font-variant-numeric: tabular-nums; color: var(--ink); }
+  .tdv-slot.is-soft { color: var(--ink-soft); }
+  .tdv-tagc { text-align: center; }
+  .tdv-tag { font-style: normal; padding: 2px 3px 1px; border: 1px solid var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink); }
+  .tdv-short { display: none; }
+  /* A narrow phone: smaller plates, and Arizona as MLB's own "D-backs". */
   @container (max-width: 400px) {
-    .tdv-row { grid-template-columns: 12px minmax(0, 1fr) 24px 24px 32px 30px 24px; gap: 4px; padding: 6px 2px; }
-    .tdv-row > span:nth-child(n+3) { font-size: 14px; }
-    .tdv-team { gap: 5px; font-size: 15px; }
-    .tdv-team img { width: 18px; height: 18px; }
+    .tdv-row { grid-template-columns: 12px minmax(0, 1fr) 28px 28px 34px 32px 24px; gap: 3px; padding: 3px 2px; }
+    .tdv-slot { font-size: 14px; }
+    .tdv-team { padding-left: 2px; font-size: 15px; letter-spacing: 0.04em; }
     .tdv-rank { font-size: 13px; }
     .tdv-tag { padding: 1px 2px 0; font-size: 7.5px; letter-spacing: 0.02em; }
+    .tdv-full { display: none; } .tdv-short { display: inline; }
   }
-  .tdv-short { display: none; }
-  @container (max-width: 300px) { .tdv-team img, .tdv-full { display: none; } .tdv-short { display: inline; } }
   .pp-tabs.tm-roster-tabs { margin-top: -6px; }
   /* Next game: a card that opens the scorecard. */
   .tn { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'k k' 'opp right' 'go right'; align-items: center; gap: 4px 14px; width: 100%; padding: 12px 14px; text-align: left; color: var(--ink); background: rgba(0, 0, 0, 0.16); border: 1px solid var(--paper-line); cursor: pointer; font: inherit; }
@@ -1751,42 +1754,22 @@
   /* Leaders' column heads: the group and the stat they're ranked by. */
   .tl-sub { display: flex; justify-content: space-between; align-items: baseline; margin: 2px 0 8px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); }
   .tl-sub em { font-style: normal; color: var(--ink-soft); }
-  /* Leaders. A phone keeps the two sides next to each other, three rows
-     a side: rank, print, plate, and the stat in a slot under the plate.
-     From 520px each side is a podium -- the leader a tall card with a big
-     print, the next two stacked beside him, each half his height. */
-  .tl-wrap { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 10px; }
-  .tl-pod, .tl-rest { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; min-width: 0; }
-  .tl-pod { gap: 4px; }
-  .tl-card { position: relative; display: grid; grid-template-columns: 30px minmax(0, 1fr); grid-template-areas: 'print name' 'print stat'; align-items: center; align-content: center; gap: 4px 7px; min-width: 0; padding: 6px 5px 6px 8px; background: rgba(0, 0, 0, 0.16); border: 1px solid var(--paper-line); }
-  .tl-card .dcf-photo { grid-area: print; }
-  .tl-card .dcf-print { width: 30px; border-width: 1px; box-shadow: none; }
-  .tl-card .player-name-btn { grid-area: name; justify-self: start; max-width: 100%; padding: 2px 5px; font-size: 9.5px; }
-  .tl-stat { grid-area: stat; justify-self: start; padding: 1px 6px; border-radius: 2px; background: rgba(0, 0, 0, 0.22); box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.5), inset 0 -1px 1px rgba(255, 255, 255, 0.05); font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 13px; line-height: 1.25; color: var(--ink); font-variant-numeric: tabular-nums; }
-  /* On a phone the rank rides the print's corner, leaving the plate room. */
-  .tl-rank { position: absolute; top: 3px; left: 3px; z-index: 1; min-width: 14px; padding: 1px 2px; background: var(--paper); font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 13px; line-height: 1; text-align: center; color: var(--gold); }
-  .tl-card.is-first { grid-template-columns: 36px minmax(0, 1fr); background: rgba(0, 0, 0, 0.24); }
-  .tl-card.is-first .dcf-print { width: 36px; border-width: 2px; }
-  @container (min-width: 520px) {
-    .tl-wrap { gap: 0 16px; }
-    .tl-pod { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 5px; }
-    .tl-rest { grid-template-rows: 1fr 1fr; gap: 5px; }
-    .tl-card { grid-template-columns: 34px minmax(0, 1fr); gap: 5px 10px; padding: 8px 8px 8px 26px; }
-    .tl-card .dcf-print { width: 34px; }
-    .tl-stat { font-size: 15px; padding: 2px 7px; }
-    .tl-card .player-name-btn { padding: 2px 7px; font-size: 10px; }
-    .tl-rank { top: 8px; left: 9px; min-width: 0; padding: 0; background: none; font-size: 16px; }
-    .tl-card.is-first { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'print' 'name' 'stat'; justify-items: center; gap: 7px; padding: 12px 8px; }
-    .tl-card.is-first .dcf-print { width: 64px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.45); }
-    .tl-card.is-first .player-name-btn { justify-self: center; font-size: 11px; }
-    .tl-card.is-first .tl-stat { justify-self: center; padding: 3px 10px; font-size: 22px; font-weight: 600; }
-    .tl-card.is-first .tl-rank { top: 9px; left: 10px; font-size: 24px; }
-  }
-  @container (min-width: 900px) {
-    .tl-wrap { gap: 0 20px; }
-    .tl-card.is-first .dcf-print { width: 76px; }
-    .tl-card.is-first .tl-stat { font-size: 26px; }
-  }
+  /* Leaders: a tile a category, like a scoreboard's leader panel -- the
+     category in gold, the number big, the surname under it, the print
+     beside them. Two across on a phone, four from 520px. */
+  .tlc-group + .tlc-group { margin-top: 12px; }
+  .tlc-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }
+  .tlc { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: 'print cat' 'print val' 'print name'; align-items: center; gap: 0 10px; min-width: 0; padding: 8px 10px 8px 8px; background: rgba(0, 0, 0, 0.16); border: 1px solid var(--paper-line); color: var(--ink); text-align: left; font: inherit; cursor: pointer; }
+  .tlc:hover, .tlc:focus-visible { border-color: var(--gold); outline: none; }
+  .tlc-print { grid-area: print; display: block; width: 44px; aspect-ratio: 4 / 5; overflow: hidden; border: 2px solid var(--ink); background: var(--paper-line); box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4); }
+  .tlc-print img { width: 100%; height: 100%; object-fit: cover; object-position: center 18%; display: block; }
+  .tlc-cat { grid-area: cat; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); }
+  .tlc-val { grid-area: val; font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 26px; line-height: 1.05; font-variant-numeric: tabular-nums; color: var(--ink); }
+  .tlc-name { grid-area: name; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); }
+  .tlc:hover .tlc-name, .tlc:focus-visible .tlc-name { color: var(--ink); }
+  @container (max-width: 400px) { .tlc { gap: 0 8px; padding: 7px 6px; } .tlc-print { width: 36px; } .tlc-val { font-size: 24px; } }
+  @container (min-width: 520px) { .tlc-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; } }
+  @container (min-width: 900px) { .tlc-print { width: 48px; } .tlc-val { font-size: 28px; } }
   /* Season Highlights: each row scrolls on its own, at any width. */
   .tm-moments .dp-row { grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: minmax(230px, 80%); overflow-x: auto; }
   @container (min-width: 700px) { .tm-moments .dp-row { grid-auto-columns: 280px; } }
@@ -1800,6 +1783,9 @@
   .hl-hit:focus-visible { outline: none; }
   .vc.hl-card .vc-title { min-height: 2.5em; }
   .hl-card:hover .vc-play, .hl-card:has(.hl-hit:focus-visible) .vc-play { border-color: var(--gold); }
+  /* Kicker and title sit flush with the still's edges, the chip's right
+     edge on the still's. */
+  .hl-card .vc-kicker, .hl-card .vc-title { padding: 0; }
   .hl-kick { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 19px; min-width: 0; }
   .hl-kick-l { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .hl-kick-l b { margin-right: 6px; font-weight: 800; color: var(--ink-soft); }
@@ -1839,7 +1825,7 @@
   /* List (a phone): one month's clips as rows, a pager to the next. */
   .hs-list-month { margin: 8px 0 2px; font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 20px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gold); }
   .hs-row { border-bottom: 1px dashed var(--paper-line); }
-  .hs-row.hl-card { display: grid; grid-template-columns: 124px minmax(0, 1fr); align-items: center; gap: 12px; padding: 10px 0; }
+  .hs-row.hl-card { display: grid; grid-template-columns: 136px minmax(0, 1fr); align-items: stretch; gap: 12px; padding: 10px 0; }
   .hs-row.hl-card:has(.hl-hit:focus-visible) { outline: 2px solid var(--gold); outline-offset: 2px; }
   .hs-thumb { position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden; border: 1px solid var(--paper-line); container-type: inline-size; }
   .hs-row.hl-card:hover { border-color: var(--paper-line); }
@@ -1855,11 +1841,15 @@
   .hs-text .vc-kicker, .hs-text .dp-meta { padding: 0; }
   /* A phone's row is too narrow for the chip at the kicker's end; it
      sits under the title, within the still's height. */
-  .hs-text { display: grid; grid-template-areas: 'kick' 'title' 'alt'; grid-template-columns: minmax(0, 1fr); justify-items: start; }
+  .hs-text { display: grid; grid-template-areas: 'kick' 'title' 'alt'; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto 1fr; row-gap: 3px; justify-items: start; }
+  .hs-row.hl-card .hs-thumb { align-self: start; }
+  .hs-row.hl-card .hs-title { font-size: 14px; line-height: 1.22; }
+  .hs-row.hl-card .hl-kick-l { line-height: 1.3; }
+  .hs-row.hl-card .hl-alt { padding: 2px 6px 1px; }
   .hs-text .hl-kick { display: contents; }
   .hs-text .hl-kick-l { grid-area: kick; max-width: 100%; }
   .hs-text .hl-hit { grid-area: title; }
-  .hs-text .hl-alt { grid-area: alt; margin-top: 3px; }
+  .hs-text .hl-alt { grid-area: alt; align-self: end; }
   .hs-title { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 15.5px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .hs-row.hl-card:hover .hs-title { color: var(--gold); }
   .hs-pager { display: flex; justify-content: space-between; gap: 10px; padding-top: 12px; }
@@ -1886,7 +1876,6 @@
   .tm-o-ranks { order: 6; }
   .tm-o-hl { order: 7; }
   .tm-up-head { margin-top: 18px; }
-  /* The quiet way to the full chart, under the record. */
   /* League ranks: the rank big (gold in the top three), the stat small. */
   .trk-head { align-items: center; }
   .trk-head em { font-style: normal; margin-left: 4px; font-weight: 700; letter-spacing: 0.02em; text-transform: none; color: var(--ink-soft); }
@@ -1899,7 +1888,7 @@
   .trk-rank.is-top { color: var(--gold); }
   .trk-v { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
   @container (min-width: 700px) and (max-width: 899px) {
-    .tm-o { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: 'head head' 'next next' 'form div' 'lead lead' 'ranks ranks' 'hl hl'; gap: 22px 28px; align-items: start; }
+    .tm-o { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: 'head head' 'next div' 'form div' 'lead lead' 'ranks ranks' 'hl hl'; grid-template-rows: auto auto 1fr; gap: 22px 28px; align-items: start; }
     .tm-o-ranks { grid-area: ranks; }
     .trk { grid-template-columns: repeat(6, minmax(0, 1fr)); }
     .tm-o-head { grid-area: head; }
@@ -7871,8 +7860,8 @@
     return `<div class="gt-row">${recent.slice().reverse().map(g => renderGameTile(g, media && media[g.gamePk] && media[g.gamePk].recap)).join('')}</div>`;
   }
 
-  // The division as a small standings board, this team washed in gold. A
-  // row opens that team's Overview.
+  // The division as a small scoreboard in the Monster's style, this team
+  // washed in gold. A row opens that team's Overview.
   function renderDivisionTable(records, teamId) {
     const rows = (records || []).slice().sort((a, b) => (parseInt(a.divisionRank, 10) || 99) - (parseInt(b.divisionRank, 10) || 99));
     const lastTen = r => {
@@ -7887,11 +7876,11 @@
           const t = tag(r);
           return `<button type="button" class="tdv-row${r.team.id === Number(teamId) ? ' is-this' : ''}" data-team-pick="${r.team.id}">
             <span class="tdv-rank">${r.divisionRank}</span>
-            <span class="tdv-team"><img src="${capLogoUrl(r.team.id)}" alt="">${r.team.id === 109 ? '<span class="tdv-full">Diamondbacks</span><span class="tdv-short">D-backs</span>' : TEAM_NICKNAMES[r.team.id] || r.team.name}</span>
-            <span>${r.wins}</span><span>${r.losses}</span>
-            <span class="tdv-gb">${r.gamesBack === '-' ? '' : r.gamesBack}</span>
-            <span class="tdv-l10">${lastTen(r)}</span>
-            <span>${t ? `<em class="tdv-tag">${t}</em>` : ''}</span>
+            <span class="tdv-team">${r.team.id === 109 ? '<span class="tdv-full">Diamondbacks</span><span class="tdv-short">D-backs</span>' : TEAM_NICKNAMES[r.team.id] || r.team.name}</span>
+            <span class="tdv-slot">${r.wins}</span><span class="tdv-slot">${r.losses}</span>
+            <span class="tdv-slot is-soft">${r.gamesBack === '-' ? '&nbsp;' : r.gamesBack}</span>
+            <span class="tdv-slot is-soft">${lastTen(r) || '&nbsp;'}</span>
+            <span class="tdv-tagc">${t ? `<em class="tdv-tag">${t}</em>` : ''}</span>
           </button>`;
         }).join('')}
       </div>`;
@@ -8259,16 +8248,43 @@
   // (3.1 a team game) or more, by OPS -- the title's own share where three
   // have it; pitchers by ERA among starters, a start every ten team games
   // and 0.4 innings a game, so a hot reliever doesn't lead the staff.
+  // The team's leader in each of the classic categories. A rate (AVG,
+  // ERA) counts only regulars -- the batting title's 3.1 PA a team game,
+  // else half that early on; the ERA title's inning a game, else half --
+  // and a count that nobody has yet (no saves) is left out.
+  const TEAM_LEADER_CATS = {
+    hitting: [
+      { key: 'homeRuns', label: 'Home Runs' },
+      { key: 'avg', label: 'Average', rate: true },
+      { key: 'rbi', label: 'RBI' },
+      { key: 'stolenBases', label: 'Steals' }
+    ],
+    pitching: [
+      { key: 'wins', label: 'Wins' },
+      { key: 'era', label: 'ERA', rate: true, low: true },
+      { key: 'strikeOuts', label: 'Strikeouts' },
+      { key: 'saves', label: 'Saves' }
+    ]
+  };
   function buildTeamLeaders(hitting, pitching, teamGames) {
     const n = v => Number(v) || 0;
-    const titled = (hitting || []).filter(r => n(r.stat.plateAppearances) >= 3.1 * teamGames);
-    const regulars = titled.length >= 3 ? titled : (hitting || []).filter(r => n(r.stat.plateAppearances) >= 1.55 * teamGames);
-    const starters = (pitching || []).filter(r => n(r.stat.gamesStarted) >= teamGames / 10 && n(r.stat.inningsPitched) >= 0.4 * teamGames);
+    const qualified = (rows, field, per) => {
+      const full = rows.filter(r => n(r.stat[field]) >= per * teamGames);
+      return full.length ? full : rows.filter(r => n(r.stat[field]) >= per * teamGames / 2);
+    };
+    const lead = (rows, cats, pool) => cats.map(cat => {
+      const from = cat.rate ? pool : rows;
+      const best = from.slice().sort((a, b) => cat.low ? n(a.stat[cat.key]) - n(b.stat[cat.key]) : n(b.stat[cat.key]) - n(a.stat[cat.key]))[0];
+      if (!best || (!cat.rate && !n(best.stat[cat.key]))) return null;
+      return { cat, row: best, value: best.stat[cat.key] };
+    }).filter(Boolean);
+    const h = hitting || [], p = pitching || [];
     return {
-      hitters: regulars.slice().sort((a, b) => n(b.stat.ops) - n(a.stat.ops)).slice(0, 3),
-      pitchers: starters.slice().sort((a, b) => n(a.stat.era) - n(b.stat.era)).slice(0, 3)
+      hitting: lead(h, TEAM_LEADER_CATS.hitting, qualified(h, 'plateAppearances', 3.1)),
+      pitching: lead(p, TEAM_LEADER_CATS.pitching, qualified(p, 'inningsPitched', 1))
     };
   }
+
 
 
   // The next game: one under way first, else the next on the schedule --
@@ -8374,27 +8390,22 @@
     }
   }
 
-  // Leaders: a podium a side -- the leader a tall card, the next two
-  // stacked beside him. Each is a rank, the print, the plate and the one
-  // stat they're ranked by in a slot.
+  // Leaders: one tile a category -- what it is, the number, who. The
+  // number is the headline; the print and surname say whose it is, and
+  // the whole tile opens his quick look.
   function renderLeaderRows(leaders, teamId, season) {
     const surname = name => name.split(' ').slice(1).filter(w => !/^(Jr\.?|Sr\.?|II|III|IV)$/.test(w)).join(' ') || name;
-    const side = (title, rows, pitcher) => {
-      if (!rows.length) return '';
-      const card = (r, i) => {
-        storeTeamPlayer(r.id, r.name, r.pos, teamId, season);
-        return `<div class="tl-card${i === 0 ? ' is-first' : ''}">
-          <span class="tl-rank">${i + 1}</span>
-          ${depthPrint({ id: r.id, name: r.name })}
-          <button type="button" class="player-name-btn" data-player-id="${r.id}" title="${r.name}">${surname(r.name)}</button>
-          <span class="tl-stat">${pitcher ? r.stat.era : r.stat.ops}</span>
-        </div>`;
-      };
-      return `<div class="tl-side"><div class="tl-sub">${title}<em>${pitcher ? 'ERA' : 'OPS'}</em></div>
-        <div class="tl-pod">${card(rows[0], 0)}${rows.length > 1 ? `<div class="tl-rest">${rows.slice(1).map((r, i) => card(r, i + 1)).join('')}</div>` : ''}</div></div>`;
-    };
-    const html = side('Hitters', leaders.hitters, false) + side('Starters', leaders.pitchers, true);
-    return html ? `<div class="tl-wrap">${html}</div>` : '<div class="pitch-empty">No regulars yet this season.</div>';
+    const group = (title, items) => items.length ? `<div class="tlc-group"><div class="tl-sub">${title}</div><div class="tlc-grid">${items.map(({ cat, row, value }) => {
+      storeTeamPlayer(row.id, row.name, row.pos, teamId, season);
+      return `<button type="button" class="tlc" data-player-id="${row.id}" aria-label="${cat.label}: ${row.name}, ${value}">
+          <span class="tlc-print"><img src="${headshotUrl(row.id, 120)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'"></span>
+          <span class="tlc-cat">${cat.label}</span>
+          <span class="tlc-val">${value}</span>
+          <span class="tlc-name">${surname(row.name)}</span>
+        </button>`;
+    }).join('')}</div></div>` : '';
+    const html = group('Hitting', leaders.hitting) + group('Pitching', leaders.pitching);
+    return html || '<div class="pitch-empty">No leaders yet this season.</div>';
   }
   // ---- Season Highlights: one stream, in date order ----
   // Each kind fills in as its data lands (undefined while loading, null or
@@ -9053,7 +9064,7 @@
       teamBody.innerHTML = renderTeamStats(lastTeamStats);
       return;
     }
-    const photo = e.target.closest('.dcf-photo[data-player-id]');
+    const photo = e.target.closest('.dcf-photo[data-player-id], .tlc[data-player-id]');
     if (photo) { showPlayerModal(photo.dataset.playerId); return; }
     const rosterTab = e.target.closest('[data-roster-view]');
     if (rosterTab) {
