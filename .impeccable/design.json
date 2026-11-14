@@ -366,7 +366,7 @@
       "refersTo": "sheet",
       "description": "A scorebook page laid on the Monster-green wall.",
       "html": "<div class=\"ds-sheet\">Scorebook page</div>",
-      "css": ".ds-sheet{background:var(--paper,#3b4336);color:var(--ink,#f3ecdb);border:2px solid var(--ink,#f3ecdb);border-radius:0;padding:18px;box-shadow:0 2px 0 rgba(0,0,0,.25) inset,0 4px 14px rgba(0,0,0,.35);font-family:'Inter',sans-serif;font-size:13px}"
+      "css": ".ds-sheet{background:var(--paper,#3b4336);color:var(--ink,#f3ecdb);border:2px solid var(--ink,#f3ecdb);border-radius:0;padding:18px;box-shadow:0 2px 0 rgba(0,0,0,.25) inset,0 4px 14px rgba(0,0,0,.35);font-family:'Overpass',sans-serif;font-size:13px}"
     },
     {
       "name": "Runner Tags",

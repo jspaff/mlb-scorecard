@@ -38,9 +38,9 @@ typography:
     fontWeight: 500
     lineHeight: 1.3
   body:
-    fontFamily: "Inter, sans-serif"
+    fontFamily: "Overpass, sans-serif"
     fontSize: "13px"
-    fontWeight: 400
+    fontWeight: 600
     lineHeight: 1.5
   data:
     fontFamily: "Overpass, sans-serif"
@@ -174,11 +174,10 @@ A three-layer palette of wall, board and ink, with two spare signal colors.
 ## Typography
 
 **Display Font:** Oswald (with sans-serif)
-**Label/Data Font:** Overpass (with sans-serif)
-**Body Font:** Inter (with sans-serif)
+**Label/Data/Body Font:** Overpass (with sans-serif)
 **Notation Font:** Special Elite (with monospace)
 
-**Character:** Oswald is the condensed scoreboard numeral and the player's name on their plate. Overpass is the stenciled label and the box-score figure. Special Elite is the scorekeeper's typewritten notation inside each diamond. Inter appears only for running text, which is rare by design.
+**Character:** Oswald is the condensed scoreboard numeral and the player's name on their plate. Overpass is the stenciled label and the box-score figure. Special Elite is the scorekeeper's typewritten notation inside each diamond. Overpass also carries the rare running text (a play written out, a recap headline, an injury note) in sentence case, so the app has three faces and every sentence reads in the same voice as the board around it.
 
 ### Hierarchy
 - **Display** (Oswald 600, 42px on wide sheets, 26px on narrow, 1.05): player names on the profile.
@@ -188,7 +187,7 @@ A three-layer palette of wall, board and ink, with two spare signal colors.
 - **Data** (Overpass 600–700, tabular figures) on three sizes: **12px** for table cells, game-log rows, splits and pitch lines; **11px** for secondary data under or beside it (the stat under a skill score, a rank's value, chart axis ends, card meta); **13px** for data that stands alone (a score box's runs, the batting-order slot). The one exception is a table squeezed under 340px, which drops to 11px to fit.
 - **Section title** (Overpass 800, 11.5px, 0.12em, uppercase, Scorekeeper Cream, under a 2px rule of cream at 35%): every section heading on a sheet or in a popup, one step above the subheads beneath it. Never gold: the page's gold is left to kickers, active rules and the data that earns it.
 - **Label** (Overpass 800, uppercase, 0.05–0.12em tracking) on three sizes only: **9px** for tight column heads, tags, tile dates and card kickers; **10px** for painted labels, vitals, subheads, award plates and text links; **11px** for positions and in-sheet controls, which drop to 700 since they read as text and controls rather than paint. No label sits between or below these steps.
-- **Body** (Inter 400, 12.5–13px, 1.5): rare running text such as tooltips and footnotes.
+- **Body** (Overpass 600, sentence case, 0.01em, 1.45–1.5): **13px** for a play or description standing alone (the half-inning view, the Final summary, the at-bat popup); **12px** inside a table or list (injury notes, the Defense tab's plays); **11px** for the small fragments around them (a date or venue line, a recap headline in a score box). Fragments such as "vs Jonah Tong" are 12px.
 - **Status** (Overpass 600, 12px, 0.01em, sentence case; 13px on a plate on the frame): loading, empty and error messages, everywhere. The label face at a lighter weight, so an empty board reads as part of the board.
 - **Notation** (Special Elite, 10–18px inside a diamond): play codes K, HR, 6-3, F8. Used in the diamond glyph, and wherever a play is named by its scorebook notation outside one (the Defense tab's double-play ledger, a double play's clip popup).
 
