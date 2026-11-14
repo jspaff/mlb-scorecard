@@ -31,6 +31,9 @@
     --paper: #3b4336;
     --paper-line: #545e4d;
     --ink: #f3ecdb;
+    /* Cream for text sitting straight on the Monster green: a shade
+       brighter than --ink, which is 4.1:1 there; this is 4.6:1. */
+    --frame-ink: #fdf8ee;
     --ink-soft: #c3c8bb;
     --gold: #d9a91a;
     --brick: #e0604a;
@@ -113,7 +116,7 @@
     font-size: 12px;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    color: var(--ink);
+    color: var(--frame-ink);
     background: none;
     border: none;
     border-bottom: 2px solid transparent;
@@ -3280,7 +3283,7 @@
     font-size: 12px;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    color: var(--ink);
+    color: var(--frame-ink);
     cursor: pointer;
   }
   .pp-back svg { width: 7px; height: 11px; }

@@ -6,6 +6,7 @@ colors:
   scorebook-board: "#3b4336"
   board-rule: "#545e4d"
   scorekeeper-cream: "#f3ecdb"
+  frame-cream: "#fdf8ee"
   faded-cream: "#c3c8bb"
   pennant-gold: "#d9a91a"
   brick-red: "#e0604a"
@@ -159,13 +160,14 @@ A three-layer palette of wall, board and ink, with two spare signal colors.
 ### Neutral
 - **Scorebook Board**: sheets, modals, plates and inputs; the dark page the scorebook is written on.
 - **Board Rule**: hairlines, table rules, input borders and slot edges.
-- **Scorekeeper Cream**: primary text and ink on both the board and the frame.
+- **Scorekeeper Cream**: primary text and ink on the board.
+- **Frame Cream** (`#fdf8ee`): the same ink a shade brighter, for text sitting straight on the Monster green (the tab labels, the profile's back link), where Scorekeeper Cream is only 4.1:1. It clears 4.5:1.
 - **Faded Cream**: secondary text on the board (labels, column heads, inactive controls, PA counts). It is never used on the frame, where it fails contrast.
 - **Weathered Sage**: muted data fills, such as a non-quality start on the Starts chart.
 - **Scoreboard Panel** and **Scoreboard Lamp Green**: the live game's scoreboard panel and its lit count lamps. Lamp green is only ever a lamp on that board; a game being live is marked in gold.
 
 ### Named Rules
-**The Monster Stays Rule.** The frame is Monster Green and never darkens or shifts. Text on the frame is full Scorekeeper Cream. Small or secondary text belongs on a board plate, not directly on the wall.
+**The Monster Stays Rule.** The frame is Monster Green and never darkens or shifts. Text on the frame is Frame Cream, the brighter cream. Small or secondary text belongs on a board plate, not directly on the wall.
 
 **The Two Golds Rule.** Gold has two jobs, and they don't mix. As trim it is simply part of the scheme, like the paint on a scoreboard: kickers, the active tab and segment rules, focus rings, the jersey number, the wash on the user's own team. In the data it is earned: a number, dot, lamp or mark turns gold only for excellence or a positive event (top 10% of that season's qualified pool, a quality start, an award, a hit, an RBI, a made 5-star catch). Trim never reaches into the data: a value is never gold just to lead the eye, so a "lead stat" stays cream.
 
