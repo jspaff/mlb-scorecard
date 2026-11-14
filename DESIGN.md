@@ -18,7 +18,7 @@ colors:
 typography:
   display:
     fontFamily: "Oswald, sans-serif"
-    fontSize: "42px"
+    fontSize: "44px"
     fontWeight: 600
     lineHeight: 1.05
   headline:
@@ -28,13 +28,13 @@ typography:
     lineHeight: 1.3
   stat:
     fontFamily: "Oswald, sans-serif"
-    fontSize: "46px"
+    fontSize: "44px"
     fontWeight: 600
     lineHeight: 1.45
     fontFeature: "tnum"
   title:
     fontFamily: "Oswald, sans-serif"
-    fontSize: "15px"
+    fontSize: "16px"
     fontWeight: 500
     lineHeight: 1.3
   body:
@@ -180,10 +180,11 @@ A three-layer palette of wall, board and ink, with two spare signal colors.
 **Character:** Oswald is the condensed scoreboard numeral and the player's name on their plate. Overpass is the stenciled label and the box-score figure. Special Elite is the scorekeeper's typewritten notation inside each diamond. Overpass also carries the rare running text (a play written out, a recap headline, an injury note) in sentence case, so the app has three faces and every sentence reads in the same voice as the board around it.
 
 ### Hierarchy
-- **Display** (Oswald 600, 42px on wide sheets, 26px on narrow, 1.05): player names on the profile.
-- **Stat** (Oswald 600, 46px / 34px narrow, tabular figures): numbers in recessed slots on the Defense tab; the Overview's skill scores (42px / 34px narrow).
+- **Display** (Oswald 600, 44px on wide sheets, 24px on narrow, 1.05): player names on the profile.
+- **Oswald ramp:** every Oswald size is one of six steps -- **14** (small names, controls), **16** (names in rows, vitals), **20** (card titles, secondary numbers), **24** (big values in tiles, ranks, totals on a phone), **30** (a phone's headline numbers, totals on a wide sheet), **44** (a wide sheet's names, scores and record). Cards that scale with their container (`cqw`/`clamp`) are the only exception.
+- **Stat** (Oswald 600, 44px / 30px narrow, tabular figures): numbers in recessed slots on the Defense tab and the Overview's skill scores.
 - **Headline** (Oswald 500, 20px / 16px narrow): team and position line under a name. The position is a step softer than the team.
-- **Title** (Oswald 500, 15px): vitals values, select values, card summaries.
+- **Title** (Oswald 500, 16px): vitals values, select values, card summaries.
 - **Data** (Overpass 600–700, tabular figures) on three sizes: **12px** for table cells, game-log rows, splits and pitch lines; **11px** for secondary data under or beside it (the stat under a skill score, a rank's value, chart axis ends, card meta); **13px** for data that stands alone (a score box's runs, the batting-order slot). The one exception is a table squeezed under 340px, which drops to 11px to fit.
 - **Section title** (Overpass 800, 11.5px, 0.12em, uppercase, Scorekeeper Cream, under a 2px rule of cream at 35%): every section heading on a sheet or in a popup, one step above the subheads beneath it. Never gold: the page's gold is left to kickers, active rules and the data that earns it.
 - **Label** (Overpass 800, uppercase, 0.05–0.12em tracking) on three sizes only: **9px** for tight column heads, tags, tile dates and card kickers; **10px** for painted labels, vitals, subheads, award plates and text links; **11px** for positions and in-sheet controls, which drop to 700 since they read as text and controls rather than paint. No label sits between or below these steps.
@@ -247,7 +248,7 @@ The Overview board: a player's season as percentile scores, one per skill, so hi
 - **Groups:** hitters get Hitting (Bat, Power, Contact, Eye) and Tools (Speed, Range, Glove, Arm); pitchers Pitching (Runs, Damage, Traffic, Command) and Stuff (Velo, Reach, Whiff, Grounders). Four to a row; the two groups stack on a phone and sit side by side on a wide sheet. The first group's heading names the pool ("vs 246 hitters", "vs 176 starters") or how far short he is ("56 PA short of the pool").
 - **Short of the pool:** still scored, placed among the pool, but in Faded Cream and never gold.
 - **Not ranked:** a tile that doesn't apply, or a pool he isn't in, keeps its name and shows a dash.
-- **Totals:** a few plain counts below (G, HR, SB; GS, IP, K) in Oswald 600 at 28px (32px wide), a step under the scores, never ranked or gold.
+- **Totals:** a few plain counts below (G, HR, SB; GS, IP, K) in Oswald 600 at 24px (30px wide), a step under the scores, never ranked or gold.
 
 ### Pitch Arsenal
 A pitcher's Arsenal tab answers how he gets hitters out, in four sections on the same scores as the Overview (percentiles against every pitch of the same type, gold from 90).
