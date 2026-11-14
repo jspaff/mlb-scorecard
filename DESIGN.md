@@ -194,6 +194,7 @@ A three-layer palette of wall, board and ink, with two spare signal colors.
 - **Label** (Overpass 800, uppercase, 0.05–0.12em tracking) on three sizes only: **9px** for tight column heads, tags, tile dates and card kickers; **10px** for painted labels, vitals, subheads, award plates and text links; **11px** for positions and in-sheet controls, which drop to 700 since they read as text and controls rather than paint. No label sits between or below these steps.
 - **Body** (Overpass 600, sentence case, 0.01em, 1.45–1.5): **13px** for a play or description standing alone (the half-inning view, the Final summary, the at-bat popup); **12px** inside a table or list (injury notes, the Defense tab's plays); **11px** for the small fragments around them (a date or venue line, a recap headline in a score box). Fragments such as "vs Jonah Tong" are 12px.
 - **Status** (Overpass 600, 12px, 0.01em, sentence case; 13px on a plate on the frame): loading, empty and error messages, everywhere. The label face at a lighter weight, so an empty board reads as part of the board.
+- **Calendar opponent** (Overpass 800, 24px, 17px on a doubleheader day; 16px / 12px on a phone): the schedule's day cells keep the stenciled label face at display size on purpose, like letters painted on a schedule board.
 - **Notation** (Special Elite, 10–18px inside a diamond): play codes K, HR, 6-3, F8. Used in the diamond glyph, and wherever a play is named by its scorebook notation outside one (the Defense tab's double-play ledger, a double play's clip popup).
 
 ### Named Rules

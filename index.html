@@ -1127,6 +1127,10 @@
     .dg-aside .dg-recap::before { inset: -5px -4px; }
     .dh-watch::before { inset: -10px -6px; }
     .hl-alt::before { inset: -8px -4px; }
+    .dy-more, .pp-game-link { position: relative; }
+    .dy-more::before, .pp-game-link::before { content: ''; position: absolute; }
+    .dy-more::before { inset: -10px -6px; }
+    .pp-game-link::before { inset: -6px -4px; }
     .gt-play, .gt-play[class] { height: 26px; }
   }
   .dg-story { margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(84, 94, 77, 0.6); font-family: 'Overpass', sans-serif; font-weight: 600; letter-spacing: 0.01em; font-size: 11px; line-height: 1.35; color: var(--ink-soft); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -14071,12 +14075,12 @@
     closeOverlay(playerOverlay);
   }
 
-  // On a touch screen a table cell holding one nameplate is the plate's
-  // target too: the plate is 19px tall, the cell a finger's height.
+  // On a touch screen a table cell or a player's row holding one nameplate
+  // is the plate's target too: the plate is 19px tall, the row a finger's.
   const coarsePointer = window.matchMedia('(pointer: coarse)');
   document.addEventListener('click', (e) => {
     if (!coarsePointer.matches || e.target.closest('button, a, input, select, label, [role="button"]')) return;
-    const td = e.target.closest('#mlb-root td');
+    const td = e.target.closest('#mlb-root td, #mlb-root .dh-main, #mlb-root .ds-who, #mlb-root .hv-who, #mlb-root .story-pl');
     if (!td) return;
     const plates = td.querySelectorAll('.player-name-btn, button.standings-team-btn');
     if (plates.length === 1) plates[0].click();
