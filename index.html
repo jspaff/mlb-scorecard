@@ -1212,7 +1212,6 @@
   /* Team and inning in scoreboard lettering, sized to the card. */
   .vc-where { display: flex; align-items: center; gap: 0.35em; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: clamp(15px, 8.6cqw, 28px); line-height: 1.1; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink); white-space: nowrap; }
   .vc-where img { width: 1.15em; height: 1.15em; }
-  .vc-where b { font-weight: inherit; opacity: 0.55; }
   .vc-inn { display: inline-flex; align-items: center; gap: 0.14em; }
   .vc-inn .now-tri { width: 0.46em; height: 0.37em; }
   .vc-dia { position: relative; height: 56%; aspect-ratio: 1; }
@@ -6187,7 +6186,7 @@
     </div>`;
     const offLive = m.state === 'Live' && m.liveHalf && !sameHalf(v.half, m.liveHalf);
     const liveBtn = offLive
-      ? `<button type="button" class="hv-live" data-hv-live>Back to live &#183; ${NOW_TRI_SVG(m.liveHalf.top)}${m.liveHalf.top ? 'Top' : 'Bottom'} ${ordinalSuffix(m.liveHalf.inning)}</button>` : '';
+      ? `<button type="button" class="hv-live" data-hv-live>Back to live ${NOW_TRI_SVG(m.liveHalf.top)}${m.liveHalf.top ? 'Top' : 'Bottom'} ${ordinalSuffix(m.liveHalf.inning)}</button>` : '';
     if (isFinalPage) return head + step + renderGameStory(m.highlights);
 
     const team = m[side];
@@ -7583,7 +7582,7 @@
       ? `<img class="vc-photo" src="${headshotUrl(item.personId, 240)}" alt="" onerror="this.style.visibility='hidden'">`
       : '';
     const team = item.teamId ? `<img src="${capLogoUrl(item.teamId)}" alt="">${TEAM_ABBR[item.teamId] || ''}` : '';
-    const where = [team, k ? inningTag(k) : ''].filter(Boolean).join('<b>&#183;</b>');
+    const where = [team, k ? inningTag(k) : ''].filter(Boolean).join(' ');
     const dots = k && k.rbi ? `<span class="pp-rc-rbi">${'<i></i>'.repeat(k.rbi)}</span>` : '';
     const diamond = k
       ? diamondSVG(k.reached, k.reached === 4, k.code, k.isOut, k.outEdge, null, false, k.calledLooking)
@@ -8145,7 +8144,7 @@
           label: k.kind ? HR_IMPACT_LABELS[k.kind] : k.event === 'Home Run' ? 'Home run' : k.isOut ? 'Big out' : 'Big hit',
           why: k.runs > 1 ? `${k.runs} runs` : k.runs ? '1 run' : '',
           teamId: Number(teamId), personId: k.isOut ? k.pitcherId : k.batterId, clipPrefix: 't',
-          meta: `${fmtShortDate(g.date)} &#183; ${g.isHome ? 'vs' : '@'} ${TEAM_ABBR[g.isHome ? g.awayId : g.homeId] || g.opponentFull}`
+          meta: `${fmtShortDate(g.date)} ${g.isHome ? 'vs' : '@'} ${TEAM_ABBR[g.isHome ? g.awayId : g.homeId] || g.opponentFull}`
         };
       }).filter(Boolean);
       teamMomentsCache[key] = items;
@@ -8215,7 +8214,7 @@
     return { mp4: c.mp4, title: c.title, date: g.date, gamePk: g.gamePk, matchup: `${TEAM_ABBR[g.awayId] || ''} @ ${TEAM_ABBR[g.homeId] || ''}` };
   }
   function teamGameMeta(g) {
-    return `${fmtShortDate(g.date)} &#183; ${g.isHome ? 'vs' : '@'} ${TEAM_ABBR[g.isHome ? g.awayId : g.homeId] || g.opponentFull}`;
+    return `${fmtShortDate(g.date)} ${g.isHome ? 'vs' : '@'} ${TEAM_ABBR[g.isHome ? g.awayId : g.homeId] || g.opponentFull}`;
   }
   function teamGameResult(g) {
     const us = g.isHome ? g.homeScore : g.awayScore, them = g.isHome ? g.awayScore : g.homeScore;
@@ -8853,7 +8852,7 @@
       const covers = starter && alsoById.get(starter.id);
       return `<div class="dcf-spot" style="left:${x}%; top:${y}%">
           ${starter ? depthPrint(starter) : '<span class="dcf-print is-empty"></span>'}
-          <span class="dcf-pos">${pos}${covers ? `<span class="dcf-pos-also">${covers.map(c => ` &#183; ${c}`).join('')}</span>` : ''}</span>
+          <span class="dcf-pos">${pos}${covers ? `<span class="dcf-pos-also">${covers.map(c => ` ${c}`).join('')}</span>` : ''}</span>
           ${starter ? depthPlate(starter) : ''}
         </div>`;
     }).join('');
@@ -8861,7 +8860,7 @@
     return `<div class="dcf-layout"><div class="dcf">${DEPTH_FIELD_SVG}${spots}</div><div class="dcf-side">
       <section class="tm-sec">
         <div class="pp-skg-head"><span>Bench</span></div>
-        ${depthCards(bench.map(({ p, spots: s }) => depthCard(p, s.join(' &#183; '))))}
+        ${depthCards(bench.map(({ p, spots: s }) => depthCard(p, s.join(' '))))}
       </section>
       <section class="tm-sec">
         <div class="pp-skg-head"><span>Rotation</span></div>
