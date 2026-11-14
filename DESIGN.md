@@ -169,6 +169,8 @@ A three-layer palette of wall, board and ink, with two spare signal colors.
 
 **The Two Golds Rule.** Gold has two jobs, and they don't mix. As trim it is simply part of the scheme, like the paint on a scoreboard: kickers, the active tab and segment rules, focus rings, the jersey number, the wash on the user's own team. In the data it is earned: a number, dot, lamp or mark turns gold only for excellence or a positive event (top 10% of that season's qualified pool, a quality start, an award, a hit, an RBI, a made 5-star catch). Trim never reaches into the data: a value is never gold just to lead the eye, so a "lead stat" stays cream.
 
+**The Half-Game Rule.** Games back are written in halves everywhere, as the Monster hangs them: "4½", "½", "11", never "4.5" or "11.0"; a wild-card team ahead of the line is "+3". The standings tables mark the leader with a dash; the Team tab's Monster board leaves the leader's plate empty.
+
 **The Blank Zero Rule.** In game logs and tables, a zero count is left blank, never written as 0. The exceptions are pairs read aloud ("0-4" H-AB, an inning pitched), a linescore or big-number summary, where a blank would read as missing, and a zero that is the achievement (a starter's 0 ER or 0 BB on the Highlights tab).
 
 ## Typography

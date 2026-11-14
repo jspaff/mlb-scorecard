@@ -5712,11 +5712,22 @@
     <span class="standings-num">L10</span>
     <span class="standings-num sn-strk">Strk</span>
   </div>`;
+  // Games back in halves, as the Monster hangs them: "4½", "½", "+2" for a
+  // wild-card leader ahead of the line, a dash for the leader.
+  function formatGamesBack(gb) {
+    if (gb == null || gb === '-' || gb === '') return '&#8212;';
+    const str = String(gb);
+    const v = Math.abs(parseFloat(str));
+    if (isNaN(v)) return str;
+    if (!v) return '&#8212;';
+    const whole = Math.floor(v);
+    return `${str.startsWith('+') ? '+' : ''}${whole || ''}${v - whole ? '<i class="tdv-half">&#189;</i>' : ''}`;
+  }
   // gbValue is tr.gamesBack for the division view, tr.wildCardGamesBack for
   // the wild-card view -- the only field that differs between the two.
   function standingsRow(tr, gbValue) {
     const streak = (tr.streak && tr.streak.streakCode) || '&#8212;';
-    const gb = gbValue === '-' || gbValue == null ? '&#8212;' : gbValue;
+    const gb = formatGamesBack(gbValue);
     const teamId = tr.team && tr.team.id;
     const teamName = (tr.team && tr.team.name) || '';
     const lastTen = ((tr.records && tr.records.splitRecords) || []).find(r => r.type === 'lastTen');
