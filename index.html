@@ -1459,6 +1459,10 @@
   }
   table.player-list-table col.plc-player { width: var(--name-col-w); }
   table.player-list-table col.plc-team { width: var(--team-col-w); }
+  /* Stat columns at a fixed compact width, as Team Stats does, so a wide
+     sheet reads them as one block beside the names. */
+  table.pitch-table.player-list-table { width: auto; }
+  table.player-list-table col:not(.plc-player):not(.plc-team) { width: var(--stat-col-min-w); }
   @media (max-width: 520px) {
     table.player-list-table { --name-col-w: 156px; --team-col-w: 118px; --stat-col-min-w: 52px; }
   }

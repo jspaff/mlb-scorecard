@@ -209,7 +209,7 @@ Breakpoints are content-driven:
 - **Around 900px:** recent-game cards line up five across.
 - **Around 1150px:** they stand in a sticky column beside the season log, sized to a five-PA card rather than six, so most cards don't trail empty room.
 
-Tables size their identity columns (date, opponent, result) to content, and give stat columns a fixed compact width on wide sheets, so stats read as one block rather than spreading across the sheet.
+Tables size their identity columns (date, opponent, result) to content, and give stat columns a fixed compact width on wide sheets, so stats read as one block rather than spreading across the sheet. The Players list and Team Stats share this: names and team at their own widths, every stat column the same compact width.
 
 ### Named Rules
 **The Fixed Slot Rule.** Any control whose content changes, such as a filter select, a stat column or a swipe card, gets a fixed slot sized for its longest real value. Changing a filter must never shift the row around it.
