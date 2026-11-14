@@ -188,6 +188,7 @@ A three-layer palette of wall, board and ink, with two spare signal colors.
 - **Data** (Overpass 700, 12px, tabular figures): table cells, game-log rows, splits.
 - **Label** (Overpass 700–800, 9–11px, 0.05–0.12em tracking, uppercase): tabs, column heads, slot labels ("painted" on the board), section titles, award plates.
 - **Body** (Inter 400, 12.5–13px, 1.5): rare running text such as tooltips and footnotes.
+- **Status** (Overpass 600, 12px, 0.01em, sentence case; 13px on a plate on the frame): loading, empty and error messages, everywhere. The label face at a lighter weight, so an empty board reads as part of the board.
 - **Notation** (Special Elite, 10–18px inside a diamond): play codes K, HR, 6-3, F8. Used in the diamond glyph, and wherever a play is named by its scorebook notation outside one (the Defense tab's double-play ledger, a double play's clip popup).
 
 ### Named Rules
@@ -315,7 +316,7 @@ The live game's screen. Wider screens keep the full card; a phone gets its own p
 ### Cards and Sheets
 - **Sheets:** square, Scorebook Board, 2px cream border, 18px padding, sheet shadow.
 - **Recent-game cards:** square, darker board wash, 1px rule. The header row carries date · opponent · result · stat line, and the body is diamonds or a row of number slots. The whole card links to the game.
-- **Status plates:** loading, empty and error messages sit on a small board plate when on the frame, and as plain Faded Cream text inside a sheet.
+- **Status plates:** loading, empty and error messages sit on a small board plate when on the frame, and as plain Faded Cream text inside a sheet. Every one is set in the Status role (Overpass 600, sentence case), never italic and never a monospace.
 
 ### Playoff Bracket
 The Standings tab's Playoffs view, drawn like a printed bracket.

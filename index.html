@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Overpass:wght@600;700;800&family=Special+Elite&family=IBM+Plex+Mono:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Overpass:wght@600;700;800&family=Special+Elite&family=Inter:wght@400;500;600&display=swap');
 
   html, body { margin: 0; padding: 0; background: var(--frame, #54796d); }
 
@@ -312,8 +312,10 @@
      small text to clear 4.5:1 on its own. Already-dark surfaces (a .sheet,
      a modal, the sidebar) don't need the plate, just the softer ink. */
   .mlb-status-msg {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 600;
     font-size: 13px;
+    letter-spacing: 0.01em;
     line-height: 1.5;
     color: var(--ink);
     background: var(--paper);
@@ -327,6 +329,7 @@
   .sheet .mlb-status-msg,
   .pitch-overlay .mlb-status-msg,
   .scorecard-sidebar .mlb-status-msg {
+    font-size: 12px;
     color: var(--ink-soft);
     background: none;
     border: none;
@@ -747,8 +750,10 @@
      size (no overrides needed here). */
   .atbat-watch { display: block; margin-bottom: 4px; }
   .potg-loading {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 600;
     font-size: 12px;
+    letter-spacing: 0.01em;
     color: var(--ink-soft);
   }
   .potg-player-name { max-width: 100%; }
@@ -1071,7 +1076,7 @@
   .dy-meta { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
   .dy-sec { min-width: 0; margin-top: 24px; }
   .dy-head + .dy-sec { margin-top: 0; }
-  .dy-empty { color: var(--ink-soft); font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; padding: 6px 0; }
+  .dy-empty { color: var(--ink-soft); font-family: 'Overpass', sans-serif; font-weight: 600; font-size: 12px; letter-spacing: 0.01em; padding: 6px 0; }
 
   /* Scores: a small box a game -- two across a phone, more on a wide
      sheet. The teams stack with their runs in a fixed column; the state
@@ -1606,10 +1611,11 @@
      bullpenRowsHtml). */
   #rosterOverlay .roster-pos { flex: none; width: 28px; text-align: right; }
   .roster-empty {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 600;
     font-size: 12px;
+    letter-spacing: 0.01em;
     color: var(--ink-soft);
-    font-style: italic;
     padding: 4px 0;
   }
   .roster-badge {
@@ -3210,7 +3216,9 @@
     padding: 10px;
     font-size: 12px;
     color: var(--ink-soft);
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.01em;
   }
   /* ---- Player profile ----
      The photo is a print pinned to the page (cream border, drop shadow);
@@ -3886,7 +3894,7 @@
     color: var(--ink);
     line-height: 1.5;
   }
-  .pitch-empty { font-family: 'Inter', sans-serif; font-size: 12px; color: var(--ink-soft); padding: 6px 0; }
+  .pitch-empty { font-family: 'Overpass', sans-serif; font-weight: 600; font-size: 12px; letter-spacing: 0.01em; color: var(--ink-soft); padding: 6px 0; }
   .pitch-events { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
   .pitch-event-tag {
     font-family: 'Overpass', sans-serif;
