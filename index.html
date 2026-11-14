@@ -3372,7 +3372,7 @@
   .ars-col { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
   .ars-plot { display: block; width: 100%; max-width: 320px; margin: 0 auto; }
   .ars-ring { fill: none; stroke: var(--paper-line); stroke-width: 1; }
-  .ars-ax { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8px; letter-spacing: 0.1em; fill: var(--ink-soft); }
+  .ars-ax { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.1em; fill: var(--ink-soft); }
   .ars-dot { fill: var(--paper); stroke: var(--ink); stroke-width: 1.5; }
   .ars-code { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 11px; fill: var(--ink); }
   .ars-sc, .ars-ts-sc { font-family: 'Oswald', sans-serif; font-weight: 600; line-height: 1.1; color: var(--ink); font-variant-numeric: tabular-nums; }
@@ -4768,7 +4768,7 @@
     return `<svg width="21" height="21" viewBox="0 0 21 21" aria-hidden="true">
       <circle cx="10.5" cy="10.5" r="8.95" fill="none" stroke="${ink}" stroke-width="1.6"/>
       <text x="10.5" y="10.75" text-anchor="middle" dominant-baseline="central"
-        font-family="Overpass, sans-serif" font-weight="800" font-size="12" fill="${ink}">H</text>
+        font-family="'Overpass', sans-serif" font-weight="800" font-size="12" fill="${ink}">H</text>
     </svg>`;
   }
 
@@ -4797,7 +4797,7 @@
       const labelX = 20 + (cx - 20) * outFactor;
       const labelY = 20 + (cy - 20) * outFactor;
       return `<rect x="${labelX - 6.5}" y="${labelY - 4.5}" width="13" height="9" fill="${paper}" stroke="${gold}" stroke-width="0.8"/>`
-        + `<text x="${labelX}" y="${labelY + 2.8}" text-anchor="middle" font-family="'Overpass', sans-serif" font-size="6.5" font-weight="700" fill="${gold}">${text}</text>`;
+        + `<text x="${labelX}" y="${labelY + 2.8}" text-anchor="middle" font-family="'Overpass', sans-serif" font-size="7" font-weight="800" fill="${gold}">${text}</text>`;
     }
     let svg = '<svg viewBox="0 0 40 40" width="52" height="52" aria-hidden="true">';
     let labelSvg = '';
@@ -6751,7 +6751,7 @@
 
     // Room above for the high point's label, below for the low point's
     // (above the month labels), and on the right for the current mark.
-    const padL = 14, padR = 22, padT = 18, padB = 28;
+    const padL = 14, padR = 26, padT = 18, padB = 28;
     const plotW = width - padL - padR;
     const plotH = height - padT - padB;
     const n = played.length;
@@ -6794,9 +6794,9 @@
     svg += `<line x1="${padL}" y1="${zeroY.toFixed(1)}" x2="${width - padR}" y2="${zeroY.toFixed(1)}" stroke="${ink}" stroke-width="1" stroke-dasharray="2,2" opacity="0.5"/>`;
     monthTicks.forEach(t => {
       svg += `<line x1="${t.x.toFixed(1)}" y1="${padT}" x2="${t.x.toFixed(1)}" y2="${height - padB}" stroke="${ink}" stroke-width="0.5" opacity="0.15"/>`;
-      svg += `<text x="${t.x.toFixed(1)}" y="${height - 4}" font-family="Overpass, sans-serif" font-size="7" font-weight="700" letter-spacing="0.04em" fill="${ink}" opacity="0.6">${t.label}</text>`;
+      svg += `<text x="${t.x.toFixed(1)}" y="${height - 4}" font-family="'Overpass', sans-serif" font-size="9" font-weight="800" letter-spacing="0.04em" fill="${ink}" opacity="0.6">${t.label}</text>`;
     });
-    svg += `<text x="${padL - 4}" y="${(zeroY + 3).toFixed(1)}" font-family="Overpass, sans-serif" font-weight="700" font-size="8" fill="${ink}" opacity="0.6" text-anchor="end">0</text>`;
+    svg += `<text x="${padL - 4}" y="${(zeroY + 3).toFixed(1)}" font-family="'Overpass', sans-serif" font-weight="800" font-size="9" fill="${ink}" opacity="0.6" text-anchor="end">0</text>`;
     if (n > 1) {
       svg += `<polyline points="${linePts}" fill="none" stroke="${ink}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>`;
     }
@@ -6808,13 +6808,13 @@
       const anchor = x < padL + 40 ? 'start' : x > width - padR - 40 ? 'end' : 'middle';
       const ty = above ? y - 6 : y + 12;
       return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.2" fill="${PALETTE.paper}" stroke="${ink}" stroke-width="1.2"/>`
-        + `<text x="${x.toFixed(1)}" y="${ty.toFixed(1)}" font-family="Overpass, sans-serif" font-weight="700" font-size="8" fill="${ink}" text-anchor="${anchor}" font-variant-numeric="tabular-nums">${fmtNet(netValues[i])}<tspan fill-opacity="0.6" dx="3">${fmtShortDate(played[i].date)}</tspan></text>`;
+        + `<text x="${x.toFixed(1)}" y="${ty.toFixed(1)}" font-family="'Overpass', sans-serif" font-weight="700" font-size="10" fill="${ink}" text-anchor="${anchor}" font-variant-numeric="tabular-nums">${fmtNet(netValues[i])}<tspan fill-opacity="0.6" dx="3">${fmtShortDate(played[i].date)}</tspan></text>`;
     };
     if (netValues[peakIdx] > 0 && netValues[peakIdx] !== finalNet) svg += markLabel(peakIdx, true);
     if (netValues[troughIdx] < 0 && netValues[troughIdx] !== finalNet) svg += markLabel(troughIdx, false);
     const lastX = xFor(n - 1), lastY = yFor(finalNet);
     svg += `<circle cx="${lastX.toFixed(1)}" cy="${lastY.toFixed(1)}" r="3" fill="${finalNet >= 0 ? gold : brick}" stroke="${ink}" stroke-width="1"/>`;
-    svg += `<text x="${(lastX + 5).toFixed(1)}" y="${(lastY + 3).toFixed(1)}" font-family="Overpass, sans-serif" font-weight="700" font-size="8.5" fill="${ink}" font-variant-numeric="tabular-nums">${fmtNet(finalNet)}</text>`;
+    svg += `<text x="${(lastX + 5).toFixed(1)}" y="${(lastY + 3).toFixed(1)}" font-family="'Overpass', sans-serif" font-weight="700" font-size="10" fill="${ink}" font-variant-numeric="tabular-nums">${fmtNet(finalNet)}</text>`;
     svg += '</svg>';
     return svg;
   }
@@ -10557,7 +10557,7 @@
     let svg = `<line x1="${outerX}" y1="${zoneTop}" x2="${outerX}" y2="${zoneBot}" stroke="${PALETTE.ink}" stroke-width="1.3" opacity="0.7"/>`;
     svg += `<line x1="${outerX}" y1="${zoneTop}" x2="${outerX + tickDir * tickLen}" y2="${zoneTop}" stroke="${PALETTE.ink}" stroke-width="1.3" opacity="0.7"/>`;
     svg += `<line x1="${outerX}" y1="${zoneBot}" x2="${outerX + tickDir * tickLen}" y2="${zoneBot}" stroke="${PALETTE.ink}" stroke-width="1.3" opacity="0.7"/>`;
-    svg += `<text x="${midX}" y="${midY}" text-anchor="middle" dominant-baseline="middle" font-size="10.5" font-weight="700" letter-spacing="0.06em" font-family="Overpass, sans-serif" fill="${PALETTE.ink}" opacity="0.85" transform="rotate(-90 ${midX} ${midY})">${label}</text>`;
+    svg += `<text x="${midX}" y="${midY}" text-anchor="middle" dominant-baseline="middle" font-size="10.5" font-weight="700" letter-spacing="0.06em" font-family="'Overpass', sans-serif" fill="${PALETTE.ink}" opacity="0.85" transform="rotate(-90 ${midX} ${midY})">${label}</text>`;
     return svg;
   }
 
@@ -10574,7 +10574,7 @@
     const dotY = zoneTop - gapAboveZone - r;
     const label = pitchHand + 'HP';
     return `<circle cx="${dotX}" cy="${dotY}" r="${r}" fill="rgba(243,236,219,0.04)" stroke="${PALETTE.ink}" stroke-width="1.3" opacity="0.75"/>` +
-      `<text x="${dotX}" y="${dotY + 3}" text-anchor="middle" font-size="7.5" font-weight="700" letter-spacing="-0.02em" font-family="Overpass, sans-serif" fill="${PALETTE.ink}" opacity="0.85">${label}</text>`;
+      `<text x="${dotX}" y="${dotY + 3}" text-anchor="middle" font-size="8.5" font-weight="800" letter-spacing="0" font-family="'Overpass', sans-serif" fill="${PALETTE.ink}" opacity="0.85">${label}</text>`;
   }
 
   // ringed: only the pitch that actually ended the at-bat gets the persistent
@@ -10596,10 +10596,10 @@
     }
     if (spec.hollow) {
       svg += `<circle cx="${px}" cy="${py}" r="7.5" fill="${PALETTE.paper}" stroke="${spec.hue}" stroke-width="1.8"/>`;
-      svg += `<text x="${px}" y="${py + 3}" text-anchor="middle" font-size="8.5" font-weight="700" font-family="Overpass, sans-serif" fill="${spec.hue}">${p.num || ''}</text>`;
+      svg += `<text x="${px}" y="${py + 3}" text-anchor="middle" font-size="8.5" font-weight="700" font-family="'Overpass', sans-serif" fill="${spec.hue}">${p.num || ''}</text>`;
     } else {
       svg += `<circle cx="${px}" cy="${py}" r="7.5" fill="${spec.hue}" stroke="${PALETTE.paper}" stroke-width="1.2"/>`;
-      svg += `<text x="${px}" y="${py + 3}" text-anchor="middle" font-size="8.5" font-weight="700" font-family="Overpass, sans-serif" fill="${PALETTE.paper}">${p.num || ''}</text>`;
+      svg += `<text x="${px}" y="${py + 3}" text-anchor="middle" font-size="8.5" font-weight="700" font-family="'Overpass', sans-serif" fill="${PALETTE.paper}">${p.num || ''}</text>`;
     }
     svg += '</g>';
     return svg;
@@ -12780,7 +12780,7 @@
     const base = T + PH, H = base + AX;
     const maxIP = Math.max(9, Math.ceil(Math.max(...starts.map(s => s.outs)) / 3));
     const y = v => T + (1 - v / maxIP) * PH;
-    const text = (x, yy, t, anchor, fill, weight) => `<text x="${x}" y="${yy}" text-anchor="${anchor}" fill="${fill}" font-size="10" font-family="Overpass" font-weight="${weight}">${t}</text>`;
+    const text = (x, yy, t, anchor, fill, weight) => `<text x="${x}" y="${yy}" text-anchor="${anchor}" fill="${fill}" font-size="10" font-family="'Overpass', sans-serif" font-weight="${weight}">${t}</text>`;
     const ticks = [0, 3, 6, 9].filter(v => v <= maxIP);
     const grid = ticks.map(v => `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="${PALETTE.paperLine}" stroke-width="1"/>${text(L - 6, y(v) + 3.5, v, 'end', PALETTE.inkSoft, 700)}`).join('');
     const bars = starts.map((s, i) => {
@@ -12801,7 +12801,7 @@
     }).join('');
     const six = `<line x1="${L}" x2="${W - R}" y1="${y(6)}" y2="${y(6)}" stroke="${PALETTE.ink}" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.8"/>`;
     const ipY = T + PH / 2;
-    const ipTitle = `<text x="10" y="${ipY}" transform="rotate(-90 10 ${ipY})" text-anchor="middle" fill="${PALETTE.ink}" font-size="10" font-family="Overpass" font-weight="800" letter-spacing="1.2">IP</text>`;
+    const ipTitle = `<text x="10" y="${ipY}" transform="rotate(-90 10 ${ipY})" text-anchor="middle" fill="${PALETTE.ink}" font-size="10" font-family="'Overpass', sans-serif" font-weight="800" letter-spacing="1.2">IP</text>`;
     const qsCount = starts.filter(s => s.qs).length;
     return `<div class="pp-chart${narrow ? ' is-scroll' : ''}">
       <svg viewBox="0 0 ${W} ${H}"${narrow ? ` style="width:${W}px"` : ''} role="img" aria-label="Innings pitched in each of ${starts.length} starts; ${qsCount} quality starts">
