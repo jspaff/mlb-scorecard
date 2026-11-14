@@ -392,7 +392,7 @@
       "Monster-green frame, dark board sheets, cream ink. Three layers, always in that order.",
       "Square corners everywhere except the 2px recessed slot and round data dots.",
       "Condensed Oswald for names and numbers; small-caps Overpass for every label.",
-      "Gold does two jobs: trim in the scheme (section titles, active and focus rules), and earned in the data (elite rank, quality start, award).",
+      "Gold does two jobs: trim in the scheme (kickers, active and focus rules), and earned in the data (elite rank, quality start, award).",
       "Zeros left blank in tables, so the cells that carry ink are the ones that happened."
     ],
     "rules": [
@@ -403,7 +403,7 @@
       },
       {
         "name": "The Two Golds Rule",
-        "body": "Gold has two jobs, and they don't mix. As trim it is simply part of the scheme, like the paint on a scoreboard: section titles, the active tab and segment rules, focus rings, the jersey number, the wash on the user's own team. In the data it is earned: a number, dot, lamp or mark turns gold only for excellence or a positive event (top 10% of that season's qualified pool, a quality start, an award, a hit, an RBI, a made 5-star catch). Trim never reaches into the data: a value is never gold just to lead the eye, so a \"lead stat\" stays cream.",
+        "body": "Gold has two jobs, and they don't mix. As trim it is simply part of the scheme, like the paint on a scoreboard: kickers, the active tab and segment rules, focus rings, the jersey number, the wash on the user's own team. In the data it is earned: a number, dot, lamp or mark turns gold only for excellence or a positive event (top 10% of that season's qualified pool, a quality start, an award, a hit, an RBI, a made 5-star catch). Trim never reaches into the data: a value is never gold just to lead the eye, so a \"lead stat\" stays cream.",
         "section": "colors"
       },
       {
@@ -441,7 +441,7 @@
       "**Do** keep the Monster Green frame (#54796d) exactly. Fix contrast by changing what sits on it.",
       "**Do** put numbers in recessed slots and clickable names on pegged nameplates.",
       "**Do** leave zero counts blank in logs and tables.",
-      "**Do** use Pennant Gold as trim (section titles, active and focus rules) and, within the data, only for top-10% stats, made 5-star catches, quality starts, awards, RBIs and hits.",
+      "**Do** use Pennant Gold as trim (kickers, active and focus rules) and, within the data, only for top-10% stats, made 5-star catches, quality starts, awards, RBIs and hits.",
       "**Do** use tabular figures for every column of numbers.",
       "**Do** size changeable controls to fixed slots so filters never shift the layout.",
       "**Do** draw spray charts in the API's own coordinate space (home 125.42, 198.27; 2.495 ft per unit) so fences and batted balls agree.",

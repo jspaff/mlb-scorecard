@@ -140,7 +140,7 @@ Components split by role. Data and identity get physical scoreboard parts: reces
 - Monster-green frame, dark board sheets, cream ink. Three layers, always in that order.
 - Square corners everywhere except the 2px recessed slot and round data dots.
 - Condensed Oswald for names and numbers; small-caps Overpass for every label.
-- Gold does two jobs: trim in the scheme (section titles, active and focus rules), and earned in the data (elite rank, quality start, award).
+- Gold does two jobs: trim in the scheme (kickers, active and focus rules), and earned in the data (elite rank, quality start, award).
 - Zeros left blank in tables, so the cells that carry ink are the ones that happened.
 
 ## Colors
@@ -151,7 +151,7 @@ A three-layer palette of wall, board and ink, with two spare signal colors.
 - **Monster Green**: the frame. It's the page background behind every sheet and the PWA theme color, matching Fenway's Green Monster. It is binding and never changes. Contrast is solved by what sits on it.
 
 ### Secondary
-- **Pennant Gold**: the scheme's accent and its one positive signal. As trim it paints section titles, the active tab and segment rules, the rule under the pitcher on the mound, focus rings and the jersey number. In the data it marks award plates, a skill score of 90 or more (or a Defense-tab stat in the top 10% of qualified players), a made 5-star catch, quality starts, a walk-off or grand slam, RBI dots and hits on the spray chart.
+- **Pennant Gold**: the scheme's accent and its one positive signal. As trim it paints kickers, the active tab and segment rules, the rule under the pitcher on the mound, focus rings and the jersey number. In the data it marks award plates, a skill score of 90 or more (or a Defense-tab stat in the top 10% of qualified players), a made 5-star catch, quality starts, a walk-off or grand slam, RBI dots and hits on the spray chart.
 
 ### Tertiary
 - **Brick Red**: the out and the run against. It fills strikeout diamonds, out ticks and a runner-out tag (lettered in **Brick Ink**, a near-black, since the board's own ink is only 2.9:1 on it). Its text-only tint, **Brick Red Text**, is lighter for small type on the board, where the fill color is too dark to read (runs allowed, strikes).
@@ -167,7 +167,7 @@ A three-layer palette of wall, board and ink, with two spare signal colors.
 ### Named Rules
 **The Monster Stays Rule.** The frame is Monster Green and never darkens or shifts. Text on the frame is full Scorekeeper Cream. Small or secondary text belongs on a board plate, not directly on the wall.
 
-**The Two Golds Rule.** Gold has two jobs, and they don't mix. As trim it is simply part of the scheme, like the paint on a scoreboard: section titles, the active tab and segment rules, focus rings, the jersey number, the wash on the user's own team. In the data it is earned: a number, dot, lamp or mark turns gold only for excellence or a positive event (top 10% of that season's qualified pool, a quality start, an award, a hit, an RBI, a made 5-star catch). Trim never reaches into the data: a value is never gold just to lead the eye, so a "lead stat" stays cream.
+**The Two Golds Rule.** Gold has two jobs, and they don't mix. As trim it is simply part of the scheme, like the paint on a scoreboard: kickers, the active tab and segment rules, focus rings, the jersey number, the wash on the user's own team. In the data it is earned: a number, dot, lamp or mark turns gold only for excellence or a positive event (top 10% of that season's qualified pool, a quality start, an award, a hit, an RBI, a made 5-star catch). Trim never reaches into the data: a value is never gold just to lead the eye, so a "lead stat" stays cream.
 
 **The Blank Zero Rule.** In game logs and tables, a zero count is left blank, never written as 0. The exceptions are pairs read aloud ("0-4" H-AB, an inning pitched), a linescore or big-number summary, where a blank would read as missing, and a zero that is the achievement (a starter's 0 ER or 0 BB on the Highlights tab).
 
@@ -186,7 +186,8 @@ A three-layer palette of wall, board and ink, with two spare signal colors.
 - **Headline** (Oswald 500, 20px / 16px narrow): team and position line under a name. The position is a step softer than the team.
 - **Title** (Oswald 500, 15px): vitals values, select values, card summaries.
 - **Data** (Overpass 700, 12px, tabular figures): table cells, game-log rows, splits.
-- **Label** (Overpass 700–800, 9–11px, 0.05–0.12em tracking, uppercase): tabs, column heads, slot labels ("painted" on the board), section titles, award plates.
+- **Section title** (Overpass 800, 11.5px, 0.12em, uppercase, Scorekeeper Cream, under a 2px rule of cream at 35%): every section heading on a sheet or in a popup, one step above the subheads beneath it. Never gold: the page's gold is left to kickers, active rules and the data that earns it.
+- **Label** (Overpass 700–800, 9–11px, 0.05–0.12em tracking, uppercase): tabs, column heads, slot labels ("painted" on the board), subheads, award plates.
 - **Body** (Inter 400, 12.5–13px, 1.5): rare running text such as tooltips and footnotes.
 - **Status** (Overpass 600, 12px, 0.01em, sentence case; 13px on a plate on the frame): loading, empty and error messages, everywhere. The label face at a lighter weight, so an empty board reads as part of the board.
 - **Notation** (Special Elite, 10–18px inside a diamond): play codes K, HR, 6-3, F8. Used in the diamond glyph, and wherever a play is named by its scorebook notation outside one (the Defense tab's double-play ledger, a double play's clip popup).
@@ -369,7 +370,7 @@ Single-series and quiet: Board Rule gridlines, Faded Cream axis labels, thin mar
 - **Do** keep the Monster Green frame (#54796d) exactly. Fix contrast by changing what sits on it.
 - **Do** put numbers in recessed slots and clickable names on pegged nameplates.
 - **Do** leave zero counts blank in logs and tables.
-- **Do** use Pennant Gold as trim (section titles, active and focus rules) and, within the data, only for top-10% stats, made 5-star catches, quality starts, awards, RBIs and hits.
+- **Do** use Pennant Gold as trim (kickers, active and focus rules) and, within the data, only for top-10% stats, made 5-star catches, quality starts, awards, RBIs and hits.
 - **Do** use tabular figures for every column of numbers.
 - **Do** size changeable controls to fixed slots so filters never shift the layout.
 - **Do** draw spray charts in the API's own coordinate space (home 125.42, 198.27; 2.495 ft per unit) so fences and batted balls agree, with a generic fence drawn as one circular arc from pole to pole (330 down the lines, 400 to center).

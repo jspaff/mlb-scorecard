@@ -44,6 +44,9 @@
     --frame: #54796d;
     --monster-green: #3fae56;
     --monster-green-dim: #33422e;
+    /* The rule over a section title: cream at a third, so titles stay ink
+       and gold is left to the data that earns it. */
+    --title-rule: rgba(243, 236, 219, 0.35);
   }
 
   #mlb-root * { box-sizing: border-box; }
@@ -1401,14 +1404,14 @@
   .roster-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
   .roster-section-title {
     font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 10px;
-    letter-spacing: 0.06em;
+    font-weight: 800;
+    font-size: 11.5px;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--gold);
+    color: var(--ink);
     margin: 16px 0 6px;
-    padding-bottom: 3px;
-    border-bottom: 1px solid var(--paper-line);
+    padding-top: 5px;
+    border-top: 2px solid var(--title-rule);
   }
   /* Team names (nicknames, not full city + name -- see teamNickname) never
      wrap, so a "Multiple" traded year or a longer nickname can't blow out
@@ -1908,9 +1911,9 @@
   .trk-head { align-items: center; }
   .trk-head em { font-style: normal; margin-left: 4px; font-weight: 700; letter-spacing: 0.02em; text-transform: none; color: var(--ink-soft); }
   .trk-scope .view-toggle-btn { padding: 4px 9px; font-size: 9.5px; }
-  /* The toggle hangs over the rule rather than heightening the head, so
+  /* The toggle hangs below the label rather than heightening the head, so
      the cells start level with the tiles beside them. */
-  .trk-scope { margin: -7px 0 -4px; }
+  .trk-scope { margin: -2px 0 -7px; }
   .trk { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
   .trk-cell { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px 7px; background: rgba(0, 0, 0, 0.16); border: 1px solid var(--paper-line); }
   .trk-k { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); opacity: 0.85; }
@@ -2236,14 +2239,14 @@
   .schedule-month-block:last-child { margin-bottom: 0; }
   .schedule-month-title {
     font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 10px;
-    letter-spacing: 0.06em;
+    font-weight: 800;
+    font-size: 11.5px;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--gold);
+    color: var(--ink);
     margin: 16px 0 6px;
-    padding-bottom: 3px;
-    border-bottom: 1px solid var(--paper-line);
+    padding-top: 5px;
+    border-top: 2px solid var(--title-rule);
   }
   .schedule-month-block:first-child .schedule-month-title { margin-top: 0; }
   .calendar-weekdays {
@@ -2389,11 +2392,13 @@
   .pbox-title {
     font-family: 'Overpass', sans-serif;
     font-weight: 800;
-    font-size: 11px;
-    letter-spacing: 0.1em;
+    font-size: 11.5px;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--gold);
+    color: var(--ink);
     margin-bottom: 10px;
+    padding-top: 5px;
+    border-top: 2px solid var(--title-rule);
   }
   .pbox-body { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 14px 40px; }
   .pbox-starter { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 10px 26px; }
@@ -2543,12 +2548,14 @@
   .story-title {
     display: flex; justify-content: space-between; gap: 10px;
     margin-bottom: 10px;
+    padding-top: 5px;
+    border-top: 2px solid var(--title-rule);
     font-family: 'Overpass', sans-serif;
     font-weight: 800;
-    font-size: 11px;
-    letter-spacing: 0.1em;
+    font-size: 11.5px;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--gold);
+    color: var(--ink);
   }
   .story-title span { color: var(--ink-soft); }
   .story-play { display: grid; grid-template-columns: 34px 1fr; gap: 12px; align-items: start; }
@@ -3330,14 +3337,14 @@
     align-items: baseline;
     gap: 10px;
     margin-bottom: 10px;
-    padding-bottom: 4px;
-    border-bottom: 1px solid var(--paper-line);
+    padding-top: 5px;
+    border-top: 2px solid var(--title-rule);
     font-family: 'Overpass', sans-serif;
     font-weight: 800;
-    font-size: 10px;
-    letter-spacing: 0.1em;
+    font-size: 11.5px;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--gold);
+    color: var(--ink);
   }
   .pp-skg-head em { font-style: normal; font-weight: 700; font-size: 10.5px; letter-spacing: 0.02em; text-transform: none; color: var(--ink-soft); text-align: right; }
   .pp-skg-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
@@ -3778,7 +3785,7 @@
   .pp-splits-key { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; letter-spacing: 0.04em; text-transform: none; font-size: 11px; color: var(--ink-soft); }
   .pp-splits-key i { width: 0; height: 12px; border-left: 1.5px dashed var(--ink); }
   .pp-sgroup { margin-top: 12px; }
-  .pp-sgroup-name { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); padding-bottom: 4px; border-bottom: 1px solid var(--paper-line); margin-bottom: 2px; }
+  .pp-sgroup-name { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 11.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink); padding-top: 5px; border-top: 2px solid var(--title-rule); margin-bottom: 6px; }
   .pp-saxis { padding-top: 2px; }
   .pp-saxis-ends { display: flex; justify-content: space-between; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10px; color: var(--ink-soft); }
   .pp-srow { display: grid; grid-template-columns: 68px minmax(0, 1fr) 44px 52px; align-items: center; gap: 10px; padding: 5px 0; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 12px; font-variant-numeric: tabular-nums; }
