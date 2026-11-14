@@ -2270,7 +2270,7 @@
   .calendar-day {
     position: relative;
     min-height: 68px;
-    border-radius: 3px;
+    border-radius: 0;
     padding: 3px 2px 4px;
     display: flex;
     flex-direction: column;
@@ -2283,6 +2283,8 @@
   .calendar-day.is-game { cursor: pointer; }
   .calendar-day.is-home { background: var(--gold); }
   .calendar-day.is-away { background: var(--paper-line); }
+  .calendar-day.is-done { opacity: 0.45; }
+  .calendar-day.is-done:hover, .calendar-day.is-done:focus-visible { opacity: 1; }
   .calendar-day.is-game:hover,
   .calendar-day.is-game:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
   .cal-daynum {
@@ -6844,6 +6846,9 @@
   function renderMonthGrid(startDate, endDate, gamesByDate, seasonStart, seasonEnd) {
     const leadBlanks = startDate.getUTCDay();
     const todayS = todayStr();
+    // Played days step back only while games are still to come; a finished
+    // season, all played, keeps its full color.
+    const seasonOpen = Object.values(gamesByDate).some(gs => gs.some(g => g.state !== 'Final'));
 
     let cells = '';
     for (let i = 0; i < leadBlanks; i++) cells += '<div class="calendar-day is-empty"></div>';
@@ -6859,8 +6864,9 @@
       } else if (games && games.length) {
         const homeAway = games[0].isHome ? 'is-home' : 'is-away';
         const isDH = games.length > 1 ? ' is-dh' : '';
+        const done = seasonOpen && games.every(g => g.state === 'Final') ? ' is-done' : '';
         const lines = games.map(g => `<div class="cal-game-opp">${g.opponent}</div>`).join('');
-        cells += `<div class="calendar-day is-game ${homeAway}${today}${isDH}" data-date="${dateStr}" tabindex="0" role="button">
+        cells += `<div class="calendar-day is-game ${homeAway}${today}${isDH}${done}" data-date="${dateStr}" tabindex="0" role="button">
           <div class="cal-daynum">${day}</div>
           ${lines}
         </div>`;
