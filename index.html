@@ -9708,7 +9708,7 @@
         el.appendChild(line);
       }
       line.textContent = lastFeedOkAt
-        ? `Last update ${lastFeedOkAt.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })} | Reconnecting`
+        ? `${lastFeedOkAt.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })} | Reconnecting`
         : 'Reconnecting';
     });
   }
@@ -13422,7 +13422,7 @@
       const open = profileOpenRow === key;
       const row = `<button type="button" class="pp-cb-row pp-dp-row" data-open-row="${key}" aria-expanded="${open}">
         <span class="pp-dp-code">${plays[0].code}</span>
-        <span class="pp-dp-role">${plays[0].role}${plays.some(p => p.triple) ? ' &#183; TP' : ''}</span>
+        <span class="pp-dp-role">${plays[0].role}</span>
         <span class="pp-cb-count">${plays.length}</span>
         ${CHEVRON}
       </button>`;
