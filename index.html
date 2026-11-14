@@ -337,6 +337,10 @@
     padding: 30px 10px;
   }
 
+  /* Form controls take the page's type unless a rule sets their own; the
+     browser's default (Arial 13.33px) is no face of this design. */
+  :where(#mlb-root) :where(button, input, select, textarea) { font: inherit; }
+
   .sheet {
     background: var(--paper);
     border: 2px solid var(--ink);
