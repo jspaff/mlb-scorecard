@@ -3435,7 +3435,6 @@
   .ars-fc { display: grid; grid-template-columns: minmax(0, 1fr) 44px 14px 52px; align-items: center; gap: 6px; padding: 6px 0; border-bottom: 1px dashed var(--paper-line); }
   .ars-fc-pre { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 16px; color: var(--ink-soft); text-align: right; font-variant-numeric: tabular-nums; }
   .ars-fc-v.is-up { box-shadow: inset 0 -2px 0 var(--gold); }
-  .ars-foot { margin-top: 6px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); }
   .pp-painted {
     display: block;
     text-align: center;
@@ -3793,9 +3792,7 @@
   /* white-space: normal -- the month's totals line may wrap on a phone;
      left on the table's nowrap, it set the whole log's minimum width. */
   .pp-log tr.pp-month td { padding: 14px 6px 4px; border-bottom: 1px solid var(--paper-line); white-space: normal; }
-  .pp-month-total { display: inline-block; }
   .pp-month-name { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); }
-  .pp-month-total { margin-left: 12px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
 
 
   /* Splits tab: OPS bars on one scale, with a dashed tick at the season
@@ -6134,7 +6131,7 @@
     const s = starter.stats;
     const stat = (label, val, cls) => `<div class="pbox-stat${cls ? ' ' + cls : ''}"><div class="pbox-lbl">${label}</div><div class="pbox-val">${val}</div></div>`;
     return `<div class="pbox">
-      <div class="pbox-title">Pitching &#183; ${teamNick}</div>
+      <div class="pbox-title">${teamNick} Pitching</div>
       <div class="pbox-body">
         <div class="pbox-starter">
           <div class="pbox-who">
@@ -6290,7 +6287,7 @@
     if (!weather || weather.temp == null) return '';
     const parts = [`${weather.temp}&#176;F`];
     if (weather.condition) parts.push(weather.condition);
-    return ` <span class="gs-weather">&#183; ${parts.join(' &#183; ')}</span>`;
+    return `<span class="gs-weather">&emsp;${parts.join('&emsp;')}</span>`;
   }
 
   // Dot + label for the top-row status tag next to the venue name. Keeps
@@ -7386,7 +7383,7 @@
     storeTeamPlayer(hr.batterId, hr.batterName, '', hr.battingTeamId, season);
     const tag = hr.impact === 'walkoff' ? 'Walk-off' : hr.isGrandSlam ? 'Grand slam' : hr.impact ? HR_IMPACT_LABELS[hr.impact] : '';
     const gold = hr.impact === 'walkoff' || hr.isGrandSlam;
-    const watch = hr.videoUrl ? `<a class="dh-watch" ${clipWatchAttrs(hr.videoUrl, `Home Run &#183; ${hr.batterName}`)}>Watch <span class="lk-tri">&#9654;</span></a>` : '';
+    const watch = hr.videoUrl ? `<a class="dh-watch" ${clipWatchAttrs(hr.videoUrl, `Home Run | ${hr.batterName}`)}>Watch <span class="lk-tri">&#9654;</span></a>` : '';
     return `
       <div class="dh${gold ? ' is-gold' : ''}${i >= DAY_HR_SHOWN ? ' is-extra' : ''}">
         <div class="dh-main">
@@ -12527,8 +12524,7 @@
     if (!ts.n) return `${toggle}<div class="pitch-empty">No two-strike pitches ${side === 'L' ? 'to lefties' : 'to righties'}.</div>`;
     const rows = ts.pays.map(p => `<div class="ars-ts">${p.setup ? pitchChip(p.setup) : '<span></span>'}<span class="ars-arrow">&#8594;</span><span class="ars-ts-n">${pitchName(p.code)}</span><span class="ars-ts-v">${Math.round(p.share)}%</span>${arsenalScore(p.score, 'ars-ts-sc')}</div>`).join('');
     const full = ts.full ? `<div class="ars-fc-h"><span>Full count</span><span class="ars-fc-cols"><span>Before</span><span></span><span>Full</span></span></div>
-      ${ts.full.rows.map(r => `<div class="ars-fc"><span class="ars-ts-n">${pitchName(r.code)}</span><span class="ars-fc-pre">${Math.round(r.before)}%</span><span class="ars-arrow">&#8594;</span><span class="ars-fc-v${r.up ? ' is-up' : ''}">${Math.round(r.full)}%</span></div>`).join('')}
-      <div class="ars-foot">${ts.full.n} full-count pitches</div>` : '';
+      ${ts.full.rows.map(r => `<div class="ars-fc"><span class="ars-ts-n">${pitchName(r.code)}</span><span class="ars-fc-pre">${Math.round(r.before)}%</span><span class="ars-arrow">&#8594;</span><span class="ars-fc-v${r.up ? ' is-up' : ''}">${Math.round(r.full)}%</span></div>`).join('')}` : '';
     return `${toggle}<div class="ars-ts ars-ts-h"><span>Setup</span><span></span><span>Pitch</span><span>Thrown</span><span>Put away</span></div>${rows}${full}`;
   }
 
@@ -12539,18 +12535,18 @@
     if (a.league === null) return apiErrorMsg('pitch data');
     if (!a.movement.length) return `<div class="pitch-empty">No ${lastProfileSeason} pitch data.</div>`;
     const head = (title, note) => `<div class="pp-skg-head"><span>${title}</span>${note ? `<em>${note}</em>` : ''}</div>`;
-    const velo = a.fastballs.length ? `<section class="pp-skg ars-velo">${head('Fastball velo', 'vs pitches of the same type')}
+    const velo = a.fastballs.length ? `<section class="pp-skg ars-velo">${head('Fastball velo')}
       <div class="pp-skg-row" style="grid-template-columns:repeat(${Math.max(3, a.fastballs.length)},minmax(0,1fr))">${a.fastballs.map(f =>
         `<div class="pp-sk"><span class="pp-sk-name">${pitchName(f.code)}</span>${f.pct == null ? '<span class="pp-sk-score is-none">&#8212;</span>' : `<span class="pp-sk-score${f.pct >= SKILL_GOLD_PERCENTILE ? ' is-top' : ''}">${f.pct}</span>`}<span class="pp-sk-stat">${f.mph.toFixed(1)} mph</span></div>`).join('')}</div></section>` : '';
-    const movement = `<section class="pp-skg">${head('Movement', 'inches of break')}${renderArsenalMovement(a.movement, a.hand)}</section>`;
+    const movement = `<section class="pp-skg">${head('Movement')}${renderArsenalMovement(a.movement, a.hand)}</section>`;
     let right;
     if (a.log === undefined) right = '<div class="mlb-status-msg">Loading his pitches&#8230;</div>';
     else if (a.log === null) right = apiErrorMsg('pitch-by-pitch data');
     else {
       const side = profileArsenalSide || (a.faced.L > a.faced.R ? 'L' : 'R');
       const ts = a.twoStrikes[side];
-      right = `<section class="pp-skg">${head('Pitches', 'score: run value vs same type')}${renderArsenalMix(a.pitches)}</section>
-        <section class="pp-skg">${head('With two strikes', ts.n ? `${ts.n} pitches &#183; ${ts.k} K` : '')}${renderArsenalTwoStrikes(ts, side)}</section>`;
+      right = `<section class="pp-skg">${head('Pitches')}${renderArsenalMix(a.pitches)}</section>
+        <section class="pp-skg">${head('With two strikes')}${renderArsenalTwoStrikes(ts, side)}</section>`;
     }
     return `<div class="ars"><div class="ars-col">${velo}${movement}</div><div class="ars-col">${right}</div></div>`;
   }
@@ -12676,7 +12672,7 @@
   function renderRecentCard(entry, pitcher) {
     const g = entry.log, s = g.stat || {};
     const count = (n, label) => (n ? `${n > 1 ? n + ' ' : ''}${label}` : '');
-    const line = pitcher ? '' : [`${s.hits ?? 0}-${s.atBats ?? 0}`, count(s.homeRuns, 'HR'), s.rbi ? `${s.rbi} RBI` : '', count(s.baseOnBalls, 'BB')].filter(Boolean).join(' &#183; ');
+    const line = pitcher ? '' : [`${s.hits ?? 0}-${s.atBats ?? 0}`, count(s.homeRuns, 'HR'), s.rbi ? `${s.rbi} RBI` : '', count(s.baseOnBalls, 'BB')].filter(Boolean).join(', ');
     const head = `<div class="pp-rc-head"><span class="pp-rc-date">${formatShortDate(g.date)}</span><span class="pp-rc-opp">${g.isHome ? 'vs' : '@'} ${teamNickname(g.opponent)}</span>${teamResult(g, lastProfileScores[g.game && g.game.gamePk])}${line ? `<span class="pp-rc-line">${line}</span>` : ''}</div>`;
     let body;
     if (!pitcher) {
@@ -12724,7 +12720,7 @@
     const opp = g => `${g.isHome ? 'vs' : '@'} <span class="pp-opp-long">${teamNickname(g.opponent)}</span><span class="pp-opp-short">${teamAbbr(g.opponent)}</span>`;
     const wl = g => teamResult(g, lastProfileScores[g.game && g.game.gamePk]);
     const groups = gameLogMonths(gameLog);
-    let head, row, total;
+    let head, row;
     if (!pitcher) {
       // 1B/2B/3B only on a wide sheet (see .pp-xbh) -- room the phone
       // doesn't have, and the hit breakdown the wide log otherwise lacked.
@@ -12733,14 +12729,12 @@
       const sb = st => ((st.stolenBases || 0) + (st.caughtStealing || 0) ? formatStolenBases(st.stolenBases || 0, st.caughtStealing) : '');
       head = `<th>Date</th><th>Opp</th><th>Result</th><th>H-AB</th>${xbh('1B')}${xbh('2B')}${xbh('3B')}<th>HR</th><th>RBI</th><th>BB</th><th>K</th>${xbh('SB')}`;
       row = g => { const s = g.stat || {}; return `<tr><td>${dateCell(g)}</td><td class="pp-soft">${opp(g)}</td><td>${wl(g)}</td><td>${s.hits ?? 0}-${s.atBats ?? 0}</td>${xbh(null, (s.hits || 0) - (s.doubles || 0) - (s.triples || 0) - (s.homeRuns || 0))}${xbh(null, s.doubles)}${xbh(null, s.triples)}<td>${blank(s.homeRuns)}</td><td>${blank(s.rbi)}</td><td>${blank(s.baseOnBalls)}</td><td>${blank(s.strikeOuts)}</td><td class="pp-xbh">${sb(s)}</td></tr>`; };
-      total = grp => { const t = sumStatLines(grp.games.map(g => g.stat || {})); const r = slashFromCounts(t); return `${grp.games.length} G &#183; ${r.avg} / ${r.obp} / ${r.slg}${t.homeRuns ? ` &#183; ${t.homeRuns} HR` : ''}`; };
     } else {
       head = '<th>Date</th><th>Opp</th><th>Result</th><th>IP</th><th>H</th><th>ER</th><th>BB</th><th>K</th><th>Pit</th>';
       row = g => { const s = g.stat || {}; return `<tr><td>${dateCell(g)}</td><td class="pp-soft">${opp(g)}</td><td>${wl(g)}</td><td>${s.inningsPitched ?? '0.0'}</td><td>${blank(s.hits)}</td><td>${blank(s.earnedRuns)}</td><td>${blank(s.baseOnBalls)}</td><td>${blank(s.strikeOuts)}</td><td class="pp-soft">${s.numberOfPitches ?? ''}</td></tr>`; };
-      total = grp => { const t = sumStatLines(grp.games.map(g => g.stat || {})); return `${grp.games.length} G &#183; ${t.inningsPitched} IP &#183; ${formatERA(t.earnedRuns, ipToOuts(t.inningsPitched))} ERA &#183; ${t.strikeOuts} K`; };
     }
     const cols = pitcher ? 9 : 12;
-    const body = groups.map(grp => `<tr class="pp-month"><td colspan="${cols}"><span class="pp-month-name">${grp.label}</span><span class="pp-month-total">${total(grp)}</span></td></tr>${grp.games.map(row).join('')}`).join('');
+    const body = groups.map(grp => `<tr class="pp-month"><td colspan="${cols}"><span class="pp-month-name">${grp.label}</span></td></tr>${grp.games.map(row).join('')}`).join('');
     return `<div class="pp-gl">${recent}
       <div class="pp-gl-log"><table class="pitch-table pp-table pp-log${pitcher ? ' is-pitcher' : ''}"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div></div>`;
   }
@@ -13435,7 +13429,7 @@
         ${CHEVRON}
       </button>`;
       if (!open) return row;
-      const head = p => `<span class=&quot;cv-code&quot;>${p.code}</span><span class=&quot;cv-result&quot;>${p.triple ? 'Triple' : 'Double'} Play &#183; ${p.role}</span>`;
+      const head = p => `<span class=&quot;cv-code&quot;>${p.code}</span><span class=&quot;cv-result&quot;>${p.triple ? 'Triple' : 'Double'} Play | ${p.role}</span>`;
       return `${row}<div class="pp-cb-list">${plays.map(p => renderPlayRow(p, p.batter, head(p))).join('')}</div>`;
     }).join('');
     const dpHtml = dps.length
@@ -13502,7 +13496,7 @@
       const chalHtml = challenges.length
         ? renderLampRows(chalRows,
           p => `${p.batter}${p.count ? ` &#183; ${p.count}` : ''} &#183; ${p.overturned ? (p.twoStrikes ? 'Strike three' : 'Overturned') : 'Confirmed'}`,
-          p => `<span class=&quot;cv-result&quot;>ABS Challenge &#183; ${p.overturned ? 'Overturned' : 'Confirmed'}${p.count ? ` &#183; ${p.count}` : ''}</span>`)
+          p => `<span class=&quot;cv-result&quot;>ABS Challenge | ${p.overturned ? 'Overturned' : 'Confirmed'}${p.count ? ` | ${p.count}` : ''}</span>`)
         : `<div class="pitch-empty">No ${lastProfileSeason} challenges.</div>`;
       sections.push(`<div class="pp-cb"><span class="pp-painted pp-cb-title">ABS Challenges <span class="pp-dp-total">${challenges.length ? `${won}/${challenges.length}` : ''}</span></span>${chalHtml}</div>`);
     }
@@ -14014,7 +14008,7 @@
       clipModalBody.innerHTML = `${head}<div class="cv-video cv-video-wait">${apiErrorMsg('clip')}</div>${facts}`;
       return;
     }
-    const when = clip.date ? `${formatShortDate(clip.date)}${clip.matchup ? ` &#183; ${clip.matchup}` : ''}` : '';
+    const when = clip.date ? `${formatShortDate(clip.date)}${clip.matchup ? ` | ${clip.matchup}` : ''}` : '';
     const game = when && gameLink && clip.gamePk
       ? `<button type="button" class="pp-game-link cv-game" data-date="${clip.date}" data-game-pk="${clip.gamePk}">${when}</button>`
       : when;

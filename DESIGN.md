@@ -254,7 +254,7 @@ The Overview board: a player's season as percentile scores, one per skill, so hi
 - **Totals:** a few plain counts below (G, HR, SB; GS, IP, K) in Oswald 600 at 24px (30px wide), a step under the scores, never ranked or gold.
 
 ### Pitch Arsenal
-A pitcher's Arsenal tab answers how he gets hitters out, in four sections on the same scores as the Overview (percentiles against every pitch of the same type, gold from 90).
+A pitcher's Arsenal tab answers how he gets hitters out, in four sections on the same scores as the Overview (percentiles against every pitch of the same type, gold from 90). Section heads carry no notes (no "inches of break", no pitch counts): the scores and labels carry it.
 - **Fastball velo:** a Skill Score tile for each fastball type he throws 10%+ of the time (4-seam, sinker, cutter), each ranked against its own type.
 - **Movement:** induced rise against horizontal break in inches, in the catcher's view and true to his hand (a righty's arm-side pitches break toward "3B SIDE"). Dots are sized by usage and labeled with the pitch's short code in Overpass, never Special Elite.
 - **Pitches:** one row per pitch, its name down the middle, usage bars running outward (vs LHB to the left, vs RHB to the right) with the share at the bar's end, and that side's run-value score beside the name. A bar turns gold where its score is 90+. No raw run value is shown.
