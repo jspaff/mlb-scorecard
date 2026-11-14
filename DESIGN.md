@@ -240,6 +240,7 @@ Clickable names (players and teams) hang like scoreboard plates.
 - **Default:** faint cream wash, cream Overpass 700 uppercase at 10.5–11px, padding 2px 7px, hung-plate shadow.
 - **Hover / Focus:** fills Pennant Gold with Scorebook Board text, and the shadow deepens. Long names ellipsize inside the plate.
 - **Use:** only for things you can click into. Identity that isn't a link (a profile's own team and position) is plain type.
+- **Touch:** on a touch screen a table cell holding one nameplate is also its target, so the 19px plate gets a finger-sized row. Other small controls (a recap ▶, Watch, a recap chip) reach past their drawn edge on touch screens; nothing tappable is drawn under 24px tall there.
 
 ### Skill Scores (signature)
 The Overview board: a player's season as percentile scores, one per skill, so his strengths read at a glance.
