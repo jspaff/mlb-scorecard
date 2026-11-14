@@ -9708,15 +9708,13 @@
         el.appendChild(line);
       }
       line.textContent = lastFeedOkAt
-        ? `Last update ${lastFeedOkAt.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })} \u00b7 Reconnecting`
+        ? `Last update ${lastFeedOkAt.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })} | Reconnecting`
         : 'Reconnecting';
     });
   }
   function markFeedFresh() {
     lastFeedOkAt = new Date();
     setFeedStale(false);
-    const stamp = body.querySelector('.feed-updated');
-    if (stamp) stamp.textContent = `updated ${lastFeedOkAt.toLocaleTimeString()}`;
   }
 
   // Toggles the edge fade (see .game-strip::before/::after) on and off
@@ -9936,7 +9934,7 @@
     }).join('');
     body.innerHTML = `
       <div class="sheet sc-sheet">${m.state === 'Final' ? `<div class="sc-final-story">${renderGameStory(m.highlights)}</div>` : ''}<div class="sc-grid">${grid}</div><div class="sc-half">${renderHalfView(m, v)}</div>
-        <div class="footnote">Source: MLB Stats API${m.state === 'Final' ? '' : ` &#183; <span class="feed-updated">${lastFeedOkAt ? `updated ${lastFeedOkAt.toLocaleTimeString()}` : ''}</span>`}</div></div>
+        <div class="footnote">Source: MLB Stats API</div></div>
     `;
     body.querySelectorAll('.table-scroll').forEach((el, i) => {
       if (scrollLefts[i]) el.scrollLeft = scrollLefts[i];
@@ -11273,7 +11271,7 @@
     col.setAttribute('x', left + i * colW);
     col.setAttribute('opacity', '0.1');
     const tip = chart.querySelector('.pp-chart-tip');
-    tip.innerHTML = `${formatShortDate(s.date)} ${s.isHome ? 'vs' : '@'} ${teamNickname(s.opp)}<br>${s.ip} IP &#183; ${s.er} ER &#183; ${s.k} K${s.qs ? ' &#183; QS' : ''}`;
+    tip.innerHTML = `${formatShortDate(s.date)} ${s.isHome ? 'vs' : '@'} ${teamNickname(s.opp)}<br>${s.ip} IP ${s.er} ER ${s.k} K${s.qs ? ' | QS' : ''}`;
     const chartRect = chart.getBoundingClientRect();
     tip.style.left = (rect.left - chartRect.left + chart.scrollLeft + (left + (i + 0.5) * colW) / vb.width * rect.width) + 'px';
     tip.classList.add('is-on');
@@ -13214,7 +13212,7 @@
     const pos = mine.position.code;
     const at = seq.indexOf(pos);
     const role = seq.length === 1 ? 'Unassisted' : at === 0 ? 'Started' : at === seq.length - 1 ? 'Finished' : 'Turned';
-    return { code: seq.length === 1 ? `${seq[0]}U` : seq.join('-'), role, pos, triple: /Triple Play/.test(event) };
+    return { code: seq.length === 1 ? `${seq[0]}U` : seq.join('·'), role, pos, triple: /Triple Play/.test(event) };
   }
 
   // A catcher's steals against him and ABS challenges in one game. A
@@ -13484,7 +13482,7 @@
       .filter(([, , plays]) => plays.length);
     const stealsHtml = steals.length
       ? renderLampRows(stealRows,
-        p => `${p.runner} &#183; ${p.thrownOut ? 'Thrown out' : 'Stole'}`,
+        p => `${p.runner} | ${p.thrownOut ? 'Thrown out' : 'Stole'}`,
         p => `<span class=&quot;cv-result&quot;>${p.thrownOut ? 'Caught Stealing' : 'Stolen Base'} ${p.base}</span>`)
       : `<div class="pitch-empty">No ${lastProfileSeason} stolen base attempts.</div>`;
     const sections = [`<div class="pp-cb"><span class="pp-painted pp-cb-title">Caught Stealing <span class="pp-dp-total">${steals.length ? `${thrownOut}/${steals.length}` : ''}</span></span>${stealsHtml}</div>`];
@@ -13495,7 +13493,7 @@
         .filter(([, , plays]) => plays.length);
       const chalHtml = challenges.length
         ? renderLampRows(chalRows,
-          p => `${p.batter}${p.count ? ` &#183; ${p.count}` : ''} &#183; ${p.overturned ? (p.twoStrikes ? 'Strike three' : 'Overturned') : 'Confirmed'}`,
+          p => `${p.count ? `${p.count} | ` : ''}${p.overturned ? (p.twoStrikes ? 'Strike three' : 'Overturned') : 'Confirmed'}`,
           p => `<span class=&quot;cv-result&quot;>ABS Challenge | ${p.overturned ? 'Overturned' : 'Confirmed'}${p.count ? ` | ${p.count}` : ''}</span>`)
         : `<div class="pitch-empty">No ${lastProfileSeason} challenges.</div>`;
       sections.push(`<div class="pp-cb"><span class="pp-painted pp-cb-title">ABS Challenges <span class="pp-dp-total">${challenges.length ? `${won}/${challenges.length}` : ''}</span></span>${chalHtml}</div>`);
