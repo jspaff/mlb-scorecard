@@ -309,6 +309,11 @@ The live game's screen. Wider screens keep the full card; a phone gets its own p
 
 ### Segmented Toggle
 - **Style:** square segments on a Scorebook Board backing with Board Rule dividers. The active segment gets a gold wash and a 2px gold underline.
+- **One build, two sizes:** Overpass 800 uppercase at 0.08em. On the frame (a tab's controls row) 11px with 9px by 12px padding; inside a sheet (the Scorecard's team toggle, League Ranks, the Arsenal's vs LHB / vs RHB) 10px with 8px by 12px.
+
+### Links
+- **Text links** (All 31, All 12 highlights, Scorecard →): Overpass 800 uppercase, 10px, 0.08em, cream, turning gold on hover; an arrow after the label is gold. A date that opens a game is the one underlined link.
+- **Watch:** a cream label with its ▶ in gold ("Watch ▶", a recap chip's "Recap ▶"), gold on hover; icon-only, it is the recessed ▶ square. Link text is never gold at rest, so gold keeps meaning trim or an earned mark.
 - **State:** on a screen the toggle doesn't describe (a player profile), no segment is lit.
 
 ### Selects and Inputs

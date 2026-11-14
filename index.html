@@ -749,12 +749,14 @@
     font-family: 'Overpass', sans-serif;
     font-weight: 800;
     font-size: 10px;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--gold);
+    color: var(--ink);
     text-decoration: none;
   }
-  .pog-watch:hover, .pog-watch:focus-visible { text-decoration: underline; }
+  .pog-watch:hover, .pog-watch:focus-visible { color: var(--gold); }
+  /* Every text link and Watch: cream label, its arrow or play mark in gold. */
+  .lk-tri { color: var(--gold); }
   /* At-bat popup/trackers' own Watch link -- sits right below the batter/
      pitcher lines, left-aligned like them, at .pog-watch's own original
      size (no overrides needed here). */
@@ -1145,11 +1147,11 @@
     font-size: 10px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--gold);
+    color: var(--ink);
     text-decoration: none;
     cursor: pointer;
   }
-  .dh-watch:hover { text-decoration: underline; }
+  .dh-watch:hover, .dy-more:hover { color: var(--gold); }
 
   /* Home runs, the biggest swing first */
   .dh { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; border-bottom: 1px dashed var(--paper-line); }
@@ -1185,8 +1187,7 @@
   .dh-dist { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 20px; line-height: 1.1; color: var(--ink); font-variant-numeric: tabular-nums; }
   .dh-dist small { margin-left: 2px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); }
   .dh-watch { margin-top: 2px; }
-  .dy-more { margin-top: 8px; color: var(--ink-soft); }
-  .dy-more:hover { color: var(--ink); }
+  .dy-more { margin-top: 8px; }
 
   /* Best starts: a box-score line under painted heads, zeros blank */
   .ds-row { display: grid; grid-template-columns: minmax(0, 1fr) repeat(6, 30px); align-items: center; gap: 4px; padding: 5px 0; border-bottom: 1px dashed var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 12px; color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; }
@@ -1375,14 +1376,14 @@
   .view-toggle { display: flex; background: var(--paper); border: 1px solid var(--paper-line); border-radius: 0; overflow: hidden; }
   .view-toggle-btn {
     font-family: 'Overpass', sans-serif;
-    font-weight: 700;
+    font-weight: 800;
     font-size: 11px;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--ink-soft);
     background: none;
     border: none;
-    padding: 7px 12px;
+    padding: 9px 12px;
     cursor: pointer;
   }
   .view-toggle-btn + .view-toggle-btn { border-left: 1px solid var(--paper-line); }
@@ -1776,7 +1777,8 @@
   .tn-score { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 30px; line-height: 1; font-variant-numeric: tabular-nums; }
   .tn-score b { font-weight: 400; color: var(--ink-soft); margin: 0 3px; }
   .tn-state { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); }
-  .tn-go { grid-area: go; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); }
+  .tn-go { grid-area: go; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); }
+  .tn:hover .tn-go, .tn:focus-visible .tn-go { color: var(--gold); }
   .tm-next { margin-top: 20px; }
   .tm-next:empty { display: none; }
   /* Leaders' column heads: the group and the stat they're ranked by. */
@@ -1835,7 +1837,7 @@
   .hl-kick { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 19px; min-width: 0; }
   .hl-kick-l { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .hl-kick-l b { margin-right: 6px; font-weight: 800; color: var(--ink-soft); }
-  .hl-alt { position: relative; z-index: 1; flex: none; padding: 3px 6px 2px; background: transparent; border: 1px solid var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); cursor: pointer; }
+  .hl-alt { position: relative; z-index: 1; flex: none; padding: 3px 6px 2px; background: transparent; border: 1px solid var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); cursor: pointer; }
   .hl-alt:hover, .hl-alt:focus-visible { color: var(--ink); border-color: var(--gold); }
   .hl-alt:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
   /* The reel stills. */
@@ -1928,7 +1930,7 @@
   /* League ranks: the rank big (gold in the top three), the stat small. */
   .trk-head { align-items: center; }
   .trk-head em { font-style: normal; margin-left: 4px; font-weight: 700; letter-spacing: 0.02em; text-transform: none; color: var(--ink-soft); }
-  .trk-scope .view-toggle-btn { padding: 8px 12px; font-size: 9.5px; }
+  .trk-scope .view-toggle-btn { padding: 8px 12px; font-size: 10px; }
   /* The toggle hangs below the label rather than heightening the head, so
      the cells start level with the tiles beside them. */
   .trk-scope { margin: -6px 0 -10px; }
@@ -2476,7 +2478,7 @@
 
   /* The team toggle in each card's header (see renderTeamToggle); the
      triangle marks the side batting now. */
-  .sc-toggle .view-toggle-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; }
+  .sc-toggle .view-toggle-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 10px; padding: 8px 12px; }
   .sc-toggle .view-toggle-btn.active { color: var(--ink); background: var(--wash); box-shadow: inset 0 -2px 0 var(--gold); }
   .now-tri { width: 8px; height: 7px; flex: none; }
   th.is-now { color: var(--ink) !important; box-shadow: inset 0 -2px 0 var(--gold); }
@@ -2490,7 +2492,7 @@
     .sc-half { display: block; }
   }
   .hv-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-bottom: 10px; border-bottom: 2px solid var(--ink); }
-  .hv-head .view-toggle-btn { font-size: 13px; padding: 9px 16px; min-height: 40px; }
+  .hv-head .view-toggle-btn { font-size: 10px; padding: 8px 12px; }
   .hv-head .roster-btn { min-height: 40px; }
   .hv-step { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 12px 0 4px; }
   .hv-step-btn {
@@ -3412,8 +3414,9 @@
   .ars-mx em { flex: none; font-style: normal; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink); font-variant-numeric: tabular-nums; }
   .ars-mx-n { text-align: center; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 14px; line-height: 1.1; color: var(--ink); }
   .ars-tg { display: inline-flex; margin: 0 0 10px; border: 1px solid var(--paper-line); background: var(--paper); }
-  .ars-tg button { background: none; border: 0; padding: 6px 12px 5px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); cursor: pointer; }
+  .ars-tg button { background: none; border: 0; padding: 8px 12px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); cursor: pointer; }
   .ars-tg button + button { border-left: 1px solid var(--paper-line); }
+  .ars-tg button:hover { color: var(--ink); background: rgba(243, 236, 219, 0.08); }
   .ars-tg button[aria-pressed="true"] { color: var(--ink); background: var(--wash); box-shadow: inset 0 -2px 0 var(--gold); }
   .ars-tg button:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
   .ars-ts { display: grid; grid-template-columns: 34px 14px minmax(0, 1fr) 52px 56px; align-items: center; gap: 6px; padding: 7px 0; border-bottom: 1px dashed var(--paper-line); }
@@ -7370,7 +7373,7 @@
     storeTeamPlayer(hr.batterId, hr.batterName, '', hr.battingTeamId, season);
     const tag = hr.impact === 'walkoff' ? 'Walk-off' : hr.isGrandSlam ? 'Grand slam' : hr.impact ? HR_IMPACT_LABELS[hr.impact] : '';
     const gold = hr.impact === 'walkoff' || hr.isGrandSlam;
-    const watch = hr.videoUrl ? `<a class="dh-watch" ${clipWatchAttrs(hr.videoUrl, `Home Run &#183; ${hr.batterName}`)}>Watch &#9654;</a>` : '';
+    const watch = hr.videoUrl ? `<a class="dh-watch" ${clipWatchAttrs(hr.videoUrl, `Home Run &#183; ${hr.batterName}`)}>Watch <span class="lk-tri">&#9654;</span></a>` : '';
     return `
       <div class="dh${gold ? ' is-gold' : ''}${i >= DAY_HR_SHOWN ? ' is-extra' : ''}">
         <div class="dh-main">
@@ -7410,7 +7413,7 @@
         <div class="ds-row">
           <span class="ds-name">
             <span class="ds-who"><img class="dh-cap" src="${capLogoUrl(p.teamId)}" alt=""><button type="button" class="player-name-btn" data-player-id="${p.id}" title="${p.name}"><span class="ds-full">${p.name}</span><span class="ds-short">${shortPlayerName(p.name)}</span></button></span>
-            <span class="ds-sub">${p.isHome ? 'vs' : '@'} ${p.oppAbbr}${reels[p.id] ? `<button type="button" class="dh-watch ds-watch" data-day-clip="${dayVideoKey({ clip: reels[p.id] })}">Watch &#9654;</button>` : ''}</span>
+            <span class="ds-sub">${p.isHome ? 'vs' : '@'} ${p.oppAbbr}${reels[p.id] ? `<button type="button" class="dh-watch ds-watch" data-day-clip="${dayVideoKey({ clip: reels[p.id] })}">Watch <span class="lk-tri">&#9654;</span></button>` : ''}</span>
           </span>
           <span>${p.ip}</span><span>${blank(p.h)}</span><span${p.er ? '' : ' class="is-zero"'}>${p.er}</span><span${p.bb ? '' : ' class="is-zero"'}>${p.bb}</span><span>${blank(p.k)}</span><span class="ds-gs">${p.gameScore}</span>
         </div>`;
@@ -8365,7 +8368,7 @@
         <span class="tn-kicker">${kicker}</span>
         <span class="tn-opp"><span class="tn-at">${g.isHome ? 'vs' : '@'}</span><img src="${capLogoUrl(oppId)}" alt="">${g.opponentFull}</span>
         <span class="tn-right">${right}</span>
-        <span class="tn-go">${live ? 'Follow live' : 'Scorecard'} &#8594;</span>
+        <span class="tn-go">${live ? 'Follow live' : 'Scorecard'} <span class="lk-tri">&#8594;</span></span>
       </button>`;
   }
 
@@ -8538,7 +8541,7 @@
       : (m && m.recap && { clip: teamGameClip(m.recap, x.g), label: 'Recap' });
     return `<span class="vc-kicker hl-kick">
         <span class="hl-kick-l"><b>${fmtShortDate(x.g.date)}</b>${x.label}${x.why ? ` <em>${x.why}</em>` : ''}</span>
-        ${alt ? `<button type="button" class="hl-alt" data-day-clip="${dayVideoKey({ clip: alt.clip, clipPrefix: 't' })}">${alt.label} &#9654;</button>` : ''}
+        ${alt ? `<button type="button" class="hl-alt" data-day-clip="${dayVideoKey({ clip: alt.clip, clipPrefix: 't' })}">${alt.label} <span class="lk-tri">&#9654;</span></button>` : ''}
       </span>`;
   }
   function highlightStill(x) { return ((x.kind && HIGHLIGHT_STILLS[x.kind]) || renderScorebookStill)(x); }
@@ -10767,7 +10770,7 @@
     return `
       <div class="pitch-header">${c.batterName || 'Batter'}</div>
       <div class="pitch-subheader">vs ${c.pitcherFullName || 'pitcher'}</div>
-      ${c.videoUrl ? `<a class="pog-watch atbat-watch" ${clipWatchAttrs(c.videoUrl, `${c.batterName || ''}${c.pitcherFullName ? ` vs ${c.pitcherFullName}` : ''}`, { gameLink: false })}>Watch &#9654;</a>` : ''}
+      ${c.videoUrl ? `<a class="pog-watch atbat-watch" ${clipWatchAttrs(c.videoUrl, `${c.batterName || ''}${c.pitcherFullName ? ` vs ${c.pitcherFullName}` : ''}`, { gameLink: false })}>Watch <span class="lk-tri">&#9654;</span></a>` : ''}
       ${locationHtml}
       ${rows}
       ${reviewsHtml}
