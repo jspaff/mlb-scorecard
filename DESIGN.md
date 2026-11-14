@@ -362,7 +362,7 @@ The day on one sheet, built to be watched: the scores, then a handful of videos,
 - **On the Mound:** the best starts by Game Score as box-score lines (IP, H, ER, BB, K, GSc), the cap and nameplate over "vs ATH · Watch" when MLB has a reel; a phone shortens the name ("S. McClanahan"). Zero hits and strikeouts stay blank, but zero earned runs and walks are written: they're the point of the line.
 
 ### Your Team
-The user's team is a cap in a fixed slot at the end of the tab row (a stitched ball when none is picked). Its rows in standings and the bracket get the chosen-segment gold wash (`rgba(217,169,26,0.13)`): trim marking the user's own focus, never a gold value.
+The user's team is a cap in a fixed slot at the end of the tab row (a stitched ball when none is picked). Its rows in standings and the bracket get the "mine" gold wash (`--wash-mine`, gold at 13%; the chosen segment and hover use `--wash-on`, 15%, and no other gold wash exists): trim marking the user's own focus, never a gold value.
 
 ### Charts
 Single-series and quiet: Board Rule gridlines, Faded Cream axis labels (Overpass 800, never under 9px on screen; values on the line 10px), thin marks with 3px data-end corners, gold for the meaningful category (a quality start), and Weathered Sage or Faded Cream for the rest. Axis titles are labelled, a bar scale that doesn't start at zero has both ends labelled, and readouts appear on hover or tap. There are no legends where the page already explains the color.

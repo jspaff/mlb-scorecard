@@ -47,6 +47,13 @@
     /* The rule over a section title: cream at a third, so titles stay ink
        and gold is left to the data that earns it. */
     --title-rule: rgba(243, 236, 219, 0.35);
+    /* Gold washes, two strengths only: --wash-on for the chosen segment or
+       chip and for hover, --wash-mine for what's yours or current (your team,
+       this team's row, today, the pitch in view). */
+    --wash-on: rgba(217, 169, 26, 0.15);
+    --wash-mine: rgba(217, 169, 26, 0.13);
+    /* Text-only tint of the ball green, as --brick-text is for brick. */
+    --ball-text: #7fae8f;
   }
 
   #mlb-root * { box-sizing: border-box; }
@@ -1090,7 +1097,7 @@
   .dg { min-width: 0; padding: 6px 7px 7px; background: rgba(0, 0, 0, 0.14); border: 1px solid var(--paper-line); cursor: pointer; }
   .dg:hover { border-color: var(--ink-soft); }
   .dg:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
-  .dg.is-my-team { background: rgba(217, 169, 26, 0.13); }
+  .dg.is-my-team { background: var(--wash-mine); }
   .dg.is-live { border-color: var(--gold); }
   .dg-box { display: flex; gap: 6px; }
   .dg-teams { flex: 1; min-width: 0; }
@@ -1381,7 +1388,7 @@
     [data-tab-controls="standings"] .view-toggle-btn { padding-left: 6px; padding-right: 6px; letter-spacing: 0.02em; }
     #standingsYearPick { padding-left: 8px; padding-right: 22px; background-position: right 8px center; }
   }
-  .view-toggle-btn.active { color: var(--ink); background: rgba(217, 169, 26, 0.15); box-shadow: inset 0 -2px 0 var(--gold); }
+  .view-toggle-btn.active { color: var(--ink); background: var(--wash-on); box-shadow: inset 0 -2px 0 var(--gold); }
   .view-toggle-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
   .wc-cutoff-line { border-top: 2px solid var(--ink); margin: 2px 0 0; }
 
@@ -1636,7 +1643,7 @@
     border-radius: 0;
     white-space: nowrap;
   }
-  .roster-badge.roster-badge-il { color: #fbf3e3; background: var(--brick); border-color: var(--brick); }
+  .roster-badge.roster-badge-il { color: var(--brick-ink); background: var(--brick); border-color: var(--brick); }
   .roster-columns { display: flex; gap: 0 28px; align-items: flex-start; }
   .roster-column { flex: 1; min-width: 0; }
   .roster-subgroup-title {
@@ -1706,7 +1713,7 @@
   .gt-res.is-loss { color: var(--ink-soft); }
   .gt-res.is-note { font-size: 13px; color: var(--ink-soft); }
   .gt-play { height: 18px; padding: 0; background: rgba(0, 0, 0, 0.18); border: 0; border-top: 1px solid var(--paper-line); font-size: 8px; color: var(--gold); cursor: pointer; }
-  .gt-play:hover { background: rgba(217, 169, 26, 0.15); }
+  .gt-play:hover { background: var(--wash-on); }
   @container (min-width: 700px) {
     .gt-row { gap: 8px; }
     .gt-main { flex-direction: row; justify-content: center; flex-wrap: wrap; gap: 4px 8px; padding: 8px 4px; }
@@ -1723,7 +1730,7 @@
   .tdv-row { display: grid; grid-template-columns: 14px minmax(0, 1fr) 40px 40px 44px 30px; align-items: center; gap: 4px; width: 100%; padding: 3px 4px; background: none; border: 0; color: var(--ink); text-align: left; font: inherit; cursor: pointer; }
   .tdv-row:not(.tdv-head):hover .tdv-team { color: var(--gold); }
   .tdv-row:focus-visible { outline: 2px solid var(--gold); outline-offset: 0; }
-  .tdv-row.is-this, .tdv-row.is-this:hover { background: rgba(217, 169, 26, 0.13); box-shadow: inset 3px 0 0 var(--gold); cursor: default; }
+  .tdv-row.is-this, .tdv-row.is-this:hover { background: var(--wash-mine); box-shadow: inset 3px 0 0 var(--gold); cursor: default; }
   .tdv-row.is-this:hover .tdv-team { color: var(--ink); }
   .tdv-head { padding-top: 0; padding-bottom: 0; cursor: default; }
   .tdv-head > span { text-align: center; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; color: var(--ink-soft); }
@@ -1848,7 +1855,7 @@
   .hs-jump button { flex: none; padding: 6px 11px; background: transparent; border: 1px solid var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); cursor: pointer; }
   .hs-jump button:hover, .hs-jump button:focus-visible { color: var(--ink); border-color: var(--gold); }
   .hs-jump button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
-  .hs-jump button.is-on { color: var(--ink); background: rgba(217, 169, 26, 0.15); box-shadow: inset 0 -2px 0 var(--gold); }
+  .hs-jump button.is-on { color: var(--ink); background: var(--wash-on); box-shadow: inset 0 -2px 0 var(--gold); }
   /* Reel (a wide sheet): one swipe row, a gold month marker standing up
      between months. */
   .hs-reel { display: none; align-items: stretch; gap: 10px; overflow-x: auto; scroll-snap-type: x proximity; padding: 8px 0 6px; }
@@ -2110,7 +2117,7 @@
   /* The user's own team: the same gold wash as a chosen segment, never a
      gold value -- picking a team isn't the team earning anything. */
   .standings-row.is-my-team,
-  .pb-team.is-my-team { background: rgba(217, 169, 26, 0.13); }
+  .pb-team.is-my-team { background: var(--wash-mine); }
 
   /* Postseason bracket. Each league is a 3-column grid (WC, DS, LCS) of two
      equal rows, so a DS sits beside the WC that feeds it and the LCS spans
@@ -2303,7 +2310,7 @@
   .calendar-day.is-home .cal-daynum { color: var(--paper); opacity: 0.7; }
   .calendar-day.is-away .cal-daynum { color: var(--ink); opacity: 0.6; }
   .calendar-day.is-today { box-shadow: inset 0 0 0 2px var(--gold); }
-  .calendar-day.is-today:not(.is-game) { background: rgba(217, 169, 26, 0.14); }
+  .calendar-day.is-today:not(.is-game) { background: var(--wash-mine); }
   .calendar-day.is-home.is-today { box-shadow: inset 0 0 0 2px var(--ink); }
   .calendar-day.is-today .cal-daynum { opacity: 1; font-weight: 700; }
   .cal-game-opp {
@@ -2461,7 +2468,7 @@
   /* The team toggle in each card's header (see renderTeamToggle); the
      triangle marks the side batting now. */
   .sc-toggle .view-toggle-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; }
-  .sc-toggle .view-toggle-btn.active { color: var(--ink); background: rgba(217, 169, 26, 0.15); box-shadow: inset 0 -2px 0 var(--gold); }
+  .sc-toggle .view-toggle-btn.active { color: var(--ink); background: var(--wash-on); box-shadow: inset 0 -2px 0 var(--gold); }
   .now-tri { width: 8px; height: 7px; flex: none; }
   th.is-now { color: var(--ink) !important; box-shadow: inset 0 -2px 0 var(--gold); }
   th.is-now .now-tri { color: var(--gold); margin-right: 4px; vertical-align: 1px; }
@@ -2506,7 +2513,7 @@
     color: var(--ink); background: transparent; border: 1px solid var(--gold); cursor: pointer;
   }
   .hv-live .now-tri { width: 8px; height: 7px; color: var(--gold); }
-  .hv-live:hover { background: rgba(217, 169, 26, 0.12); }
+  .hv-live:hover { background: var(--wash-on); }
   .hv-live:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
   .hv-pa { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 8px; align-items: center; padding: 10px 0; border-bottom: 1px dashed var(--paper-line); }
   .hv-dia { position: relative; width: 76px; min-height: 60px; display: grid; place-items: center; }
@@ -2815,7 +2822,7 @@
     margin: -4px 0 0 -4px;
     border-radius: 50%;
     background: var(--gold);
-    box-shadow: 0 0 0 2px rgba(179, 121, 26, 0.25);
+    box-shadow: 0 0 0 2px rgba(217, 169, 26, 0.25);
     animation: live-pulse 1.3s ease-in-out infinite;
   }
   @keyframes live-pulse {
@@ -3220,7 +3227,7 @@
     border-bottom: 1px solid var(--paper-line);
   }
   .player-search-result:last-child { border-bottom: none; }
-  .player-search-result:hover { background: rgba(217, 169, 26, 0.12); }
+  .player-search-result:hover { background: var(--wash-on); }
   .player-search-result .psr-meta {
     color: var(--ink-soft);
     font-size: 11px;
@@ -3398,7 +3405,7 @@
   .ars-tg { display: inline-flex; margin: 0 0 10px; border: 1px solid var(--paper-line); background: var(--paper); }
   .ars-tg button { background: none; border: 0; padding: 6px 12px 5px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); cursor: pointer; }
   .ars-tg button + button { border-left: 1px solid var(--paper-line); }
-  .ars-tg button[aria-pressed="true"] { color: var(--ink); background: rgba(217, 169, 26, 0.15); box-shadow: inset 0 -2px 0 var(--gold); }
+  .ars-tg button[aria-pressed="true"] { color: var(--ink); background: var(--wash-on); box-shadow: inset 0 -2px 0 var(--gold); }
   .ars-tg button:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
   .ars-ts { display: grid; grid-template-columns: 34px 14px minmax(0, 1fr) 52px 56px; align-items: center; gap: 6px; padding: 7px 0; border-bottom: 1px dashed var(--paper-line); }
   .ars-ts-h, .ars-fc-h { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
@@ -3849,14 +3856,14 @@
   table.pitch-table td.pnum { color: var(--ink-soft); width: 20px; }
   table.pitch-table td.pcount { color: var(--ink-soft); white-space: nowrap; }
   table.pitch-table td.pspeed { color: var(--ink-soft); white-space: nowrap; }
-  .pitch-result-ball { color: #7fae8f; font-weight: 600; }
+  .pitch-result-ball { color: var(--ball-text); font-weight: 600; }
   .pitch-result-strike { color: var(--brick-text); font-weight: 600; }
   /* A hit is earned gold; a foul is just a foul (the Two Golds Rule). */
   .pitch-result-hit { color: var(--gold); font-weight: 600; }
   .pitch-result-foul { color: var(--ink); font-weight: 600; }
-  .pitch-result-out { color: #a39d90; font-weight: 700; }
-  .pitch-result-hbp { color: #7fae8f; font-weight: 700; font-style: italic; }
-  table.pitch-table tr.hl td { background: rgba(217, 169, 26, 0.14); }
+  .pitch-result-out { color: var(--ink-soft); font-weight: 700; }
+  .pitch-result-hbp { color: var(--ball-text); font-weight: 700; font-style: italic; }
+  table.pitch-table tr.hl td { background: var(--wash-mine); }
   table.pitch-table tr.challenged td { border-bottom-style: dashed; }
   .abs-tag {
     display: inline-block;
