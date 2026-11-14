@@ -171,6 +171,8 @@ A three-layer palette of wall, board and ink, with two spare signal colors.
 
 **The Half-Game Rule.** Games back are written in halves everywhere, as the Monster hangs them: "4½", "½", "11", never "4.5" or "11.0"; a wild-card team ahead of the line is "+3". The standings tables mark the leader with a dash; the Team tab's Monster board leaves the leader's plate empty.
 
+**The Separator Rule.** Words and figures are set apart by the job they do, never by a middle dot. A pipe splits the parts of an identity or a heading (Seattle Mariners | CF, Home Run | Rafael Flores Jr., 7.0 IP 0 ER 8 K | QS); a comma runs a stat line (1-4, 1 RBI); a plain or wide space sits between a date and opponent, a team and inning, or a time and the weather; a title is reworded rather than split (Mets Pitching). The middle dot belongs to scorebook notation alone, inside the diamond and the double-play codes (6·3, 6·4·3).
+
 **The Blank Zero Rule.** In short stat lines that are mostly zeros (a game log, a single game's line, a team's per-player stats), a zero count is left blank, never written as 0, so the cells that carry ink are the ones that happened. Season leaderboards like the Players list, where zeros are rare, write them. The other exceptions are pairs read aloud ("0-4" H-AB, an inning pitched), a linescore or big-number summary, where a blank would read as missing, and a zero that is the achievement (a starter's 0 ER or 0 BB on the Highlights tab).
 
 ## Typography
@@ -307,7 +309,7 @@ The live game's screen. Wider screens keep the full card; a phone gets its own p
 - **Roster popup:** the lineup, the bench, and the pitchers: who has pitched, then everyone else, fewest games started first, so the rotation sinks to the bottom.
 
 ### Tabs
-- **Style:** Overpass 700 uppercase labels, full cream on the frame (the tab bar) and Faded Cream inside a sheet (profile tabs). The active tab has a 2px Pennant Gold underline. Tab rows scroll sideways on a phone rather than wrapping.
+- **Style:** Overpass 700 uppercase labels, full cream on the frame (the tab bar) and Faded Cream inside a sheet (profile tabs). The active tab has a 2px Pennant Gold underline. Tab rows scroll sideways on a phone rather than wrapping. The main tab bar stays one scrolling row on a phone, with its edge fade, by choice: no bottom bar, no shortened labels.
 
 ### Segmented Toggle
 - **Style:** square segments on a Scorebook Board backing with Board Rule dividers. The active segment gets a gold wash and a 2px gold underline.
@@ -324,7 +326,7 @@ The live game's screen. Wider screens keep the full card; a phone gets its own p
 
 ### Cards and Sheets
 - **Sheets:** square, Scorebook Board, 2px cream border, 18px padding, sheet shadow.
-- **Recent-game cards:** square, darker board wash, 1px rule. The header row carries date · opponent · result · stat line, and the body is diamonds or a row of number slots. The whole card links to the game.
+- **Recent-game cards:** square, darker board wash, 1px rule. The header row carries date, opponent, result and stat line, and the body is diamonds or a row of number slots. The whole card links to the game.
 - **Status plates:** loading, empty and error messages sit on a small board plate when on the frame, and as plain Faded Cream text inside a sheet. Every one is set in the Status role (Overpass 600, sentence case), never italic and never a monospace.
 
 ### Playoff Bracket
@@ -343,7 +345,7 @@ The Team tab's Overview reads like the front page of a team's media guide: bold,
 - **Last 5 / Up Next:** five tiles across. Last 5 runs newest first; Up Next runs soonest first. A tile is the date, vs/@ and the opponent's cap, then W or L and the score (or first pitch). W and L are both cream; a loss is just softer. A tile opens the scorecard; a finished game with MLB's recap gets a play strip at its foot. The head of Last 5 carries the record over those games.
 - **League Ranks:** six team stats (Runs, HR, OPS; ERA, K, WHIP), each a cell with the rank big ("2nd", gold in the top three), the stat small under it. A segmented toggle in the head, hung over its rule so the head stays the height of its neighbors', ranks among the team's own league (the default) or all of MLB.
 - **Layout:** a phone stacks it in reading order: head, next game, Last 5 / Up Next, division, leaders, ranks, highlights. From 700px it's rows of pairs under the Shared Edge Rule: the head with the next game (stacked until 900px), the leaders with the division, the form with the ranks, then the highlights across both. Out of season, when the form is one row of tiles, the ranks go one row of six to stand as tall.
-- **Season Highlights:** every kind of clip in date order -- the biggest plays by win probability added for the team, starters' outings, big nights and the best wins -- by month, March riding with April and October with September. Month chips (no counts) sit above. No footer: a card is the still, a kicker that leads with the date ("APR 7 · GO-AHEAD 3 RUNS") and ends with that game's other video as a small ruled chip ("Recap ▶", or "Full game ▶" on a best win, whose own clip is the recap), and the title; the rest of the card plays the clip. On a wide sheet it's one swipe row of equal cards, the chip's right edge on the still's, with a gold month name standing up where each month starts. On a phone it's one month at a time as a list, the chip under the title with its foot on the still's foot, and a pager steps to the next month; a season over opens on its first month, one under way on its latest.
+- **Season Highlights:** every kind of clip in date order -- the biggest plays by win probability added for the team, starters' outings, big nights and the best wins -- by month, March riding with April and October with September. Month chips (no counts) sit above. No footer: a card is the still, a kicker that leads with the date ("APR 7 GO-AHEAD 3 RUNS") and ends with that game's other video as a small ruled chip ("Recap ▶", or "Full game ▶" on a best win, whose own clip is the recap), and the title; the rest of the card plays the clip. On a wide sheet it's one swipe row of equal cards, the chip's right edge on the still's, with a gold month name standing up where each month starts. On a phone it's one month at a time as a list, the chip under the title with its foot on the still's foot, and a pager steps to the next month; a season over opens on its first month, one under way on its latest.
 
 ### Schedule
 The Team tab's season as month calendars of square day cells: a home game on gold, an away game on Board Rule, each lettered with the opponent (two stacked for a doubleheader). While the season still has games to play, a day whose games are all final steps back to 45% (full again on hover or focus), so what's still to come leads; a finished season keeps its full color.
@@ -354,8 +356,8 @@ Every player's line for the team, hitters then pitchers, in the Players list's t
 ### Roster and Depth Chart
 - **Rows:** jersey number in gold trim, the nameplate, then B/T, season age and position in fixed right-aligned slots under painted heads. Pitchers split into Rotation (in order) and Bullpen (closer first, "CL"). Subgroup titles (Rotation, Catchers) start in line with the names, not the numbers.
 - **Depth chart:** the roster's first view, standing in for the 26-man. Everyone on it gets a photo, a small pinned print (2px cream border, the profile photo's 4:5), or nobody does.
-  - **Field:** the starters on a chalk-drawn field (faint fence, foul lines, infield cut and bases on the board), each a print over his position in gold trim and his nameplate. Any other spot he backs up follows his position in Faded Cream ("LF · CF"), so his own spot still leads. DH stands off the field by home. The field keeps one square shape, capped at 560px.
-  - **Bench:** players who start nowhere, as photo cards labelled with every spot they cover in scoring order ("1B · 2B · 3B · SS").
+  - **Field:** the starters on a chalk-drawn field (faint fence, foul lines, infield cut and bases on the board), each a print over his position in gold trim and his nameplate. Any other spot he backs up follows his position in Faded Cream ("LF CF"), so his own spot still leads. DH stands off the field by home. The field keeps one square shape, capped at 560px.
+  - **Bench:** players who start nowhere, as photo cards labelled with every spot they cover in scoring order ("1B 2B 3B SS").
   - **Staff:** the rotation numbered in order, then the bullpen with the closer first ("CL"), the rest "RP", all as photo cards.
   - On a wide sheet the field sits left and bench, rotation and bullpen run down the right.
 
@@ -367,7 +369,7 @@ The day on one sheet, built to be watched: the scores, then a handful of videos,
 - **Video card:** a framed still over a gold kicker saying why it's there (Go-ahead, Big hit, Big out, Walk-off; a defensive play's position), the title, the game. The kicker keeps its line when empty so a row's titles align.
 - **The still:** the player's photo as a pinned print (cream border all round, the print's shadow) beside the play's diamond as the scorecard draws it, RBI dots in the Game Log's proportion to the diamond, under a line of his team's cap and abbreviation and the inning in cream Oswald, sized to the card, legible at a glance, the half-inning as the scorecard's own triangle (▲8, ▼5) rather than T/B; the ▶ in the score boxes' recessed square in the corner. Every card draws its own still, never MLB's photo, so a play only Savant has a clip of looks like any other. No grid rules, no fades, no pitch data.
 - **Out of the Park:** the homers, the biggest swing first, six until asked for all: the cap, the nameplate, his season count ("No. 17"), and under it only its tag when it has one, then distance and a Watch link. A walk-off or grand slam is gold; go-ahead and game-tying are tagged from the 7th on. No pitcher, inning, runs or exit velocity: the tag is the story, the clip has the rest.
-- **On the Mound:** the best starts by Game Score as box-score lines (IP, H, ER, BB, K, GSc), the cap and nameplate over "vs ATH · Watch" when MLB has a reel; a phone shortens the name ("S. McClanahan"). Zero hits and strikeouts stay blank, but zero earned runs and walks are written: they're the point of the line.
+- **On the Mound:** the best starts by Game Score as box-score lines (IP, H, ER, BB, K, GSc), the cap and nameplate over "vs ATH Watch" when MLB has a reel; a phone shortens the name ("S. McClanahan"). Zero hits and strikeouts stay blank, but zero earned runs and walks are written: they're the point of the line.
 
 ### Your Team
 The user's team is a cap in a fixed slot at the end of the tab row (a stitched ball when none is picked). Its rows in standings and the bracket get the gold wash (`--wash`, gold at 15%), the one gold wash in the app, shared with the chosen segment, hovers and today: trim marking the user's own focus, never a gold value.
@@ -384,6 +386,7 @@ Single-series and quiet: Board Rule gridlines, Faded Cream axis labels (Overpass
 - **Do** use Pennant Gold as trim (kickers, active and focus rules) and, within the data, only for top-10% stats, made 5-star catches, quality starts, awards, RBIs and hits.
 - **Do** use tabular figures for every column of numbers.
 - **Do** size changeable controls to fixed slots so filters never shift the layout.
+- **Do** keep the spray chart's own palette (gold singles and homers, blue doubles, purple triples, a small legend): it is the one deliberate place where hue, not gold, encodes a category, and it stays.
 - **Do** draw spray charts in the API's own coordinate space (home 125.42, 198.27; 2.495 ft per unit) so fences and batted balls agree, with a generic fence drawn as one circular arc from pole to pole (330 down the lines, 400 to center).
 - **Do** run a split bar so longer is better: a pitcher's opponent-OPS scale runs high to low.
 - **Do** give sections that sit side by side a shared top and bottom edge (the Shared Edge Rule).
