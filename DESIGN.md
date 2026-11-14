@@ -187,7 +187,7 @@ A three-layer palette of wall, board and ink, with two spare signal colors.
 - **Title** (Oswald 500, 15px): vitals values, select values, card summaries.
 - **Data** (Overpass 700, 12px, tabular figures): table cells, game-log rows, splits.
 - **Section title** (Overpass 800, 11.5px, 0.12em, uppercase, Scorekeeper Cream, under a 2px rule of cream at 35%): every section heading on a sheet or in a popup, one step above the subheads beneath it. Never gold: the page's gold is left to kickers, active rules and the data that earns it.
-- **Label** (Overpass 700–800, 9–11px, 0.05–0.12em tracking, uppercase): tabs, column heads, slot labels ("painted" on the board), subheads, award plates.
+- **Label** (Overpass 700–800, uppercase, 0.05–0.12em tracking) on three sizes only: **9px** for tight column heads, tags, tile dates and card kickers; **10px** for painted labels, vitals, subheads, award plates and text links; **11px** for positions and in-sheet controls. No label sits between or below these steps.
 - **Body** (Inter 400, 12.5–13px, 1.5): rare running text such as tooltips and footnotes.
 - **Status** (Overpass 600, 12px, 0.01em, sentence case; 13px on a plate on the frame): loading, empty and error messages, everywhere. The label face at a lighter weight, so an empty board reads as part of the board.
 - **Notation** (Special Elite, 10–18px inside a diamond): play codes K, HR, 6-3, F8. Used in the diamond glyph, and wherever a play is named by its scorebook notation outside one (the Defense tab's double-play ledger, a double play's clip popup).
