@@ -464,10 +464,11 @@
     padding: 7px 0;
   }
   .score-strip-teams {
-    font-family: 'Oswald', sans-serif;
-    font-weight: 600;
-    font-size: 14px;
-    letter-spacing: 0.02em;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
     color: var(--ink);
     white-space: nowrap;
   }
@@ -908,9 +909,11 @@
   }
   .daily-tile-logo { width: 24px; height: 24px; flex-shrink: 0; }
   .daily-tile-team {
-    font-family: 'Oswald', sans-serif;
-    font-weight: 600;
-    font-size: 14px;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
     color: var(--ink-soft);
     white-space: nowrap;
     overflow: hidden;
@@ -925,8 +928,9 @@
     font-variant-numeric: tabular-nums;
     flex-shrink: 0;
   }
-  .daily-tile-team.is-winner, .daily-tile-score.is-winner { color: var(--ink); font-weight: 700; }
-  .daily-tile.is-live .daily-tile-team, .daily-tile.is-live .daily-tile-score { color: var(--ink); font-weight: 600; }
+  .daily-tile-team.is-winner, .daily-tile-score.is-winner { color: var(--ink); }
+  .daily-tile-score.is-winner { font-weight: 700; }
+  .daily-tile.is-live .daily-tile-team, .daily-tile.is-live .daily-tile-score { color: var(--ink); }
   .daily-tile-state {
     position: relative;
     z-index: 1;
@@ -1102,7 +1106,7 @@
   .dg-teams { flex: 1; min-width: 0; }
   /* Lettered like the Monster's own board: no logos (a 16px logo turned
      the detailed and colorful ones to smudges), the club in Oswald. */
-  .dg-team { display: grid; grid-template-columns: minmax(0, 1fr) 24px; align-items: center; gap: 5px; height: 21px; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 14px; letter-spacing: 0.04em; color: var(--ink); }
+  .dg-team { display: grid; grid-template-columns: minmax(0, 1fr) 24px; align-items: center; gap: 5px; height: 21px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); }
   .dg-team b { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 16px; text-align: right; font-variant-numeric: tabular-nums; }
   /* A final's winner, as the game strip marks it: his cap faintly behind
      the box, sized to the box so a phone's short one isn't swamped. */
@@ -7015,7 +7019,7 @@
   }
 
   function dailyTileRow(name, teamId, score, won) {
-    const nameBlock = `<span class="daily-tile-team${won ? ' is-winner' : ''}">${name}</span>`;
+    const nameBlock = `<span class="daily-tile-team${won ? ' is-winner' : ''}" title="${name}">${TEAM_ABBR[teamId] || name}</span>`;
     const logo = teamId ? `<img class="daily-tile-logo" src="${capLogoUrl(teamId)}" alt="">` : '';
     const scoreHtml = score == null ? '' : `<span class="daily-tile-score${won ? ' is-winner' : ''}">${score}</span>`;
     return `<div class="daily-tile-row"><span class="daily-tile-left">${logo}${nameBlock}</span>${scoreHtml}</div>`;
