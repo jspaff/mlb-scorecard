@@ -1085,7 +1085,6 @@
   .dy { container-type: inline-size; }
   .dy-head { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 4px 14px; margin-bottom: 16px; }
   .dy-title { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 24px; line-height: 1.1; text-transform: uppercase; color: var(--ink); }
-  .dy-meta { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
   .dy-sec { min-width: 0; margin-top: 24px; }
   .dy-head + .dy-sec { margin-top: 0; }
   .dy-empty { color: var(--ink-soft); font-family: 'Overpass', sans-serif; font-weight: 600; font-size: 12px; letter-spacing: 0.01em; padding: 6px 0; }
@@ -7632,12 +7631,10 @@
     const homeRuns = stats.flatMap(s => s.homeRuns);
     const starts = stats.flatMap(s => s.starts);
     const sec = buildDaySections(dayData);
-    const finals = games.filter(g => g.status.abstractGameState === 'Final').length;
     const when = new Date(`${dateStr}T12:00:00`).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-    const meta = [`${games.length} game${games.length === 1 ? '' : 's'}`, finals && finals < games.length ? `${finals} final` : '', homeRuns.length ? `${homeRuns.length} HR` : ''].filter(Boolean).join(' &#183; ');
     return `
       <div class="sheet dy">
-        <div class="dy-head"><div class="dy-title">${when}</div><div class="dy-meta">${meta}</div></div>
+        <div class="dy-head"><div class="dy-title">${when}</div></div>
         <div class="dy-sec">
           <div class="pp-skg-head"><span>Scores</span></div>
           <div class="dg-grid">${games.map(g => renderDayGame(g, media[g.gamePk])).join('')}</div>
@@ -11083,7 +11080,7 @@
     return [
       person.currentTeam && person.currentTeam.name,
       person.primaryPosition && person.primaryPosition.abbreviation
-    ].filter(Boolean).join(' &#183; ');
+    ].filter(Boolean).join(' | ');
   }
   function renderPlayerSearchResults(people) {
     if (!people.length) {
@@ -13561,7 +13558,7 @@
     const shownTab = hasTab ? profileTab : 'ov';
     const team = person.currentTeam && person.currentTeam.name;
     const pos = person.primaryPosition && person.primaryPosition.name;
-    const ident = [team, pos].filter(Boolean).map((t, i) => (i ? `<span class="pp-sep">&#183;</span><span class="pp-pos">${t}</span>` : t)).join('');
+    const ident = [team, pos].filter(Boolean).map((t, i) => (i ? `<span class="pp-sep">|</span><span class="pp-pos">${t}</span>` : t)).join('');
     const born = [person.birthCity, person.birthStateProvince || person.birthCountry].filter(Boolean).join(', ');
     // Label-over-value pairs, spelled out, wrapping onto as many lines as
     // the sheet needs -- one run-on line of abbreviations blurred together.
