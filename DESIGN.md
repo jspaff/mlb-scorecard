@@ -171,7 +171,7 @@ A three-layer palette of wall, board and ink, with two spare signal colors.
 
 **The Half-Game Rule.** Games back are written in halves everywhere, as the Monster hangs them: "4½", "½", "11", never "4.5" or "11.0"; a wild-card team ahead of the line is "+3". The standings tables mark the leader with a dash; the Team tab's Monster board leaves the leader's plate empty.
 
-**The Blank Zero Rule.** In game logs and tables, a zero count is left blank, never written as 0. The exceptions are pairs read aloud ("0-4" H-AB, an inning pitched), a linescore or big-number summary, where a blank would read as missing, and a zero that is the achievement (a starter's 0 ER or 0 BB on the Highlights tab).
+**The Blank Zero Rule.** In short stat lines that are mostly zeros (a game log, a single game's line, a team's per-player stats), a zero count is left blank, never written as 0, so the cells that carry ink are the ones that happened. Season leaderboards like the Players list, where zeros are rare, write them. The other exceptions are pairs read aloud ("0-4" H-AB, an inning pitched), a linescore or big-number summary, where a blank would read as missing, and a zero that is the achievement (a starter's 0 ER or 0 BB on the Highlights tab).
 
 ## Typography
 
