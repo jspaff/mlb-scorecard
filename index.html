@@ -4182,8 +4182,23 @@
       try { input.showPicker(); } catch (e) {}
     });
   });
+  // Dates are written in English whatever the phone's locale, so a UK phone
+  // doesn't turn "Sep 20" into "20 Sep" beside the app's own wording.
+  const DATE_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const DATE_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   function formatShortDate(dateStr) {
-    return new Date(dateStr + 'T00:00:00Z').toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' });
+    const [, m, d] = dateStr.split('-').map(Number);
+    return `${DATE_MONTHS[m - 1].slice(0, 3)} ${d}`;
+  }
+  // A heading's dateline; a date outside this year carries its year.
+  function formatLongDate(dateStr) {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const wd = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+    const year = String(y) === todayStr().slice(0, 4) ? '' : `, ${y}`;
+    return `${DATE_DAYS[wd]}, ${DATE_MONTHS[m - 1]} ${d}${year}`;
+  }
+  function formatClockTime(date) {
+    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   }
   // The Scorecard tab's .datePickText carries .date-display-text-cal (see
   // its CSS) and renders as a small month over a big day number instead of
@@ -4193,9 +4208,7 @@
       textEl.textContent = formatShortDate(dateStr);
       return;
     }
-    const d = new Date(dateStr + 'T00:00:00Z');
-    const month = d.toLocaleDateString(undefined, { month: 'short', timeZone: 'UTC' });
-    const day = d.toLocaleDateString(undefined, { day: 'numeric', timeZone: 'UTC' });
+    const [month, day] = formatShortDate(dateStr).split(' ');
     textEl.innerHTML = `<span class="cal-month">${month}</span><span class="cal-day">${day}</span>`;
   }
   function setDateInputValue(input, textEl, value) {
@@ -6668,7 +6681,7 @@
   }
 
   const scheduleCache = {};
-  const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const MONTH_NAMES = DATE_MONTHS;
   // Months are written one way across the app: three letters, a merged pair
   // with a slash (Mar/Apr, Sep/Oct).
   const monthShort = m => MONTH_NAMES[m].slice(0, 3);
@@ -6884,10 +6897,7 @@
   }
 
   function fmtNet(v) { return v > 0 ? `+${v}` : String(v); }
-  function fmtShortDate(d) {
-    const [, m, dd] = d.split('-').map(Number);
-    return `${MONTH_NAMES[m - 1].slice(0, 3)} ${dd}`;
-  }
+  function fmtShortDate(d) { return formatShortDate(d); }
 
   function renderTeamChartContent(teamId, teamName, season, series, throughDate) {
     const played = throughDate ? series.filter(s => s.date <= throughDate) : series;
@@ -6902,7 +6912,7 @@
   }
 
   function formatGameTime(iso) {
-    return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    return formatClockTime(new Date(iso));
   }
 
   function renderMonthGrid(startDate, endDate, gamesByDate, seasonStart, seasonEnd) {
@@ -7656,7 +7666,7 @@
     const homeRuns = stats.flatMap(s => s.homeRuns);
     const starts = stats.flatMap(s => s.starts);
     const sec = buildDaySections(dayData);
-    const when = new Date(`${dateStr}T12:00:00`).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    const when = formatLongDate(dateStr);
     return `
       <div class="sheet dy">
         <div class="dy-head"><div class="dy-title">${when}</div></div>
@@ -8395,7 +8405,7 @@
     const live = g.state === 'Live';
     const us = g.isHome ? g.homeScore : g.awayScore, them = g.isHome ? g.awayScore : g.homeScore;
     const when = new Date(g.gameDate);
-    const day = when.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+    const day = `${DATE_DAYS[when.getDay()].slice(0, 3)}, ${DATE_MONTHS[when.getMonth()].slice(0, 3)} ${when.getDate()}`;
     const kicker = live ? (g.inningLabel || g.detailedState || 'Live') : next.opener ? 'Opening Day' : 'Next Game';
     const right = live
       ? `<span class="tn-score">${us ?? 0}<b>-</b>${them ?? 0}</span>`
@@ -8905,7 +8915,7 @@
       if (a.date || b.date) return a.date ? -1 : 1;
       return (a.p.name || '').localeCompare(b.p.name || '');
     }).map(({ p, detail, date }) => {
-      const dateLabel = date ? new Date(date + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '&#8212;';
+      const dateLabel = date ? formatShortDate(date) : '&#8212;';
       return `
         <tr>
           <td class="il-num">${p.jersey}</td>
@@ -9266,7 +9276,7 @@
   }
 
   function renderGameSummaryContent(dateStr, games, headerLabel) {
-    const dateLabel = new Date(dateStr + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+    const dateLabel = formatLongDate(dateStr);
     const multi = games.length > 1;
 
     return `
@@ -9735,7 +9745,7 @@
         el.appendChild(line);
       }
       line.textContent = lastFeedOkAt
-        ? `${lastFeedOkAt.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })} | Reconnecting`
+        ? `${formatClockTime(lastFeedOkAt)} | Reconnecting`
         : 'Reconnecting';
     });
   }
@@ -9757,7 +9767,7 @@
 
   function showGameStripModal(dateStr, games) {
     gameStripOverlayBody.dataset.mode = 'date';
-    gameStripOverlayBody.innerHTML = `<div class="pitch-header">${formatShortDate(dateStr)} Games</div>
+    gameStripOverlayBody.innerHTML = `<div class="pitch-header">${formatLongDate(dateStr)}</div>
       <div class="daily-games-grid">${games.map(g => renderDailyGameTile(dateStr, scheduleGameToTileGame(g))).join('')}</div>`;
     openOverlay(gameStripOverlay);
   }
@@ -10305,7 +10315,7 @@
         const startTime = gameData.datetime && gameData.datetime.dateTime ? new Date(gameData.datetime.dateTime) : null;
         compactStateHtml = detailedState;
         subLineHtml = startTime
-          ? 'First pitch: ' + startTime.toLocaleString(undefined, {hour:'numeric', minute:'2-digit', month:'short', day:'numeric'})
+          ? 'First pitch ' + formatClockTime(startTime)
           : '';
       }
 

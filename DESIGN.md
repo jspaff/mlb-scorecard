@@ -175,7 +175,7 @@ A three-layer palette of wall, board and ink, with two spare signal colors.
 
 **The Separator Rule.** Words and figures are set apart by the job they do, never by a middle dot. A pipe splits the parts of an identity or a heading (Seattle Mariners | CF, Home Run | Rafael Flores Jr., 7.0 IP 0 ER 8 K | QS); a comma runs a stat line (1-4, 1 RBI); a plain or wide space sits between a date and opponent, a team and inning, or a time and the weather; a title is reworded rather than split (Mets Pitching). The middle dot belongs to scorebook notation alone, inside the diamond and the double-play codes (6·3, 6·4·3).
 
-**The Month Rule.** A month is written one way everywhere: three letters (May, Jun, Sep), a merged pair with a slash (Mar/Apr, Sep/Oct), capitals where the label is painted (MAR/APR 2026).
+**The Month Rule.** A month is written one way everywhere (a heading's dateline, which spells it out, aside): three letters (May, Jun, Sep), a merged pair with a slash (Mar/Apr, Sep/Oct), capitals where the label is painted (MAR/APR 2026).
 
 **The Blank Zero Rule.** In short stat lines that are mostly zeros (a game log, a single game's line, a team's per-player stats), a zero count is left blank, never written as 0, so the cells that carry ink are the ones that happened. Season leaderboards like the Players list, where zeros are rare, write them. The other exceptions are pairs read aloud ("0-4" H-AB, an inning pitched), a linescore or big-number summary, where a blank would read as missing, and a zero that is the achievement (a starter's 0 ER or 0 BB on the Highlights tab).
 
@@ -188,7 +188,8 @@ One spelling per thing, everywhere. A new screen takes these, never a second for
 | Half-inning | ▲ 7th, ▼ 7th, Mid 7th; in a still or tile, ▲8 | Top 7th, Bottom 7th, Bot, T7/B7 |
 | A live game's state | its inning, as above | "Live", a lamp |
 | A finished game | Final; F/10 for extra innings | Game over, FINAL/10 |
-| Dates | Sep 20; with the day, Sun, Sep 20 (built from the app's own month names) | September 20, a locale's "Sept" |
+| Dates | Sep 20 in rows, tiles, kickers and pickers; Sun, Sep 20 where the day matters (an upcoming game); Sep 20, 2019 for a debut. A date that heads a page or popup is a dateline: Sunday, September 20, with the year when it isn't this year (Friday, September 20, 2019). Always in English, from the app's own names, whatever the phone's locale | 20 Sep, a locale's "Sept", a full month outside a dateline |
+| Times | 7:05 PM, in the reader's time zone; a game not yet started says First pitch 7:05 PM (the picker already has the date) | 19:05, First pitch: Sep 20, 7:05 PM |
 | Months | per the Month Rule (Mar/Apr, May, Sep/Oct) | March/April, Mar–Apr |
 | Games back | per the Half-Game Rule (4½, ½, +3) | 4.5, 11.0 |
 | Records and scores | 62-100, 3-2 (a hyphen) | 62–100, 62 - 100 |
