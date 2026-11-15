@@ -1751,10 +1751,14 @@
   /* The division as the Monster's scoreboard: names in white block
      capitals, each number on its own recessed plate. */
   .tdv { display: grid; gap: 4px; }
-  .tdv-row { display: grid; grid-template-columns: 14px minmax(0, 1fr) 40px 40px 44px 30px; align-items: center; gap: 4px; width: 100%; padding: 3px 4px; background: none; border: 0; color: var(--ink); text-align: left; font: inherit; cursor: pointer; }
+  .tdv-row { display: grid; grid-template-columns: 14px minmax(0, 1fr) 40px 40px 44px 30px; align-items: center; gap: 4px; width: 100%; padding: 3px 8px; background: none; border: 0; color: var(--ink); text-align: left; font: inherit; cursor: pointer; }
   .tdv-row:not(.tdv-head):hover .tdv-team { color: var(--gold); }
   .tdv-row:focus-visible { outline: 2px solid var(--gold); outline-offset: 0; }
-  .tdv-row.is-this, .tdv-row.is-this:hover { background: var(--wash); box-shadow: inset 3px 0 0 var(--gold); cursor: default; }
+  .tdv-row.is-this, .tdv-row.is-this:hover { background: var(--wash); cursor: default; }
+  /* The team chart's head: the season as a gold kicker, the record big. */
+  .tc-sub { display: flex; align-items: baseline; gap: 8px; }
+  .tc-season { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.1em; color: var(--gold); }
+  .tc-rec { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 20px; color: var(--ink); font-variant-numeric: tabular-nums; }
   .tdv-row.is-this:hover .tdv-team { color: var(--ink); }
   .tdv-head { padding-top: 0; padding-bottom: 0; cursor: default; }
   .tdv-head > span { text-align: center; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; color: var(--ink-soft); }
@@ -1768,7 +1772,7 @@
   .tdv-short { display: none; }
   /* A narrow phone: smaller plates, and Arizona as MLB's own "D-backs". */
   @container (max-width: 340px) {
-    .tdv-row { grid-template-columns: 12px minmax(0, 1fr) 32px 32px 38px 26px; gap: 3px; padding: 3px 2px; }
+    .tdv-row { grid-template-columns: 12px minmax(0, 1fr) 32px 32px 38px 26px; gap: 3px; padding: 3px 6px; }
     .tdv-slot { font-size: 14px; }
     .tdv-team { padding-left: 2px; font-size: 16px; letter-spacing: 0.04em; }
     .tdv-rank { font-size: 14px; }
@@ -6662,6 +6666,9 @@
 
   const scheduleCache = {};
   const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  // Months are written one way across the app: three letters, a merged pair
+  // with a slash (Mar/Apr, Sep/Oct).
+  const monthShort = m => MONTH_NAMES[m].slice(0, 3);
 
   function sortedTeams() {
     return Object.keys(TEAM_NICKNAMES)
@@ -6887,7 +6894,7 @@
     const wins = played.filter(s => s.won).length;
     const losses = played.length - wins;
     return `<div class="pitch-header">${teamName}</div>
-      <div class="pitch-subheader">${season} Season &#8226; ${wins}-${losses}</div>
+      <div class="pitch-subheader tc-sub"><span class="tc-season">${season}</span><span class="tc-rec">${wins}-${losses}</span></div>
       ${renderWinLossSvg(`teamChartClip${teamId}`, played)}`;
   }
 
@@ -6957,11 +6964,11 @@
         if (blockEndM > 11) { blockEndM = 0; blockEndY++; }
         blockStart = new Date(seasonStart + 'T00:00:00Z');
         blockEnd = new Date(Date.UTC(blockEndY, blockEndM + 1, 0));
-        title = `${MONTH_NAMES[m]}/${MONTH_NAMES[blockEndM]} ${blockEndY}`;
+        title = `${monthShort(m)}/${monthShort(blockEndM)} ${blockEndY}`;
       } else {
         blockStart = new Date(Date.UTC(y, m, 1));
         blockEnd = new Date(Date.UTC(y, m + 1, 0));
-        title = `${MONTH_NAMES[m]} ${y}`;
+        title = `${monthShort(m)} ${y}`;
       }
 
       const isCurrentMonth = (todayS.slice(0, 4) === String(y) && Number(todayS.slice(5, 7)) - 1 === m) ||
@@ -8529,7 +8536,7 @@
     stream.forEach(x => {
       const m = Math.min(9, Math.max(4, Number(x.g.date.slice(5, 7))));
       const ym = `${x.g.date.slice(0, 4)}-${String(m).padStart(2, '0')}`;
-      const name = m === 4 ? 'Mar&#8211;Apr' : m === 9 ? 'Sep&#8211;Oct' : MONTH_NAMES[m - 1];
+      const name = m === 4 ? 'Mar/Apr' : m === 9 ? 'Sep/Oct' : monthShort(m - 1);
       if (!months.length || months[months.length - 1].ym !== ym) months.push({ ym, name, short: m === 4 || m === 9 ? name : name.slice(0, 3), items: [] });
       months[months.length - 1].items.push(x);
     });
@@ -10954,7 +10961,7 @@
   const teamChartClose = document.getElementById('teamChartClose');
 
   async function showTeamChartModal(teamId, teamName, season, throughDate) {
-    teamChartModalBody.innerHTML = `<div class="pitch-header">${teamName}</div><div class="pitch-subheader">${season} Season</div><div class="pitch-empty">Loading&#8230;</div>`;
+    teamChartModalBody.innerHTML = `<div class="pitch-header">${teamName}</div><div class="pitch-subheader tc-sub"><span class="tc-season">${season}</span></div><div class="pitch-empty">Loading&#8230;</div>`;
     openOverlay(teamChartOverlay);
     try {
       const series = await getTeamWinLossSeries(teamId, season);
@@ -12720,7 +12727,7 @@
       grp.games.push(g);
     });
     const hasMarch = gameLog.some(g => g.date.slice(5, 7) === '03');
-    groups.forEach(grp => { grp.label = grp.m === '04' && hasMarch ? 'Mar/Apr' : MONTH_NAMES[Number(grp.m) - 1]; });
+    groups.forEach(grp => { grp.label = grp.m === '04' && hasMarch ? 'Mar/Apr' : monthShort(Number(grp.m) - 1); });
     return groups;
   }
 
@@ -12776,7 +12783,7 @@
     const marApr = [splits.March, splits.April].filter(Boolean);
     const groups = [
       ['Platoon', [[pitcher ? 'vs LHB' : 'vs LHP', splits['vs Left']], [pitcher ? 'vs RHB' : 'vs RHP', splits['vs Right']]]],
-      ['By month', [['Mar/Apr', marApr.length ? sumStatLines(marApr) : null], ...SPLIT_MONTHS.map(m => [m, splits[m]])]]
+      ['By month', [['Mar/Apr', marApr.length ? sumStatLines(marApr) : null], ...SPLIT_MONTHS.map(m => [m.slice(0, 3), splits[m]])]]
     ].map(([name, rows]) => [name, rows.filter(([, st]) => st).map(([label, st]) => {
       const ops = slashFromCounts(st).ops;
       return { label, st, ops, value: Number(ops) || 0, sample: pitcher ? st.battersFaced : st.plateAppearances };
