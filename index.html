@@ -112,9 +112,9 @@
   .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
   .tab-btn {
     font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 12px;
-    letter-spacing: 0.05em;
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--frame-ink);
     background: none;
@@ -1757,7 +1757,7 @@
   /* The division as the Monster's scoreboard: names in white block
      capitals, each number on its own recessed plate. */
   .tdv { display: grid; gap: 4px; }
-  .tdv-row { display: grid; grid-template-columns: 14px minmax(0, 1fr) 40px 40px 44px 30px; align-items: center; gap: 4px; width: 100%; padding: 3px 8px; background: none; border: 0; color: var(--ink); text-align: left; font: inherit; cursor: pointer; }
+  .tdv-row { display: grid; grid-template-columns: minmax(0, 1fr) 40px 40px 44px 30px; align-items: center; gap: 4px; width: 100%; padding: 3px 8px; background: none; border: 0; color: var(--ink); text-align: left; font: inherit; cursor: pointer; }
   .tdv-row:not(.tdv-head):hover .tdv-team { color: var(--gold); }
   .tdv-row:focus-visible { outline: 2px solid var(--gold); outline-offset: 0; }
   .tdv-row.is-this, .tdv-row.is-this:hover { background: var(--wash); cursor: default; }
@@ -1768,7 +1768,6 @@
   .tdv-row.is-this:hover .tdv-team { color: var(--ink); }
   .tdv-head { padding-top: 0; padding-bottom: 0; cursor: default; }
   .tdv-head > span { text-align: center; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; color: var(--ink-soft); }
-  .tdv-rank { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 16px; color: var(--gold); text-align: center; }
   .tdv-team { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-left: 4px; font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 16px; letter-spacing: 0.06em; text-transform: uppercase; }
   .tdv-slot { display: block; padding: 3px 0 2px; border-radius: 2px; background: rgba(0, 0, 0, 0.26); box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.5), inset 0 -1px 1px rgba(255, 255, 255, 0.05); text-align: center; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 16px; line-height: 1.25; font-variant-numeric: tabular-nums; color: var(--ink); }
   .tdv-slot.is-soft { color: var(--ink-soft); }
@@ -1778,10 +1777,9 @@
   .tdv-short { display: none; }
   /* A narrow phone: smaller plates, and Arizona as MLB's own "D-backs". */
   @container (max-width: 340px) {
-    .tdv-row { grid-template-columns: 12px minmax(0, 1fr) 32px 32px 38px 26px; gap: 3px; padding: 3px 6px; }
+    .tdv-row { grid-template-columns: minmax(0, 1fr) 32px 32px 38px 26px; gap: 3px; padding: 3px 6px; }
     .tdv-slot { font-size: 14px; }
     .tdv-team { padding-left: 2px; font-size: 16px; letter-spacing: 0.04em; }
-    .tdv-rank { font-size: 14px; }
     .tdv-tag { padding: 1px 2px 0; font-size: 9px; letter-spacing: 0.02em; }
     .tdv-full { display: none; } .tdv-short { display: inline; }
   }
@@ -3290,8 +3288,8 @@
     background: none;
     border: 0;
     font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 12px;
+    font-weight: 800;
+    font-size: 11px;
     letter-spacing: 0.05em;
     text-transform: uppercase;
     color: var(--frame-ink);
@@ -3359,8 +3357,8 @@
     margin-bottom: -1px;
     padding: 9px 10px 8px;
     font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 11.5px;
+    font-weight: 800;
+    font-size: 11px;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--ink-soft);
@@ -7987,11 +7985,10 @@
     const tag = r => (r.divisionChamp || /[yz]/.test(r.clinchIndicator || '')) ? 'Div'
       : r.clinchIndicator === 'w' ? 'WC' : r.clinchIndicator === 'x' ? 'In' : '';
     return `<div class="tdv">
-        <div class="tdv-row tdv-head"><span></span><span></span><span>W</span><span>L</span><span>GB</span><span></span></div>
+        <div class="tdv-row tdv-head"><span></span><span>W</span><span>L</span><span>GB</span><span></span></div>
         ${rows.map(r => {
           const t = tag(r);
           return `<button type="button" class="tdv-row${r.team.id === Number(teamId) ? ' is-this' : ''}" data-team-pick="${r.team.id}">
-            <span class="tdv-rank">${r.divisionRank}</span>
             <span class="tdv-team">${r.team.id === 109 ? '<span class="tdv-full">Diamondbacks</span><span class="tdv-short">D-backs</span>' : TEAM_NICKNAMES[r.team.id] || r.team.name}</span>
             <span class="tdv-slot">${r.wins}</span><span class="tdv-slot">${r.losses}</span>
             <span class="tdv-slot is-soft">${monsterGamesBack(r.gamesBack)}</span>
