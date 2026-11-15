@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Overpass:wght@600;700;800&family=Special+Elite&family=IBM+Plex+Mono:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Overpass:wght@600;700;800&family=Special+Elite&display=swap');
 
   html, body { margin: 0; padding: 0; background: var(--frame, #54796d); }
 
@@ -31,6 +31,9 @@
     --paper: #3b4336;
     --paper-line: #545e4d;
     --ink: #f3ecdb;
+    /* Cream for text sitting straight on the Monster green: a shade
+       brighter than --ink, which is 4.1:1 there; this is 4.6:1. */
+    --frame-ink: #fdf8ee;
     --ink-soft: #c3c8bb;
     --gold: #d9a91a;
     --brick: #e0604a;
@@ -44,6 +47,14 @@
     --frame: #54796d;
     --monster-green: #3fae56;
     --monster-green-dim: #33422e;
+    /* The rule over a section title: cream at a third, so titles stay ink
+       and gold is left to the data that earns it. */
+    --title-rule: rgba(243, 236, 219, 0.35);
+    /* The one gold wash: what's chosen or yours -- the active segment or
+       chip, a hover, your team, this team's row, today, the pitch in view. */
+    --wash: rgba(217, 169, 26, 0.15);
+    /* Text-only tint of the ball green, as --brick-text is for brick. */
+    --ball-text: #93c4a2;
   }
 
   #mlb-root * { box-sizing: border-box; }
@@ -54,8 +65,7 @@
   #mlb-root {
     background: var(--frame);
     padding: 18px;
-    border-radius: 10px;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Overpass', sans-serif;
     min-height: 100%;
     /* Kept in sync with .tab-header's real height and #mlb-root's own
        distance from the viewport's right edge by syncSidebarOffsets() --
@@ -101,11 +111,11 @@
   .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
   .tab-btn {
     font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 12px;
-    letter-spacing: 0.05em;
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--ink);
+    color: var(--frame-ink);
     background: none;
     border: none;
     border-bottom: 2px solid transparent;
@@ -190,7 +200,7 @@
     font-family: 'Oswald', sans-serif;
     font-weight: 500;
     letter-spacing: 0.02em;
-    font-size: 13px;
+    font-size: 14px;
     max-width: 260px;
   }
   /* Chrome/Safari still draw their own light bezel around a <select> unless
@@ -232,7 +242,7 @@
     font-family: 'Oswald', sans-serif;
     font-weight: 500;
     letter-spacing: 0.02em;
-    font-size: 13px;
+    font-size: 14px;
     text-transform: uppercase;
     white-space: nowrap;
   }
@@ -276,7 +286,7 @@
   .date-display-text-cal .cal-day {
     font-family: 'Oswald', sans-serif;
     font-weight: 700;
-    font-size: 22px;
+    font-size: 20px;
     line-height: 1;
     color: var(--ink);
   }
@@ -312,8 +322,10 @@
      small text to clear 4.5:1 on its own. Already-dark surfaces (a .sheet,
      a modal, the sidebar) don't need the plate, just the softer ink. */
   .mlb-status-msg {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 600;
     font-size: 13px;
+    letter-spacing: 0.01em;
     line-height: 1.5;
     color: var(--ink);
     background: var(--paper);
@@ -327,12 +339,17 @@
   .sheet .mlb-status-msg,
   .pitch-overlay .mlb-status-msg,
   .scorecard-sidebar .mlb-status-msg {
+    font-size: 12px;
     color: var(--ink-soft);
     background: none;
     border: none;
     margin: 0 auto;
     padding: 30px 10px;
   }
+
+  /* Form controls take the page's type unless a rule sets their own; the
+     browser's default (Arial 13.33px) is no face of this design. */
+  :where(#mlb-root) :where(button, input, select, textarea) { font: inherit; }
 
   .sheet {
     background: var(--paper);
@@ -449,25 +466,26 @@
     padding: 7px 0;
   }
   .score-strip-teams {
-    font-family: 'Oswald', sans-serif;
-    font-weight: 600;
-    font-size: 14.5px;
-    letter-spacing: 0.02em;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
     color: var(--ink);
     white-space: nowrap;
   }
   .score-strip-run { color: var(--gold); font-weight: 700; padding: 0 1px; }
   .score-strip-state {
     font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 10.5px;
+    font-weight: 800;
+    font-size: 10px;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--ink-soft);
     white-space: nowrap;
   }
   .score-strip-sub {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Overpass', sans-serif; font-weight: 600; letter-spacing: 0.01em;
     font-size: 12px;
     color: var(--ink-soft);
     padding-bottom: 8px;
@@ -681,16 +699,14 @@
   .venue-name {
     font-family: 'Oswald', sans-serif;
     font-weight: 600;
-    font-size: 15px;
+    font-size: 16px;
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--ink);
   }
   .venue-city {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Overpass', sans-serif; font-weight: 600; letter-spacing: 0.01em;
     font-size: 11px;
-    font-weight: 400;
-    letter-spacing: 0.02em;
     color: var(--ink-soft);
     margin-top: 1px;
   }
@@ -711,7 +727,7 @@
     align-items: center;
     gap: 5px;
     font-family: 'Overpass', sans-serif;
-    font-weight: 700;
+    font-weight: 800;
     font-size: 10px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -719,13 +735,10 @@
     flex-shrink: 0;
   }
   .badge-live { color: var(--gold); }
-  .badge-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-soft); flex-shrink: 0; }
-  .badge-live .badge-dot { background: var(--gold); }
-  .badge-final .badge-dot { background: var(--ink); }
 
   .gs-date-line {
-    font-family: 'Inter', sans-serif;
-    font-size: 11.5px;
+    font-family: 'Overpass', sans-serif; font-weight: 600; letter-spacing: 0.01em;
+    font-size: 11px;
     color: var(--ink-soft);
     margin-bottom: 10px;
   }
@@ -734,42 +747,48 @@
     display: inline-block;
     margin-top: 6px;
     font-family: 'Overpass', sans-serif;
-    font-weight: 700;
+    font-weight: 800;
     font-size: 10px;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--gold);
+    color: var(--ink);
     text-decoration: none;
   }
-  .pog-watch:hover, .pog-watch:focus-visible { text-decoration: underline; }
+  .pog-watch:hover, .pog-watch:focus-visible { color: var(--gold); }
+  /* Every text link and Watch: cream label, its arrow or play mark in gold. */
+  .lk-tri { color: var(--gold); }
   /* At-bat popup/trackers' own Watch link -- sits right below the batter/
      pitcher lines, left-aligned like them, at .pog-watch's own original
      size (no overrides needed here). */
   .atbat-watch { display: block; margin-bottom: 4px; }
   .potg-loading {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 600;
     font-size: 12px;
+    letter-spacing: 0.01em;
     color: var(--ink-soft);
   }
   .potg-player-name { max-width: 100%; }
   .potg-stat { white-space: nowrap; }
+  /* The way out of a popup to the full page: a recessed board plate,
+     cream with its arrow in gold, the border turning gold on hover. */
   .modal-cta {
     display: block;
     width: 100%;
     font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 12px;
-    letter-spacing: 0.04em;
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--paper);
-    background: var(--gold);
-    border: none;
+    color: var(--ink);
+    background: rgba(0, 0, 0, 0.22);
+    border: 1px solid var(--paper-line);
     border-radius: 0;
     padding: 11px 14px;
     cursor: pointer;
   }
-  .modal-cta:hover { filter: brightness(1.08); }
-  .modal-cta:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .modal-cta:hover { border-color: var(--gold); }
+  .modal-cta:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
   .game-summary-game + .game-summary-game {
     margin-top: 18px;
@@ -797,7 +816,6 @@
     justify-content: center;
     gap: 4px;
     border: 1px solid var(--paper-line);
-    border-radius: 6px;
     padding: 10px 12px;
     cursor: pointer;
     position: relative;
@@ -828,11 +846,12 @@
   .daily-tile:active::after { opacity: 0.16; transition-duration: 0.05s; }
   .daily-tile:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
   .daily-tile.is-live {
-    border-width: 2px;
     border-color: var(--gold);
     background: rgba(84, 121, 109, 0.32);
-    animation: daily-tile-glow 1.6s ease-in-out infinite;
   }
+  /* Live, everywhere a game is shown: a 1px gold frame that glows slowly,
+     and the inning in gold. The one glow in the app. */
+  .daily-tile.is-live, .dg.is-live, .tn.is-live { animation: live-glow 2.4s ease-in-out infinite; }
   .daily-tile.is-final { border-color: var(--ink); border-width: 1.5px; background: rgba(84, 121, 109, 0.32); }
   /* Marks whichever tile's scorecard is currently open below -- deliberately
      not another border color, since gold and ink are already spoken for by
@@ -857,12 +876,12 @@
     background: var(--ink);
     z-index: 1;
   }
-  @keyframes daily-tile-glow {
-    0%, 100% { border-color: var(--gold); box-shadow: 0 0 0 0 rgba(217, 169, 26, 0); }
-    50% { border-color: #f0c94a; box-shadow: 0 0 9px 1px rgba(217, 169, 26, 0.55); }
+  @keyframes live-glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(217, 169, 26, 0); }
+    50% { box-shadow: 0 0 10px 1px rgba(217, 169, 26, 0.5); }
   }
   @media (prefers-reduced-motion: reduce) {
-    .daily-tile.is-live { animation: none; }
+    .daily-tile.is-live, .dg.is-live, .tn.is-live { animation: none; }
   }
   .daily-tile-watermark {
     position: absolute;
@@ -891,9 +910,11 @@
   }
   .daily-tile-logo { width: 24px; height: 24px; flex-shrink: 0; }
   .daily-tile-team {
-    font-family: 'Oswald', sans-serif;
-    font-weight: 600;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 800;
     font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
     color: var(--ink-soft);
     white-space: nowrap;
     overflow: hidden;
@@ -908,16 +929,17 @@
     font-variant-numeric: tabular-nums;
     flex-shrink: 0;
   }
-  .daily-tile-team.is-winner, .daily-tile-score.is-winner { color: var(--ink); font-weight: 700; }
-  .daily-tile.is-live .daily-tile-team, .daily-tile.is-live .daily-tile-score { color: var(--ink); font-weight: 600; }
+  .daily-tile-team.is-winner, .daily-tile-score.is-winner { color: var(--ink); }
+  .daily-tile-score.is-winner { font-weight: 700; }
+  .daily-tile.is-live .daily-tile-team, .daily-tile.is-live .daily-tile-score { color: var(--ink); }
   .daily-tile-state {
     position: relative;
     z-index: 1;
     margin-top: 2px;
     text-align: center;
     font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 8.5px;
+    font-weight: 800;
+    font-size: 9px;
     letter-spacing: 0.05em;
     text-transform: uppercase;
     color: var(--ink-soft);
@@ -1068,10 +1090,9 @@
   .dy { container-type: inline-size; }
   .dy-head { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 4px 14px; margin-bottom: 16px; }
   .dy-title { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 24px; line-height: 1.1; text-transform: uppercase; color: var(--ink); }
-  .dy-meta { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
   .dy-sec { min-width: 0; margin-top: 24px; }
   .dy-head + .dy-sec { margin-top: 0; }
-  .dy-empty { color: var(--ink-soft); font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; padding: 6px 0; }
+  .dy-empty { color: var(--ink-soft); font-family: 'Overpass', sans-serif; font-weight: 600; font-size: 12px; letter-spacing: 0.01em; padding: 6px 0; }
 
   /* Scores: a small box a game -- two across a phone, more on a wide
      sheet. The teams stack with their runs in a fixed column; the state
@@ -1080,14 +1101,14 @@
   .dg { min-width: 0; padding: 6px 7px 7px; background: rgba(0, 0, 0, 0.14); border: 1px solid var(--paper-line); cursor: pointer; }
   .dg:hover { border-color: var(--ink-soft); }
   .dg:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
-  .dg.is-my-team { background: rgba(217, 169, 26, 0.13); }
-  .dg.is-live { border-color: #3fae56; }
+  .dg.is-my-team { background: var(--wash); }
+  .dg.is-live { border-color: var(--gold); }
   .dg-box { display: flex; gap: 6px; }
   .dg-teams { flex: 1; min-width: 0; }
   /* Lettered like the Monster's own board: no logos (a 16px logo turned
      the detailed and colorful ones to smudges), the club in Oswald. */
-  .dg-team { display: grid; grid-template-columns: minmax(0, 1fr) 24px; align-items: center; gap: 5px; height: 21px; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 15px; letter-spacing: 0.04em; color: var(--ink); }
-  .dg-team b { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 17px; text-align: right; font-variant-numeric: tabular-nums; }
+  .dg-team { display: grid; grid-template-columns: minmax(0, 1fr) 24px; align-items: center; gap: 5px; height: 21px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); }
+  .dg-team b { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 16px; text-align: right; font-variant-numeric: tabular-nums; }
   /* A final's winner, as the game strip marks it: his cap faintly behind
      the box, sized to the box so a phone's short one isn't swamped. */
   .dg { position: relative; overflow: hidden; }
@@ -1099,11 +1120,30 @@
   .dg-team.is-lost { color: var(--ink-soft); }
   .dg-team.is-lost b { font-weight: 400; }
   .dg-aside { display: flex; flex-direction: column; align-items: flex-end; justify-content: space-between; width: 42px; flex: none; }
-  .dg-state { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; line-height: 21px; }
-  .dg.is-live .dg-state { color: #3fae56; }
+  .dg-state { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; line-height: 21px; }
+  .dg.is-live .dg-state { color: var(--gold); }
+  .daily-tile.is-live .daily-tile-state { color: var(--gold); }
   .dg-recap { width: 24px; height: 18px; padding: 0; background: rgba(0, 0, 0, 0.22); border: 1px solid var(--paper-line); font-size: 9px; line-height: 1; color: var(--gold); cursor: pointer; }
   .dg-recap:hover, .dg-recap:focus-visible { border-color: var(--gold); }
-  .dg-story { margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(84, 94, 77, 0.6); font-family: 'Inter', sans-serif; font-size: 10.5px; line-height: 1.35; color: var(--ink-soft); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  /* On a touch screen the small controls reach past their own edges, to a
+     finger's size, without growing what's drawn. */
+  @media (pointer: coarse) {
+    .dg-aside .dg-recap, .dh-watch { position: relative; }
+    .dg-aside .dg-recap::before, .dh-watch::before, .hl-alt::before { content: ''; position: absolute; }
+    .dg-aside .dg-recap::before { inset: -5px -4px; }
+    .dh-watch::before { inset: -10px -6px; }
+    .hl-alt::before { inset: -8px -4px; }
+    .dy-more, .pp-game-link, .pog-watch { position: relative; }
+    .pog-watch::before { content: ''; position: absolute; inset: -6px -4px; }
+    /* In a start's row the Watch link sits right under the plate: its reach
+       stays inside the row so it never takes a tap meant for the name. */
+    .ds-watch::before { inset: -4px -6px; }
+    .dy-more::before, .pp-game-link::before { content: ''; position: absolute; }
+    .dy-more::before { inset: -10px -6px; }
+    .pp-game-link::before { inset: -6px -4px; }
+    .gt-play, .gt-play[class] { height: 26px; }
+  }
+  .dg-story { margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(84, 94, 77, 0.6); font-family: 'Overpass', sans-serif; font-weight: 600; letter-spacing: 0.01em; font-size: 11px; line-height: 1.35; color: var(--ink-soft); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   /* On a phone the box is just the score; the recap's headline joins it
      once there's room. */
   .dg-story { display: none; }
@@ -1117,14 +1157,14 @@
     border: 0;
     font-family: 'Overpass', sans-serif;
     font-weight: 800;
-    font-size: 9.5px;
+    font-size: 10px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--gold);
+    color: var(--ink);
     text-decoration: none;
     cursor: pointer;
   }
-  .dh-watch:hover { text-decoration: underline; }
+  .dh-watch:hover, .dy-more:hover { color: var(--gold); }
 
   /* Home runs, the biggest swing first */
   .dh { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; border-bottom: 1px dashed var(--paper-line); }
@@ -1140,7 +1180,7 @@
   .ds-row .ds-name { flex-direction: column; align-items: flex-start; gap: 2px; }
   .ds-head .ds-name { flex-direction: row; }
   .ds-who { display: flex; align-items: center; min-width: 0; max-width: 100%; }
-  .ds-sub { display: flex; align-items: baseline; gap: 10px; padding-left: 24px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10px; color: var(--ink-soft); }
+  .ds-sub { display: flex; align-items: baseline; gap: 10px; padding-left: 24px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); }
   .ds-watch { margin: 0; }
   /* A phone's table gives a long name its short form ("S. McClanahan"). */
   .ds-short { display: none; }
@@ -1150,32 +1190,31 @@
     .ds-short { display: inline; }
   }
   .dh-who .player-name-btn { min-width: 0; }
-  .dh-team, .dh-count { flex: none; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10px; color: var(--ink-soft); white-space: nowrap; }
+  .dh-team, .dh-count { flex: none; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); white-space: nowrap; }
   .ds-name .dh-team { margin-left: 6px; }
   .dh-count { font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; font-size: 9px; }
-  .dh-context { margin-top: 3px; font-family: 'Overpass', sans-serif; font-weight: 600; font-size: 10.5px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .dh-context { margin-top: 3px; font-family: 'Overpass', sans-serif; font-weight: 600; font-size: 11px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
   .dh-tag { font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; font-size: 9px; color: var(--ink); }
   .dh-tag.is-gold { color: var(--gold); }
   .dh-side { flex: none; display: flex; flex-direction: column; align-items: flex-end; }
   .dh-dist { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 20px; line-height: 1.1; color: var(--ink); font-variant-numeric: tabular-nums; }
-  .dh-dist small { margin-left: 2px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 8.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); }
+  .dh-dist small { margin-left: 2px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); }
   .dh-watch { margin-top: 2px; }
-  .dy-more { margin-top: 8px; color: var(--ink-soft); }
-  .dy-more:hover { color: var(--ink); }
+  .dy-more { margin-top: 8px; }
 
   /* Best starts: a box-score line under painted heads, zeros blank */
   .ds-row { display: grid; grid-template-columns: minmax(0, 1fr) repeat(6, 30px); align-items: center; gap: 4px; padding: 5px 0; border-bottom: 1px dashed var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 12px; color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; }
-  .ds-head { padding: 0 0 3px; border-bottom: 1px solid var(--paper-line); font-weight: 800; font-size: 8.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+  .ds-head { padding: 0 0 3px; border-bottom: 1px solid var(--paper-line); font-weight: 800; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
   .ds-name { display: flex; align-items: center; min-width: 0; text-align: left; }
   .ds-name .player-name-btn { min-width: 0; }
-  .ds-gs { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 15px; }
+  .ds-gs { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 16px; }
   @media (max-width: 420px) { .ds-row { grid-template-columns: minmax(0, 1fr) repeat(6, 26px); } }
 
   /* Videos. A card is a framed scorebook still -- the player's print
      beside the play's diamond -- over a kicker saying why it's here. */
   .vc { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 6px 6px 8px; background: rgba(0, 0, 0, 0.18); border: 1px solid var(--paper-line); text-align: left; color: var(--ink); cursor: pointer; scroll-snap-align: start; }
   .vc:hover, .vc:focus-visible { border-color: var(--gold); }
-  .vc:focus-visible { outline: none; }
+  .vc:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
   .vc-thumb { position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden; margin-bottom: 2px; background: var(--paper-line); border: 1px solid var(--paper-line); }
   .vc { container-type: inline-size; }
   .vc-card { position: absolute; inset: 0; display: grid; grid-template-columns: 40% minmax(0, 1fr); background: var(--paper); }
@@ -1187,7 +1226,6 @@
   /* Team and inning in scoreboard lettering, sized to the card. */
   .vc-where { display: flex; align-items: center; gap: 0.35em; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: clamp(15px, 8.6cqw, 28px); line-height: 1.1; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink); white-space: nowrap; }
   .vc-where img { width: 1.15em; height: 1.15em; }
-  .vc-where b { font-weight: inherit; opacity: 0.55; }
   .vc-inn { display: inline-flex; align-items: center; gap: 0.14em; }
   .vc-inn .now-tri { width: 0.46em; height: 0.37em; }
   .vc-dia { position: relative; height: 56%; aspect-ratio: 1; }
@@ -1203,8 +1241,8 @@
   }
   .vc-kicker { padding: 0 2px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); }
   .vc-kicker em { font-style: normal; font-weight: 700; letter-spacing: 0.02em; color: var(--ink-soft); }
-  .vc-title { padding: 0 2px; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 13.5px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .dp-meta { padding: 0 2px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 9.5px; color: var(--ink-soft); }
+  .vc-title { padding: 0 2px; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 14px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .dp-meta { padding: 0 2px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); }
 
 
   /* A row of videos in a section: swiped on a phone, a grid when wide. */
@@ -1236,7 +1274,7 @@
   .team-name {
     font-family: 'Oswald', sans-serif;
     font-weight: 600;
-    font-size: 15px;
+    font-size: 16px;
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--ink);
@@ -1296,7 +1334,6 @@
     padding: 12px 14px;
     background: rgba(28, 58, 44, 0.03);
     border: 1px solid var(--paper-line);
-    border-radius: 6px;
     text-align: center;
   }
   .spray-card > svg { max-width: 280px; margin: 0 auto; }
@@ -1310,15 +1347,15 @@
   }
   .spray-title {
     font-family: 'Overpass', sans-serif;
-    font-weight: 700;
+    font-weight: 800;
     font-size: 10px;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--ink-soft);
   }
   .spray-filter {
-    font-family: 'Inter', sans-serif;
-    font-size: 10.5px;
+    font-family: 'Overpass', sans-serif; font-weight: 600; letter-spacing: 0.01em;
+    font-size: 11px;
     background: var(--paper);
     color: var(--ink);
     border: 2px solid var(--ink);
@@ -1335,7 +1372,7 @@
   .spray-key {
     font-family: 'Overpass', sans-serif;
     font-weight: 600;
-    font-size: 10px;
+    font-size: 11px;
     color: var(--ink-soft);
     display: inline-flex;
     align-items: center;
@@ -1350,14 +1387,14 @@
   .view-toggle { display: flex; background: var(--paper); border: 1px solid var(--paper-line); border-radius: 0; overflow: hidden; }
   .view-toggle-btn {
     font-family: 'Overpass', sans-serif;
-    font-weight: 700;
+    font-weight: 800;
     font-size: 11px;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--ink-soft);
     background: none;
     border: none;
-    padding: 7px 12px;
+    padding: 9px 12px;
     cursor: pointer;
   }
   .view-toggle-btn + .view-toggle-btn { border-left: 1px solid var(--paper-line); }
@@ -1371,7 +1408,7 @@
     [data-tab-controls="standings"] .view-toggle-btn { padding-left: 6px; padding-right: 6px; letter-spacing: 0.02em; }
     #standingsYearPick { padding-left: 8px; padding-right: 22px; background-position: right 8px center; }
   }
-  .view-toggle-btn.active { color: var(--ink); background: rgba(217, 169, 26, 0.15); box-shadow: inset 0 -2px 0 var(--gold); }
+  .view-toggle-btn.active { color: var(--ink); background: var(--wash); box-shadow: inset 0 -2px 0 var(--gold); }
   .view-toggle-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
   .wc-cutoff-line { border-top: 2px solid var(--ink); margin: 2px 0 0; }
 
@@ -1392,14 +1429,14 @@
   .roster-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
   .roster-section-title {
     font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 10px;
-    letter-spacing: 0.06em;
+    font-weight: 800;
+    font-size: 11.5px;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--gold);
+    color: var(--ink);
     margin: 16px 0 6px;
-    padding-bottom: 3px;
-    border-bottom: 1px solid var(--paper-line);
+    padding-top: 5px;
+    border-top: 2px solid var(--title-rule);
   }
   /* Team names (nicknames, not full city + name -- see teamNickname) never
      wrap, so a "Multiple" traded year or a longer nickname can't blow out
@@ -1433,6 +1470,10 @@
   }
   table.player-list-table col.plc-player { width: var(--name-col-w); }
   table.player-list-table col.plc-team { width: var(--team-col-w); }
+  /* Stat columns at a fixed compact width, as Team Stats does, so a wide
+     sheet reads them as one block beside the names. */
+  table.pitch-table.player-list-table { width: auto; }
+  table.player-list-table col:not(.plc-player):not(.plc-team) { width: var(--stat-col-min-w); }
   @media (max-width: 520px) {
     table.player-list-table { --name-col-w: 156px; --team-col-w: 118px; --stat-col-min-w: 52px; }
   }
@@ -1480,7 +1521,7 @@
   .player-filter { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
   .player-filter-label {
     font-family: 'Overpass', sans-serif;
-    font-weight: 600;
+    font-weight: 800;
     font-size: 10px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -1568,7 +1609,7 @@
   .roster-order {
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
-    font-size: 10.5px;
+    font-size: 11px;
     color: var(--ink-soft);
     width: 14px;
     flex-shrink: 0;
@@ -1606,16 +1647,17 @@
      bullpenRowsHtml). */
   #rosterOverlay .roster-pos { flex: none; width: 28px; text-align: right; }
   .roster-empty {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 600;
     font-size: 12px;
+    letter-spacing: 0.01em;
     color: var(--ink-soft);
-    font-style: italic;
     padding: 4px 0;
   }
   .roster-badge {
     font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 8px;
+    font-weight: 800;
+    font-size: 9px;
     letter-spacing: 0.05em;
     text-transform: uppercase;
     color: var(--ink);
@@ -1625,12 +1667,12 @@
     border-radius: 0;
     white-space: nowrap;
   }
-  .roster-badge.roster-badge-il { color: #fbf3e3; background: var(--brick); border-color: var(--brick); }
+  .roster-badge.roster-badge-il { color: var(--brick-ink); background: var(--brick); border-color: var(--brick); }
   .roster-columns { display: flex; gap: 0 28px; align-items: flex-start; }
   .roster-column { flex: 1; min-width: 0; }
   .roster-subgroup-title {
     font-family: 'Overpass', sans-serif;
-    font-weight: 700;
+    font-weight: 800;
     font-size: 9px;
     letter-spacing: 0.05em;
     text-transform: uppercase;
@@ -1665,7 +1707,7 @@
   button.tm-recbig:focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; }
   .tm-pct i { margin-left: 5px; font-style: normal; font-size: 1.25em; line-height: 0; color: var(--gold); }
   button.tm-recbig:hover .tm-wl, button.tm-recbig:hover .tm-pct { color: var(--gold); }
-  .tm-wl { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 34px; line-height: 1; font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; }
+  .tm-wl { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 30px; line-height: 1; font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; }
   .tm-wl b { font-weight: 400; color: var(--ink-soft); margin: 0 2px; }
   .tm-pct { margin-top: 4px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
   .tm-col { min-width: 0; }
@@ -1675,8 +1717,8 @@
   @container (min-width: 700px) { .tm-wide { display: block; } .tm-narrow { display: none; } }
   @container (min-width: 700px) {
     .tm-cap { width: 72px; height: 72px; }
-    .tm-name { font-size: 46px; }
-    .tm-wl { font-size: 54px; }
+    .tm-name { font-size: 44px; }
+    .tm-wl { font-size: 44px; }
     .tm-pct { font-size: 12px; }
   }
   /* Game tiles: five across, a form guide. A tile is one framed unit;
@@ -1686,22 +1728,24 @@
   .gt:hover, .gt:focus-within { border-color: var(--gold); }
   .gt-main { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 100%; padding: 6px 2px 7px; background: none; border: 0; color: var(--ink); cursor: pointer; font: inherit; }
   .gt-main:focus-visible, .gt-play:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
-  .gt-date { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; }
+  .gt-date { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; }
   .gt-opp { display: flex; align-items: center; gap: 2px; }
-  .gt-opp i { font-style: normal; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 8.5px; color: var(--ink-soft); }
+  .gt-opp i { font-style: normal; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 9px; color: var(--ink-soft); }
   .gt-opp img { width: 22px; height: 22px; }
-  .gt-res { display: flex; align-items: baseline; gap: 2px; font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 15px; line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .gt-res { display: flex; align-items: baseline; gap: 2px; font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 16px; line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .gt-res b { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; }
   .gt-res.is-loss { color: var(--ink-soft); }
+  /* A win's W is gold, as in the highlight stills; a loss is all soft. */
+  .gt-res:not(.is-loss):not(.is-note) b { color: var(--gold); }
   .gt-res.is-note { font-size: 13px; color: var(--ink-soft); }
-  .gt-play { height: 18px; padding: 0; background: rgba(0, 0, 0, 0.18); border: 0; border-top: 1px solid var(--paper-line); font-size: 8px; color: var(--gold); cursor: pointer; }
-  .gt-play:hover { background: rgba(217, 169, 26, 0.15); }
+  .gt-play { height: 18px; padding: 0; background: rgba(0, 0, 0, 0.18); border: 0; border-top: 1px solid var(--paper-line); font-size: 9px; color: var(--gold); cursor: pointer; }
+  .gt-play:hover { background: var(--wash); }
   @container (min-width: 700px) {
     .gt-row { gap: 8px; }
     .gt-main { flex-direction: row; justify-content: center; flex-wrap: wrap; gap: 4px 8px; padding: 8px 4px; }
-    .gt-date { flex-basis: 100%; text-align: center; font-size: 9.5px; }
+    .gt-date { flex-basis: 100%; text-align: center; font-size: 10px; }
     .gt-opp img { width: 26px; height: 26px; }
-    .gt-res { font-size: 19px; }
+    .gt-res { font-size: 20px; }
     .gt-res b { font-size: 10px; }
     .gt-play { height: 20px; font-size: 9px; }
   }
@@ -1709,51 +1753,53 @@
   /* The division as the Monster's scoreboard: names in white block
      capitals, each number on its own recessed plate. */
   .tdv { display: grid; gap: 4px; }
-  .tdv-row { display: grid; grid-template-columns: 14px minmax(0, 1fr) 40px 40px 44px 30px; align-items: center; gap: 4px; width: 100%; padding: 3px 4px; background: none; border: 0; color: var(--ink); text-align: left; font: inherit; cursor: pointer; }
+  .tdv-row { display: grid; grid-template-columns: minmax(0, 1fr) 40px 40px 44px 30px; align-items: center; gap: 4px; width: 100%; padding: 3px 8px; background: none; border: 0; color: var(--ink); text-align: left; font: inherit; cursor: pointer; }
   .tdv-row:not(.tdv-head):hover .tdv-team { color: var(--gold); }
   .tdv-row:focus-visible { outline: 2px solid var(--gold); outline-offset: 0; }
-  .tdv-row.is-this, .tdv-row.is-this:hover { background: rgba(217, 169, 26, 0.13); box-shadow: inset 3px 0 0 var(--gold); cursor: default; }
+  .tdv-row.is-this, .tdv-row.is-this:hover { background: var(--wash); cursor: default; }
+  /* The team chart's head: the season as a gold kicker, the record big. */
+  .tc-sub { display: flex; align-items: baseline; gap: 8px; }
+  .tc-season { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.1em; color: var(--gold); }
+  .tc-rec { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 20px; color: var(--ink); font-variant-numeric: tabular-nums; }
   .tdv-row.is-this:hover .tdv-team { color: var(--ink); }
   .tdv-head { padding-top: 0; padding-bottom: 0; cursor: default; }
   .tdv-head > span { text-align: center; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; color: var(--ink-soft); }
-  .tdv-rank { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 15px; color: var(--gold); text-align: center; }
-  .tdv-team { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-left: 4px; font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 17px; letter-spacing: 0.06em; text-transform: uppercase; }
+  .tdv-team { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-left: 4px; font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 16px; letter-spacing: 0.06em; text-transform: uppercase; }
   .tdv-slot { display: block; padding: 3px 0 2px; border-radius: 2px; background: rgba(0, 0, 0, 0.26); box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.5), inset 0 -1px 1px rgba(255, 255, 255, 0.05); text-align: center; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 16px; line-height: 1.25; font-variant-numeric: tabular-nums; color: var(--ink); }
   .tdv-slot.is-soft { color: var(--ink-soft); }
   .tdv-half { font-style: normal; font-size: 0.85em; }
   .tdv-tagc { text-align: center; }
-  .tdv-tag { font-style: normal; padding: 2px 3px 1px; border: 1px solid var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink); }
+  .tdv-tag { font-style: normal; padding: 2px 3px 1px; border: 1px solid var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink); }
   .tdv-short { display: none; }
   /* A narrow phone: smaller plates, and Arizona as MLB's own "D-backs". */
   @container (max-width: 340px) {
-    .tdv-row { grid-template-columns: 12px minmax(0, 1fr) 32px 32px 38px 26px; gap: 3px; padding: 3px 2px; }
+    .tdv-row { grid-template-columns: minmax(0, 1fr) 32px 32px 38px 26px; gap: 3px; padding: 3px 6px; }
     .tdv-slot { font-size: 14px; }
-    .tdv-team { padding-left: 2px; font-size: 15px; letter-spacing: 0.04em; }
-    .tdv-rank { font-size: 13px; }
-    .tdv-tag { padding: 1px 2px 0; font-size: 7.5px; letter-spacing: 0.02em; }
+    .tdv-team { padding-left: 2px; font-size: 16px; letter-spacing: 0.04em; }
+    .tdv-tag { padding: 1px 2px 0; font-size: 9px; letter-spacing: 0.02em; }
     .tdv-full { display: none; } .tdv-short { display: inline; }
   }
   .pp-tabs.tm-roster-tabs { margin-top: -6px; }
   /* Next game: a card that opens the scorecard. */
   .tn { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'k k' 'opp right' 'go right'; align-items: center; gap: 4px 14px; width: 100%; padding: 12px 14px; text-align: left; color: var(--ink); background: rgba(0, 0, 0, 0.16); border: 1px solid var(--paper-line); cursor: pointer; font: inherit; }
-  .tn:hover, .tn:focus-visible { border-color: var(--gold); outline: none; }
-  .tn.is-live { border-color: #3fae56; }
+  .tn:hover, .tn:focus-visible { border-color: var(--gold); }
+  .tn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .tn.is-live { border-color: var(--gold); }
   .tn-kicker { grid-area: k; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); }
-  .tn-live { display: inline-flex; align-items: center; gap: 6px; color: #3fae56; }
-  .tn-live i { width: 8px; height: 8px; border-radius: 50%; background: #3fae56; box-shadow: 0 0 6px #3fae56; }
-  .tn-opp { grid-area: opp; display: flex; align-items: center; gap: 8px; min-width: 0; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 24px; line-height: 1.1; white-space: nowrap; overflow: hidden; }
+      .tn-opp { grid-area: opp; display: flex; align-items: center; gap: 8px; min-width: 0; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 24px; line-height: 1.1; white-space: nowrap; overflow: hidden; }
   .tn-opp img { width: 30px; height: 30px; flex: none; }
   .tn-at { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 12px; color: var(--ink-soft); }
   .tn-right { grid-area: right; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
-  .tn-day { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 18px; }
+  .tn-day { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 20px; }
   .tn-score { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 30px; line-height: 1; font-variant-numeric: tabular-nums; }
   .tn-score b { font-weight: 400; color: var(--ink-soft); margin: 0 3px; }
   .tn-state { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); }
-  .tn-go { grid-area: go; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); }
+  .tn-go { grid-area: go; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); }
+  .tn:hover .tn-go, .tn:focus-visible .tn-go { color: var(--gold); }
   .tm-next { margin-top: 20px; }
   .tm-next:empty { display: none; }
   /* Leaders' column heads: the group and the stat they're ranked by. */
-  .tl-sub { display: flex; justify-content: space-between; align-items: baseline; margin: 2px 0 8px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); }
+  .tl-sub { display: flex; justify-content: space-between; align-items: baseline; margin: 2px 0 8px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); }
   .tl-sub em { font-style: normal; color: var(--ink-soft); }
   /* Leaders: Top Hitters and Top Pitchers, three tiles a row in rank
      order -- the print, rank and position in gold, the stat big, the
@@ -1763,13 +1809,14 @@
   .tlc-group { display: flex; flex-direction: column; }
   .tlc-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
   .tlc { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: 'print' 'cat' 'val' 'name'; justify-items: center; align-items: center; align-content: center; gap: 2px; min-width: 0; padding: 8px 4px 7px; background: rgba(0, 0, 0, 0.16); border: 1px solid var(--paper-line); color: var(--ink); text-align: center; font: inherit; cursor: pointer; }
-  .tlc:hover, .tlc:focus-visible { border-color: var(--gold); outline: none; }
+  .tlc:hover, .tlc:focus-visible { border-color: var(--gold); }
+  .tlc:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
   .tlc-print { grid-area: print; display: block; width: 40px; margin-bottom: 4px; aspect-ratio: 4 / 5; overflow: hidden; border: 2px solid var(--ink); background: var(--paper-line); box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4); }
   .tlc-print img { width: 100%; height: 100%; object-fit: cover; object-position: center 18%; display: block; }
   .tlc-cat { grid-area: cat; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
   .tlc-cat b { margin-right: 5px; color: var(--gold); }
   .tlc-val { grid-area: val; font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 24px; line-height: 1.05; font-variant-numeric: tabular-nums; color: var(--ink); }
-  .tlc-name { grid-area: name; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9.5px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-soft); }
+  .tlc-name { grid-area: name; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-soft); }
   .tlc:hover .tlc-name, .tlc:focus-visible .tlc-name { color: var(--ink); }
   /* Beside the division (from 700px) the tiles lie down -- print beside
      the words -- so the two groups stand no taller than the board's five
@@ -1786,7 +1833,7 @@
     .tlc-print { width: 38px; border-width: 2px; box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4); }
     .tlc-val { font-size: 24px; line-height: 1; }
     .tlc-cat, .tlc-name { line-height: 1.25; }
-    .tlc-name { font-size: 10.5px; letter-spacing: 0.05em; }
+    .tlc-name { font-size: 10px; letter-spacing: 0.05em; }
   }
   /* Season Highlights: each row scrolls on its own, at any width. */
   .tm-moments .dp-row { grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: minmax(230px, 80%); overflow-x: auto; }
@@ -1796,6 +1843,7 @@
      and the kicker's video chip sits above that. */
   .hl-card { position: relative; cursor: default; }
   .hl-card:hover, .hl-card:has(.hl-hit:focus-visible) { border-color: var(--gold); }
+  .hl-card:has(.hl-hit:focus-visible) { outline: 2px solid var(--gold); outline-offset: 2px; }
   .hl-hit { display: block; width: 100%; padding: 0; font: inherit; background: none; border: 0; color: var(--ink); text-align: left; cursor: pointer; }
   .hl-hit::after { content: ''; position: absolute; inset: 0; }
   .hl-hit:focus-visible { outline: none; }
@@ -1807,8 +1855,9 @@
   .hl-kick { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 19px; min-width: 0; }
   .hl-kick-l { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .hl-kick-l b { margin-right: 6px; font-weight: 800; color: var(--ink-soft); }
-  .hl-alt { position: relative; z-index: 1; flex: none; padding: 3px 6px 2px; background: transparent; border: 1px solid var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); cursor: pointer; }
-  .hl-alt:hover, .hl-alt:focus-visible { color: var(--ink); border-color: var(--gold); outline: none; }
+  .hl-alt { position: relative; z-index: 1; flex: none; padding: 3px 6px 2px; background: transparent; border: 1px solid var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); cursor: pointer; }
+  .hl-alt:hover, .hl-alt:focus-visible { color: var(--ink); border-color: var(--gold); }
+  .hl-alt:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
   /* The reel stills. */
   .vc-who-cap img { width: 72%; height: auto; }
   .vc-line { display: grid; grid-template-columns: repeat(2, auto); gap: 0.15em 0.8em; margin-bottom: 14%; font-size: clamp(13px, 6.6cqw, 22px); }
@@ -1818,7 +1867,7 @@
   .vc-final { display: flex; align-items: center; gap: 0.15em; font-family: 'Oswald', sans-serif; font-weight: 600; font-size: clamp(22px, 13cqw, 44px); line-height: 1; font-variant-numeric: tabular-nums; color: var(--ink); }
   .vc-final b { font-weight: 400; color: var(--ink-soft); }
   .vc-wl { margin-right: 0.25em; font-size: 0.5em; color: var(--gold); }
-  .vc-wl.is-loss { color: var(--brick); }
+  .vc-wl.is-loss { color: var(--ink-soft); }
   .vc-card-win { display: flex; flex-direction: column; padding: 5% 6% 6%; gap: 4%; }
   .vc-win-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-right: 0; }
   .vc-card-win .vc-final { font-size: clamp(20px, 11cqw, 40px); }
@@ -1831,15 +1880,16 @@
   /* Month chips: the phone's list shows the one that's on; on a wide
      sheet a chip runs the reel to its month. */
   .hs-jump { display: flex; gap: 6px; overflow-x: auto; margin: 0 0 6px; padding-bottom: 4px; }
-  .hs-jump button { flex: none; padding: 6px 11px; background: transparent; border: 1px solid var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); cursor: pointer; }
-  .hs-jump button:hover, .hs-jump button:focus-visible { color: var(--ink); border-color: var(--gold); outline: none; }
-  .hs-jump button.is-on { color: var(--ink); background: rgba(217, 169, 26, 0.15); box-shadow: inset 0 -2px 0 var(--gold); }
+  .hs-jump button { flex: none; padding: 6px 11px; background: transparent; border: 1px solid var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); cursor: pointer; }
+  .hs-jump button:hover, .hs-jump button:focus-visible { color: var(--ink); border-color: var(--gold); }
+  .hs-jump button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .hs-jump button.is-on { color: var(--ink); background: var(--wash); box-shadow: inset 0 -2px 0 var(--gold); }
   /* Reel (a wide sheet): one swipe row, a gold month marker standing up
      between months. */
   .hs-reel { display: none; align-items: stretch; gap: 10px; overflow-x: auto; scroll-snap-type: x proximity; padding: 8px 0 6px; }
   .hs-reel > .vc { flex: 0 0 224px; }
   .hs-tick { flex: none; align-self: stretch; display: flex; padding: 4px 2px 4px 6px; border-left: 2px solid var(--gold); scroll-snap-align: start; }
-  .hs-tick span { writing-mode: vertical-rl; transform: rotate(180deg); font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 18px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); }
+  .hs-tick span { writing-mode: vertical-rl; transform: rotate(180deg); font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 20px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); }
   /* List (a phone): one month's clips as rows, a pager to the next. */
   .hs-list-month { margin: 8px 0 2px; font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 20px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gold); }
   .hs-row { border-bottom: 1px dashed var(--paper-line); }
@@ -1851,6 +1901,8 @@
   .hs-thumb .vc-play { display: none; }
   .hs-thumb .vc-where { font-size: 9.5cqw; }
   .hs-thumb .vc-line { font-size: 7.6cqw; margin-bottom: 0; }
+  /* A thumbnail's labels would scale down past legible; 8px is the floor. */
+  .hs-thumb .vc-line i, .hs-thumb .vc-wl { font-size: max(8px, 0.48em); }
   .hs-thumb .vc-final { font-size: 14cqw; }
   .hs-thumb .vc-card-win .vc-final { font-size: 12cqw; }
   .hs-thumb .vc-photo { border-width: 1px; box-shadow: none; }
@@ -1868,11 +1920,12 @@
   .hs-text .hl-kick-l { grid-area: kick; max-width: 100%; }
   .hs-text .hl-hit { grid-area: title; }
   .hs-text .hl-alt { grid-area: alt; align-self: end; }
-  .hs-title { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 15.5px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .hs-title { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 16px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .hs-row.hl-card:hover .hs-title { color: var(--gold); }
   .hs-pager { display: flex; justify-content: space-between; gap: 10px; padding-top: 12px; }
-  .hs-page { padding: 8px 12px; background: transparent; border: 1px solid var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); cursor: pointer; }
-  .hs-page:hover, .hs-page:focus-visible { border-color: var(--gold); outline: none; }
+  .hs-page { padding: 8px 12px; background: transparent; border: 1px solid var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); cursor: pointer; }
+  .hs-page:hover, .hs-page:focus-visible { border-color: var(--gold); }
+  .hs-page:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
   @container (min-width: 700px) {
     .hs-reel { display: flex; }
     .hs-list { display: none; }
@@ -1897,17 +1950,17 @@
   /* League ranks: the rank big (gold in the top three), the stat small. */
   .trk-head { align-items: center; }
   .trk-head em { font-style: normal; margin-left: 4px; font-weight: 700; letter-spacing: 0.02em; text-transform: none; color: var(--ink-soft); }
-  .trk-scope .view-toggle-btn { padding: 4px 9px; font-size: 9.5px; }
-  /* The toggle hangs over the rule rather than heightening the head, so
+  .trk-scope .view-toggle-btn { padding: 8px 12px; font-size: 10px; }
+  /* The toggle hangs below the label rather than heightening the head, so
      the cells start level with the tiles beside them. */
-  .trk-scope { margin: -7px 0 -4px; }
+  .trk-scope { margin: -6px 0 -10px; }
   .trk { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
   .trk-cell { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px 7px; background: rgba(0, 0, 0, 0.16); border: 1px solid var(--paper-line); }
   .trk-k { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); opacity: 0.85; }
   .trk-rank { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 24px; line-height: 1.1; color: var(--ink); font-variant-numeric: tabular-nums; }
   .trk-rank sup { margin-left: 1px; font-size: 0.45em; vertical-align: super; }
   .trk-rank.is-top { color: var(--gold); }
-  .trk-v { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .trk-v { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
   /* From 700px the Overview is rows of pairs, each pair sharing its top
      and bottom edge: who they are beside the next game, the leaders
      beside the division, the form beside the ranks, then the clips
@@ -1955,7 +2008,7 @@
   /* Roster rows: number, nameplate, then B/T, age and position in fixed
      slots so every row's columns line up under the painted heads. */
   .rr { display: grid; grid-template-columns: 24px minmax(0, 1fr) 30px 26px 26px; align-items: center; gap: 6px; padding: 4px 0; border-bottom: 1px dashed var(--paper-line); }
-  .rr-head { padding: 0 0 4px; border-bottom: 1px solid var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+  .rr-head { padding: 0 0 4px; border-bottom: 1px solid var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
   .rr-head span:nth-child(n+3) { text-align: right; }
   .rr-num { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--gold); font-variant-numeric: tabular-nums; }
   .rr-name { display: flex; align-items: center; gap: 6px; min-width: 0; }
@@ -1997,9 +2050,9 @@
   .dcf-print img { width: 100%; height: 100%; object-fit: cover; object-position: center 18%; display: block; }
   .dcf-print.is-empty { opacity: 0.35; box-shadow: none; }
   .dcf-photo:hover .dcf-print, .dcf-photo:focus-visible .dcf-print { border-color: var(--gold); }
-  .dcf-photo:focus-visible { outline: none; }
+  .dcf-photo:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
   .dcf-pos { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.1em; color: var(--gold); line-height: 1; margin-top: 1px; }
-  .dcf-spot .player-name-btn, .dcf-rot .player-name-btn { font-size: 9.5px; padding: 1px 5px; }
+  .dcf-spot .player-name-btn, .dcf-rot .player-name-btn { font-size: 10px; padding: 1px 5px; }
   @container (min-width: 520px) {
     .dcf-spot { width: 120px; }
     .dcf-print { width: 58px; }
@@ -2022,7 +2075,7 @@
   table.il-table col.il-col-date { width: 60px; }
   table.il-table th {
     font-family: 'Overpass', sans-serif;
-    font-weight: 700;
+    font-weight: 800;
     font-size: 9px;
     letter-spacing: 0.05em;
     text-transform: uppercase;
@@ -2056,8 +2109,8 @@
     white-space: nowrap;
   }
   table.il-table td.il-injury {
-    font-family: 'Inter', sans-serif;
-    font-size: 11.5px;
+    font-family: 'Overpass', sans-serif; font-weight: 600; letter-spacing: 0.01em;
+    font-size: 12px;
     color: var(--ink-soft);
   }
   table.il-table td.il-date {
@@ -2074,13 +2127,13 @@
     gap: 6px;
     padding: 4px 0;
     border-bottom: 1px dashed var(--paper-line);
-    font-size: 11.5px;
+    font-size: 12px;
     color: var(--ink);
   }
   .standings-row:last-child { border-bottom: none; }
   .standings-row.standings-header-row {
     font-family: 'Overpass', sans-serif;
-    font-weight: 700;
+    font-weight: 800;
     font-size: 9px;
     letter-spacing: 0.05em;
     text-transform: uppercase;
@@ -2095,7 +2148,7 @@
   /* The user's own team: the same gold wash as a chosen segment, never a
      gold value -- picking a team isn't the team earning anything. */
   .standings-row.is-my-team,
-  .pb-team.is-my-team { background: rgba(217, 169, 26, 0.13); }
+  .pb-team.is-my-team { background: var(--wash); }
 
   /* Postseason bracket. Each league is a 3-column grid (WC, DS, LCS) of two
      equal rows, so a DS sits beside the WC that feeds it and the LCS spans
@@ -2110,7 +2163,7 @@
   .pb-heads {
     margin-bottom: 6px;
     font-family: 'Overpass', sans-serif;
-    font-weight: 700;
+    font-weight: 800;
     font-size: 9px;
     letter-spacing: 0.05em;
     text-transform: uppercase;
@@ -2226,14 +2279,14 @@
   .schedule-month-block:last-child { margin-bottom: 0; }
   .schedule-month-title {
     font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 10px;
-    letter-spacing: 0.06em;
+    font-weight: 800;
+    font-size: 11.5px;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--gold);
+    color: var(--ink);
     margin: 16px 0 6px;
-    padding-bottom: 3px;
-    border-bottom: 1px solid var(--paper-line);
+    padding-top: 5px;
+    border-top: 2px solid var(--title-rule);
   }
   .schedule-month-block:first-child .schedule-month-title { margin-top: 0; }
   .calendar-weekdays {
@@ -2244,8 +2297,8 @@
   }
   .calendar-weekdays span {
     font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 8.5px;
+    font-weight: 800;
+    font-size: 9px;
     letter-spacing: 0.05em;
     text-transform: uppercase;
     color: var(--ink-soft);
@@ -2259,7 +2312,7 @@
   .calendar-day {
     position: relative;
     min-height: 68px;
-    border-radius: 3px;
+    border-radius: 0;
     padding: 3px 2px 4px;
     display: flex;
     flex-direction: column;
@@ -2272,6 +2325,8 @@
   .calendar-day.is-game { cursor: pointer; }
   .calendar-day.is-home { background: var(--gold); }
   .calendar-day.is-away { background: var(--paper-line); }
+  .calendar-day.is-done { opacity: 0.45; }
+  .calendar-day.is-done:hover, .calendar-day.is-done:focus-visible { opacity: 1; }
   .calendar-day.is-game:hover,
   .calendar-day.is-game:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
   .cal-daynum {
@@ -2280,13 +2335,13 @@
     left: 3px;
     font-family: 'Overpass', sans-serif;
     font-weight: 700;
-    font-size: 8px;
+    font-size: 9px;
     color: var(--ink-soft);
   }
   .calendar-day.is-home .cal-daynum { color: var(--paper); opacity: 0.7; }
   .calendar-day.is-away .cal-daynum { color: var(--ink); opacity: 0.6; }
   .calendar-day.is-today { box-shadow: inset 0 0 0 2px var(--gold); }
-  .calendar-day.is-today:not(.is-game) { background: rgba(217, 169, 26, 0.14); }
+  .calendar-day.is-today:not(.is-game) { background: var(--wash); }
   .calendar-day.is-home.is-today { box-shadow: inset 0 0 0 2px var(--ink); }
   .calendar-day.is-today .cal-daynum { opacity: 1; font-weight: 700; }
   .cal-game-opp {
@@ -2379,17 +2434,19 @@
   .pbox-title {
     font-family: 'Overpass', sans-serif;
     font-weight: 800;
-    font-size: 11px;
-    letter-spacing: 0.1em;
+    font-size: 11.5px;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--gold);
+    color: var(--ink);
     margin-bottom: 10px;
+    padding-top: 5px;
+    border-top: 2px solid var(--title-rule);
   }
   .pbox-body { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 14px 40px; }
   .pbox-starter { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 10px 26px; }
   .pbox-lbl {
     font-family: 'Overpass', sans-serif;
-    font-weight: 700;
+    font-weight: 800;
     font-size: 10px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -2411,7 +2468,7 @@
   .pbox-final {
     margin-top: 3px;
     font-family: 'Overpass', sans-serif;
-    font-weight: 700;
+    font-weight: 800;
     font-size: 10px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -2441,8 +2498,8 @@
 
   /* The team toggle in each card's header (see renderTeamToggle); the
      triangle marks the side batting now. */
-  .sc-toggle .view-toggle-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; }
-  .sc-toggle .view-toggle-btn.active { color: var(--ink); background: rgba(217, 169, 26, 0.15); box-shadow: inset 0 -2px 0 var(--gold); }
+  .sc-toggle .view-toggle-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 10px; padding: 8px 12px; }
+  .sc-toggle .view-toggle-btn.active { color: var(--ink); background: var(--wash); box-shadow: inset 0 -2px 0 var(--gold); }
   .now-tri { width: 8px; height: 7px; flex: none; }
   th.is-now { color: var(--ink) !important; box-shadow: inset 0 -2px 0 var(--gold); }
   th.is-now .now-tri { color: var(--gold); margin-right: 4px; vertical-align: 1px; }
@@ -2455,7 +2512,7 @@
     .sc-half { display: block; }
   }
   .hv-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-bottom: 10px; border-bottom: 2px solid var(--ink); }
-  .hv-head .view-toggle-btn { font-size: 13px; padding: 9px 16px; min-height: 40px; }
+  .hv-head .view-toggle-btn { font-size: 10px; padding: 8px 12px; }
   .hv-head .roster-btn { min-height: 40px; }
   .hv-step { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 12px 0 4px; }
   .hv-step-btn {
@@ -2473,7 +2530,7 @@
     display: inline-flex; align-items: center; gap: 8px;
     font-family: 'Oswald', sans-serif;
     font-weight: 500;
-    font-size: 19px;
+    font-size: 20px;
     letter-spacing: 0.03em;
     text-transform: uppercase;
     color: var(--ink);
@@ -2487,7 +2544,7 @@
     color: var(--ink); background: transparent; border: 1px solid var(--gold); cursor: pointer;
   }
   .hv-live .now-tri { width: 8px; height: 7px; color: var(--gold); }
-  .hv-live:hover { background: rgba(217, 169, 26, 0.12); }
+  .hv-live:hover { background: var(--wash); }
   .hv-live:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
   .hv-pa { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 8px; align-items: center; padding: 10px 0; border-bottom: 1px dashed var(--paper-line); }
   .hv-dia { position: relative; width: 76px; min-height: 60px; display: grid; place-items: center; }
@@ -2502,9 +2559,9 @@
   .hv-slot { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 13px; color: var(--gold); font-variant-numeric: tabular-nums; }
   .hv-who .player-name-btn { text-align: center; }
   .hv-pos { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: 0.06em; color: var(--ink-soft); }
-  .hv-desc { margin: 5px 0 0 24px; font-family: 'Inter', sans-serif; font-size: 13px; line-height: 1.45; color: var(--ink-soft); }
+  .hv-desc { margin: 5px 0 0 24px; font-family: 'Overpass', sans-serif; font-weight: 600; letter-spacing: 0.01em; font-size: 13px; line-height: 1.45; color: var(--ink-soft); }
   .hv-pa.is-live .hv-desc { color: var(--ink); }
-  .hv-vs { margin: 4px 0 0 24px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--ink-soft); }
+  .hv-vs { margin: 4px 0 0 24px; font-family: 'Overpass', sans-serif; font-weight: 600; letter-spacing: 0.01em; font-size: 12px; color: var(--ink-soft); }
   .hv-pa.is-ondeck { opacity: 0.6; border-bottom: 0; }
   .hv-sub {
     margin: 14px 0 0;
@@ -2516,8 +2573,8 @@
     color: var(--ink-soft);
   }
   /* The at-bat's pitches, one line each (see renderCompactPitchTable). */
-  .cpt { width: 100%; border-collapse: collapse; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 12.5px; color: var(--ink); font-variant-numeric: tabular-nums; }
-  .cpt th { font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); text-align: left; padding: 0 8px 4px 0; border-bottom: 1px solid var(--paper-line); font-weight: 700; }
+  .cpt { width: 100%; border-collapse: collapse; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 12px; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .cpt th { font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); text-align: left; padding: 0 8px 4px 0; border-bottom: 1px solid var(--paper-line); font-weight: 800; }
   .cpt td { padding: 4px 8px 3px 0; white-space: nowrap; border-bottom: 1px solid rgba(84, 94, 77, 0.5); }
   .cpt .n, .cpt .t { color: var(--ink-soft); }
   .cpt .n { width: 14px; }
@@ -2528,22 +2585,23 @@
   /* A finished game's story (see renderGameStory): the phone's Final page
      and the desktop sidebar. */
   .sc-story { text-align: left; }
-  .story-sec { padding: 14px 0; border-bottom: 1px solid var(--paper-line); }
-  .story-sec:last-child { border-bottom: 0; }
+  .story-sec { padding: 14px 0; }
   .story-title {
     display: flex; justify-content: space-between; gap: 10px;
     margin-bottom: 10px;
+    padding-top: 5px;
+    border-top: 2px solid var(--title-rule);
     font-family: 'Overpass', sans-serif;
     font-weight: 800;
-    font-size: 11px;
-    letter-spacing: 0.1em;
+    font-size: 11.5px;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--gold);
+    color: var(--ink);
   }
   .story-title span { color: var(--ink-soft); }
   .story-play { display: grid; grid-template-columns: 34px 1fr; gap: 12px; align-items: start; }
   .story-recap { display: grid; place-items: center; width: 34px; height: 26px; font-size: 12px; text-decoration: none; }
-  .story-desc { font-family: 'Inter', sans-serif; font-size: 13.5px; line-height: 1.5; color: var(--ink); }
+  .story-desc { font-family: 'Overpass', sans-serif; font-weight: 600; letter-spacing: 0.01em; font-size: 13px; line-height: 1.5; color: var(--ink); }
   .story-players { display: flex; flex-direction: column; gap: 12px; }
   .story-pl { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 4px 10px; align-items: center; }
   .story-pl .player-name-btn { justify-self: start; }
@@ -2582,7 +2640,7 @@
   .bar-ab-zone .loc-section { margin: 0; }
   .bar-ab-zone .loc-compact { display: block; width: 136px; height: auto; }
   .bar-ab-name { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 16px; text-transform: uppercase; letter-spacing: 0.02em; color: var(--ink); line-height: 1.2; }
-  .bar-ab-vs { margin-bottom: 6px; font-family: 'Inter', sans-serif; font-size: 12px; color: var(--ink-soft); }
+  .bar-ab-vs { margin-bottom: 6px; font-family: 'Overpass', sans-serif; font-weight: 600; letter-spacing: 0.01em; font-size: 12px; color: var(--ink-soft); }
 
 
   .table-scroll {
@@ -2621,8 +2679,8 @@
   }
   table.scorecard-table th {
     font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 10.5px;
+    font-weight: 800;
+    font-size: 10px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--ink-soft);
@@ -2774,7 +2832,7 @@
   /* A substitute's entry: a cream rule down the left of his first inning,
      with his position and name written up it (see renderTeamTable). */
   table.scorecard-table td.sub-divider { position: relative; border-left: 2px solid rgba(243, 236, 219, 0.7); }
-  .sub-up { position: absolute; bottom: 4px; max-height: calc(100% - 8px); writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8.5px; line-height: 9px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); pointer-events: none; }
+  .sub-up { position: absolute; bottom: 4px; max-height: calc(100% - 8px); writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; line-height: 9px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); pointer-events: none; }
   .sub-up b { color: var(--ink-soft); font-weight: 800; }
   /* an inset shadow instead of border-top: back when this table used
      border-collapse: collapse (it now uses separate, see above), a real
@@ -2795,7 +2853,7 @@
     margin: -4px 0 0 -4px;
     border-radius: 50%;
     background: var(--gold);
-    box-shadow: 0 0 0 2px rgba(179, 121, 26, 0.25);
+    box-shadow: 0 0 0 2px rgba(217, 169, 26, 0.25);
     animation: live-pulse 1.3s ease-in-out infinite;
   }
   @keyframes live-pulse {
@@ -2870,7 +2928,7 @@
        opaque (see the last two attempts at this rule). */
     background: var(--paper-line);
   }
-  .sub-note { font-size: 10px; color: var(--ink-soft); opacity: 0.85; font-style: italic; }
+  .sub-note { font-size: 11px; color: var(--ink-soft); opacity: 0.85; }
 
   /* On the sheet, not the wall: secondary text on the Monster green can't
      clear contrast (DESIGN.md, the Monster Stays Rule). */
@@ -2879,7 +2937,7 @@
     color: var(--ink-soft);
     text-align: right;
     margin-top: 16px;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Overpass', sans-serif; font-weight: 600; letter-spacing: 0.01em;
   }
 
   .cell-wrap.clickable { cursor: pointer; }
@@ -2953,7 +3011,7 @@
   }
   .player-stat-line .psl-label {
     font-family: 'Overpass', sans-serif;
-    font-weight: 700;
+    font-weight: 800;
     font-size: 9px;
     letter-spacing: 0.05em;
     text-transform: uppercase;
@@ -2982,7 +3040,6 @@
   table.pitch-table.recent-games-table th:not(:first-child),
   table.pitch-table.recent-games-table td:not(:first-child) { text-align: center; }
   table.pitch-table.recent-games-table th:not(:first-child) { letter-spacing: normal; }
-  table.pitch-table.recent-games-table tr.hl td:first-child { color: var(--gold); }
   /* Batter rows: H-AB stays centered like every other stat column above,
      but the trailing Notes column is a variable-length comma list
      (see notableBattingEvents) -- centering that reads worse than just
@@ -3083,7 +3140,7 @@
   .pitch-header {
     font-family: 'Oswald', sans-serif;
     font-weight: 600;
-    font-size: 15px;
+    font-size: 16px;
     letter-spacing: 0.04em;
     text-transform: uppercase;
     text-align: center;
@@ -3097,7 +3154,7 @@
     letter-spacing: 0.12em;
   }
   .pitch-subheader {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Overpass', sans-serif; font-weight: 600; letter-spacing: 0.01em;
     font-size: 12px;
     color: var(--ink-soft);
     margin-bottom: 12px;
@@ -3108,7 +3165,7 @@
      a secondary label next to a team/date. */
   #pitchModalBody .pitch-header,
   #sidebarAtBat .pitch-header {
-    font-size: 19px;
+    font-size: 20px;
     text-align: left;
   }
   #pitchModalBody .pitch-subheader,
@@ -3157,14 +3214,14 @@
     color: var(--paper);
     font-family: 'Oswald', sans-serif;
     font-weight: 600;
-    font-size: 12px;
+    font-size: 14px;
     line-height: 1;
     font-variant-numeric: tabular-nums;
   }
   .player-award-label {
     padding: 4px 7px 3px;
     font-family: 'Overpass', sans-serif;
-    font-weight: 700;
+    font-weight: 800;
     font-size: 10px;
     line-height: 1.2;
     letter-spacing: 0.06em;
@@ -3194,13 +3251,13 @@
     gap: 10px;
     padding: 8px 10px;
     cursor: pointer;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Overpass', sans-serif; font-weight: 600; letter-spacing: 0.01em;
     font-size: 13px;
     color: var(--ink);
     border-bottom: 1px solid var(--paper-line);
   }
   .player-search-result:last-child { border-bottom: none; }
-  .player-search-result:hover { background: rgba(217, 169, 26, 0.12); }
+  .player-search-result:hover { background: var(--wash); }
   .player-search-result .psr-meta {
     color: var(--ink-soft);
     font-size: 11px;
@@ -3210,7 +3267,9 @@
     padding: 10px;
     font-size: 12px;
     color: var(--ink-soft);
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: 'Overpass', sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.01em;
   }
   /* ---- Player profile ----
      The photo is a print pinned to the page (cream border, drop shadow);
@@ -3226,11 +3285,11 @@
     background: none;
     border: 0;
     font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 12px;
+    font-weight: 800;
+    font-size: 11px;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    color: var(--ink);
+    color: var(--frame-ink);
     cursor: pointer;
   }
   .pp-back svg { width: 7px; height: 11px; }
@@ -3247,23 +3306,23 @@
   }
   .pp-photo img { width: 100%; height: 100%; object-fit: cover; object-position: center 18%; display: block; }
   .pp-num { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 30px; line-height: 1; color: var(--gold); }
-  .pp-name { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 26px; line-height: 1.05; margin: 2px 0 6px; color: var(--ink); text-wrap: balance; }
+  .pp-name { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 24px; line-height: 1.05; margin: 2px 0 6px; color: var(--ink); text-wrap: balance; }
   /* Team and position as a plain line of type -- the nameplates are for
      things you click through to; here they're just who he is. On a narrow
      sheet each gets its own line so a position can't break mid-phrase. */
   .pp-ident { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 16px; line-height: 1.3; letter-spacing: 0.01em; color: var(--ink); margin-bottom: 12px; }
   .pp-pos { color: var(--ink-soft); }
-  .pp-sep { color: var(--gold); padding: 0 7px; }
+  .pp-sep { color: var(--ink-soft); padding: 0 7px; }
   @container (max-width: 699px) { .pp-sep { display: none; } .pp-pos { display: block; } }
   @container (min-width: 700px) {
     .pp-num { font-size: 44px; }
-    .pp-name { font-size: 42px; margin: 4px 0 8px; }
+    .pp-name { font-size: 44px; margin: 4px 0 8px; }
     .pp-ident { font-size: 20px; margin-bottom: 16px; }
   }
   .pp-vitals { display: flex; flex-wrap: wrap; gap: 10px 22px; margin: 0 0 14px; }
   .pp-vitals > div { display: flex; flex-direction: column; gap: 1px; }
-  .pp-vitals dt { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
-  .pp-vitals dd { margin: 0; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 15px; line-height: 1.3; color: var(--ink); }
+  .pp-vitals dt { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+  .pp-vitals dd { margin: 0; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 16px; line-height: 1.3; color: var(--ink); }
   /* Faint team mark behind the header's top-right corner. overflow: clip
      on the sheet (not hidden) trims it without making the sheet a scroll
      container, which would stop the Game Log's header from sticking. */
@@ -3295,8 +3354,8 @@
     margin-bottom: -1px;
     padding: 9px 10px 8px;
     font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 11.5px;
+    font-weight: 800;
+    font-size: 11px;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--ink-soft);
@@ -3318,81 +3377,87 @@
     align-items: baseline;
     gap: 10px;
     margin-bottom: 10px;
-    padding-bottom: 4px;
-    border-bottom: 1px solid var(--paper-line);
+    padding-top: 5px;
+    border-top: 2px solid var(--title-rule);
     font-family: 'Overpass', sans-serif;
     font-weight: 800;
-    font-size: 10px;
-    letter-spacing: 0.1em;
+    font-size: 11.5px;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--gold);
+    color: var(--ink);
   }
-  .pp-skg-head em { font-style: normal; font-weight: 700; font-size: 10.5px; letter-spacing: 0.02em; text-transform: none; color: var(--ink-soft); text-align: right; }
+  .pp-skg-head em { font-style: normal; font-weight: 700; font-size: 11px; letter-spacing: 0.02em; text-transform: none; color: var(--ink-soft); text-align: right; }
   .pp-skg-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
   .pp-sk, .pp-tot { display: flex; flex-direction: column; align-items: center; text-align: center; min-width: 0; }
-  .pp-sk-name { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); opacity: 0.85; }
-  .pp-sk-score { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 34px; line-height: 1.15; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .pp-sk-name { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); opacity: 0.85; }
+  .pp-sk-score { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 30px; line-height: 1.15; color: var(--ink); font-variant-numeric: tabular-nums; }
   .pp-sk-score.is-top { color: var(--gold); }
   /* Short of the pool: placed among it, but quieter and never gold. */
   .pp-sk-score.is-soft { color: var(--ink-soft); }
   .pp-sk-score.is-none { color: var(--ink-soft); opacity: 0.6; }
   /* Waiting on Savant: an empty slot the score's size, so nothing shifts. */
   .pp-sk-score.is-wait { width: 1.2em; margin: 0 auto; background: rgba(243, 236, 219, 0.035); border-radius: 2px; }
-  .pp-sk-stat { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10px; color: var(--ink-soft); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .pp-sk-stat { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); white-space: nowrap; font-variant-numeric: tabular-nums; }
   .pp-totals { margin-top: 18px; }
   @container (min-width: 760px) { .pp-totals { max-width: calc(50% - 20px); } }
   .pp-tot-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-  .pp-tot-v { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 28px; line-height: 1.15; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .pp-tot-v { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 24px; line-height: 1.15; color: var(--ink); font-variant-numeric: tabular-nums; }
   @container (min-width: 700px) {
-    .pp-sk-score { font-size: 42px; }
-    .pp-tot-v { font-size: 32px; }
-    .pp-sk-stat { font-size: 10.5px; }
+    .pp-sk-score { font-size: 44px; }
+    .pp-tot-v { font-size: 30px; }
+    .pp-sk-stat { font-size: 11px; }
   }
 
   /* Arsenal: velo and movement, then the mix and two-strike sections --
      stacked on a phone, side by side on a wide sheet. */
   .ars { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px 40px; padding: 2px 0 4px; }
-  @container (min-width: 760px) { .ars { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  /* Side by side, the movement chart grows into the left column's spare
+     height so both columns end together. */
+  @container (min-width: 760px) {
+    .ars { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .ars-move { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+    .ars-move .ars-plot { max-width: 440px; }
+  }
   .ars-col { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
   .ars-plot { display: block; width: 100%; max-width: 320px; margin: 0 auto; }
   .ars-ring { fill: none; stroke: var(--paper-line); stroke-width: 1; }
-  .ars-ax { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8px; letter-spacing: 0.1em; fill: var(--ink-soft); }
+  .ars-ax { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.1em; fill: var(--ink-soft); }
   .ars-dot { fill: var(--paper); stroke: var(--ink); stroke-width: 1.5; }
-  .ars-code { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10.5px; fill: var(--ink); }
+  .ars-code { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 11px; fill: var(--ink); }
   .ars-sc, .ars-ts-sc { font-family: 'Oswald', sans-serif; font-weight: 600; line-height: 1.1; color: var(--ink); font-variant-numeric: tabular-nums; }
-  .ars-sc { font-size: 19px; text-align: center; }
+  .ars-sc { font-size: 20px; text-align: center; }
   .ars-sc.is-top, .ars-ts-sc.is-top { color: var(--gold); }
   .ars-sc.is-none, .ars-ts-sc.is-none { color: var(--ink-soft); opacity: 0.6; }
   .ars-mx { display: grid; grid-template-columns: minmax(0, 1fr) 28px 76px 28px minmax(0, 1fr); align-items: center; gap: 5px; padding: 5px 0; border-bottom: 1px dashed var(--paper-line); }
-  .ars-mx-h { padding: 0 0 4px; border-bottom: 1px solid var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); }
+  .ars-mx-h { padding: 0 0 4px; border-bottom: 1px solid var(--paper-line); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); }
   .ars-mx-l, .ars-mx-r { display: flex; align-items: center; min-width: 0; }
   .ars-mx-h .ars-mx-r { justify-content: flex-end; }
   .ars-trk { flex: 1; display: flex; align-items: center; gap: 4px; min-width: 0; }
   .ars-mx-l .ars-trk { justify-content: flex-end; }
   .ars-mx i { display: block; flex: none; height: 11px; background: var(--ink); opacity: 0.75; }
   .ars-mx i.is-top { background: var(--gold); opacity: 1; }
-  .ars-mx em { flex: none; font-style: normal; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10.5px; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .ars-mx em { flex: none; font-style: normal; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink); font-variant-numeric: tabular-nums; }
   .ars-mx-n { text-align: center; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 14px; line-height: 1.1; color: var(--ink); }
   .ars-tg { display: inline-flex; margin: 0 0 10px; border: 1px solid var(--paper-line); background: var(--paper); }
-  .ars-tg button { background: none; border: 0; padding: 6px 12px 5px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); cursor: pointer; }
+  .ars-tg button { background: none; border: 0; padding: 8px 12px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); cursor: pointer; }
   .ars-tg button + button { border-left: 1px solid var(--paper-line); }
-  .ars-tg button[aria-pressed="true"] { color: var(--ink); background: rgba(217, 169, 26, 0.15); box-shadow: inset 0 -2px 0 var(--gold); }
+  .ars-tg button:hover { color: var(--ink); background: rgba(243, 236, 219, 0.08); }
+  .ars-tg button[aria-pressed="true"] { color: var(--ink); background: var(--wash); box-shadow: inset 0 -2px 0 var(--gold); }
   .ars-tg button:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
   .ars-ts { display: grid; grid-template-columns: 34px 14px minmax(0, 1fr) 52px 56px; align-items: center; gap: 6px; padding: 7px 0; border-bottom: 1px dashed var(--paper-line); }
-  .ars-ts-h, .ars-fc-h { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+  .ars-ts-h, .ars-fc-h { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
   .ars-ts-h { padding: 0 0 4px; border-bottom: 1px solid var(--paper-line); }
   .ars-ts-h span:nth-child(n+4) { text-align: right; }
-  .ars-chip { display: inline-flex; align-items: center; justify-content: center; min-width: 30px; height: 22px; padding: 0 4px; border: 1px solid var(--ink-soft); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10.5px; letter-spacing: 0.04em; color: var(--ink); }
+  .ars-chip { display: inline-flex; align-items: center; justify-content: center; min-width: 30px; height: 22px; padding: 0 4px; border: 1px solid var(--ink-soft); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 11px; letter-spacing: 0.04em; color: var(--ink); }
   .ars-arrow { font-family: 'Overpass', sans-serif; color: var(--ink-soft); text-align: center; }
-  .ars-ts-n { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 17px; color: var(--ink); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .ars-ts-v, .ars-fc-v { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 21px; color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; }
-  .ars-ts-sc { font-size: 21px; text-align: right; }
+  .ars-ts-n { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 16px; color: var(--ink); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ars-ts-v, .ars-fc-v { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 20px; color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; }
+  .ars-ts-sc { font-size: 20px; text-align: right; }
   .ars-fc-h { display: flex; justify-content: space-between; align-items: baseline; margin-top: 14px; padding-bottom: 4px; border-bottom: 1px solid var(--paper-line); }
   .ars-fc-cols { display: grid; grid-template-columns: 44px 14px 52px; gap: 6px; text-align: right; }
   .ars-fc { display: grid; grid-template-columns: minmax(0, 1fr) 44px 14px 52px; align-items: center; gap: 6px; padding: 6px 0; border-bottom: 1px dashed var(--paper-line); }
   .ars-fc-pre { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 16px; color: var(--ink-soft); text-align: right; font-variant-numeric: tabular-nums; }
   .ars-fc-v.is-up { box-shadow: inset 0 -2px 0 var(--gold); }
-  .ars-foot { margin-top: 6px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10px; color: var(--ink-soft); }
   .pp-painted {
     display: block;
     text-align: center;
@@ -3411,7 +3476,7 @@
     text-align: center;
     font-family: 'Oswald', sans-serif;
     font-weight: 600;
-    font-size: 34px;
+    font-size: 30px;
     line-height: 1.5;
     color: var(--ink);
     font-variant-numeric: tabular-nums;
@@ -3419,7 +3484,7 @@
     border-radius: 2px;
     box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.5), inset 0 -1px 1px rgba(255, 255, 255, 0.05);
   }
-  @container (min-width: 700px) { .pp-slot { font-size: 46px; line-height: 1.45; } }
+  @container (min-width: 700px) { .pp-slot { font-size: 44px; line-height: 1.45; } }
   .pp-rank {
     position: absolute;
     bottom: 4px;
@@ -3457,7 +3522,7 @@
     .pp-def-top .pp-stat { flex: 0 1 220px; min-width: 0; }
     .pp-def-pools { order: 0; margin-left: auto; }
   }
-  .pp-def-pools .view-toggle-btn { flex: none; }
+  .pp-def-pools .view-toggle-btn { flex: none; font-size: 10px; padding: 8px 12px; }
   /* Catch board: one row per star rating, each chance a scoreboard lamp
      (the live panel's count lamps, see .monster-dot) -- lit for a catch,
      a dark socket for a miss. The stars and counts sit in fixed columns
@@ -3504,13 +3569,13 @@
     padding: 9px 0 0;
     border-top: 1px solid var(--paper-line);
     font-family: 'Overpass', sans-serif;
-    font-weight: 700;
+    font-weight: 800;
     font-size: 10px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--ink-soft);
   }
-  .pp-cb-routine span { margin-left: 8px; font-size: 12px; letter-spacing: 0; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .pp-cb-routine span { margin-left: 8px; font-size: 14px; letter-spacing: 0; color: var(--ink); font-variant-numeric: tabular-nums; }
   /* A row's catches, hardest first: lamp, catch %, hang time, distance,
      wall/back tags, play mark -- the same columns for the painted head. */
   .pp-cb-list { padding: 0 0 10px; }
@@ -3521,7 +3586,7 @@
     gap: 10px;
     padding: 0 4px;
   }
-  .pp-cb-head { padding-bottom: 4px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+  .pp-cb-head { padding-bottom: 4px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
   .pp-cb-catch {
     width: 100%;
     min-height: 34px;
@@ -3540,7 +3605,7 @@
   .pp-cb-catch:hover .pp-cb-play { border-color: var(--gold); }
   .pp-cb-catch:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
   .pp-cb-tags { display: flex; gap: 4px; justify-content: flex-end; }
-  .pp-cb-tag { padding: 2px 4px 1px; border: 1px solid var(--paper-line); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+  .pp-cb-tag { padding: 2px 4px 1px; border: 1px solid var(--paper-line); font-weight: 800; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
   /* The same boxed gold play mark as a score box's recap button. */
   .pp-cb-play { box-sizing: border-box; width: 24px; height: 18px; padding: 3px 7px; background: rgba(0, 0, 0, 0.22); border: 1px solid var(--paper-line); color: var(--gold); }
 
@@ -3571,7 +3636,7 @@
   .pp-pl-row:hover .pp-cb-play { border-color: var(--gold); }
   .pp-pl-row:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
   .pp-pl-opp { color: var(--ink-soft); white-space: nowrap; }
-  .pp-pl-text { font-family: 'Inter', sans-serif; font-weight: 400; font-size: 12.5px; line-height: 1.35; }
+  .pp-pl-text { font-family: 'Overpass', sans-serif; font-weight: 600; letter-spacing: 0.01em; font-size: 12px; line-height: 1.35; }
   .pp-pl-list { border-bottom: 1px solid var(--paper-line); }
   .pp-pl-more {
     display: block;
@@ -3580,8 +3645,8 @@
     background: none;
     border: 0;
     font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 10.5px;
+    font-weight: 800;
+    font-size: 10px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--ink);
@@ -3590,11 +3655,11 @@
   .pp-pl-more:hover { color: var(--gold); }
   .pp-pl-more:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
   .pp-dp-row { grid-template-columns: 80px minmax(0, 1fr) 46px 10px; }
-  .pp-cb-label { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; }
+  .pp-cb-label { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; }
   .pp-pl-row:disabled { cursor: default; }
   .pp-pl-row:disabled .pp-cb-play { visibility: hidden; }
   .pp-dp-code, .cv-code { font-family: 'Special Elite', monospace; font-size: 16px; color: var(--ink); }
-  .pp-dp-role { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+  .pp-dp-role { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
   .pp-dp-roles { border-top: 0; padding: 0 0 9px; display: flex; flex-wrap: wrap; gap: 4px 16px; }
   .pp-dp-roles span { margin-left: 6px; }
   .pp-dp-total { margin-left: 6px; color: var(--ink); }
@@ -3608,7 +3673,7 @@
   .cv-result { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); }
   .cv-video { display: block; width: 100%; aspect-ratio: 16 / 9; background: #000; }
   .cv-video-wait { display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.3); }
-  .cv-desc { margin: 12px 0 4px; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 15px; line-height: 1.3; color: var(--ink); }
+  .cv-desc { margin: 12px 0 4px; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 16px; line-height: 1.3; color: var(--ink); }
   .cv-meta { margin-bottom: 4px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 12px; }
   .cv-facts { margin: 12px 0 0; }
 
@@ -3725,7 +3790,7 @@
      block instead of each spreading to fill the sheet. */
   @container (min-width: 700px) {
     table.pitch-table.pp-log td:nth-child(3), table.pitch-table.pp-log th:nth-child(3) { width: auto; }
-    table.pitch-table.pp-log td:nth-child(n+4), table.pitch-table.pp-log th:nth-child(n+4) { width: 58px; padding-left: 4px; padding-right: 4px; }
+    table.pitch-table.pp-log td:nth-child(n+4), table.pitch-table.pp-log th:nth-child(n+4) { width: 44px; padding-left: 4px; padding-right: 4px; }
   }
   .pp-log td:nth-child(3) { font-variant-numeric: tabular-nums; }
   .pp-log .pp-opp-short { display: none; }
@@ -3750,9 +3815,7 @@
   /* white-space: normal -- the month's totals line may wrap on a phone;
      left on the table's nowrap, it set the whole log's minimum width. */
   .pp-log tr.pp-month td { padding: 14px 6px 4px; border-bottom: 1px solid var(--paper-line); white-space: normal; }
-  .pp-month-total { display: inline-block; }
   .pp-month-name { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); }
-  .pp-month-total { margin-left: 12px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
 
 
   /* Splits tab: OPS bars on one scale, with a dashed tick at the season
@@ -3766,16 +3829,16 @@
   .pp-splits-key { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; letter-spacing: 0.04em; text-transform: none; font-size: 11px; color: var(--ink-soft); }
   .pp-splits-key i { width: 0; height: 12px; border-left: 1.5px dashed var(--ink); }
   .pp-sgroup { margin-top: 12px; }
-  .pp-sgroup-name { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); padding-bottom: 4px; border-bottom: 1px solid var(--paper-line); margin-bottom: 2px; }
+  .pp-sgroup-name { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 11.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink); padding-top: 5px; border-top: 2px solid var(--title-rule); margin-bottom: 6px; }
   .pp-saxis { padding-top: 2px; }
-  .pp-saxis-ends { display: flex; justify-content: space-between; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10px; color: var(--ink-soft); }
+  .pp-saxis-ends { display: flex; justify-content: space-between; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); }
   .pp-srow { display: grid; grid-template-columns: 68px minmax(0, 1fr) 44px 52px; align-items: center; gap: 10px; padding: 5px 0; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 12px; font-variant-numeric: tabular-nums; }
   .pp-slabel { color: var(--ink); white-space: nowrap; }
   .pp-sbar { position: relative; height: 12px; background: rgba(0, 0, 0, 0.22); border-radius: 2px; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4); }
   .pp-sbar > i:first-child { position: absolute; left: 0; top: 0; bottom: 0; background: var(--ink-soft); border-radius: 0 3px 3px 0; }
   .pp-sb-season { position: absolute; top: -3px; bottom: -3px; width: 0; border-left: 1.5px dashed var(--ink); }
   .pp-sops { text-align: right; color: var(--ink); }
-  .pp-ssample { text-align: right; color: var(--ink-soft); font-size: 10.5px; white-space: nowrap; }
+  .pp-ssample { text-align: right; color: var(--ink-soft); font-size: 11px; white-space: nowrap; }
 
   .pp-chart { position: relative; }
   .pp-chart.is-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -3810,7 +3873,7 @@
   table.pitch-table { width: 100%; border-collapse: collapse; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 12px; }
   table.pitch-table th {
     font-family: 'Overpass', sans-serif;
-    font-weight: 700;
+    font-weight: 800;
     font-size: 9px;
     letter-spacing: 0.05em;
     text-transform: uppercase;
@@ -3827,24 +3890,26 @@
   table.pitch-table td.pnum { color: var(--ink-soft); width: 20px; }
   table.pitch-table td.pcount { color: var(--ink-soft); white-space: nowrap; }
   table.pitch-table td.pspeed { color: var(--ink-soft); white-space: nowrap; }
-  .pitch-result-ball { color: #7fae8f; font-weight: 600; }
-  .pitch-result-strike { color: var(--brick-text); font-weight: 600; }
+  /* Under #mlb-root so they outrank table.pitch-table td's ink, which
+     otherwise turned every result in the at-bat popup cream. */
+  #mlb-root .pitch-result-ball { color: var(--ball-text); font-weight: 600; }
+  #mlb-root .pitch-result-strike { color: var(--brick-text); font-weight: 600; }
   /* A hit is earned gold; a foul is just a foul (the Two Golds Rule). */
-  .pitch-result-hit { color: var(--gold); font-weight: 600; }
-  .pitch-result-foul { color: var(--ink); font-weight: 600; }
-  .pitch-result-out { color: #a39d90; font-weight: 700; }
-  .pitch-result-hbp { color: #7fae8f; font-weight: 700; font-style: italic; }
-  table.pitch-table tr.hl td { background: rgba(217, 169, 26, 0.14); }
+  #mlb-root .pitch-result-hit { color: var(--gold); font-weight: 600; }
+  #mlb-root .pitch-result-foul { color: var(--ink); font-weight: 600; }
+  #mlb-root .pitch-result-out { color: var(--ink-soft); font-weight: 700; }
+  #mlb-root .pitch-result-hbp { color: var(--ball-text); font-weight: 700; }
+  table.pitch-table tr.hl td { background: var(--wash); }
   table.pitch-table tr.challenged td { border-bottom-style: dashed; }
   .abs-tag {
     display: inline-block;
     font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 8.5px;
-    letter-spacing: 0.04em;
+    font-weight: 800;
+    font-size: 9px;
+    letter-spacing: 0.08em;
     color: var(--paper);
     background: var(--ink);
-    border-radius: 3px;
+    border-radius: 0;
     padding: 1px 4px;
     vertical-align: middle;
     margin-left: 4px;
@@ -3881,24 +3946,27 @@
     margin-top: 12px;
     padding-top: 10px;
     border-top: 1.5px solid var(--ink);
-    font-family: 'Inter', sans-serif;
-    font-size: 12px;
+    font-family: 'Overpass', sans-serif; font-weight: 600; letter-spacing: 0.01em;
+    font-size: 13px;
     color: var(--ink);
     line-height: 1.5;
   }
-  .pitch-empty { font-family: 'Inter', sans-serif; font-size: 12px; color: var(--ink-soft); padding: 6px 0; }
+  .pitch-empty { font-family: 'Overpass', sans-serif; font-weight: 600; font-size: 12px; letter-spacing: 0.01em; color: var(--ink-soft); padding: 6px 0; }
   .pitch-events { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
   .pitch-event-tag {
     font-family: 'Overpass', sans-serif;
-    font-weight: 600;
-    font-size: 10.5px;
-    font-style: italic;
+    font-weight: 800;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
     color: var(--ink-soft);
     background: rgba(243, 236, 219, 0.08);
     border: 1px solid var(--paper-line);
-    border-radius: 3px;
-    padding: 2px 7px;
+    border-radius: 0;
+    padding: 3px 7px 2px;
   }
+  /* A challenge is a sentence, not a status: it keeps sentence case. */
+  .pitch-event-tag.challenge-tag { font-weight: 600; font-size: 11px; letter-spacing: 0.01em; text-transform: none; padding: 2px 7px; }
 
   @media (max-width: 520px) {
     .sheet { padding: 14px; }
@@ -3915,7 +3983,7 @@
     .roster-columns { flex-direction: column; gap: 14px 0; }
     .calendar-day { min-height: 42px; padding: 2px 1px; }
     .cal-game-opp { font-size: 16px; margin-top: 2px; }
-    .cal-daynum { font-size: 7px; }
+    .cal-daynum { font-size: 9px; }
     .calendar-day.is-dh .cal-game-opp { font-size: 12px; margin-top: 1px; }
   }
   /* A phone held sideways: too short for a sticky header and a fixed
@@ -4119,8 +4187,23 @@
       try { input.showPicker(); } catch (e) {}
     });
   });
+  // Dates are written in English whatever the phone's locale, so a UK phone
+  // doesn't turn "Sep 20" into "20 Sep" beside the app's own wording.
+  const DATE_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const DATE_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   function formatShortDate(dateStr) {
-    return new Date(dateStr + 'T00:00:00Z').toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' });
+    const [, m, d] = dateStr.split('-').map(Number);
+    return `${DATE_MONTHS[m - 1].slice(0, 3)} ${d}`;
+  }
+  // A heading's dateline; a date outside this year carries its year.
+  function formatLongDate(dateStr) {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const wd = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+    const year = String(y) === todayStr().slice(0, 4) ? '' : `, ${y}`;
+    return `${DATE_DAYS[wd]}, ${DATE_MONTHS[m - 1]} ${d}${year}`;
+  }
+  function formatClockTime(date) {
+    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   }
   // The Scorecard tab's .datePickText carries .date-display-text-cal (see
   // its CSS) and renders as a small month over a big day number instead of
@@ -4130,9 +4213,7 @@
       textEl.textContent = formatShortDate(dateStr);
       return;
     }
-    const d = new Date(dateStr + 'T00:00:00Z');
-    const month = d.toLocaleDateString(undefined, { month: 'short', timeZone: 'UTC' });
-    const day = d.toLocaleDateString(undefined, { day: 'numeric', timeZone: 'UTC' });
+    const [month, day] = formatShortDate(dateStr).split(' ');
     textEl.innerHTML = `<span class="cal-month">${month}</span><span class="cal-day">${day}</span>`;
   }
   function setDateInputValue(input, textEl, value) {
@@ -4596,7 +4677,7 @@
     return splits
       .filter(s => s.date && s.date < beforeDate)
       .sort((a, b) => b.date < a.date ? -1 : 1)
-      .slice(0, 9)
+      .slice(0, info.gameDate ? 9 : 10)
       .map(s => ({ date: s.date, stat: s.stat || {} }));
   }
   function addDays(dateStr, delta) {
@@ -4752,7 +4833,7 @@
     return `<svg width="21" height="21" viewBox="0 0 21 21" aria-hidden="true">
       <circle cx="10.5" cy="10.5" r="8.95" fill="none" stroke="${ink}" stroke-width="1.6"/>
       <text x="10.5" y="10.75" text-anchor="middle" dominant-baseline="central"
-        font-family="Overpass, sans-serif" font-weight="800" font-size="12" fill="${ink}">H</text>
+        font-family="'Overpass', sans-serif" font-weight="800" font-size="12" fill="${ink}">H</text>
     </svg>`;
   }
 
@@ -4781,7 +4862,7 @@
       const labelX = 20 + (cx - 20) * outFactor;
       const labelY = 20 + (cy - 20) * outFactor;
       return `<rect x="${labelX - 6.5}" y="${labelY - 4.5}" width="13" height="9" fill="${paper}" stroke="${gold}" stroke-width="0.8"/>`
-        + `<text x="${labelX}" y="${labelY + 2.8}" text-anchor="middle" font-family="'Overpass', sans-serif" font-size="6.5" font-weight="700" fill="${gold}">${text}</text>`;
+        + `<text x="${labelX}" y="${labelY + 2.8}" text-anchor="middle" font-family="'Overpass', sans-serif" font-size="7" font-weight="800" fill="${gold}">${text}</text>`;
     }
     let svg = '<svg viewBox="0 0 40 40" width="52" height="52" aria-hidden="true">';
     let labelSvg = '';
@@ -4970,7 +5051,10 @@
   function extractEvents(play) {
     return (play.playEvents || [])
       .filter(pe => !pe.isPitch && pe.type !== 'pitch' && pe.details && pe.details.description
-        && !GENUINE_PAUSE_RE.test(pe.details.description))
+        && !GENUINE_PAUSE_RE.test(pe.details.description)
+        // The feed's game-state advisories ("Status Change - Warmup") ride
+        // on the first at-bat; they're not part of it.
+        && !/^Status Change\b/i.test(pe.details.description))
       .map(pe => pe.details.description);
   }
 
@@ -5671,11 +5755,22 @@
     <span class="standings-num">L10</span>
     <span class="standings-num sn-strk">Strk</span>
   </div>`;
+  // Games back in halves, as the Monster hangs them: "4½", "½", "+2" for a
+  // wild-card leader ahead of the line, a dash for the leader.
+  function formatGamesBack(gb) {
+    if (gb == null || gb === '-' || gb === '') return '&#8212;';
+    const str = String(gb);
+    const v = Math.abs(parseFloat(str));
+    if (isNaN(v)) return str;
+    if (!v) return '&#8212;';
+    const whole = Math.floor(v);
+    return `${str.startsWith('+') ? '+' : ''}${whole || ''}${v - whole ? '<i class="tdv-half">&#189;</i>' : ''}`;
+  }
   // gbValue is tr.gamesBack for the division view, tr.wildCardGamesBack for
   // the wild-card view -- the only field that differs between the two.
   function standingsRow(tr, gbValue) {
     const streak = (tr.streak && tr.streak.streakCode) || '&#8212;';
-    const gb = gbValue === '-' || gbValue == null ? '&#8212;' : gbValue;
+    const gb = formatGamesBack(gbValue);
     const teamId = tr.team && tr.team.id;
     const teamName = (tr.team && tr.team.name) || '';
     const lastTen = ((tr.records && tr.records.splitRecords) || []).find(r => r.type === 'lastTen');
@@ -5942,13 +6037,14 @@
     openOverlay(gameStripOverlay);
   }
 
-  // The player modal's Last 10 Games section: row 1 is always "Today",
-  // built from the live boxscore (info.todayStats) rather than the game
-  // log -- for a game still in progress the log hasn't caught up yet, and
-  // for one just finished it may not have either -- so recentGames (see
-  // getRecentGameStats) only ever needs to cover the 9 games before it.
+  // The player modal's Last 10 Games section. Opened from a game, row 1 is
+  // that game (under the wash), built from its boxscore (info.todayStats)
+  // rather than the game log -- for a game still in progress the log hasn't
+  // caught up yet, and for one just finished it may not have either -- so
+  // recentGames (see getRecentGameStats) covers the 9 games before it.
+  // Opened from anywhere else it's simply his last 10 from the log.
   // recentGames is undefined while that fetch is still in flight.
-  function renderRecentGamesTable(pitcher, todayStats, recentGames) {
+  function renderRecentGamesTable(pitcher, info, recentGames) {
     if (recentGames === undefined) return '<div class="pitch-empty">Loading recent games&#8230;</div>';
     const headers = pitcher ? ['Date', 'IP', 'H', 'ER', 'BB', 'K'] : ['Date', 'H-AB', 'Notes'];
     // A rigid AB/H/RBI/BB/HR column set reads as mostly zeroes most
@@ -5961,12 +6057,15 @@
       if (s.doubles) parts.push(`${s.doubles} 2B`);
       if (s.triples) parts.push(`${s.triples} 3B`);
       if (s.homeRuns) parts.push(`${s.homeRuns} HR`);
-      return parts.join(', ') || '&#8212;';
+      return parts.join(', ');
     };
+    // The Blank Zero Rule: a short line leaves its zero counts blank.
+    const count = v => v ? v : '';
     const cells = s => pitcher
-      ? [s.inningsPitched ?? '0.0', s.hits ?? 0, s.earnedRuns ?? 0, s.baseOnBalls ?? 0, s.strikeOuts ?? 0]
+      ? [s.inningsPitched ?? '0.0', count(s.hits), count(s.earnedRuns), count(s.baseOnBalls), count(s.strikeOuts)]
       : [`${s.hits ?? 0}-${s.atBats ?? 0}`, notableBattingEvents(s)];
-    const games = [{ label: 'Today', stat: todayStats, hl: true }, ...recentGames.map(g => ({ label: formatShortDate(g.date), stat: g.stat }))];
+    const recent = recentGames.map(g => ({ label: formatShortDate(g.date), stat: g.stat }));
+    const games = info.gameDate ? [{ label: formatShortDate(info.gameDate), stat: info.todayStats || {}, hl: true }, ...recent] : recent;
     const rows = games.map(g => `<tr${g.hl ? ' class="hl"' : ''}><td>${g.label}</td>${cells(g.stat).map(v => `<td>${v}</td>`).join('')}</tr>`).join('');
     return `<div class="table-scroll"><table class="pitch-table recent-games-table${pitcher ? '' : ' batter'}">
         <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
@@ -5976,13 +6075,13 @@
 
   function renderPlayerModalContent(info, seasonStat, awardTags, recentGames, displayPos, leagueWoba) {
     const pitcher = info.pos === 'P';
-    const recentGamesHtml = renderRecentGamesTable(pitcher, info.todayStats || {}, recentGames);
+    const recentGamesHtml = renderRecentGamesTable(pitcher, info, recentGames);
     // Same set of columns as the Career table's pitching view (see
     // renderPitchingCareerTable) minus Year/Team, just for this one season.
     const seasonHtml = seasonStat
       ? (pitcher
         ? `<div class="table-scroll"><table class="pitch-table season-stat-table">
-             <thead><tr><th>G</th><th>IP</th><th>ERA</th><th>WHIP</th><th>K%-BB%</th><th>SO</th><th>BB</th></tr></thead>
+             <thead><tr><th>G</th><th>IP</th><th>ERA</th><th>WHIP</th><th>K%-BB%</th><th>K</th><th>BB</th></tr></thead>
              <tbody><tr>
                <td>${seasonStat.gamesPitched ?? '&#8212;'}</td>
                <td>${seasonStat.inningsPitched ?? '&#8212;'}</td>
@@ -6013,7 +6112,7 @@
         <img class="player-headshot" src="${headshotUrl(info.id)}" alt="" loading="lazy" onerror="this.style.display='none'">
         <div>
           <div class="pitch-header">${info.name}</div>
-          <div class="pitch-subheader">${displayPos || info.pos} &#183; ${info.team}</div>
+          <div class="pitch-subheader">${[info.team, displayPos || info.pos].filter(Boolean).join(' | ')}</div>
         </div>
       </div>
       ${awardsHtml}
@@ -6021,7 +6120,7 @@
       ${seasonHtml}
       <div class="roster-section-title">Last 10 Games</div>
       ${recentGamesHtml}
-      <button type="button" class="modal-cta" data-player-id="${info.id}">View Full Profile &#8594;</button>
+      <button type="button" class="modal-cta" data-player-id="${info.id}">View Full Profile <span class="lk-tri">&#8594;</span></button>
     `;
   }
 
@@ -6080,7 +6179,7 @@
     const s = starter.stats;
     const stat = (label, val, cls) => `<div class="pbox-stat${cls ? ' ' + cls : ''}"><div class="pbox-lbl">${label}</div><div class="pbox-val">${val}</div></div>`;
     return `<div class="pbox">
-      <div class="pbox-title">Pitching &#183; ${teamNick}</div>
+      <div class="pbox-title">${teamNick} Pitching</div>
       <div class="pbox-body">
         <div class="pbox-starter">
           <div class="pbox-who">
@@ -6124,7 +6223,7 @@
     const idx = isFinalPage ? m.halves.length : m.halves.findIndex(h => h.inning === v.half.inning && h.top === v.half.top);
     const side = isFinalPage ? null : (v.half.top ? 'away' : 'home');
     const head = `<div class="hv-head">${renderTeamToggle(m, side, true)}${side ? `<button class="roster-btn" data-team="${m[side].name}">Roster</button>` : ''}</div>`;
-    const title = isFinalPage ? 'Final' : `${NOW_TRI_SVG(v.half.top)}${v.half.top ? 'Top' : 'Bottom'} ${ordinalSuffix(v.half.inning)}`;
+    const title = isFinalPage ? 'Final' : `${NOW_TRI_SVG(v.half.top)}${ordinalSuffix(v.half.inning)}`;
     const step = `<div class="hv-step">
       <button type="button" class="hv-step-btn" data-hv-step="-1" aria-label="Previous half-inning"${idx <= 0 ? ' disabled' : ''}>${HV_CHEV(true)}</button>
       <div class="hv-title" aria-live="polite">${title}</div>
@@ -6132,7 +6231,7 @@
     </div>`;
     const offLive = m.state === 'Live' && m.liveHalf && !sameHalf(v.half, m.liveHalf);
     const liveBtn = offLive
-      ? `<button type="button" class="hv-live" data-hv-live>Back to live &#183; ${NOW_TRI_SVG(m.liveHalf.top)}${m.liveHalf.top ? 'Top' : 'Bottom'} ${ordinalSuffix(m.liveHalf.inning)}</button>` : '';
+      ? `<button type="button" class="hv-live" data-hv-live>Back to live ${NOW_TRI_SVG(m.liveHalf.top)}${ordinalSuffix(m.liveHalf.inning)}</button>` : '';
     if (isFinalPage) return head + step + renderGameStory(m.highlights);
 
     const team = m[side];
@@ -6236,7 +6335,7 @@
     if (!weather || weather.temp == null) return '';
     const parts = [`${weather.temp}&#176;F`];
     if (weather.condition) parts.push(weather.condition);
-    return ` <span class="gs-weather">&#183; ${parts.join(' &#183; ')}</span>`;
+    return `<span class="gs-weather">&emsp;${parts.join('&emsp;')}</span>`;
   }
 
   // Dot + label for the top-row status tag next to the venue name. Keeps
@@ -6246,15 +6345,25 @@
   // manager challenge, a review), the same way a paper scorecard wouldn't
   // annotate every pause. Only an actual delay is worth calling out as
   // something other than the game just being underway.
+  // Written as every other game state is (the Live rule): Final or F/10, a
+  // live game's inning in gold, and nothing for a game that hasn't started
+  // (the date line has its time) unless it's postponed or delayed. A
+  // schedule game has no linescore, so a live inning waits for the feed
+  // (game.feedLinescore, from loadGameSummaryExtrasInto).
   function renderStateBadge(game) {
-    if (game.state === 'Final') return `<span class="badge badge-final"><span class="badge-dot"></span>Final</span>`;
-    if (game.state === 'Live') {
-      const isDelay = game.detailedState && /delay/i.test(game.detailedState);
-      const label = isDelay ? game.detailedState : 'Live';
-      return `<span class="badge badge-live"><span class="badge-dot"></span>${label}</span>`;
+    const ls = game.linescore || game.feedLinescore;
+    const id = game.gamePk ? ` id="state-${game.gamePk}"` : '';
+    const state = game.detailedState || '';
+    if (game.state === 'Final') {
+      const inn = ls && ls.currentInning, sched = (ls && ls.scheduledInnings) || 9;
+      return `<span class="badge"${id}>${inn && inn !== sched ? `F/${inn}` : 'Final'}</span>`;
     }
-    const label = game.detailedState && game.detailedState !== 'Scheduled' ? game.detailedState : 'Upcoming';
-    return `<span class="badge badge-preview"><span class="badge-dot"></span>${label}</span>`;
+    if (/postponed|cancel|delay|suspend/i.test(state)) return `<span class="badge"${id}>${state}</span>`;
+    if (game.state === 'Live' && state !== 'Warmup') {
+      return `<span class="badge badge-live"${id}>${ls ? liveInning(ls.inningState, ls.currentInningOrdinal) : ''}</span>`;
+    }
+    if (state === 'Warmup') return `<span class="badge"${id}>Warmup</span>`;
+    return `<span${id}></span>`;
   }
 
   // Fenway-style linescore reused for both the Scorecard tab's fixed bottom
@@ -6591,7 +6700,10 @@
   }
 
   const scheduleCache = {};
-  const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const MONTH_NAMES = DATE_MONTHS;
+  // Months are written one way across the app: three letters, a merged pair
+  // with a slash (Mar/Apr, Sep/Oct).
+  const monthShort = m => MONTH_NAMES[m].slice(0, 3);
 
   function sortedTeams() {
     return Object.keys(TEAM_NICKNAMES)
@@ -6735,7 +6847,7 @@
 
     // Room above for the high point's label, below for the low point's
     // (above the month labels), and on the right for the current mark.
-    const padL = 14, padR = 22, padT = 18, padB = 28;
+    const padL = 14, padR = 26, padT = 18, padB = 28;
     const plotW = width - padL - padR;
     const plotH = height - padT - padB;
     const n = played.length;
@@ -6778,9 +6890,9 @@
     svg += `<line x1="${padL}" y1="${zeroY.toFixed(1)}" x2="${width - padR}" y2="${zeroY.toFixed(1)}" stroke="${ink}" stroke-width="1" stroke-dasharray="2,2" opacity="0.5"/>`;
     monthTicks.forEach(t => {
       svg += `<line x1="${t.x.toFixed(1)}" y1="${padT}" x2="${t.x.toFixed(1)}" y2="${height - padB}" stroke="${ink}" stroke-width="0.5" opacity="0.15"/>`;
-      svg += `<text x="${t.x.toFixed(1)}" y="${height - 4}" font-family="Overpass, sans-serif" font-size="7" font-weight="700" letter-spacing="0.04em" fill="${ink}" opacity="0.6">${t.label}</text>`;
+      svg += `<text x="${t.x.toFixed(1)}" y="${height - 4}" font-family="'Overpass', sans-serif" font-size="9" font-weight="800" letter-spacing="0.04em" fill="${ink}" opacity="0.6">${t.label}</text>`;
     });
-    svg += `<text x="${padL - 4}" y="${(zeroY + 3).toFixed(1)}" font-family="Overpass, sans-serif" font-weight="700" font-size="8" fill="${ink}" opacity="0.6" text-anchor="end">0</text>`;
+    svg += `<text x="${padL - 4}" y="${(zeroY + 3).toFixed(1)}" font-family="'Overpass', sans-serif" font-weight="800" font-size="9" fill="${ink}" opacity="0.6" text-anchor="end">0</text>`;
     if (n > 1) {
       svg += `<polyline points="${linePts}" fill="none" stroke="${ink}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>`;
     }
@@ -6792,22 +6904,19 @@
       const anchor = x < padL + 40 ? 'start' : x > width - padR - 40 ? 'end' : 'middle';
       const ty = above ? y - 6 : y + 12;
       return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.2" fill="${PALETTE.paper}" stroke="${ink}" stroke-width="1.2"/>`
-        + `<text x="${x.toFixed(1)}" y="${ty.toFixed(1)}" font-family="Overpass, sans-serif" font-weight="700" font-size="8" fill="${ink}" text-anchor="${anchor}" font-variant-numeric="tabular-nums">${fmtNet(netValues[i])}<tspan fill-opacity="0.6" dx="3">${fmtShortDate(played[i].date)}</tspan></text>`;
+        + `<text x="${x.toFixed(1)}" y="${ty.toFixed(1)}" font-family="'Overpass', sans-serif" font-weight="700" font-size="10" fill="${ink}" text-anchor="${anchor}" font-variant-numeric="tabular-nums">${fmtNet(netValues[i])}<tspan fill-opacity="0.6" dx="3">${fmtShortDate(played[i].date)}</tspan></text>`;
     };
     if (netValues[peakIdx] > 0 && netValues[peakIdx] !== finalNet) svg += markLabel(peakIdx, true);
     if (netValues[troughIdx] < 0 && netValues[troughIdx] !== finalNet) svg += markLabel(troughIdx, false);
     const lastX = xFor(n - 1), lastY = yFor(finalNet);
     svg += `<circle cx="${lastX.toFixed(1)}" cy="${lastY.toFixed(1)}" r="3" fill="${finalNet >= 0 ? gold : brick}" stroke="${ink}" stroke-width="1"/>`;
-    svg += `<text x="${(lastX + 5).toFixed(1)}" y="${(lastY + 3).toFixed(1)}" font-family="Overpass, sans-serif" font-weight="700" font-size="8.5" fill="${ink}" font-variant-numeric="tabular-nums">${fmtNet(finalNet)}</text>`;
+    svg += `<text x="${(lastX + 5).toFixed(1)}" y="${(lastY + 3).toFixed(1)}" font-family="'Overpass', sans-serif" font-weight="700" font-size="10" fill="${ink}" font-variant-numeric="tabular-nums">${fmtNet(finalNet)}</text>`;
     svg += '</svg>';
     return svg;
   }
 
   function fmtNet(v) { return v > 0 ? `+${v}` : String(v); }
-  function fmtShortDate(d) {
-    const [, m, dd] = d.split('-').map(Number);
-    return `${MONTH_NAMES[m - 1].slice(0, 3)} ${dd}`;
-  }
+  function fmtShortDate(d) { return formatShortDate(d); }
 
   function renderTeamChartContent(teamId, teamName, season, series, throughDate) {
     const played = throughDate ? series.filter(s => s.date <= throughDate) : series;
@@ -6817,17 +6926,20 @@
     const wins = played.filter(s => s.won).length;
     const losses = played.length - wins;
     return `<div class="pitch-header">${teamName}</div>
-      <div class="pitch-subheader">${season} Season &#8226; ${wins}-${losses}</div>
+      <div class="pitch-subheader tc-sub"><span class="tc-season">${season}</span><span class="tc-rec">${wins}-${losses}</span></div>
       ${renderWinLossSvg(`teamChartClip${teamId}`, played)}`;
   }
 
   function formatGameTime(iso) {
-    return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    return formatClockTime(new Date(iso));
   }
 
   function renderMonthGrid(startDate, endDate, gamesByDate, seasonStart, seasonEnd) {
     const leadBlanks = startDate.getUTCDay();
     const todayS = todayStr();
+    // Played days step back only while games are still to come; a finished
+    // season, all played, keeps its full color.
+    const seasonOpen = Object.values(gamesByDate).some(gs => gs.some(g => g.state !== 'Final'));
 
     let cells = '';
     for (let i = 0; i < leadBlanks; i++) cells += '<div class="calendar-day is-empty"></div>';
@@ -6843,8 +6955,9 @@
       } else if (games && games.length) {
         const homeAway = games[0].isHome ? 'is-home' : 'is-away';
         const isDH = games.length > 1 ? ' is-dh' : '';
+        const done = seasonOpen && games.every(g => g.state === 'Final') ? ' is-done' : '';
         const lines = games.map(g => `<div class="cal-game-opp">${g.opponent}</div>`).join('');
-        cells += `<div class="calendar-day is-game ${homeAway}${today}${isDH}" data-date="${dateStr}" tabindex="0" role="button">
+        cells += `<div class="calendar-day is-game ${homeAway}${today}${isDH}${done}" data-date="${dateStr}" tabindex="0" role="button">
           <div class="cal-daynum">${day}</div>
           ${lines}
         </div>`;
@@ -6883,11 +6996,11 @@
         if (blockEndM > 11) { blockEndM = 0; blockEndY++; }
         blockStart = new Date(seasonStart + 'T00:00:00Z');
         blockEnd = new Date(Date.UTC(blockEndY, blockEndM + 1, 0));
-        title = `${MONTH_NAMES[m]}/${MONTH_NAMES[blockEndM]} ${blockEndY}`;
+        title = `${monthShort(m)}/${monthShort(blockEndM)} ${blockEndY}`;
       } else {
         blockStart = new Date(Date.UTC(y, m, 1));
         blockEnd = new Date(Date.UTC(y, m + 1, 0));
-        title = `${MONTH_NAMES[m]} ${y}`;
+        title = `${monthShort(m)} ${y}`;
       }
 
       const isCurrentMonth = (todayS.slice(0, 4) === String(y) && Number(todayS.slice(5, 7)) - 1 === m) ||
@@ -6923,10 +7036,10 @@
     loadSchedule(dateStr, gamePk);
   }
 
-  function formatInningState(state) {
-    if (state === 'Bottom') return 'Bot';
-    if (state === 'Middle') return 'Mid';
-    return state || '';
+  // A live game's place, as the scorecard marks it: ▲ 6th, ▼ 6th, Mid 6th.
+  function liveInning(state, ordinal) {
+    const mark = { Top: '&#9650;', Bottom: '&#9660;', Middle: 'Mid', End: 'End' }[state] || '';
+    return `${mark} ${ordinal || ''}`.trim();
   }
 
   function capLogoUrl(teamId) {
@@ -6950,7 +7063,7 @@
   }
 
   function dailyTileRow(name, teamId, score, won) {
-    const nameBlock = `<span class="daily-tile-team${won ? ' is-winner' : ''}">${name}</span>`;
+    const nameBlock = `<span class="daily-tile-team${won ? ' is-winner' : ''}" title="${name}">${TEAM_ABBR[teamId] || name}</span>`;
     const logo = teamId ? `<img class="daily-tile-logo" src="${capLogoUrl(teamId)}" alt="">` : '';
     const scoreHtml = score == null ? '' : `<span class="daily-tile-score${won ? ' is-winner' : ''}">${score}</span>`;
     return `<div class="daily-tile-row"><span class="daily-tile-left">${logo}${nameBlock}</span>${scoreHtml}</div>`;
@@ -6968,7 +7081,7 @@
     if (game.state === 'Live' && game.detailedState !== 'Warmup' && !isRealDelay) {
       rowsHtml = dailyTileRow(game.awayName, game.awayId, game.awayScore ?? 0, false)
         + dailyTileRow(game.homeName, game.homeId, game.homeScore ?? 0, false);
-      stateLabel = `${formatInningState(game.inningState)} ${game.inningOrdinal || ''}`.trim();
+      stateLabel = liveInning(game.inningState, game.inningOrdinal);
       tileClass = 'is-live';
     } else if (game.state === 'Final') {
       const awayWon = game.awayScore > game.homeScore;
@@ -7291,7 +7404,7 @@
       return { label: inn && inn !== sched ? `F/${inn}` : 'Final', started: true, final: true };
     }
     if (t.state === 'Live' && t.detailedState !== 'Warmup' && !isRealDelay) {
-      return { label: `${formatInningState(t.inningState)} ${t.inningOrdinal || ''}`.trim(), started: true, live: true };
+      return { label: liveInning(t.inningState, t.inningOrdinal), started: true, live: true };
     }
     if (t.state === 'Live') return { label: t.detailedState || 'Warmup', started: false };
     return { label: formatGameTime(t.gameDate), started: false };
@@ -7328,11 +7441,7 @@
     storeTeamPlayer(hr.batterId, hr.batterName, '', hr.battingTeamId, season);
     const tag = hr.impact === 'walkoff' ? 'Walk-off' : hr.isGrandSlam ? 'Grand slam' : hr.impact ? HR_IMPACT_LABELS[hr.impact] : '';
     const gold = hr.impact === 'walkoff' || hr.isGrandSlam;
-    const kind = hr.isGrandSlam ? '' : hr.runs === 1 ? 'Solo' : `${hr.runs}-run`;
-    const inning = hr.inning ? `${hr.isTop ? 'T' : 'B'}${hr.inning}` : '';
-    const ev = hr.exitVelo != null ? `${hr.exitVelo.toFixed(1)} mph` : '';
-    const context = [`vs ${shortPlayerName(hr.pitcherName)}`, inning, kind, ev].filter(Boolean).join(' &#183; ');
-    const watch = hr.videoUrl ? `<a class="dh-watch" ${clipWatchAttrs(hr.videoUrl, `Home Run &#183; ${hr.batterName}`)}>Watch &#9654;</a>` : '';
+    const watch = hr.videoUrl ? `<a class="dh-watch" ${clipWatchAttrs(hr.videoUrl, `Home Run | ${hr.batterName}`)}>Watch <span class="lk-tri">&#9654;</span></a>` : '';
     return `
       <div class="dh${gold ? ' is-gold' : ''}${i >= DAY_HR_SHOWN ? ' is-extra' : ''}">
         <div class="dh-main">
@@ -7341,7 +7450,7 @@
             <button type="button" class="player-name-btn" data-player-id="${hr.batterId || ''}">${hr.batterName}</button>
             ${hr.seasonCount ? `<span class="dh-count">No. ${hr.seasonCount}</span>` : ''}
           </div>
-          <div class="dh-context">${tag ? `<span class="dh-tag${gold ? ' is-gold' : ''}">${tag}</span> &#183; ` : ''}${context}</div>
+          ${tag ? `<div class="dh-context"><span class="dh-tag${gold ? ' is-gold' : ''}">${tag}</span></div>` : ''}
         </div>
         <div class="dh-side">
           <div class="dh-dist">${hr.distance != null ? `${Math.round(hr.distance)}<small>ft</small>` : '&#8212;'}</div>
@@ -7372,7 +7481,7 @@
         <div class="ds-row">
           <span class="ds-name">
             <span class="ds-who"><img class="dh-cap" src="${capLogoUrl(p.teamId)}" alt=""><button type="button" class="player-name-btn" data-player-id="${p.id}" title="${p.name}"><span class="ds-full">${p.name}</span><span class="ds-short">${shortPlayerName(p.name)}</span></button></span>
-            <span class="ds-sub">${p.isHome ? 'vs' : '@'} ${p.oppAbbr}${reels[p.id] ? `<button type="button" class="dh-watch ds-watch" data-day-clip="${dayVideoKey({ clip: reels[p.id] })}">Watch &#9654;</button>` : ''}</span>
+            <span class="ds-sub">${p.isHome ? 'vs' : '@'} ${p.oppAbbr}${reels[p.id] ? `<button type="button" class="dh-watch ds-watch" data-day-clip="${dayVideoKey({ clip: reels[p.id] })}">Watch <span class="lk-tri">&#9654;</span></button>` : ''}</span>
           </span>
           <span>${p.ip}</span><span>${blank(p.h)}</span><span${p.er ? '' : ' class="is-zero"'}>${p.er}</span><span${p.bb ? '' : ' class="is-zero"'}>${p.bb}</span><span>${blank(p.k)}</span><span class="ds-gs">${p.gameScore}</span>
         </div>`;
@@ -7528,7 +7637,7 @@
       ? `<img class="vc-photo" src="${headshotUrl(item.personId, 240)}" alt="" onerror="this.style.visibility='hidden'">`
       : '';
     const team = item.teamId ? `<img src="${capLogoUrl(item.teamId)}" alt="">${TEAM_ABBR[item.teamId] || ''}` : '';
-    const where = [team, k ? inningTag(k) : ''].filter(Boolean).join('<b>&#183;</b>');
+    const where = [team, k ? inningTag(k) : ''].filter(Boolean).join(' ');
     const dots = k && k.rbi ? `<span class="pp-rc-rbi">${'<i></i>'.repeat(k.rbi)}</span>` : '';
     const diamond = k
       ? diamondSVG(k.reached, k.reached === 4, k.code, k.isOut, k.outEdge, null, false, k.calledLooking)
@@ -7576,12 +7685,10 @@
     const homeRuns = stats.flatMap(s => s.homeRuns);
     const starts = stats.flatMap(s => s.starts);
     const sec = buildDaySections(dayData);
-    const finals = games.filter(g => g.status.abstractGameState === 'Final').length;
-    const when = new Date(`${dateStr}T12:00:00`).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-    const meta = [`${games.length} game${games.length === 1 ? '' : 's'}`, finals && finals < games.length ? `${finals} final` : '', homeRuns.length ? `${homeRuns.length} HR` : ''].filter(Boolean).join(' &#183; ');
+    const when = formatLongDate(dateStr);
     return `
       <div class="sheet dy">
-        <div class="dy-head"><div class="dy-title">${when}</div><div class="dy-meta">${meta}</div></div>
+        <div class="dy-head"><div class="dy-title">${when}</div></div>
         <div class="dy-sec">
           <div class="pp-skg-head"><span>Scores</span></div>
           <div class="dg-grid">${games.map(g => renderDayGame(g, media[g.gamePk])).join('')}</div>
@@ -7907,11 +8014,10 @@
     const tag = r => (r.divisionChamp || /[yz]/.test(r.clinchIndicator || '')) ? 'Div'
       : r.clinchIndicator === 'w' ? 'WC' : r.clinchIndicator === 'x' ? 'In' : '';
     return `<div class="tdv">
-        <div class="tdv-row tdv-head"><span></span><span></span><span>W</span><span>L</span><span>GB</span><span></span></div>
+        <div class="tdv-row tdv-head"><span></span><span>W</span><span>L</span><span>GB</span><span></span></div>
         ${rows.map(r => {
           const t = tag(r);
           return `<button type="button" class="tdv-row${r.team.id === Number(teamId) ? ' is-this' : ''}" data-team-pick="${r.team.id}">
-            <span class="tdv-rank">${r.divisionRank}</span>
             <span class="tdv-team">${r.team.id === 109 ? '<span class="tdv-full">Diamondbacks</span><span class="tdv-short">D-backs</span>' : TEAM_NICKNAMES[r.team.id] || r.team.name}</span>
             <span class="tdv-slot">${r.wins}</span><span class="tdv-slot">${r.losses}</span>
             <span class="tdv-slot is-soft">${monsterGamesBack(r.gamesBack)}</span>
@@ -8092,7 +8198,7 @@
           label: k.kind ? HR_IMPACT_LABELS[k.kind] : k.event === 'Home Run' ? 'Home run' : k.isOut ? 'Big out' : 'Big hit',
           why: k.runs > 1 ? `${k.runs} runs` : k.runs ? '1 run' : '',
           teamId: Number(teamId), personId: k.isOut ? k.pitcherId : k.batterId, clipPrefix: 't',
-          meta: `${fmtShortDate(g.date)} &#183; ${g.isHome ? 'vs' : '@'} ${TEAM_ABBR[g.isHome ? g.awayId : g.homeId] || g.opponentFull}`
+          meta: `${fmtShortDate(g.date)} ${g.isHome ? 'vs' : '@'} ${TEAM_ABBR[g.isHome ? g.awayId : g.homeId] || g.opponentFull}`
         };
       }).filter(Boolean);
       teamMomentsCache[key] = items;
@@ -8162,7 +8268,7 @@
     return { mp4: c.mp4, title: c.title, date: g.date, gamePk: g.gamePk, matchup: `${TEAM_ABBR[g.awayId] || ''} @ ${TEAM_ABBR[g.homeId] || ''}` };
   }
   function teamGameMeta(g) {
-    return `${fmtShortDate(g.date)} &#183; ${g.isHome ? 'vs' : '@'} ${TEAM_ABBR[g.isHome ? g.awayId : g.homeId] || g.opponentFull}`;
+    return `${fmtShortDate(g.date)} ${g.isHome ? 'vs' : '@'} ${TEAM_ABBR[g.isHome ? g.awayId : g.homeId] || g.opponentFull}`;
   }
   function teamGameResult(g) {
     const us = g.isHome ? g.homeScore : g.awayScore, them = g.isHome ? g.awayScore : g.homeScore;
@@ -8318,16 +8424,16 @@
     const live = g.state === 'Live';
     const us = g.isHome ? g.homeScore : g.awayScore, them = g.isHome ? g.awayScore : g.homeScore;
     const when = new Date(g.gameDate);
-    const day = when.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-    const kicker = live ? '<span class="tn-live"><i></i>Live</span>' : next.opener ? 'Opening Day' : 'Next Game';
+    const day = `${DATE_DAYS[when.getDay()].slice(0, 3)}, ${DATE_MONTHS[when.getMonth()].slice(0, 3)} ${when.getDate()}`;
+    const kicker = live ? (g.inningLabel || g.detailedState || 'Live') : next.opener ? 'Opening Day' : 'Next Game';
     const right = live
-      ? `<span class="tn-score">${us ?? 0}<b>-</b>${them ?? 0}</span><span class="tn-state">${g.inningLabel || g.detailedState || ''}</span>`
+      ? `<span class="tn-score">${us ?? 0}<b>-</b>${them ?? 0}</span>`
       : `<span class="tn-day">${day}</span><span class="tn-state">${formatGameTime(g.gameDate)}</span>`;
     return `<button type="button" class="tn${live ? ' is-live' : ''}" data-tn-date="${g.date}" data-tn-pk="${g.gamePk}">
         <span class="tn-kicker">${kicker}</span>
         <span class="tn-opp"><span class="tn-at">${g.isHome ? 'vs' : '@'}</span><img src="${capLogoUrl(oppId)}" alt="">${g.opponentFull}</span>
         <span class="tn-right">${right}</span>
-        <span class="tn-go">${live ? 'Follow live' : 'Scorecard'} &#8594;</span>
+        <span class="tn-go">${live ? 'Follow live' : 'Scorecard'} <span class="lk-tri">&#8594;</span></span>
       </button>`;
   }
 
@@ -8390,13 +8496,12 @@
       const g = data.dates && data.dates[0] && data.dates[0].games && data.dates[0].games[0];
       if (!g) return null;
       const ls = g.linescore || {};
-      const half = { Top: 'Top', Bottom: 'Bot', Middle: 'Mid', End: 'End' }[ls.inningState] || '';
       return {
         state: g.status.abstractGameState,
         detailedState: g.status.detailedState,
         homeScore: g.teams.home.score,
         awayScore: g.teams.away.score,
-        inningLabel: ls.currentInning ? `${half} ${ordinalSuffix(ls.currentInning)}`.trim() : ''
+        inningLabel: ls.currentInning ? liveInning(ls.inningState, ordinalSuffix(ls.currentInning)) : ''
       };
     } catch (e) {
       return null;
@@ -8461,7 +8566,7 @@
     stream.forEach(x => {
       const m = Math.min(9, Math.max(4, Number(x.g.date.slice(5, 7))));
       const ym = `${x.g.date.slice(0, 4)}-${String(m).padStart(2, '0')}`;
-      const name = m === 4 ? 'Mar&#8211;Apr' : m === 9 ? 'Sep&#8211;Oct' : MONTH_NAMES[m - 1];
+      const name = m === 4 ? 'Mar/Apr' : m === 9 ? 'Sep/Oct' : monthShort(m - 1);
       if (!months.length || months[months.length - 1].ym !== ym) months.push({ ym, name, short: m === 4 || m === 9 ? name : name.slice(0, 3), items: [] });
       months[months.length - 1].items.push(x);
     });
@@ -8500,7 +8605,7 @@
       : (m && m.recap && { clip: teamGameClip(m.recap, x.g), label: 'Recap' });
     return `<span class="vc-kicker hl-kick">
         <span class="hl-kick-l"><b>${fmtShortDate(x.g.date)}</b>${x.label}${x.why ? ` <em>${x.why}</em>` : ''}</span>
-        ${alt ? `<button type="button" class="hl-alt" data-day-clip="${dayVideoKey({ clip: alt.clip, clipPrefix: 't' })}">${alt.label} &#9654;</button>` : ''}
+        ${alt ? `<button type="button" class="hl-alt" data-day-clip="${dayVideoKey({ clip: alt.clip, clipPrefix: 't' })}">${alt.label} <span class="lk-tri">&#9654;</span></button>` : ''}
       </span>`;
   }
   function highlightStill(x) { return ((x.kind && HIGHLIGHT_STILLS[x.kind]) || renderScorebookStill)(x); }
@@ -8800,7 +8905,7 @@
       const covers = starter && alsoById.get(starter.id);
       return `<div class="dcf-spot" style="left:${x}%; top:${y}%">
           ${starter ? depthPrint(starter) : '<span class="dcf-print is-empty"></span>'}
-          <span class="dcf-pos">${pos}${covers ? `<span class="dcf-pos-also">${covers.map(c => ` &#183; ${c}`).join('')}</span>` : ''}</span>
+          <span class="dcf-pos">${pos}${covers ? `<span class="dcf-pos-also">${covers.map(c => ` ${c}`).join('')}</span>` : ''}</span>
           ${starter ? depthPlate(starter) : ''}
         </div>`;
     }).join('');
@@ -8808,7 +8913,7 @@
     return `<div class="dcf-layout"><div class="dcf">${DEPTH_FIELD_SVG}${spots}</div><div class="dcf-side">
       <section class="tm-sec">
         <div class="pp-skg-head"><span>Bench</span></div>
-        ${depthCards(bench.map(({ p, spots: s }) => depthCard(p, s.join(' &#183; '))))}
+        ${depthCards(bench.map(({ p, spots: s }) => depthCard(p, s.join(' '))))}
       </section>
       <section class="tm-sec">
         <div class="pp-skg-head"><span>Rotation</span></div>
@@ -8829,7 +8934,7 @@
       if (a.date || b.date) return a.date ? -1 : 1;
       return (a.p.name || '').localeCompare(b.p.name || '');
     }).map(({ p, detail, date }) => {
-      const dateLabel = date ? new Date(date + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '&#8212;';
+      const dateLabel = date ? formatShortDate(date) : '&#8212;';
       return `
         <tr>
           <td class="il-num">${p.jersey}</td>
@@ -8950,7 +9055,7 @@
     { key: 'kbb', label: 'K%-BB%', dir: 'desc',
       get: r => rawKBB(r.stat.strikeOuts, r.stat.baseOnBalls, r.stat.battersFaced),
       render: r => formatKBB(r.stat.strikeOuts, r.stat.baseOnBalls, r.stat.battersFaced) },
-    statCol('so', 'SO', 'strikeOuts', { count: true }),
+    statCol('so', 'K', 'strikeOuts', { count: true }),
     statCol('bb', 'BB', 'baseOnBalls', { count: true, dir: 'asc' }),
     statCol('sv', 'SV', 'saves', { count: true })
   ];
@@ -9176,7 +9281,7 @@
       ? `<div class="gs-story" id="wpaLeaders-${game.gamePk}"><div class="sc-story"><div class="story-sec"><div class="potg-loading">Loading game highlights&#8230;</div></div></div></div>`
       : '';
 
-    const ctaHtml = `<button type="button" class="modal-cta" data-date="${dateStr}" data-game-pk="${game.gamePk}">View Full Scorecard &#8594;</button>`;
+    const ctaHtml = `<button type="button" class="modal-cta" data-date="${dateStr}" data-game-pk="${game.gamePk}">View Full Scorecard <span class="lk-tri">&#8594;</span></button>`;
 
     return `
       <div class="game-summary-game">
@@ -9190,7 +9295,7 @@
   }
 
   function renderGameSummaryContent(dateStr, games, headerLabel) {
-    const dateLabel = new Date(dateStr + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+    const dateLabel = formatLongDate(dateStr);
     const multi = games.length > 1;
 
     return `
@@ -9410,7 +9515,7 @@
         playOfGame = {
           absWpa,
           description,
-          inningLabel: inning ? `${isTop ? 'Top' : 'Bottom'} ${ordinalSuffix(inning)}` : '',
+          inningLabel: inning ? `${isTop ? '&#9650;' : '&#9660;'} ${ordinalSuffix(inning)}` : '',
           videoUrl: savantVideoUrl(playId)
         };
       }
@@ -9491,6 +9596,11 @@
     const includeHighlights = game.state === 'Final';
     const { leaders, playOfGame, linescore, weather, allPlays } = await fetchGameHighlights(game.gamePk, includeHighlights);
     if (requestId !== gameSummaryRequestId) return;
+    if (linescore) {
+      game.feedLinescore = linescore;
+      const stateEl = document.getElementById(`state-${game.gamePk}`);
+      if (stateEl) stateEl.outerHTML = renderStateBadge(game);
+    }
     if (includeHighlights) {
       const wpaEl = document.getElementById(`wpaLeaders-${game.gamePk}`);
       if (wpaEl) wpaEl.innerHTML = renderGameStory({ playOfGame, leaders }, { fullProfile: true });
@@ -9659,15 +9769,13 @@
         el.appendChild(line);
       }
       line.textContent = lastFeedOkAt
-        ? `Last update ${lastFeedOkAt.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })} \u00b7 Reconnecting`
+        ? `${formatClockTime(lastFeedOkAt)} | Reconnecting`
         : 'Reconnecting';
     });
   }
   function markFeedFresh() {
     lastFeedOkAt = new Date();
     setFeedStale(false);
-    const stamp = body.querySelector('.feed-updated');
-    if (stamp) stamp.textContent = `updated ${lastFeedOkAt.toLocaleTimeString()}`;
   }
 
   // Toggles the edge fade (see .game-strip::before/::after) on and off
@@ -9683,7 +9791,7 @@
 
   function showGameStripModal(dateStr, games) {
     gameStripOverlayBody.dataset.mode = 'date';
-    gameStripOverlayBody.innerHTML = `<div class="pitch-header">${formatShortDate(dateStr)} Games</div>
+    gameStripOverlayBody.innerHTML = `<div class="pitch-header">${formatLongDate(dateStr)}</div>
       <div class="daily-games-grid">${games.map(g => renderDailyGameTile(dateStr, scheduleGameToTileGame(g))).join('')}</div>`;
     openOverlay(gameStripOverlay);
   }
@@ -9886,8 +9994,7 @@
         renderTeamToggle(m, v.side) + `<button class="roster-btn" data-team="${t.name}">Roster</button>`, side !== v.side);
     }).join('');
     body.innerHTML = `
-      <div class="sheet sc-sheet">${m.state === 'Final' ? `<div class="sc-final-story">${renderGameStory(m.highlights)}</div>` : ''}<div class="sc-grid">${grid}</div><div class="sc-half">${renderHalfView(m, v)}</div>
-        <div class="footnote">Source: MLB Stats API${m.state === 'Final' ? '' : ` &#183; <span class="feed-updated">${lastFeedOkAt ? `updated ${lastFeedOkAt.toLocaleTimeString()}` : ''}</span>`}</div></div>
+      <div class="sheet sc-sheet">${m.state === 'Final' ? `<div class="sc-final-story">${renderGameStory(m.highlights)}</div>` : ''}<div class="sc-grid">${grid}</div><div class="sc-half">${renderHalfView(m, v)}</div></div>
     `;
     body.querySelectorAll('.table-scroll').forEach((el, i) => {
       if (scrollLefts[i]) el.scrollLeft = scrollLefts[i];
@@ -10231,7 +10338,7 @@
         const startTime = gameData.datetime && gameData.datetime.dateTime ? new Date(gameData.datetime.dateTime) : null;
         compactStateHtml = detailedState;
         subLineHtml = startTime
-          ? 'First pitch: ' + startTime.toLocaleString(undefined, {hour:'numeric', minute:'2-digit', month:'short', day:'numeric'})
+          ? 'First pitch ' + formatClockTime(startTime)
           : '';
       }
 
@@ -10545,7 +10652,7 @@
     let svg = `<line x1="${outerX}" y1="${zoneTop}" x2="${outerX}" y2="${zoneBot}" stroke="${PALETTE.ink}" stroke-width="1.3" opacity="0.7"/>`;
     svg += `<line x1="${outerX}" y1="${zoneTop}" x2="${outerX + tickDir * tickLen}" y2="${zoneTop}" stroke="${PALETTE.ink}" stroke-width="1.3" opacity="0.7"/>`;
     svg += `<line x1="${outerX}" y1="${zoneBot}" x2="${outerX + tickDir * tickLen}" y2="${zoneBot}" stroke="${PALETTE.ink}" stroke-width="1.3" opacity="0.7"/>`;
-    svg += `<text x="${midX}" y="${midY}" text-anchor="middle" dominant-baseline="middle" font-size="10.5" font-weight="700" letter-spacing="0.06em" font-family="Overpass, sans-serif" fill="${PALETTE.ink}" opacity="0.85" transform="rotate(-90 ${midX} ${midY})">${label}</text>`;
+    svg += `<text x="${midX}" y="${midY}" text-anchor="middle" dominant-baseline="middle" font-size="10.5" font-weight="700" letter-spacing="0.06em" font-family="'Overpass', sans-serif" fill="${PALETTE.ink}" opacity="0.85" transform="rotate(-90 ${midX} ${midY})">${label}</text>`;
     return svg;
   }
 
@@ -10562,7 +10669,7 @@
     const dotY = zoneTop - gapAboveZone - r;
     const label = pitchHand + 'HP';
     return `<circle cx="${dotX}" cy="${dotY}" r="${r}" fill="rgba(243,236,219,0.04)" stroke="${PALETTE.ink}" stroke-width="1.3" opacity="0.75"/>` +
-      `<text x="${dotX}" y="${dotY + 3}" text-anchor="middle" font-size="7.5" font-weight="700" letter-spacing="-0.02em" font-family="Overpass, sans-serif" fill="${PALETTE.ink}" opacity="0.85">${label}</text>`;
+      `<text x="${dotX}" y="${dotY + 3}" text-anchor="middle" font-size="8.5" font-weight="800" letter-spacing="0" font-family="'Overpass', sans-serif" fill="${PALETTE.ink}" opacity="0.85">${label}</text>`;
   }
 
   // ringed: only the pitch that actually ended the at-bat gets the persistent
@@ -10584,10 +10691,10 @@
     }
     if (spec.hollow) {
       svg += `<circle cx="${px}" cy="${py}" r="7.5" fill="${PALETTE.paper}" stroke="${spec.hue}" stroke-width="1.8"/>`;
-      svg += `<text x="${px}" y="${py + 3}" text-anchor="middle" font-size="8.5" font-weight="700" font-family="Overpass, sans-serif" fill="${spec.hue}">${p.num || ''}</text>`;
+      svg += `<text x="${px}" y="${py + 3}" text-anchor="middle" font-size="8.5" font-weight="700" font-family="'Overpass', sans-serif" fill="${spec.hue}">${p.num || ''}</text>`;
     } else {
       svg += `<circle cx="${px}" cy="${py}" r="7.5" fill="${spec.hue}" stroke="${PALETTE.paper}" stroke-width="1.2"/>`;
-      svg += `<text x="${px}" y="${py + 3}" text-anchor="middle" font-size="8.5" font-weight="700" font-family="Overpass, sans-serif" fill="${PALETTE.paper}">${p.num || ''}</text>`;
+      svg += `<text x="${px}" y="${py + 3}" text-anchor="middle" font-size="8.5" font-weight="700" font-family="'Overpass', sans-serif" fill="${PALETTE.paper}">${p.num || ''}</text>`;
     }
     svg += '</g>';
     return svg;
@@ -10708,8 +10815,8 @@
       ? `<div class="pitch-events">${reviewedPitches.map(p => {
           const rd = p.review;
           const who = (rd && rd.playerName) || (rd && absChallengeInfo && absChallengeInfo[rd.challengeTeamId]) || 'A team';
-          const outcome = rd && rd.isOverturned ? 'call overturned' : 'call stands';
-          return `<div class="pitch-event-tag challenge-tag"><span class="abs-tag">ABS</span>Pitch ${p.num || ''}: ${who} challenged &#8212; ${outcome}.</div>`;
+          const outcome = rd && rd.isOverturned ? 'Call overturned' : 'Call stands';
+          return `<div class="pitch-event-tag challenge-tag"><span class="abs-tag">ABS</span>Pitch ${p.num || ''}: ${who} challenged | ${outcome}.</div>`;
         }).join('')}</div>`
       : '';
 
@@ -10729,7 +10836,7 @@
     return `
       <div class="pitch-header">${c.batterName || 'Batter'}</div>
       <div class="pitch-subheader">vs ${c.pitcherFullName || 'pitcher'}</div>
-      ${c.videoUrl ? `<a class="pog-watch atbat-watch" ${clipWatchAttrs(c.videoUrl, `${c.batterName || ''}${c.pitcherFullName ? ` vs ${c.pitcherFullName}` : ''}`, { gameLink: false })}>Watch &#9654;</a>` : ''}
+      ${c.videoUrl ? `<a class="pog-watch atbat-watch" ${clipWatchAttrs(c.videoUrl, `${c.batterName || ''}${c.pitcherFullName ? ` vs ${c.pitcherFullName}` : ''}`, { gameLink: false })}>Watch <span class="lk-tri">&#9654;</span></a>` : ''}
       ${locationHtml}
       ${rows}
       ${reviewsHtml}
@@ -10888,7 +10995,7 @@
   const teamChartClose = document.getElementById('teamChartClose');
 
   async function showTeamChartModal(teamId, teamName, season, throughDate) {
-    teamChartModalBody.innerHTML = `<div class="pitch-header">${teamName}</div><div class="pitch-subheader">${season} Season</div><div class="pitch-empty">Loading&#8230;</div>`;
+    teamChartModalBody.innerHTML = `<div class="pitch-header">${teamName}</div><div class="pitch-subheader tc-sub"><span class="tc-season">${season}</span></div><div class="pitch-empty">Loading&#8230;</div>`;
     openOverlay(teamChartOverlay);
     try {
       const series = await getTeamWinLossSeries(teamId, season);
@@ -11027,7 +11134,7 @@
     return [
       person.currentTeam && person.currentTeam.name,
       person.primaryPosition && person.primaryPosition.abbreviation
-    ].filter(Boolean).join(' &#183; ');
+    ].filter(Boolean).join(' | ');
   }
   function renderPlayerSearchResults(people) {
     if (!people.length) {
@@ -11224,7 +11331,7 @@
     col.setAttribute('x', left + i * colW);
     col.setAttribute('opacity', '0.1');
     const tip = chart.querySelector('.pp-chart-tip');
-    tip.innerHTML = `${formatShortDate(s.date)} ${s.isHome ? 'vs' : '@'} ${teamNickname(s.opp)}<br>${s.ip} IP &#183; ${s.er} ER &#183; ${s.k} K${s.qs ? ' &#183; QS' : ''}`;
+    tip.innerHTML = `${formatShortDate(s.date)} ${s.isHome ? 'vs' : '@'} ${teamNickname(s.opp)}<br>${s.ip} IP ${s.er} ER ${s.k} K${s.qs ? ' | QS' : ''}`;
     const chartRect = chart.getBoundingClientRect();
     tip.style.left = (rect.left - chartRect.left + chart.scrollLeft + (left + (i + 0.5) * colW) / vb.width * rect.width) + 'px';
     tip.classList.add('is-on');
@@ -11546,7 +11653,7 @@
       return yearRow + subRows;
     });
     return `<div class="table-scroll"><table class="pitch-table career-table">
-        <thead><tr><th>Year</th><th>Team</th><th>G</th><th>IP</th><th>ERA</th><th>WHIP</th><th>K%-BB%</th><th>SO</th><th>BB</th></tr></thead>
+        <thead><tr><th>Year</th><th>Team</th><th>G</th><th>IP</th><th>ERA</th><th>WHIP</th><th>K%-BB%</th><th>K</th><th>BB</th></tr></thead>
         <tbody>${rows.join('')}</tbody>
       </table></div>`;
   }
@@ -11709,7 +11816,7 @@
     { key: 'kbb', label: 'K%-BB%', dir: 'desc',
       get: r => rawKBB(r.stat.strikeOuts, r.stat.baseOnBalls, r.stat.battersFaced),
       render: r => formatKBB(r.stat.strikeOuts, r.stat.baseOnBalls, r.stat.battersFaced) },
-    { key: 'so', label: 'SO', dir: 'desc', get: r => r.stat.strikeOuts ?? null, render: r => r.stat.strikeOuts ?? '&#8212;' },
+    { key: 'so', label: 'K', dir: 'desc', get: r => r.stat.strikeOuts ?? null, render: r => r.stat.strikeOuts ?? '&#8212;' },
     { key: 'bb', label: 'BB', dir: 'asc', get: r => r.stat.baseOnBalls ?? null, render: r => r.stat.baseOnBalls ?? '&#8212;' }
   ];
 
@@ -12475,8 +12582,7 @@
     if (!ts.n) return `${toggle}<div class="pitch-empty">No two-strike pitches ${side === 'L' ? 'to lefties' : 'to righties'}.</div>`;
     const rows = ts.pays.map(p => `<div class="ars-ts">${p.setup ? pitchChip(p.setup) : '<span></span>'}<span class="ars-arrow">&#8594;</span><span class="ars-ts-n">${pitchName(p.code)}</span><span class="ars-ts-v">${Math.round(p.share)}%</span>${arsenalScore(p.score, 'ars-ts-sc')}</div>`).join('');
     const full = ts.full ? `<div class="ars-fc-h"><span>Full count</span><span class="ars-fc-cols"><span>Before</span><span></span><span>Full</span></span></div>
-      ${ts.full.rows.map(r => `<div class="ars-fc"><span class="ars-ts-n">${pitchName(r.code)}</span><span class="ars-fc-pre">${Math.round(r.before)}%</span><span class="ars-arrow">&#8594;</span><span class="ars-fc-v${r.up ? ' is-up' : ''}">${Math.round(r.full)}%</span></div>`).join('')}
-      <div class="ars-foot">${ts.full.n} full-count pitches</div>` : '';
+      ${ts.full.rows.map(r => `<div class="ars-fc"><span class="ars-ts-n">${pitchName(r.code)}</span><span class="ars-fc-pre">${Math.round(r.before)}%</span><span class="ars-arrow">&#8594;</span><span class="ars-fc-v${r.up ? ' is-up' : ''}">${Math.round(r.full)}%</span></div>`).join('')}` : '';
     return `${toggle}<div class="ars-ts ars-ts-h"><span>Setup</span><span></span><span>Pitch</span><span>Thrown</span><span>Put away</span></div>${rows}${full}`;
   }
 
@@ -12487,18 +12593,18 @@
     if (a.league === null) return apiErrorMsg('pitch data');
     if (!a.movement.length) return `<div class="pitch-empty">No ${lastProfileSeason} pitch data.</div>`;
     const head = (title, note) => `<div class="pp-skg-head"><span>${title}</span>${note ? `<em>${note}</em>` : ''}</div>`;
-    const velo = a.fastballs.length ? `<section class="pp-skg ars-velo">${head('Fastball velo', 'vs pitches of the same type')}
+    const velo = a.fastballs.length ? `<section class="pp-skg ars-velo">${head('Fastball velo')}
       <div class="pp-skg-row" style="grid-template-columns:repeat(${Math.max(3, a.fastballs.length)},minmax(0,1fr))">${a.fastballs.map(f =>
         `<div class="pp-sk"><span class="pp-sk-name">${pitchName(f.code)}</span>${f.pct == null ? '<span class="pp-sk-score is-none">&#8212;</span>' : `<span class="pp-sk-score${f.pct >= SKILL_GOLD_PERCENTILE ? ' is-top' : ''}">${f.pct}</span>`}<span class="pp-sk-stat">${f.mph.toFixed(1)} mph</span></div>`).join('')}</div></section>` : '';
-    const movement = `<section class="pp-skg">${head('Movement', 'inches of break')}${renderArsenalMovement(a.movement, a.hand)}</section>`;
+    const movement = `<section class="pp-skg ars-move">${head('Movement')}${renderArsenalMovement(a.movement, a.hand)}</section>`;
     let right;
     if (a.log === undefined) right = '<div class="mlb-status-msg">Loading his pitches&#8230;</div>';
     else if (a.log === null) right = apiErrorMsg('pitch-by-pitch data');
     else {
       const side = profileArsenalSide || (a.faced.L > a.faced.R ? 'L' : 'R');
       const ts = a.twoStrikes[side];
-      right = `<section class="pp-skg">${head('Pitches', 'score: run value vs same type')}${renderArsenalMix(a.pitches)}</section>
-        <section class="pp-skg">${head('With two strikes', ts.n ? `${ts.n} pitches &#183; ${ts.k} K` : '')}${renderArsenalTwoStrikes(ts, side)}</section>`;
+      right = `<section class="pp-skg">${head('Pitches')}${renderArsenalMix(a.pitches)}</section>
+        <section class="pp-skg">${head('With two strikes')}${renderArsenalTwoStrikes(ts, side)}</section>`;
     }
     return `<div class="ars"><div class="ars-col">${velo}${movement}</div><div class="ars-col">${right}</div></div>`;
   }
@@ -12624,7 +12730,7 @@
   function renderRecentCard(entry, pitcher) {
     const g = entry.log, s = g.stat || {};
     const count = (n, label) => (n ? `${n > 1 ? n + ' ' : ''}${label}` : '');
-    const line = pitcher ? '' : [`${s.hits ?? 0}-${s.atBats ?? 0}`, count(s.homeRuns, 'HR'), s.rbi ? `${s.rbi} RBI` : '', count(s.baseOnBalls, 'BB')].filter(Boolean).join(' &#183; ');
+    const line = pitcher ? '' : [`${s.hits ?? 0}-${s.atBats ?? 0}`, count(s.homeRuns, 'HR'), s.rbi ? `${s.rbi} RBI` : '', count(s.baseOnBalls, 'BB')].filter(Boolean).join(', ');
     const head = `<div class="pp-rc-head"><span class="pp-rc-date">${formatShortDate(g.date)}</span><span class="pp-rc-opp">${g.isHome ? 'vs' : '@'} ${teamNickname(g.opponent)}</span>${teamResult(g, lastProfileScores[g.game && g.game.gamePk])}${line ? `<span class="pp-rc-line">${line}</span>` : ''}</div>`;
     let body;
     if (!pitcher) {
@@ -12655,7 +12761,7 @@
       grp.games.push(g);
     });
     const hasMarch = gameLog.some(g => g.date.slice(5, 7) === '03');
-    groups.forEach(grp => { grp.label = grp.m === '04' && hasMarch ? 'Mar/Apr' : MONTH_NAMES[Number(grp.m) - 1]; });
+    groups.forEach(grp => { grp.label = grp.m === '04' && hasMarch ? 'Mar/Apr' : monthShort(Number(grp.m) - 1); });
     return groups;
   }
 
@@ -12672,7 +12778,7 @@
     const opp = g => `${g.isHome ? 'vs' : '@'} <span class="pp-opp-long">${teamNickname(g.opponent)}</span><span class="pp-opp-short">${teamAbbr(g.opponent)}</span>`;
     const wl = g => teamResult(g, lastProfileScores[g.game && g.game.gamePk]);
     const groups = gameLogMonths(gameLog);
-    let head, row, total;
+    let head, row;
     if (!pitcher) {
       // 1B/2B/3B only on a wide sheet (see .pp-xbh) -- room the phone
       // doesn't have, and the hit breakdown the wide log otherwise lacked.
@@ -12681,14 +12787,12 @@
       const sb = st => ((st.stolenBases || 0) + (st.caughtStealing || 0) ? formatStolenBases(st.stolenBases || 0, st.caughtStealing) : '');
       head = `<th>Date</th><th>Opp</th><th>Result</th><th>H-AB</th>${xbh('1B')}${xbh('2B')}${xbh('3B')}<th>HR</th><th>RBI</th><th>BB</th><th>K</th>${xbh('SB')}`;
       row = g => { const s = g.stat || {}; return `<tr><td>${dateCell(g)}</td><td class="pp-soft">${opp(g)}</td><td>${wl(g)}</td><td>${s.hits ?? 0}-${s.atBats ?? 0}</td>${xbh(null, (s.hits || 0) - (s.doubles || 0) - (s.triples || 0) - (s.homeRuns || 0))}${xbh(null, s.doubles)}${xbh(null, s.triples)}<td>${blank(s.homeRuns)}</td><td>${blank(s.rbi)}</td><td>${blank(s.baseOnBalls)}</td><td>${blank(s.strikeOuts)}</td><td class="pp-xbh">${sb(s)}</td></tr>`; };
-      total = grp => { const t = sumStatLines(grp.games.map(g => g.stat || {})); const r = slashFromCounts(t); return `${grp.games.length} G &#183; ${r.avg} / ${r.obp} / ${r.slg}${t.homeRuns ? ` &#183; ${t.homeRuns} HR` : ''}`; };
     } else {
       head = '<th>Date</th><th>Opp</th><th>Result</th><th>IP</th><th>H</th><th>ER</th><th>BB</th><th>K</th><th>Pit</th>';
       row = g => { const s = g.stat || {}; return `<tr><td>${dateCell(g)}</td><td class="pp-soft">${opp(g)}</td><td>${wl(g)}</td><td>${s.inningsPitched ?? '0.0'}</td><td>${blank(s.hits)}</td><td>${blank(s.earnedRuns)}</td><td>${blank(s.baseOnBalls)}</td><td>${blank(s.strikeOuts)}</td><td class="pp-soft">${s.numberOfPitches ?? ''}</td></tr>`; };
-      total = grp => { const t = sumStatLines(grp.games.map(g => g.stat || {})); return `${grp.games.length} G &#183; ${t.inningsPitched} IP &#183; ${formatERA(t.earnedRuns, ipToOuts(t.inningsPitched))} ERA &#183; ${t.strikeOuts} K`; };
     }
     const cols = pitcher ? 9 : 12;
-    const body = groups.map(grp => `<tr class="pp-month"><td colspan="${cols}"><span class="pp-month-name">${grp.label}</span><span class="pp-month-total">${total(grp)}</span></td></tr>${grp.games.map(row).join('')}`).join('');
+    const body = groups.map(grp => `<tr class="pp-month"><td colspan="${cols}"><span class="pp-month-name">${grp.label}</span></td></tr>${grp.games.map(row).join('')}`).join('');
     return `<div class="pp-gl">${recent}
       <div class="pp-gl-log"><table class="pitch-table pp-table pp-log${pitcher ? ' is-pitcher' : ''}"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div></div>`;
   }
@@ -12713,7 +12817,7 @@
     const marApr = [splits.March, splits.April].filter(Boolean);
     const groups = [
       ['Platoon', [[pitcher ? 'vs LHB' : 'vs LHP', splits['vs Left']], [pitcher ? 'vs RHB' : 'vs RHP', splits['vs Right']]]],
-      ['By month', [['Mar/Apr', marApr.length ? sumStatLines(marApr) : null], ...SPLIT_MONTHS.map(m => [m, splits[m]])]]
+      ['By month', [['Mar/Apr', marApr.length ? sumStatLines(marApr) : null], ...SPLIT_MONTHS.map(m => [m.slice(0, 3), splits[m]])]]
     ].map(([name, rows]) => [name, rows.filter(([, st]) => st).map(([label, st]) => {
       const ops = slashFromCounts(st).ops;
       return { label, st, ops, value: Number(ops) || 0, sample: pitcher ? st.battersFaced : st.plateAppearances };
@@ -12768,7 +12872,7 @@
     const base = T + PH, H = base + AX;
     const maxIP = Math.max(9, Math.ceil(Math.max(...starts.map(s => s.outs)) / 3));
     const y = v => T + (1 - v / maxIP) * PH;
-    const text = (x, yy, t, anchor, fill, weight) => `<text x="${x}" y="${yy}" text-anchor="${anchor}" fill="${fill}" font-size="10" font-family="Overpass" font-weight="${weight}">${t}</text>`;
+    const text = (x, yy, t, anchor, fill, weight) => `<text x="${x}" y="${yy}" text-anchor="${anchor}" fill="${fill}" font-size="10" font-family="'Overpass', sans-serif" font-weight="${weight}">${t}</text>`;
     const ticks = [0, 3, 6, 9].filter(v => v <= maxIP);
     const grid = ticks.map(v => `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="${PALETTE.paperLine}" stroke-width="1"/>${text(L - 6, y(v) + 3.5, v, 'end', PALETTE.inkSoft, 700)}`).join('');
     const bars = starts.map((s, i) => {
@@ -12789,7 +12893,7 @@
     }).join('');
     const six = `<line x1="${L}" x2="${W - R}" y1="${y(6)}" y2="${y(6)}" stroke="${PALETTE.ink}" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.8"/>`;
     const ipY = T + PH / 2;
-    const ipTitle = `<text x="10" y="${ipY}" transform="rotate(-90 10 ${ipY})" text-anchor="middle" fill="${PALETTE.ink}" font-size="10" font-family="Overpass" font-weight="800" letter-spacing="1.2">IP</text>`;
+    const ipTitle = `<text x="10" y="${ipY}" transform="rotate(-90 10 ${ipY})" text-anchor="middle" fill="${PALETTE.ink}" font-size="10" font-family="'Overpass', sans-serif" font-weight="800" letter-spacing="1.2">IP</text>`;
     const qsCount = starts.filter(s => s.qs).length;
     return `<div class="pp-chart${narrow ? ' is-scroll' : ''}">
       <svg viewBox="0 0 ${W} ${H}"${narrow ? ` style="width:${W}px"` : ''} role="img" aria-label="Innings pitched in each of ${starts.length} starts; ${qsCount} quality starts">
@@ -13168,7 +13272,7 @@
     const pos = mine.position.code;
     const at = seq.indexOf(pos);
     const role = seq.length === 1 ? 'Unassisted' : at === 0 ? 'Started' : at === seq.length - 1 ? 'Finished' : 'Turned';
-    return { code: seq.length === 1 ? `${seq[0]}U` : seq.join('-'), role, pos, triple: /Triple Play/.test(event) };
+    return { code: seq.length === 1 ? `${seq[0]}U` : seq.join('·'), role, pos, triple: /Triple Play/.test(event) };
   }
 
   // A catcher's steals against him and ABS challenges in one game. A
@@ -13378,12 +13482,12 @@
       const open = profileOpenRow === key;
       const row = `<button type="button" class="pp-cb-row pp-dp-row" data-open-row="${key}" aria-expanded="${open}">
         <span class="pp-dp-code">${plays[0].code}</span>
-        <span class="pp-dp-role">${plays[0].role}${plays.some(p => p.triple) ? ' &#183; TP' : ''}</span>
+        <span class="pp-dp-role">${plays[0].role}</span>
         <span class="pp-cb-count">${plays.length}</span>
         ${CHEVRON}
       </button>`;
       if (!open) return row;
-      const head = p => `<span class=&quot;cv-code&quot;>${p.code}</span><span class=&quot;cv-result&quot;>${p.triple ? 'Triple' : 'Double'} Play &#183; ${p.role}</span>`;
+      const head = p => `<span class=&quot;cv-code&quot;>${p.code}</span><span class=&quot;cv-result&quot;>${p.triple ? 'Triple' : 'Double'} Play | ${p.role}</span>`;
       return `${row}<div class="pp-cb-list">${plays.map(p => renderPlayRow(p, p.batter, head(p))).join('')}</div>`;
     }).join('');
     const dpHtml = dps.length
@@ -13438,7 +13542,7 @@
       .filter(([, , plays]) => plays.length);
     const stealsHtml = steals.length
       ? renderLampRows(stealRows,
-        p => `${p.runner} &#183; ${p.thrownOut ? 'Thrown out' : 'Stole'}`,
+        p => `${p.runner} | ${p.thrownOut ? 'Thrown out' : 'Stole'}`,
         p => `<span class=&quot;cv-result&quot;>${p.thrownOut ? 'Caught Stealing' : 'Stolen Base'} ${p.base}</span>`)
       : `<div class="pitch-empty">No ${lastProfileSeason} stolen base attempts.</div>`;
     const sections = [`<div class="pp-cb"><span class="pp-painted pp-cb-title">Caught Stealing <span class="pp-dp-total">${steals.length ? `${thrownOut}/${steals.length}` : ''}</span></span>${stealsHtml}</div>`];
@@ -13449,8 +13553,8 @@
         .filter(([, , plays]) => plays.length);
       const chalHtml = challenges.length
         ? renderLampRows(chalRows,
-          p => `${p.batter}${p.count ? ` &#183; ${p.count}` : ''} &#183; ${p.overturned ? (p.twoStrikes ? 'Strike three' : 'Overturned') : 'Confirmed'}`,
-          p => `<span class=&quot;cv-result&quot;>ABS Challenge &#183; ${p.overturned ? 'Overturned' : 'Confirmed'}${p.count ? ` &#183; ${p.count}` : ''}</span>`)
+          p => `${p.count ? `${p.count} | ` : ''}${p.overturned ? (p.twoStrikes ? 'Strike three' : 'Overturned') : 'Confirmed'}`,
+          p => `<span class=&quot;cv-result&quot;>ABS Challenge | ${p.overturned ? 'Overturned' : 'Confirmed'}${p.count ? ` | ${p.count}` : ''}</span>`)
         : `<div class="pitch-empty">No ${lastProfileSeason} challenges.</div>`;
       sections.push(`<div class="pp-cb"><span class="pp-painted pp-cb-title">ABS Challenges <span class="pp-dp-total">${challenges.length ? `${won}/${challenges.length}` : ''}</span></span>${chalHtml}</div>`);
     }
@@ -13505,7 +13609,7 @@
     const shownTab = hasTab ? profileTab : 'ov';
     const team = person.currentTeam && person.currentTeam.name;
     const pos = person.primaryPosition && person.primaryPosition.name;
-    const ident = [team, pos].filter(Boolean).map((t, i) => (i ? `<span class="pp-sep">&#183;</span><span class="pp-pos">${t}</span>` : t)).join('');
+    const ident = [team, pos].filter(Boolean).map((t, i) => (i ? `<span class="pp-sep">|</span><span class="pp-pos">${t}</span>` : t)).join('');
     const born = [person.birthCity, person.birthStateProvince || person.birthCountry].filter(Boolean).join(', ');
     // Label-over-value pairs, spelled out, wrapping onto as many lines as
     // the sheet needs -- one run-on line of abbreviations blurred together.
@@ -13962,7 +14066,7 @@
       clipModalBody.innerHTML = `${head}<div class="cv-video cv-video-wait">${apiErrorMsg('clip')}</div>${facts}`;
       return;
     }
-    const when = clip.date ? `${formatShortDate(clip.date)}${clip.matchup ? ` &#183; ${clip.matchup}` : ''}` : '';
+    const when = clip.date ? `${formatShortDate(clip.date)}${clip.matchup ? ` | ${clip.matchup}` : ''}` : '';
     const game = when && gameLink && clip.gamePk
       ? `<button type="button" class="pp-game-link cv-game" data-date="${clip.date}" data-game-pk="${clip.gamePk}">${when}</button>`
       : when;
@@ -14020,6 +14124,17 @@
   function hidePlayerModal() {
     closeOverlay(playerOverlay);
   }
+
+  // On a touch screen a table cell or a player's row holding one nameplate
+  // is the plate's target too: the plate is 19px tall, the row a finger's.
+  const coarsePointer = window.matchMedia('(pointer: coarse)');
+  document.addEventListener('click', (e) => {
+    if (!coarsePointer.matches || e.target.closest('button, a, input, select, label, [role="button"]')) return;
+    const td = e.target.closest('#mlb-root td, #mlb-root .dh, #mlb-root .ds-row, #mlb-root .hv-who, #mlb-root .story-pl');
+    if (!td) return;
+    const plates = td.querySelectorAll('.player-name-btn, button.standings-team-btn');
+    if (plates.length === 1) plates[0].click();
+  });
 
   document.addEventListener('click', (e) => {
     const target = e.target.closest('[data-pkey]');
