@@ -179,6 +179,24 @@ A three-layer palette of wall, board and ink, with two spare signal colors.
 
 **The Blank Zero Rule.** In short stat lines that are mostly zeros (a game log, a single game's line, a team's per-player stats), a zero count is left blank, never written as 0, so the cells that carry ink are the ones that happened. Season leaderboards like the Players list, where zeros are rare, write them. The other exceptions are pairs read aloud ("0-4" H-AB, an inning pitched), a linescore or big-number summary, where a blank would read as missing, and a zero that is the achievement (a starter's 0 ER or 0 BB on the Highlights tab).
 
+### Written Forms
+One spelling per thing, everywhere. A new screen takes these, never a second form.
+
+| Thing | Written | Never |
+|---|---|---|
+| Strikeouts | K | SO |
+| Half-inning | ▲ 7th, ▼ 7th, Mid 7th; in a still or tile, ▲8 | Top 7th, Bottom 7th, Bot, T7/B7 |
+| A live game's state | its inning, as above | "Live", a lamp |
+| A finished game | Final; F/10 for extra innings | Game over, FINAL/10 |
+| Dates | Sep 20; with the day, Sun, Sep 20 (built from the app's own month names) | September 20, a locale's "Sept" |
+| Months | per the Month Rule (Mar/Apr, May, Sep/Oct) | March/April, Mar–Apr |
+| Games back | per the Half-Game Rule (4½, ½, +3) | 4.5, 11.0 |
+| Records and scores | 62-100, 3-2 (a hyphen) | 62–100, 62 - 100 |
+| A batter's game | 1-4, HR, 2 RBI (H-AB first, then what happened) | 1 for 4 |
+| Innings pitched | 6.1 | 6⅓ |
+| Teams | the three-letter code in boxes, strips, the schedule and the line score; the nickname as a card or row's name | city names alone |
+| Separators | per the Separator Rule | a middle dot outside notation |
+
 ## Typography
 
 **Display Font:** Oswald (with sans-serif)

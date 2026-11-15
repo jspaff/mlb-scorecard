@@ -1138,7 +1138,11 @@
     .dg-aside .dg-recap::before { inset: -5px -4px; }
     .dh-watch::before { inset: -10px -6px; }
     .hl-alt::before { inset: -8px -4px; }
-    .dy-more, .pp-game-link { position: relative; }
+    .dy-more, .pp-game-link, .pog-watch { position: relative; }
+    .pog-watch::before { content: ''; position: absolute; inset: -6px -4px; }
+    /* In a start's row the Watch link sits right under the plate: its reach
+       stays inside the row so it never takes a tap meant for the name. */
+    .ds-watch::before { inset: -4px -6px; }
     .dy-more::before, .pp-game-link::before { content: ''; position: absolute; }
     .dy-more::before { inset: -10px -6px; }
     .pp-game-link::before { inset: -6px -4px; }
@@ -1215,7 +1219,7 @@
      beside the play's diamond -- over a kicker saying why it's here. */
   .vc { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 6px 6px 8px; background: rgba(0, 0, 0, 0.18); border: 1px solid var(--paper-line); text-align: left; color: var(--ink); cursor: pointer; scroll-snap-align: start; }
   .vc:hover, .vc:focus-visible { border-color: var(--gold); }
-  .vc:focus-visible { outline: none; }
+  .vc:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
   .vc-thumb { position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden; margin-bottom: 2px; background: var(--paper-line); border: 1px solid var(--paper-line); }
   .vc { container-type: inline-size; }
   .vc-card { position: absolute; inset: 0; display: grid; grid-template-columns: 40% minmax(0, 1fr); background: var(--paper); }
@@ -1845,6 +1849,7 @@
      and the kicker's video chip sits above that. */
   .hl-card { position: relative; cursor: default; }
   .hl-card:hover, .hl-card:has(.hl-hit:focus-visible) { border-color: var(--gold); }
+  .hl-card:has(.hl-hit:focus-visible) { outline: 2px solid var(--gold); outline-offset: 2px; }
   .hl-hit { display: block; width: 100%; padding: 0; font: inherit; background: none; border: 0; color: var(--ink); text-align: left; cursor: pointer; }
   .hl-hit::after { content: ''; position: absolute; inset: 0; }
   .hl-hit:focus-visible { outline: none; }
@@ -2049,7 +2054,7 @@
   .dcf-print img { width: 100%; height: 100%; object-fit: cover; object-position: center 18%; display: block; }
   .dcf-print.is-empty { opacity: 0.35; box-shadow: none; }
   .dcf-photo:hover .dcf-print, .dcf-photo:focus-visible .dcf-print { border-color: var(--gold); }
-  .dcf-photo:focus-visible { outline: none; }
+  .dcf-photo:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
   .dcf-pos { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.1em; color: var(--gold); line-height: 1; margin-top: 1px; }
   .dcf-spot .player-name-btn, .dcf-rot .player-name-btn { font-size: 10px; padding: 1px 5px; }
   @container (min-width: 520px) {
@@ -14095,7 +14100,7 @@
   const coarsePointer = window.matchMedia('(pointer: coarse)');
   document.addEventListener('click', (e) => {
     if (!coarsePointer.matches || e.target.closest('button, a, input, select, label, [role="button"]')) return;
-    const td = e.target.closest('#mlb-root td, #mlb-root .dh-main, #mlb-root .ds-who, #mlb-root .hv-who, #mlb-root .story-pl');
+    const td = e.target.closest('#mlb-root td, #mlb-root .dh, #mlb-root .ds-row, #mlb-root .hv-who, #mlb-root .story-pl');
     if (!td) return;
     const plates = td.querySelectorAll('.player-name-btn, button.standings-team-btn');
     if (plates.length === 1) plates[0].click();
