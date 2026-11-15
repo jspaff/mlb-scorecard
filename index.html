@@ -851,11 +851,12 @@
   .daily-tile:active::after { opacity: 0.16; transition-duration: 0.05s; }
   .daily-tile:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
   .daily-tile.is-live {
-    border-width: 2px;
     border-color: var(--gold);
     background: rgba(84, 121, 109, 0.32);
-    animation: daily-tile-glow 1.6s ease-in-out infinite;
   }
+  /* Live, everywhere a game is shown: a 1px gold frame that glows slowly,
+     and the inning in gold. The one glow in the app. */
+  .daily-tile.is-live, .dg.is-live, .tn.is-live { animation: live-glow 2.4s ease-in-out infinite; }
   .daily-tile.is-final { border-color: var(--ink); border-width: 1.5px; background: rgba(84, 121, 109, 0.32); }
   /* Marks whichever tile's scorecard is currently open below -- deliberately
      not another border color, since gold and ink are already spoken for by
@@ -880,12 +881,12 @@
     background: var(--ink);
     z-index: 1;
   }
-  @keyframes daily-tile-glow {
-    0%, 100% { border-color: var(--gold); box-shadow: 0 0 0 0 rgba(217, 169, 26, 0); }
-    50% { border-color: #f0c94a; box-shadow: 0 0 9px 1px rgba(217, 169, 26, 0.55); }
+  @keyframes live-glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(217, 169, 26, 0); }
+    50% { box-shadow: 0 0 10px 1px rgba(217, 169, 26, 0.5); }
   }
   @media (prefers-reduced-motion: reduce) {
-    .daily-tile.is-live { animation: none; }
+    .daily-tile.is-live, .dg.is-live, .tn.is-live { animation: none; }
   }
   .daily-tile-watermark {
     position: absolute;
@@ -1126,6 +1127,7 @@
   .dg-aside { display: flex; flex-direction: column; align-items: flex-end; justify-content: space-between; width: 42px; flex: none; }
   .dg-state { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; line-height: 21px; }
   .dg.is-live .dg-state { color: var(--gold); }
+  .daily-tile.is-live .daily-tile-state { color: var(--gold); }
   .dg-recap { width: 24px; height: 18px; padding: 0; background: rgba(0, 0, 0, 0.22); border: 1px solid var(--paper-line); font-size: 9px; line-height: 1; color: var(--gold); cursor: pointer; }
   .dg-recap:hover, .dg-recap:focus-visible { border-color: var(--gold); }
   /* On a touch screen the small controls reach past their own edges, to a
@@ -1786,9 +1788,7 @@
   .tn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
   .tn.is-live { border-color: var(--gold); }
   .tn-kicker { grid-area: k; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); }
-  .tn-live { display: inline-flex; align-items: center; gap: 6px; color: var(--gold); }
-  .tn-live i { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 6px var(--gold); }
-  .tn-opp { grid-area: opp; display: flex; align-items: center; gap: 8px; min-width: 0; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 24px; line-height: 1.1; white-space: nowrap; overflow: hidden; }
+      .tn-opp { grid-area: opp; display: flex; align-items: center; gap: 8px; min-width: 0; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 24px; line-height: 1.1; white-space: nowrap; overflow: hidden; }
   .tn-opp img { width: 30px; height: 30px; flex: none; }
   .tn-at { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 12px; color: var(--ink-soft); }
   .tn-right { grid-area: right; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
@@ -7004,10 +7004,10 @@
     loadSchedule(dateStr, gamePk);
   }
 
-  function formatInningState(state) {
-    if (state === 'Bottom') return 'Bot';
-    if (state === 'Middle') return 'Mid';
-    return state || '';
+  // A live game's place, as the scorecard marks it: ▲ 6th, ▼ 6th, Mid 6th.
+  function liveInning(state, ordinal) {
+    const mark = { Top: '&#9650;', Bottom: '&#9660;', Middle: 'Mid', End: 'End' }[state] || '';
+    return `${mark} ${ordinal || ''}`.trim();
   }
 
   function capLogoUrl(teamId) {
@@ -7049,7 +7049,7 @@
     if (game.state === 'Live' && game.detailedState !== 'Warmup' && !isRealDelay) {
       rowsHtml = dailyTileRow(game.awayName, game.awayId, game.awayScore ?? 0, false)
         + dailyTileRow(game.homeName, game.homeId, game.homeScore ?? 0, false);
-      stateLabel = `${formatInningState(game.inningState)} ${game.inningOrdinal || ''}`.trim();
+      stateLabel = liveInning(game.inningState, game.inningOrdinal);
       tileClass = 'is-live';
     } else if (game.state === 'Final') {
       const awayWon = game.awayScore > game.homeScore;
@@ -7372,7 +7372,7 @@
       return { label: inn && inn !== sched ? `F/${inn}` : 'Final', started: true, final: true };
     }
     if (t.state === 'Live' && t.detailedState !== 'Warmup' && !isRealDelay) {
-      return { label: `${formatInningState(t.inningState)} ${t.inningOrdinal || ''}`.trim(), started: true, live: true };
+      return { label: liveInning(t.inningState, t.inningOrdinal), started: true, live: true };
     }
     if (t.state === 'Live') return { label: t.detailedState || 'Warmup', started: false };
     return { label: formatGameTime(t.gameDate), started: false };
@@ -8394,9 +8394,9 @@
     const us = g.isHome ? g.homeScore : g.awayScore, them = g.isHome ? g.awayScore : g.homeScore;
     const when = new Date(g.gameDate);
     const day = when.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-    const kicker = live ? '<span class="tn-live"><i></i>Live</span>' : next.opener ? 'Opening Day' : 'Next Game';
+    const kicker = live ? (g.inningLabel || g.detailedState || 'Live') : next.opener ? 'Opening Day' : 'Next Game';
     const right = live
-      ? `<span class="tn-score">${us ?? 0}<b>-</b>${them ?? 0}</span><span class="tn-state">${g.inningLabel || g.detailedState || ''}</span>`
+      ? `<span class="tn-score">${us ?? 0}<b>-</b>${them ?? 0}</span>`
       : `<span class="tn-day">${day}</span><span class="tn-state">${formatGameTime(g.gameDate)}</span>`;
     return `<button type="button" class="tn${live ? ' is-live' : ''}" data-tn-date="${g.date}" data-tn-pk="${g.gamePk}">
         <span class="tn-kicker">${kicker}</span>
@@ -8465,13 +8465,12 @@
       const g = data.dates && data.dates[0] && data.dates[0].games && data.dates[0].games[0];
       if (!g) return null;
       const ls = g.linescore || {};
-      const half = { Top: 'Top', Bottom: 'Bot', Middle: 'Mid', End: 'End' }[ls.inningState] || '';
       return {
         state: g.status.abstractGameState,
         detailedState: g.status.detailedState,
         homeScore: g.teams.home.score,
         awayScore: g.teams.away.score,
-        inningLabel: ls.currentInning ? `${half} ${ordinalSuffix(ls.currentInning)}`.trim() : ''
+        inningLabel: ls.currentInning ? liveInning(ls.inningState, ordinalSuffix(ls.currentInning)) : ''
       };
     } catch (e) {
       return null;
