@@ -65,7 +65,6 @@
   #mlb-root {
     background: var(--frame);
     padding: 18px;
-    border-radius: 10px;
     font-family: 'Overpass', sans-serif;
     min-height: 100%;
     /* Kept in sync with .tab-header's real height and #mlb-root's own
@@ -817,7 +816,6 @@
     justify-content: center;
     gap: 4px;
     border: 1px solid var(--paper-line);
-    border-radius: 6px;
     padding: 10px 12px;
     cursor: pointer;
     position: relative;
@@ -1336,7 +1334,6 @@
     padding: 12px 14px;
     background: rgba(28, 58, 44, 0.03);
     border: 1px solid var(--paper-line);
-    border-radius: 6px;
     text-align: center;
   }
   .spray-card > svg { max-width: 280px; margin: 0 auto; }
@@ -1738,6 +1735,8 @@
   .gt-res { display: flex; align-items: baseline; gap: 2px; font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 16px; line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .gt-res b { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; }
   .gt-res.is-loss { color: var(--ink-soft); }
+  /* A win's W is gold, as in the highlight stills; a loss is all soft. */
+  .gt-res:not(.is-loss):not(.is-note) b { color: var(--gold); }
   .gt-res.is-note { font-size: 13px; color: var(--ink-soft); }
   .gt-play { height: 18px; padding: 0; background: rgba(0, 0, 0, 0.18); border: 0; border-top: 1px solid var(--paper-line); font-size: 9px; color: var(--gold); cursor: pointer; }
   .gt-play:hover { background: var(--wash); }
@@ -1868,7 +1867,7 @@
   .vc-final { display: flex; align-items: center; gap: 0.15em; font-family: 'Oswald', sans-serif; font-weight: 600; font-size: clamp(22px, 13cqw, 44px); line-height: 1; font-variant-numeric: tabular-nums; color: var(--ink); }
   .vc-final b { font-weight: 400; color: var(--ink-soft); }
   .vc-wl { margin-right: 0.25em; font-size: 0.5em; color: var(--gold); }
-  .vc-wl.is-loss { color: var(--brick); }
+  .vc-wl.is-loss { color: var(--ink-soft); }
   .vc-card-win { display: flex; flex-direction: column; padding: 5% 6% 6%; gap: 4%; }
   .vc-win-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-right: 0; }
   .vc-card-win .vc-final { font-size: clamp(20px, 11cqw, 40px); }
@@ -1902,6 +1901,8 @@
   .hs-thumb .vc-play { display: none; }
   .hs-thumb .vc-where { font-size: 9.5cqw; }
   .hs-thumb .vc-line { font-size: 7.6cqw; margin-bottom: 0; }
+  /* A thumbnail's labels would scale down past legible; 8px is the floor. */
+  .hs-thumb .vc-line i, .hs-thumb .vc-wl { font-size: max(8px, 0.48em); }
   .hs-thumb .vc-final { font-size: 14cqw; }
   .hs-thumb .vc-card-win .vc-final { font-size: 12cqw; }
   .hs-thumb .vc-photo { border-width: 1px; box-shadow: none; }
@@ -2927,7 +2928,7 @@
        opaque (see the last two attempts at this rule). */
     background: var(--paper-line);
   }
-  .sub-note { font-size: 11px; color: var(--ink-soft); opacity: 0.85; font-style: italic; }
+  .sub-note { font-size: 11px; color: var(--ink-soft); opacity: 0.85; }
 
   /* On the sheet, not the wall: secondary text on the Monster green can't
      clear contrast (DESIGN.md, the Monster Stays Rule). */
@@ -3311,7 +3312,7 @@
      sheet each gets its own line so a position can't break mid-phrase. */
   .pp-ident { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 16px; line-height: 1.3; letter-spacing: 0.01em; color: var(--ink); margin-bottom: 12px; }
   .pp-pos { color: var(--ink-soft); }
-  .pp-sep { color: var(--gold); padding: 0 7px; }
+  .pp-sep { color: var(--ink-soft); padding: 0 7px; }
   @container (max-width: 699px) { .pp-sep { display: none; } .pp-pos { display: block; } }
   @container (min-width: 700px) {
     .pp-num { font-size: 44px; }
@@ -3410,7 +3411,13 @@
   /* Arsenal: velo and movement, then the mix and two-strike sections --
      stacked on a phone, side by side on a wide sheet. */
   .ars { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px 40px; padding: 2px 0 4px; }
-  @container (min-width: 760px) { .ars { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  /* Side by side, the movement chart grows into the left column's spare
+     height so both columns end together. */
+  @container (min-width: 760px) {
+    .ars { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .ars-move { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+    .ars-move .ars-plot { max-width: 440px; }
+  }
   .ars-col { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
   .ars-plot { display: block; width: 100%; max-width: 320px; margin: 0 auto; }
   .ars-ring { fill: none; stroke: var(--paper-line); stroke-width: 1; }
@@ -3515,7 +3522,7 @@
     .pp-def-top .pp-stat { flex: 0 1 220px; min-width: 0; }
     .pp-def-pools { order: 0; margin-left: auto; }
   }
-  .pp-def-pools .view-toggle-btn { flex: none; }
+  .pp-def-pools .view-toggle-btn { flex: none; font-size: 10px; padding: 8px 12px; }
   /* Catch board: one row per star rating, each chance a scoreboard lamp
      (the live panel's count lamps, see .monster-dot) -- lit for a catch,
      a dark socket for a miss. The stars and counts sit in fixed columns
@@ -3783,7 +3790,7 @@
      block instead of each spreading to fill the sheet. */
   @container (min-width: 700px) {
     table.pitch-table.pp-log td:nth-child(3), table.pitch-table.pp-log th:nth-child(3) { width: auto; }
-    table.pitch-table.pp-log td:nth-child(n+4), table.pitch-table.pp-log th:nth-child(n+4) { width: 58px; padding-left: 4px; padding-right: 4px; }
+    table.pitch-table.pp-log td:nth-child(n+4), table.pitch-table.pp-log th:nth-child(n+4) { width: 44px; padding-left: 4px; padding-right: 4px; }
   }
   .pp-log td:nth-child(3) { font-variant-numeric: tabular-nums; }
   .pp-log .pp-opp-short { display: none; }
@@ -6105,7 +6112,7 @@
         <img class="player-headshot" src="${headshotUrl(info.id)}" alt="" loading="lazy" onerror="this.style.display='none'">
         <div>
           <div class="pitch-header">${info.name}</div>
-          <div class="pitch-subheader">${displayPos || info.pos} | ${info.team}</div>
+          <div class="pitch-subheader">${[info.team, displayPos || info.pos].filter(Boolean).join(' | ')}</div>
         </div>
       </div>
       ${awardsHtml}
@@ -6216,7 +6223,7 @@
     const idx = isFinalPage ? m.halves.length : m.halves.findIndex(h => h.inning === v.half.inning && h.top === v.half.top);
     const side = isFinalPage ? null : (v.half.top ? 'away' : 'home');
     const head = `<div class="hv-head">${renderTeamToggle(m, side, true)}${side ? `<button class="roster-btn" data-team="${m[side].name}">Roster</button>` : ''}</div>`;
-    const title = isFinalPage ? 'Final' : `${NOW_TRI_SVG(v.half.top)}${v.half.top ? 'Top' : 'Bottom'} ${ordinalSuffix(v.half.inning)}`;
+    const title = isFinalPage ? 'Final' : `${NOW_TRI_SVG(v.half.top)}${ordinalSuffix(v.half.inning)}`;
     const step = `<div class="hv-step">
       <button type="button" class="hv-step-btn" data-hv-step="-1" aria-label="Previous half-inning"${idx <= 0 ? ' disabled' : ''}>${HV_CHEV(true)}</button>
       <div class="hv-title" aria-live="polite">${title}</div>
@@ -6224,7 +6231,7 @@
     </div>`;
     const offLive = m.state === 'Live' && m.liveHalf && !sameHalf(v.half, m.liveHalf);
     const liveBtn = offLive
-      ? `<button type="button" class="hv-live" data-hv-live>Back to live ${NOW_TRI_SVG(m.liveHalf.top)}${m.liveHalf.top ? 'Top' : 'Bottom'} ${ordinalSuffix(m.liveHalf.inning)}</button>` : '';
+      ? `<button type="button" class="hv-live" data-hv-live>Back to live ${NOW_TRI_SVG(m.liveHalf.top)}${ordinalSuffix(m.liveHalf.inning)}</button>` : '';
     if (isFinalPage) return head + step + renderGameStory(m.highlights);
 
     const team = m[side];
@@ -9508,7 +9515,7 @@
         playOfGame = {
           absWpa,
           description,
-          inningLabel: inning ? `${isTop ? 'Top' : 'Bottom'} ${ordinalSuffix(inning)}` : '',
+          inningLabel: inning ? `${isTop ? '&#9650;' : '&#9660;'} ${ordinalSuffix(inning)}` : '',
           videoUrl: savantVideoUrl(playId)
         };
       }
@@ -9987,8 +9994,7 @@
         renderTeamToggle(m, v.side) + `<button class="roster-btn" data-team="${t.name}">Roster</button>`, side !== v.side);
     }).join('');
     body.innerHTML = `
-      <div class="sheet sc-sheet">${m.state === 'Final' ? `<div class="sc-final-story">${renderGameStory(m.highlights)}</div>` : ''}<div class="sc-grid">${grid}</div><div class="sc-half">${renderHalfView(m, v)}</div>
-        <div class="footnote">Source: MLB Stats API</div></div>
+      <div class="sheet sc-sheet">${m.state === 'Final' ? `<div class="sc-final-story">${renderGameStory(m.highlights)}</div>` : ''}<div class="sc-grid">${grid}</div><div class="sc-half">${renderHalfView(m, v)}</div></div>
     `;
     body.querySelectorAll('.table-scroll').forEach((el, i) => {
       if (scrollLefts[i]) el.scrollLeft = scrollLefts[i];
@@ -12590,7 +12596,7 @@
     const velo = a.fastballs.length ? `<section class="pp-skg ars-velo">${head('Fastball velo')}
       <div class="pp-skg-row" style="grid-template-columns:repeat(${Math.max(3, a.fastballs.length)},minmax(0,1fr))">${a.fastballs.map(f =>
         `<div class="pp-sk"><span class="pp-sk-name">${pitchName(f.code)}</span>${f.pct == null ? '<span class="pp-sk-score is-none">&#8212;</span>' : `<span class="pp-sk-score${f.pct >= SKILL_GOLD_PERCENTILE ? ' is-top' : ''}">${f.pct}</span>`}<span class="pp-sk-stat">${f.mph.toFixed(1)} mph</span></div>`).join('')}</div></section>` : '';
-    const movement = `<section class="pp-skg">${head('Movement')}${renderArsenalMovement(a.movement, a.hand)}</section>`;
+    const movement = `<section class="pp-skg ars-move">${head('Movement')}${renderArsenalMovement(a.movement, a.hand)}</section>`;
     let right;
     if (a.log === undefined) right = '<div class="mlb-status-msg">Loading his pitches&#8230;</div>';
     else if (a.log === null) right = apiErrorMsg('pitch-by-pitch data');
