@@ -54,7 +54,7 @@
        chip, a hover, your team, this team's row, today, the pitch in view. */
     --wash: rgba(217, 169, 26, 0.15);
     /* Text-only tint of the ball green, as --brick-text is for brick. */
-    --ball-text: #7fae8f;
+    --ball-text: #93c4a2;
   }
 
   #mlb-root * { box-sizing: border-box; }
@@ -3887,13 +3887,15 @@
   table.pitch-table td.pnum { color: var(--ink-soft); width: 20px; }
   table.pitch-table td.pcount { color: var(--ink-soft); white-space: nowrap; }
   table.pitch-table td.pspeed { color: var(--ink-soft); white-space: nowrap; }
-  .pitch-result-ball { color: var(--ball-text); font-weight: 600; }
-  .pitch-result-strike { color: var(--brick-text); font-weight: 600; }
+  /* Under #mlb-root so they outrank table.pitch-table td's ink, which
+     otherwise turned every result in the at-bat popup cream. */
+  #mlb-root .pitch-result-ball { color: var(--ball-text); font-weight: 600; }
+  #mlb-root .pitch-result-strike { color: var(--brick-text); font-weight: 600; }
   /* A hit is earned gold; a foul is just a foul (the Two Golds Rule). */
-  .pitch-result-hit { color: var(--gold); font-weight: 600; }
-  .pitch-result-foul { color: var(--ink); font-weight: 600; }
-  .pitch-result-out { color: var(--ink-soft); font-weight: 700; }
-  .pitch-result-hbp { color: var(--ball-text); font-weight: 700; font-style: italic; }
+  #mlb-root .pitch-result-hit { color: var(--gold); font-weight: 600; }
+  #mlb-root .pitch-result-foul { color: var(--ink); font-weight: 600; }
+  #mlb-root .pitch-result-out { color: var(--ink-soft); font-weight: 700; }
+  #mlb-root .pitch-result-hbp { color: var(--ball-text); font-weight: 700; }
   table.pitch-table tr.hl td { background: var(--wash); }
   table.pitch-table tr.challenged td { border-bottom-style: dashed; }
   .abs-tag {
