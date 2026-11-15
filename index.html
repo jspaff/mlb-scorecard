@@ -774,23 +774,25 @@
   }
   .potg-player-name { max-width: 100%; }
   .potg-stat { white-space: nowrap; }
+  /* The way out of a popup to the full page: a recessed board plate,
+     cream with its arrow in gold, the border turning gold on hover. */
   .modal-cta {
     display: block;
     width: 100%;
     font-family: 'Overpass', sans-serif;
-    font-weight: 700;
-    font-size: 12px;
-    letter-spacing: 0.04em;
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--paper);
-    background: var(--gold);
-    border: none;
+    color: var(--ink);
+    background: rgba(0, 0, 0, 0.22);
+    border: 1px solid var(--paper-line);
     border-radius: 0;
     padding: 11px 14px;
     cursor: pointer;
   }
-  .modal-cta:hover { filter: brightness(1.08); }
-  .modal-cta:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .modal-cta:hover { border-color: var(--gold); }
+  .modal-cta:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
   .game-summary-game + .game-summary-game {
     margin-top: 18px;
@@ -6089,7 +6091,7 @@
       ${seasonHtml}
       <div class="roster-section-title">Last 10 Games</div>
       ${recentGamesHtml}
-      <button type="button" class="modal-cta" data-player-id="${info.id}">View Full Profile &#8594;</button>
+      <button type="button" class="modal-cta" data-player-id="${info.id}">View Full Profile <span class="lk-tri">&#8594;</span></button>
     `;
   }
 
@@ -9242,7 +9244,7 @@
       ? `<div class="gs-story" id="wpaLeaders-${game.gamePk}"><div class="sc-story"><div class="story-sec"><div class="potg-loading">Loading game highlights&#8230;</div></div></div></div>`
       : '';
 
-    const ctaHtml = `<button type="button" class="modal-cta" data-date="${dateStr}" data-game-pk="${game.gamePk}">View Full Scorecard &#8594;</button>`;
+    const ctaHtml = `<button type="button" class="modal-cta" data-date="${dateStr}" data-game-pk="${game.gamePk}">View Full Scorecard <span class="lk-tri">&#8594;</span></button>`;
 
     return `
       <div class="game-summary-game">
