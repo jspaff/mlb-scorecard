@@ -736,9 +736,6 @@
     flex-shrink: 0;
   }
   .badge-live { color: var(--gold); }
-  .badge-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-soft); flex-shrink: 0; }
-  .badge-live .badge-dot { background: var(--gold); }
-  .badge-final .badge-dot { background: var(--ink); }
 
   .gs-date-line {
     font-family: 'Overpass', sans-serif; font-weight: 600; letter-spacing: 0.01em;
@@ -3042,7 +3039,6 @@
   table.pitch-table.recent-games-table th:not(:first-child),
   table.pitch-table.recent-games-table td:not(:first-child) { text-align: center; }
   table.pitch-table.recent-games-table th:not(:first-child) { letter-spacing: normal; }
-  table.pitch-table.recent-games-table tr.hl td:first-child { color: var(--gold); }
   /* Batter rows: H-AB stays centered like every other stat column above,
      but the trailing Notes column is a variable-length comma list
      (see notableBattingEvents) -- centering that reads worse than just
@@ -4674,7 +4670,7 @@
     return splits
       .filter(s => s.date && s.date < beforeDate)
       .sort((a, b) => b.date < a.date ? -1 : 1)
-      .slice(0, 9)
+      .slice(0, info.gameDate ? 9 : 10)
       .map(s => ({ date: s.date, stat: s.stat || {} }));
   }
   function addDays(dateStr, delta) {
@@ -6034,13 +6030,14 @@
     openOverlay(gameStripOverlay);
   }
 
-  // The player modal's Last 10 Games section: row 1 is always "Today",
-  // built from the live boxscore (info.todayStats) rather than the game
-  // log -- for a game still in progress the log hasn't caught up yet, and
-  // for one just finished it may not have either -- so recentGames (see
-  // getRecentGameStats) only ever needs to cover the 9 games before it.
+  // The player modal's Last 10 Games section. Opened from a game, row 1 is
+  // that game (under the wash), built from its boxscore (info.todayStats)
+  // rather than the game log -- for a game still in progress the log hasn't
+  // caught up yet, and for one just finished it may not have either -- so
+  // recentGames (see getRecentGameStats) covers the 9 games before it.
+  // Opened from anywhere else it's simply his last 10 from the log.
   // recentGames is undefined while that fetch is still in flight.
-  function renderRecentGamesTable(pitcher, todayStats, recentGames) {
+  function renderRecentGamesTable(pitcher, info, recentGames) {
     if (recentGames === undefined) return '<div class="pitch-empty">Loading recent games&#8230;</div>';
     const headers = pitcher ? ['Date', 'IP', 'H', 'ER', 'BB', 'K'] : ['Date', 'H-AB', 'Notes'];
     // A rigid AB/H/RBI/BB/HR column set reads as mostly zeroes most
@@ -6053,12 +6050,15 @@
       if (s.doubles) parts.push(`${s.doubles} 2B`);
       if (s.triples) parts.push(`${s.triples} 3B`);
       if (s.homeRuns) parts.push(`${s.homeRuns} HR`);
-      return parts.join(', ') || '&#8212;';
+      return parts.join(', ');
     };
+    // The Blank Zero Rule: a short line leaves its zero counts blank.
+    const count = v => v ? v : '';
     const cells = s => pitcher
-      ? [s.inningsPitched ?? '0.0', s.hits ?? 0, s.earnedRuns ?? 0, s.baseOnBalls ?? 0, s.strikeOuts ?? 0]
+      ? [s.inningsPitched ?? '0.0', count(s.hits), count(s.earnedRuns), count(s.baseOnBalls), count(s.strikeOuts)]
       : [`${s.hits ?? 0}-${s.atBats ?? 0}`, notableBattingEvents(s)];
-    const games = [{ label: 'Today', stat: todayStats, hl: true }, ...recentGames.map(g => ({ label: formatShortDate(g.date), stat: g.stat }))];
+    const recent = recentGames.map(g => ({ label: formatShortDate(g.date), stat: g.stat }));
+    const games = info.gameDate ? [{ label: formatShortDate(info.gameDate), stat: info.todayStats || {}, hl: true }, ...recent] : recent;
     const rows = games.map(g => `<tr${g.hl ? ' class="hl"' : ''}><td>${g.label}</td>${cells(g.stat).map(v => `<td>${v}</td>`).join('')}</tr>`).join('');
     return `<div class="table-scroll"><table class="pitch-table recent-games-table${pitcher ? '' : ' batter'}">
         <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
@@ -6068,13 +6068,13 @@
 
   function renderPlayerModalContent(info, seasonStat, awardTags, recentGames, displayPos, leagueWoba) {
     const pitcher = info.pos === 'P';
-    const recentGamesHtml = renderRecentGamesTable(pitcher, info.todayStats || {}, recentGames);
+    const recentGamesHtml = renderRecentGamesTable(pitcher, info, recentGames);
     // Same set of columns as the Career table's pitching view (see
     // renderPitchingCareerTable) minus Year/Team, just for this one season.
     const seasonHtml = seasonStat
       ? (pitcher
         ? `<div class="table-scroll"><table class="pitch-table season-stat-table">
-             <thead><tr><th>G</th><th>IP</th><th>ERA</th><th>WHIP</th><th>K%-BB%</th><th>SO</th><th>BB</th></tr></thead>
+             <thead><tr><th>G</th><th>IP</th><th>ERA</th><th>WHIP</th><th>K%-BB%</th><th>K</th><th>BB</th></tr></thead>
              <tbody><tr>
                <td>${seasonStat.gamesPitched ?? '&#8212;'}</td>
                <td>${seasonStat.inningsPitched ?? '&#8212;'}</td>
@@ -6338,15 +6338,25 @@
   // manager challenge, a review), the same way a paper scorecard wouldn't
   // annotate every pause. Only an actual delay is worth calling out as
   // something other than the game just being underway.
+  // Written as every other game state is (the Live rule): Final or F/10, a
+  // live game's inning in gold, and nothing for a game that hasn't started
+  // (the date line has its time) unless it's postponed or delayed. A
+  // schedule game has no linescore, so a live inning waits for the feed
+  // (game.feedLinescore, from loadGameSummaryExtrasInto).
   function renderStateBadge(game) {
-    if (game.state === 'Final') return `<span class="badge badge-final"><span class="badge-dot"></span>Final</span>`;
-    if (game.state === 'Live') {
-      const isDelay = game.detailedState && /delay/i.test(game.detailedState);
-      const label = isDelay ? game.detailedState : 'Live';
-      return `<span class="badge badge-live"><span class="badge-dot"></span>${label}</span>`;
+    const ls = game.linescore || game.feedLinescore;
+    const id = game.gamePk ? ` id="state-${game.gamePk}"` : '';
+    const state = game.detailedState || '';
+    if (game.state === 'Final') {
+      const inn = ls && ls.currentInning, sched = (ls && ls.scheduledInnings) || 9;
+      return `<span class="badge"${id}>${inn && inn !== sched ? `F/${inn}` : 'Final'}</span>`;
     }
-    const label = game.detailedState && game.detailedState !== 'Scheduled' ? game.detailedState : 'Upcoming';
-    return `<span class="badge badge-preview"><span class="badge-dot"></span>${label}</span>`;
+    if (/postponed|cancel|delay|suspend/i.test(state)) return `<span class="badge"${id}>${state}</span>`;
+    if (game.state === 'Live' && state !== 'Warmup') {
+      return `<span class="badge badge-live"${id}>${ls ? liveInning(ls.inningState, ls.currentInningOrdinal) : ''}</span>`;
+    }
+    if (state === 'Warmup') return `<span class="badge"${id}>Warmup</span>`;
+    return `<span${id}></span>`;
   }
 
   // Fenway-style linescore reused for both the Scorecard tab's fixed bottom
@@ -9038,7 +9048,7 @@
     { key: 'kbb', label: 'K%-BB%', dir: 'desc',
       get: r => rawKBB(r.stat.strikeOuts, r.stat.baseOnBalls, r.stat.battersFaced),
       render: r => formatKBB(r.stat.strikeOuts, r.stat.baseOnBalls, r.stat.battersFaced) },
-    statCol('so', 'SO', 'strikeOuts', { count: true }),
+    statCol('so', 'K', 'strikeOuts', { count: true }),
     statCol('bb', 'BB', 'baseOnBalls', { count: true, dir: 'asc' }),
     statCol('sv', 'SV', 'saves', { count: true })
   ];
@@ -9579,6 +9589,11 @@
     const includeHighlights = game.state === 'Final';
     const { leaders, playOfGame, linescore, weather, allPlays } = await fetchGameHighlights(game.gamePk, includeHighlights);
     if (requestId !== gameSummaryRequestId) return;
+    if (linescore) {
+      game.feedLinescore = linescore;
+      const stateEl = document.getElementById(`state-${game.gamePk}`);
+      if (stateEl) stateEl.outerHTML = renderStateBadge(game);
+    }
     if (includeHighlights) {
       const wpaEl = document.getElementById(`wpaLeaders-${game.gamePk}`);
       if (wpaEl) wpaEl.innerHTML = renderGameStory({ playOfGame, leaders }, { fullProfile: true });
@@ -11632,7 +11647,7 @@
       return yearRow + subRows;
     });
     return `<div class="table-scroll"><table class="pitch-table career-table">
-        <thead><tr><th>Year</th><th>Team</th><th>G</th><th>IP</th><th>ERA</th><th>WHIP</th><th>K%-BB%</th><th>SO</th><th>BB</th></tr></thead>
+        <thead><tr><th>Year</th><th>Team</th><th>G</th><th>IP</th><th>ERA</th><th>WHIP</th><th>K%-BB%</th><th>K</th><th>BB</th></tr></thead>
         <tbody>${rows.join('')}</tbody>
       </table></div>`;
   }
@@ -11795,7 +11810,7 @@
     { key: 'kbb', label: 'K%-BB%', dir: 'desc',
       get: r => rawKBB(r.stat.strikeOuts, r.stat.baseOnBalls, r.stat.battersFaced),
       render: r => formatKBB(r.stat.strikeOuts, r.stat.baseOnBalls, r.stat.battersFaced) },
-    { key: 'so', label: 'SO', dir: 'desc', get: r => r.stat.strikeOuts ?? null, render: r => r.stat.strikeOuts ?? '&#8212;' },
+    { key: 'so', label: 'K', dir: 'desc', get: r => r.stat.strikeOuts ?? null, render: r => r.stat.strikeOuts ?? '&#8212;' },
     { key: 'bb', label: 'BB', dir: 'asc', get: r => r.stat.baseOnBalls ?? null, render: r => r.stat.baseOnBalls ?? '&#8212;' }
   ];
 
