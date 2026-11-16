@@ -287,6 +287,13 @@ A pitcher's Arsenal tab answers how he gets hitters out, in four sections on the
 - **Pitches:** one row per pitch, its name down the middle, usage bars running outward (vs LHB to the left, vs RHB to the right) with the share at the bar's end, and that side's run-value score beside the name. A bar turns gold where its score is 90+. No raw run value is shown.
 - **With two strikes:** its own vs LHB / vs RHB toggle (the only toggle on the tab). Each row is the setup pitch as a boxed short code, an arrow, the pitch, its share of his two-strike pitches and its put-away score. Then a short full-count block, the usual finisher and the biggest riser as "before → full", the riser's full-count share underlined in gold trim. Shares are plain numbers, never bars.
 
+### Hitter Pitches
+A hitter's Pitches tab answers how to pitch him, on the Arsenal's two columns and its scores (percentiles against batters who saw enough of the same thing; short of the pool in Faded Cream, under half of it a dash). Run value is what's ranked and is never shown raw.
+- **Fastball velo:** three Skill Score tiles, Under 93, 93–94 and 95+, for 4-seamers and sinkers in that band; the band's whiff rate written beneath.
+- **Zones:** two maps side by side, xwOBA and Whiff, in the catcher's view with In / Away under each for his side: the strike zone's nine cells over the four corners outside it, each with its number. A cell washes cream where he beats the league in that zone (to his side) and Brick where he trails it, deeper the wider the gap, since brick is the out; never gold, since a zone isn't ranked. A thin cell is left plain and blank. A switch hitter gets an As LHB / As RHB toggle, the tab's only one.
+- **Pitches:** one row per pitch type he sees 2%+ of the time: name, a share bar, then Runs and Contact (fewest whiffs) scores. The bar turns gold where Runs is 90+.
+- **With two strikes:** the pitches they go to (share of his two-strike pitches), the share of his strikeouts each finished ("His K", blank at zero), and a Survive score (lowest put-away rate). Plain numbers, never bars.
+
 ### Stat Slots (signature)
 Numbers in recessed scoreboard slots, under a painted label: the Defense tab's board.
 - **Shape:** 2px corners, recessed slot shadow, centered Oswald numerals.

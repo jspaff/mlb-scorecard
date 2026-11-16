@@ -3511,6 +3511,32 @@
   .ars-fc { display: grid; grid-template-columns: minmax(0, 1fr) 44px 14px 52px; align-items: center; gap: 6px; padding: 6px 0; border-bottom: 1px dashed var(--paper-line); }
   .ars-fc-pre { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 16px; color: var(--ink-soft); text-align: right; font-variant-numeric: tabular-nums; }
   .ars-fc-v.is-up { box-shadow: inset 0 -2px 0 var(--gold); }
+  .ars-ts-sc.is-soft { color: var(--ink-soft); }
+
+  /* A hitter's Pitches tab: velo tiles and zone maps, then his pitch
+     types and two-strike pitches, on the Arsenal's two columns. */
+  .hp-mx { display: grid; grid-template-columns: minmax(84px, 1fr) minmax(0, 1.1fr) 52px 60px; align-items: center; gap: 6px; padding: 6px 0; border-bottom: 1px dashed var(--paper-line); }
+  .hp-mx.ars-ts-h { padding: 0 0 4px; border-bottom: 1px solid var(--paper-line); }
+  .hp-trk { display: flex; align-items: center; gap: 4px; min-width: 0; }
+  .hp-trk i { display: block; flex: none; height: 11px; background: var(--ink); opacity: 0.75; }
+  .hp-trk i.is-top { background: var(--gold); opacity: 1; }
+  .hp-trk em { flex: none; font-style: normal; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .hp-ts { display: grid; grid-template-columns: minmax(0, 1fr) 52px 52px 60px; align-items: center; gap: 6px; padding: 7px 0; border-bottom: 1px dashed var(--paper-line); }
+  .hp-ts.ars-ts-h { padding: 0 0 4px; border-bottom: 1px solid var(--paper-line); }
+  .hp-ts.ars-ts-h span:nth-child(n+2) { text-align: right; }
+  .hp-mx.ars-ts-h span:nth-child(n+3) { text-align: right; }
+  .hz-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .hz-one { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
+  .hz-map { display: block; width: 100%; max-width: 200px; }
+  .hz-base { fill: var(--paper); stroke: var(--paper-line); stroke-width: 1; }
+  .hz-cell { stroke: var(--paper-line); stroke-width: 1; }
+  .hz-zone { fill: none; stroke: var(--ink); stroke-width: 1.5; }
+  .hz-v { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10px; fill: var(--ink); font-variant-numeric: tabular-nums; }
+  .hz-v-out { font-size: 9px; }
+  .hz-edge { display: flex; justify-content: space-between; width: 100%; max-width: 200px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
+  @container (min-width: 760px) {
+    .hz-map, .hz-edge { max-width: 250px; }
+  }
   .pp-painted {
     display: block;
     text-align: center;
@@ -4378,6 +4404,12 @@
   let lastProfileArsenal;
   let profileArsenalRequested = false;
   let profileArsenalSide = null;
+  // A hitter's Pitches tab, the same way: the league's leaderboards first,
+  // then his own pitch log and the league's zones (buildHitterPitches).
+  // profileHitZoneSide is a switch hitter's As LHB / As RHB toggle.
+  let lastProfileHitPitches;
+  let profileHitPitchesRequested = false;
+  let profileHitZoneSide = null;
   // Players tab's browsable list (Batters/Pitchers toggle, sortable current-
   // season stats) -- separate from the search/profile state above since the
   // list and a profile are just two different things playersBody can show.
@@ -11321,6 +11353,12 @@
       showProfileTab(tab.dataset.ppTab);
       return;
     }
+    const hzSide = e.target.closest('[data-hz-side]');
+    if (hzSide) {
+      profileHitZoneSide = hzSide.dataset.hzSide;
+      rerenderPlayerProfile();
+      return;
+    }
     const arsSide = e.target.closest('[data-ars-side]');
     if (arsSide) {
       profileArsenalSide = arsSide.dataset.arsSide;
@@ -12798,6 +12836,277 @@
     return `<div class="ars"><div class="ars-col">${velo}${movement}</div><div class="ars-col">${right}</div></div>`;
   }
 
+  // ---- A hitter's Pitches tab ----
+  // How he handles what he's thrown: fastball velocity, where it's
+  // located, each pitch type, and what pitchers finish him with. Scores
+  // are percentiles against batters who've seen enough of the same thing
+  // that season, as on the Arsenal tab, and run value is never shown raw.
+  // Under these he's short of the pool (soft type); under half of it he
+  // isn't ranked.
+  const HITTER_TYPE_POOL = 100;
+  const HITTER_VELO_POOL = 50;
+  // Fastballs (4-seam and sinker) split by speed, as Savant's Statcast
+  // Search filters them (strictly greater/less than).
+  const HITTER_VELO_BANDS = [
+    { key: 'lo', name: 'Under 93', q: 'metric_1_lt=93' },
+    { key: 'mid', name: '93&#8211;94', q: 'metric_1_gt=92.9&metric_1_lt=95' },
+    { key: 'hi', name: '95+', q: 'metric_1_gt=94.9' }
+  ];
+  // Statcast's zones: 1-9 the strike zone, catcher's view, top left first;
+  // 11-14 the four corners outside it.
+  const HIT_ZONES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14];
+  // Fewer PA-ending pitches (or swings) in a zone than this and it's left
+  // blank rather than shaded off a handful.
+  const HIT_ZONE_MIN_PA = 8;
+  const HIT_ZONE_MIN_SWINGS = 10;
+  const SWING_DESCRIPTIONS = ['swinging_strike', 'swinging_strike_blocked', 'foul', 'foul_tip', 'hit_into_play', 'foul_bunt', 'missed_bunt', 'bunt_foul_tip'];
+  const WHIFF_DESCRIPTIONS = ['swinging_strike', 'swinging_strike_blocked', 'foul_tip', 'missed_bunt'];
+
+  // Every batter's line by pitch type (~700 KB) and by fastball velocity
+  // band (one Statcast Search grouped by batter per band, ~330 KB each,
+  // every batter who saw one, him included). These are the pools too.
+  async function getSavantHitterLeague(season) {
+    const search = q => getSavantCsv(`/statcast_search/csv?all=true&hfGT=R%7C&hfSea=${season}%7C&hfPT=FF%7CSI%7C&player_type=batter&metric_1=api_p_release_speed&${q}&group_by=name&min_pitches=0&min_results=0&min_pas=0&sort_col=pitches&sort_order=desc`);
+    const [types, ...bands] = await Promise.all([
+      getSavantCsv(`/leaderboard/pitch-arsenal-stats?type=batter&pitchType=&year=${season}&team=&min=1&csv=true`),
+      ...HITTER_VELO_BANDS.map(b => search(b.q))
+    ]);
+    if (!types || bands.some(b => !b)) return null;
+    const velo = {};
+    HITTER_VELO_BANDS.forEach((b, i) => { velo[b.key] = bands[i]; });
+    return { types, velo };
+  }
+
+  // The league in each zone, to one batter side (a zone's inside corner
+  // flips with the side): xwOBA on pitches that ended a plate appearance
+  // there and whiffs per swing. One tiny league-total request per zone.
+  async function getSavantZoneLeague(season, side) {
+    const rows = await Promise.all(HIT_ZONES.map(z => getSavantCsv(`/statcast_search/csv?all=true&hfGT=R%7C&hfSea=${season}%7C&hfZ=${z}%7C&batter_stands=${side}&player_type=batter&group_by=league&min_pitches=0&min_results=0&min_pas=0`)));
+    if (rows.some(r => !r || !r[0])) return null;
+    const out = {};
+    HIT_ZONES.forEach((z, i) => {
+      const r = rows[i][0];
+      const swings = csvNumber(r.swings);
+      out[z] = { xwoba: csvNumber(r.xwoba), whiff: swings ? (100 * csvNumber(r.whiffs)) / swings : null };
+    });
+    return out;
+  }
+
+  // Every pitch he saw in the regular season (Statcast Search, ~2 MB), as
+  // only what the zones and two-strike section read. xwOBA counts a ball
+  // in play at its expected value and anything else (a strikeout, a walk)
+  // at its actual one, as Savant does. A failure isn't cached.
+  const batterPitchLogCache = {};
+  async function getBatterPitchLog(personId, season) {
+    const key = `${personId}-${season}`;
+    if (batterPitchLogCache[key]) return batterPitchLogCache[key];
+    return once(`batlog-${key}`, async () => {
+      try {
+        const res = await fetch(`${SAVANT}/statcast_search/csv?all=true&hfGT=R%7C&hfSea=${season}%7C&player_type=batter&batters_lookup%5B%5D=${personId}&type=details`);
+        if (!res.ok) return null;
+        const pitches = parseCsv(await res.text())
+          .filter(r => r.pitch_type && r.pitch_type !== 'PO' && r.pitch_type !== 'IN')
+          .map(r => {
+            const denom = csvNumber(r.woba_denom) || 0;
+            const est = csvNumber(r.estimated_woba_using_speedangle);
+            return {
+              t: r.pitch_type, side: r.stand, zone: Number(r.zone), strikes: Number(r.strikes),
+              swing: SWING_DESCRIPTIONS.includes(r.description), whiff: WHIFF_DESCRIPTIONS.includes(r.description),
+              wd: denom, wv: denom ? (r.description === 'hit_into_play' && est != null ? est : csvNumber(r.woba_value) || 0) : 0,
+              k: KEY_STRIKEOUT_EVENTS.includes(r.events)
+            };
+          });
+        batterPitchLogCache[key] = pitches;
+        return pitches;
+      } catch (e) {
+        return null;
+      }
+    });
+  }
+
+  // Under `pool` pitches he's placed among it in soft type, under half of
+  // it he isn't ranked.
+  function hitterScore(value, poolValues, n, pool, low = false) {
+    if (value == null || n < pool / 2) return { pct: null };
+    const soft = n < pool;
+    return { pct: poolPercentile(value, poolValues, { low, inPool: !soft }), soft };
+  }
+
+  function hitterZones(log, side) {
+    const z = {};
+    HIT_ZONES.forEach(k => { z[k] = { pa: 0, xw: 0, swings: 0, whiffs: 0 }; });
+    log.forEach(p => {
+      if (p.side !== side || !z[p.zone]) return;
+      const c = z[p.zone];
+      c.pa += p.wd; c.xw += p.wv;
+      if (p.swing) c.swings++;
+      if (p.whiff) c.whiffs++;
+    });
+    const out = {};
+    HIT_ZONES.forEach(k => {
+      const c = z[k];
+      out[k] = {
+        xwoba: c.pa >= HIT_ZONE_MIN_PA ? c.xw / c.pa : null,
+        whiff: c.swings >= HIT_ZONE_MIN_SWINGS ? (100 * c.whiffs) / c.swings : null
+      };
+    });
+    return out;
+  }
+
+  // With two strikes: the pitches they go to (share of his two-strike
+  // pitches), the share of his strikeouts each one finished, and how well
+  // he survives it -- Savant's put-away rate against him, lower better.
+  function buildHitterTwoStrikes(log, types, pools) {
+    const two = log.filter(p => p.strikes === 2);
+    const ks = two.filter(p => p.k);
+    if (!two.length) return { n: 0, rows: [] };
+    const rows = mostCommon(two.map(p => p.t)).slice(0, 4).map(t => {
+      const r = types[t];
+      const pool = pools[t];
+      const score = r && pool ? hitterScore(csvNumber(r.put_away), pool.putAway, Number(r.pitches), HITTER_TYPE_POOL, true) : { pct: null };
+      return {
+        code: t, share: (100 * two.filter(p => p.t === t).length) / two.length,
+        ks: ks.length ? (100 * ks.filter(p => p.t === t).length) / ks.length : 0, ...score
+      };
+    }).filter(x => x.share >= 5);
+    return { n: two.length, rows };
+  }
+
+  // league undefined/log undefined: still loading; null: failed. zoneLeague
+  // is side -> the league's zones (null where that request failed).
+  function buildHitterPitches(personId, league, log, zoneLeague) {
+    const out = { league, log };
+    if (!league) return out;
+    const pools = {};
+    const mine = {};
+    league.types.forEach(r => {
+      if (Number(r.player_id) === personId) mine[r.pitch_type] = r;
+      if (Number(r.pitches) < HITTER_TYPE_POOL) return;
+      const p = pools[r.pitch_type] || (pools[r.pitch_type] = { rv: [], whiff: [], putAway: [] });
+      p.rv.push(csvNumber(r.run_value_per_100));
+      p.whiff.push(csvNumber(r.whiff_percent));
+      p.putAway.push(csvNumber(r.put_away));
+    });
+    out.velo = HITTER_VELO_BANDS.map(b => {
+      const rows = league.velo[b.key];
+      const pool = rows.filter(r => Number(r.pitches) >= HITTER_VELO_POOL).map(r => csvNumber(r.batter_run_value_per_100));
+      const r = rows.find(x => Number(x.player_id) === personId);
+      if (!r) return { name: b.name, pct: null };
+      const swings = Number(r.swings) || 0;
+      return { name: b.name, ...hitterScore(csvNumber(r.batter_run_value_per_100), pool, Number(r.pitches), HITTER_VELO_POOL), whiff: swings ? (100 * Number(r.whiffs)) / swings : null };
+    });
+    out.types = Object.values(mine)
+      .map(r => {
+        const pool = pools[r.pitch_type];
+        const n = Number(r.pitches);
+        return {
+          code: r.pitch_type, use: csvNumber(r.pitch_usage) || 0,
+          runs: pool ? hitterScore(csvNumber(r.run_value_per_100), pool.rv, n, HITTER_TYPE_POOL) : { pct: null },
+          contact: pool ? hitterScore(csvNumber(r.whiff_percent), pool.whiff, n, HITTER_TYPE_POOL, true) : { pct: null }
+        };
+      })
+      .filter(x => x.use >= 2)
+      .sort((a, b) => b.use - a.use);
+    if (log) {
+      const faced = { L: 0, R: 0 };
+      log.forEach(p => { if (faced[p.side] != null) faced[p.side]++; });
+      out.sides = ['L', 'R'].filter(s => faced[s] >= 100);
+      if (!out.sides.length) out.sides = [faced.L > faced.R ? 'L' : 'R'];
+      out.defaultSide = faced.L > faced.R ? 'L' : 'R';
+      out.zones = {};
+      out.sides.forEach(s => { out.zones[s] = { his: hitterZones(log, s), lg: (zoneLeague || {})[s] || null }; });
+      out.twoStrikes = buildHitterTwoStrikes(log, mine, pools);
+    }
+    return out;
+  }
+
+  function hitterScoreSpan(s, cls) {
+    if (!s || s.pct == null) return `<span class="${cls} is-none">&#8212;</span>`;
+    return `<span class="${cls}${s.soft ? ' is-soft' : (s.pct >= SKILL_GOLD_PERCENTILE ? ' is-top' : '')}">${s.pct}</span>`;
+  }
+
+  // One zone map, catcher's view: the strike zone's nine cells over the
+  // four corners outside it. A cell is washed cream where he beats the
+  // league there and brick where he trails it, deeper the wider the gap.
+  // Too few pitches and it's left plain and blank.
+  function renderHitZoneMap(his, lg, metric, label) {
+    const fmt = metric === 'xwoba' ? v => rate3(v) : v => `${Math.round(v)}%`;
+    // xwOBA: up is better, .120 to full depth; whiff: down is better, 15 points.
+    const tone = (v, base) => {
+      if (v == null || base == null) return 0;
+      const t = metric === 'xwoba' ? (v - base) / 0.12 : (base - v) / 15;
+      return Math.max(-1, Math.min(1, t));
+    };
+    const wash = t => (t > 0 ? `rgba(243, 236, 219, ${(0.24 * t).toFixed(3)})` : t < 0 ? `rgba(224, 96, 74, ${(-0.5 * t).toFixed(3)})` : 'none');
+    const cell = (z, x, y, w, h, tx, ty, anchor, cls) => {
+      const v = his[z][metric];
+      const t = tone(v, lg && lg[z] ? lg[z][metric] : null);
+      return `<rect x="${x}" y="${y}" width="${w}" height="${h}" class="hz-base${cls}"/><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${wash(t)}" class="hz-cell${cls}"/>`
+        + (v == null ? '' : `<text x="${tx}" y="${ty}" text-anchor="${anchor}" class="hz-v${cls ? ' hz-v-out' : ''}">${fmt(v)}</text>`);
+    };
+    const corners = [
+      [11, 2, 2, 'start', 6, 15], [12, 66, 2, 'end', 126, 15],
+      [13, 2, 75, 'start', 6, 143], [14, 66, 75, 'end', 126, 143]
+    ].map(([z, x, y, a, tx, ty]) => cell(z, x, y, 64, 73, tx, ty, a, ' hz-out')).join('');
+    const inner = [1, 2, 3, 4, 5, 6, 7, 8, 9].map(z => {
+      const x = 24 + ((z - 1) % 3) * 28, y = 27 + Math.floor((z - 1) / 3) * 32;
+      return cell(z, x, y, 28, 32, x + 14, y + 20, 'middle', '');
+    }).join('');
+    return `<svg viewBox="0 0 132 150" class="hz-map" role="img" aria-label="${label} by zone">${corners}${inner}<rect x="24" y="27" width="84" height="96" class="hz-zone"/></svg>`;
+  }
+
+  function renderHitterZones(h) {
+    const side = h.sides.includes(profileHitZoneSide) ? profileHitZoneSide : (h.sides.includes(h.defaultSide) ? h.defaultSide : h.sides[0]);
+    const z = h.zones[side];
+    const toggle = h.sides.length > 1
+      ? `<div class="ars-tg" role="group" aria-label="Batting side">${[['L', 'As LHB'], ['R', 'As RHB']].map(([s, label]) =>
+        `<button type="button" data-hz-side="${s}" aria-pressed="${s === side}">${label}</button>`).join('')}</div>`
+      : '';
+    // Catcher's view: a righty stands on the left, so his inside edge is.
+    const edge = side === 'L' ? '<span>Away</span><span>In</span>' : '<span>In</span><span>Away</span>';
+    const map = (metric, label) => `<div class="hz-one"><span class="pp-sk-name">${label}</span>${renderHitZoneMap(z.his, z.lg, metric, label)}<div class="hz-edge">${edge}</div></div>`;
+    return `${toggle}<div class="hz-pair">${map('xwoba', 'xwOBA')}${map('whiff', 'Whiff')}</div>`;
+  }
+
+  // Share bars run from the pitch name, with his run-value and contact
+  // scores against that pitch type; a bar turns gold where Runs does.
+  function renderHitterTypes(types) {
+    const top = Math.max(...types.map(x => x.use));
+    const rows = types.map(x => {
+      const gold = x.runs.pct != null && !x.runs.soft && x.runs.pct >= SKILL_GOLD_PERCENTILE ? ' class="is-top"' : '';
+      return `<div class="hp-mx"><span class="ars-ts-n">${pitchName(x.code)}</span><span class="hp-trk"><i${gold} style="width:calc((100% - 34px) * ${(x.use / top).toFixed(3)})"></i><em>${Math.round(x.use)}%</em></span>${hitterScoreSpan(x.runs, 'ars-ts-sc')}${hitterScoreSpan(x.contact, 'ars-ts-sc')}</div>`;
+    }).join('');
+    return `<div class="hp-mx ars-ts-h"><span>Pitch</span><span>Seen</span><span>Runs</span><span>Contact</span></div>${rows}`;
+  }
+
+  function renderHitterTwoStrikes(ts) {
+    if (!ts.rows.length) return '<div class="pitch-empty">No two-strike pitches.</div>';
+    const rows = ts.rows.map(r => `<div class="hp-ts"><span class="ars-ts-n">${pitchName(r.code)}</span><span class="ars-ts-v">${Math.round(r.share)}%</span><span class="ars-ts-v">${r.ks ? `${Math.round(r.ks)}%` : ''}</span>${hitterScoreSpan(r, 'ars-ts-sc')}</div>`).join('');
+    return `<div class="hp-ts ars-ts-h"><span>Pitch</span><span>Seen</span><span>His K</span><span>Survive</span></div>${rows}`;
+  }
+
+  function renderProfileHitterPitches() {
+    if (Number(lastProfileSeason) < ARSENAL_FIRST_SEASON) return `<div class="pitch-empty">Pitch-by-pitch data starts in ${ARSENAL_FIRST_SEASON}.</div>`;
+    const h = lastProfileHitPitches;
+    if (!h || h.league === undefined) return '<div class="mlb-status-msg">Loading pitches&#8230;</div>';
+    if (h.league === null) return apiErrorMsg('pitch data');
+    if (!h.types.length) return `<div class="pitch-empty">No ${lastProfileSeason} pitch data.</div>`;
+    const head = title => `<div class="pp-skg-head"><span>${title}</span></div>`;
+    const velo = `<section class="pp-skg">${head('Fastball velo')}<div class="pp-skg-row" style="grid-template-columns:repeat(3,minmax(0,1fr))">${h.velo.map(b =>
+      `<div class="pp-sk"><span class="pp-sk-name">${b.name}</span>${hitterScoreSpan(b, 'pp-sk-score')}<span class="pp-sk-stat">${b.pct == null || b.whiff == null ? '&#160;' : `Whiff ${Math.round(b.whiff)}%`}</span></div>`).join('')}</div></section>`;
+    let zones, two;
+    if (h.log === undefined) zones = two = '<div class="mlb-status-msg">Loading his pitches&#8230;</div>';
+    else if (h.log === null) zones = two = apiErrorMsg('pitch-by-pitch data');
+    else {
+      zones = renderHitterZones(h);
+      two = renderHitterTwoStrikes(h.twoStrikes);
+    }
+    return `<div class="ars">
+      <div class="ars-col">${velo}<section class="pp-skg">${head('Zones')}${zones}</section></div>
+      <div class="ars-col"><section class="pp-skg">${head('Pitches')}${renderHitterTypes(h.types)}</section><section class="pp-skg">${head('With two strikes')}${two}</section></div>
+    </div>`;
+  }
+
   // ---- Game Log ----
   // The tab leads with the last five games in scorecard terms, then the
   // full season grouped by month. Zeros are left blank throughout, so the
@@ -13756,7 +14065,7 @@
     const fielder = !pitcher && defenseGroupFor(person);
     return pitcher
       ? [['ov', 'Overview'], ...(hasStarts ? [['starts', 'Starts']] : []), ...(Number(lastProfileSeason) >= ARSENAL_FIRST_SEASON ? [['ars', 'Arsenal']] : []), ['log', 'Game Log'], ['spl', 'Splits'], ['car', 'Career']]
-      : [['ov', 'Overview'], ['log', 'Game Log'], ['spl', 'Splits'], ...(fielder ? [['def', 'Defense']] : []), ['car', 'Career']];
+      : [['ov', 'Overview'], ...(Number(lastProfileSeason) >= ARSENAL_FIRST_SEASON ? [['pit', 'Pitches']] : []), ['log', 'Game Log'], ['spl', 'Splits'], ...(fielder ? [['def', 'Defense']] : []), ['car', 'Career']];
   }
 
   function renderProfileTabBody(tab, pitcher) {
@@ -13770,6 +14079,7 @@
     }
     if (tab === 'def') return renderProfileDefense();
     if (tab === 'ars') return renderProfileArsenal();
+    if (tab === 'pit') return renderProfileHitterPitches();
     if (detail === undefined) return '<div class="mlb-status-msg">Loading season stats&#8230;</div>';
     if (detail === null) return apiErrorMsg('season stats');
     if (tab === 'ov') {
@@ -13950,6 +14260,34 @@
     rerenderPlayerProfile();
   }
 
+  function ensureProfileHitPitches() {
+    if (profileHitPitchesRequested || profileTab !== 'pit' || !lastProfileSeason || isPitcher(lastProfilePerson)) return;
+    profileHitPitchesRequested = true;
+    loadProfileHitPitches(Number(lastProfilePerson.id), lastProfileSeason, playerProfileRequestId);
+  }
+
+  // The leaderboards (~1.7 MB together) draw the velo tiles and the pitch
+  // types; his own pitch log (~2 MB) and the league's zones to each side
+  // he bats from fill in the zones and two strikes.
+  async function loadProfileHitPitches(personId, season, requestId) {
+    const bats = lastProfilePerson.batSide && lastProfilePerson.batSide.code;
+    const sides = bats === 'S' ? ['L', 'R'] : [bats === 'L' ? 'L' : 'R'];
+    const leaguePromise = getSavantHitterLeague(season);
+    const logPromise = getBatterPitchLog(personId, season);
+    const zonesPromise = Promise.all(sides.map(s => getSavantZoneLeague(season, s)));
+    const league = await leaguePromise;
+    if (requestId !== playerProfileRequestId) return;
+    lastProfileHitPitches = buildHitterPitches(personId, league, undefined, null);
+    rerenderPlayerProfile();
+    if (!league) return;
+    const [log, zones] = await Promise.all([logPromise, zonesPromise]);
+    if (requestId !== playerProfileRequestId) return;
+    const zoneLeague = {};
+    sides.forEach((s, i) => { zoneLeague[s] = zones[i]; });
+    lastProfileHitPitches = buildHitterPitches(personId, league, log, zoneLeague);
+    rerenderPlayerProfile();
+  }
+
   function showProfileTab(id) {
     profileTab = id;
     rerenderPlayerProfile();
@@ -13957,6 +14295,7 @@
     ensureProfileDefense();
     ensureProfileSpray();
     ensureProfileArsenal();
+    ensureProfileHitPitches();
   }
 
   function ensureProfileRecent() {
@@ -14068,6 +14407,9 @@
     lastProfileArsenal = undefined;
     profileArsenalRequested = false;
     profileArsenalSide = null;
+    lastProfileHitPitches = undefined;
+    profileHitPitchesRequested = false;
+    profileHitZoneSide = null;
     lastProfileSeason = playerListState.season || defaultListSeason;
     prefetchProfile(rawPerson, lastProfileSeason);
     playerSprayState = { personId: person.id, season: null, balls: null, loading: true };
@@ -14098,6 +14440,7 @@
     loadProfileSeason(person.id, season, pitcher, requestId);
     ensureProfileDefense();
     ensureProfileArsenal();
+    ensureProfileHitPitches();
     await profileAwardsReady;
     if (requestId !== playerProfileRequestId) return;
     rerenderPlayerProfile();
