@@ -3367,7 +3367,8 @@
 
   /* Overview board: skill scores (percentiles), each a bold number over
      the stat behind it, four to a row. The two skill groups stack on a
-     phone and sit side by side on a wide sheet; totals run beneath. */
+     phone and sit side by side on a wide sheet, the totals under the
+     second. */
   .pp-skills { padding: 2px 0 4px; }
   .pp-skg-pair { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px 40px; }
   @container (min-width: 760px) { .pp-skg-pair { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -3398,14 +3399,66 @@
   /* Waiting on Savant: an empty slot the score's size, so nothing shifts. */
   .pp-sk-score.is-wait { width: 1.2em; margin: 0 auto; background: rgba(243, 236, 219, 0.035); border-radius: 2px; }
   .pp-sk-stat { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); white-space: nowrap; font-variant-numeric: tabular-nums; }
-  .pp-totals { margin-top: 18px; }
-  @container (min-width: 760px) { .pp-totals { max-width: calc(50% - 20px); } }
+  .pp-skg-side { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+  .pp-skills > .pp-totals { margin-top: 18px; }
+  @container (min-width: 760px) { .pp-skills > .pp-totals { max-width: calc(50% - 20px); } }
   .pp-tot-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-  .pp-tot-v { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 24px; line-height: 1.15; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .pp-tot-v { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 30px; line-height: 1.15; color: var(--ink); font-variant-numeric: tabular-nums; }
+  /* A hitter's two tags under his scores: words, not grades -- cream,
+     never gold. Each opens a plate of his rates beside the pool's
+     medians: on hover where there is one, on keyboard focus, or a tap. */
+  .pp-tags { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 12px; padding-top: 8px; border-top: 1px dashed var(--paper-line); }
+  .pp-tag { position: relative; display: flex; flex-direction: column; align-items: center; min-width: 0; }
+  .pp-tag-btn {
+    margin: 0;
+    padding: 6px 4px;
+    min-height: 44px;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    font-family: 'Oswald', sans-serif;
+    font-weight: 500;
+    font-size: 19px;
+    line-height: 1.1;
+    color: var(--ink);
+  }
+  .pp-tag-btn span { border-bottom: 1px dotted var(--ink-soft); }
+  .pp-tag-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .pp-tag-wait { display: block; width: 6em; height: 21px; margin: 11px auto; background: rgba(243, 236, 219, 0.035); }
+  /* Opens upward, over the scores: below, a short sheet's edge would
+     clip it. */
+  .pp-tag-pop {
+    position: absolute;
+    bottom: calc(100% - 14px);
+    left: 0;
+    z-index: 5;
+    display: none;
+    min-width: 168px;
+    padding: 8px 10px;
+    background: var(--ink);
+    color: var(--paper);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    line-height: 1.35;
+  }
+  .pp-tag + .pp-tag .pp-tag-pop { left: auto; right: 0; }
+  .pp-tag.is-open .pp-tag-pop, .pp-tag-btn:focus-visible + .pp-tag-pop { display: block; }
+  @media (hover: hover) { .pp-tag:hover .pp-tag-pop { display: block; } }
+  .pp-tag.is-hushed .pp-tag-pop { display: none; }
+  .pp-tag-pop-head { margin-bottom: 4px; font-weight: 800; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; }
+  .pp-tag-pop table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  .pp-tag-pop th, .pp-tag-pop td { padding: 1px 0; font-weight: 700; white-space: nowrap; }
+  .pp-tag-pop th { text-align: left; padding-right: 12px; }
+  .pp-tag-pop td { text-align: right; padding-left: 12px; }
+  .pp-tag-pop td + td, .pp-tag-pop thead th { opacity: 0.7; }
+  .pp-tag-pop thead th { text-align: right; font-size: 10px; }
   @container (min-width: 700px) {
     .pp-sk-score { font-size: 44px; }
-    .pp-tot-v { font-size: 30px; }
+    .pp-tot-v { font-size: 44px; }
     .pp-sk-stat { font-size: 11px; }
+    .pp-tag-btn { font-size: 22px; }
   }
 
   /* Arsenal: velo and movement, then the mix and two-strike sections --
@@ -11241,6 +11294,21 @@
   // Profile controls: the back link, the profile's own tab row, and Game
   // Log dates (each opens that game's scorecard).
   playersBody.addEventListener('click', (e) => {
+    // A board tag's plate: a tap opens it (a touch screen has no hover),
+    // another tap or a tap anywhere else closes it.
+    const tagBtn = e.target.closest('.pp-tag-btn');
+    playersBody.querySelectorAll('.pp-tag.is-open').forEach(t => {
+      if (!tagBtn || t !== tagBtn.parentElement) {
+        t.classList.remove('is-open');
+        t.querySelector('.pp-tag-btn').setAttribute('aria-expanded', 'false');
+      }
+    });
+    if (tagBtn) {
+      tagBtn.parentElement.classList.remove('is-hushed');
+      const open = tagBtn.parentElement.classList.toggle('is-open');
+      tagBtn.setAttribute('aria-expanded', String(open));
+      return;
+    }
     if (e.target.closest('.pp-back')) { leaveProfileForList(); return; }
     const tab = e.target.closest('.pp-tab');
     if (tab) {
@@ -11343,6 +11411,23 @@
     if (playersView !== 'profile' || profileTab !== 'starts') return;
     clearTimeout(startsResizeTimer);
     startsResizeTimer = setTimeout(rerenderPlayerProfile, 150);
+  });
+  // Escape puts away a board tag's plate even while it's focused or under
+  // the pointer; it can show again once focus or the pointer moves on.
+  function hushProfileTags() {
+    playersBody.querySelectorAll('.pp-tag').forEach(t => {
+      t.classList.remove('is-open');
+      t.classList.add('is-hushed');
+      t.querySelector('.pp-tag-btn').setAttribute('aria-expanded', 'false');
+    });
+  }
+  playersBody.addEventListener('focusin', (e) => {
+    const t = e.target.closest && e.target.closest('.pp-tag');
+    if (t) t.classList.remove('is-hushed');
+  });
+  playersBody.addEventListener('pointerout', (e) => {
+    const t = e.target.closest && e.target.closest('.pp-tag');
+    if (t && !t.contains(e.relatedTarget)) t.classList.remove('is-hushed');
   });
   playersBody.addEventListener('pointermove', updateStartsTip);
   playersBody.addEventListener('pointerdown', updateStartsTip);
@@ -12140,7 +12225,6 @@
     return (WOBA_WEIGHTS.bbHbp * ((stat.baseOnBalls || 0) + (stat.hitByPitch || 0)) + WOBA_WEIGHTS.single * singles +
       WOBA_WEIGHTS.double * (stat.doubles || 0) + WOBA_WEIGHTS.triple * (stat.triples || 0) + WOBA_WEIGHTS.hr * (stat.homeRuns || 0)) / bf;
   }
-  const perPA = (n, s) => (s.plateAppearances ? (n || 0) / s.plateAppearances * 100 : null);
   const perBF = (n, s) => (s.battersFaced ? (n || 0) / s.battersFaced * 100 : null);
   const rate3 = v => v.toFixed(3).replace(/^0/, '');
   const wholePct = v => `${Math.round(v)}%`;
@@ -12166,18 +12250,33 @@
     return { name, pct: Math.min(100, Math.max(1, p)), stat: value == null ? statLabel : `${statLabel} ${value}` };
   }
 
+  // A Savant column ranked in the Stats API pool (by player id), so a
+  // part-timer is placed among the same hitters as his wOBA.
+  function savantPoolSkill(name, statLabel, table, column, low, id, pool, inPool, show = wholePct) {
+    const of = pid => csvNumber((table[pid] || {})[column]);
+    const value = of(id);
+    if (value == null) return { name, pct: null, savant: true };
+    return {
+      name,
+      pct: poolPercentile(value, pool.map(r => of(r.id)), { low, inPool }),
+      soft: !inPool,
+      stat: `${statLabel} ${show(value)}`,
+      savant: true
+    };
+  }
+
   function hitterSkillFields(person, seasonStat, pool, inPool, savant) {
-    const me = seasonStat;
-    const iso = s => (s.atBats ? ((s.totalBases || 0) - (s.hits || 0)) / s.atBats : null);
-    const hitting = [
-      poolSkill('Bat', 'wOBA', s => rawWOBA(s), rate3, false, me, pool, inPool),
-      poolSkill('Power', 'ISO', iso, rate3, false, me, pool, inPool),
-      poolSkill('Contact', 'K%', s => perPA(s.strikeOuts, s), wholePct, true, me, pool, inPool),
-      poolSkill('Eye', 'BB%', s => perPA(s.baseOnBalls, s), wholePct, false, me, pool, inPool)
-    ];
     const id = person.id;
+    const hitting = [
+      poolSkill('Bat', 'wOBA', s => rawWOBA(s), rate3, false, seasonStat, pool, inPool),
+      savantPoolSkill('Chase', 'O-Swing', savant.custom, 'oz_swing_percent', true, id, pool, inPool),
+      savantPoolSkill('Contact', 'Z-Contact', savant.custom, 'iz_contact_percent', false, id, pool, inPool),
+      // Per batted ball, so how often he makes contact stays with Contact.
+      // A barrel rate runs 0-20%, so it keeps its tenth.
+      savantPoolSkill('Damage', 'Barrel', savant.custom, 'barrel_batted_rate', false, id, pool, inPool, v => `${v.toFixed(1)}%`)
+    ];
     const pct = savant.pct[id] || {};
-    const sprint = csvNumber((savant.sprint[id] || {}).sprint_speed);
+    const sprint = csvNumber((savant.custom[id] || {}).sprint_speed);
     const speed = savantSkill('Speed', pct.sprint_speed, 'Sprint', sprint != null ? `${sprint.toFixed(1)} ft/s` : null);
     const type = person.primaryPosition && person.primaryPosition.type;
     if (type !== 'Outfielder' && type !== 'Infielder' && type !== 'Catcher') return { hitting, tools: [speed] };
@@ -12208,6 +12307,67 @@
       arm = savantSkill('Arm', pct.arm_strength, 'Arm', mph != null ? `${mph.toFixed(1)} mph` : null);
     }
     return { hitting, tools: [speed, range, glove, arm] };
+  }
+
+  // A hitter's two tags: how he swings and where his batted balls go.
+  // They describe rather than grade (good hitters land in every one), so
+  // they're words, never scores or gold. Percentiles are in the same pool
+  // as the board; each tag carries his rates beside the pool's medians.
+  // Approach: halves of how much he swings (Swing%) by how much more he
+  // swings at strikes than balls (Z-Swing minus O-Swing), the two
+  // unrelated in the pool, with a Balanced box in the middle of both.
+  const APPROACH_BALANCED_SPAN = 20;
+  // Batted ball: Air Pull if his Pull-Air% is this high, else whichever of
+  // the other three he's most extreme in, if any is. Line-drive rate
+  // isn't one: it barely carries over from one season to the next.
+  const BATTED_TAG_PERCENTILE = 75;
+
+  function poolMedian(values) {
+    const v = values.filter(x => x != null && Number.isFinite(x)).sort((a, b) => a - b);
+    if (!v.length) return null;
+    const mid = Math.floor(v.length / 2);
+    return v.length % 2 ? v[mid] : (v[mid - 1] + v[mid]) / 2;
+  }
+
+  function buildHitterTags(id, pool, inPool, savant) {
+    const tags = [];
+    const rank = (of, low) => poolPercentile(of(id), pool.map(r => of(r.id)), { low, inPool });
+    const row = (label, of) => ({ label, his: of(id), lg: poolMedian(pool.map(r => of(r.id))) });
+
+    const sw = pid => csvNumber((savant.custom[pid] || {}).swing_percent);
+    const zs = pid => csvNumber((savant.custom[pid] || {}).z_swing_percent);
+    const os = pid => csvNumber((savant.custom[pid] || {}).oz_swing_percent);
+    const gap = pid => (zs(pid) == null || os(pid) == null ? null : zs(pid) - os(pid));
+    const aggression = sw(id) == null ? null : rank(sw);
+    const selectivity = gap(id) == null ? null : rank(gap);
+    if (aggression != null && selectivity != null) {
+      const mid = Math.abs(aggression - 50) <= APPROACH_BALANCED_SPAN && Math.abs(selectivity - 50) <= APPROACH_BALANCED_SPAN;
+      const word = mid ? 'Balanced'
+        : aggression >= 50 ? (selectivity >= 50 ? 'Aggressive' : 'Free Swinging')
+        : (selectivity >= 50 ? 'Discerning' : 'Patient');
+      tags.push({ key: 'approach', title: 'Approach', word, rows: [row('Swing', sw), row('Z-Swing', zs), row('O-Swing', os)] });
+    }
+
+    const bb = column => pid => {
+      const v = csvNumber((savant.bb[pid] || {})[column]);
+      return v == null ? null : v * 100;
+    };
+    const pullAir = bb('pull_air_rate'), pull = bb('pull_rate'), gb = bb('gb_rate'), fb = bb('fb_rate');
+    if (pullAir(id) != null) {
+      let word = 'Balanced';
+      if (rank(pullAir) >= BATTED_TAG_PERCENTILE) word = 'Air Pull';
+      else {
+        const best = [['Whole Field', rank(pull, true)], ['Ground Balls', rank(gb)], ['Lifts It', rank(fb)]]
+          .reduce((a, b) => (b[1] > a[1] ? b : a));
+        if (best[1] >= BATTED_TAG_PERCENTILE) word = best[0];
+      }
+      tags.push({
+        key: 'batted', title: 'Batted Ball', word,
+        rows: [row('Pull-Air', pullAir), row('Pull', pull), row('Straight', bb('straight_rate')), row('Oppo', bb('oppo_rate')),
+          row('Ground ball', gb), row('Line drive', bb('ld_rate')), row('Fly ball', fb)]
+      });
+    }
+    return tags;
   }
 
   function pitcherSkillFields(personId, seasonStat, pool, inPool, savant) {
@@ -12254,18 +12414,21 @@
       return { pct: csvById(pct), custom: csvById(custom), ext: csvById(ext) };
     }
     const none = Promise.resolve([]);
-    const [pct, sprint, oaa, frv, arm, pop, catchers] = await Promise.all([
+    const [pct, custom, bb, oaa, frv, arm, pop, catchers] = await Promise.all([
       getSavantCsv(`/leaderboard/percentile-rankings?type=batter&year=${y}&csv=true`),
-      getSavantCsv(`/leaderboard/custom?year=${y}&type=batter&min=1&selections=sprint_speed&csv=true`),
+      getSavantCsv(`/leaderboard/custom?year=${y}&type=batter&min=1&selections=sprint_speed,swing_percent,z_swing_percent,oz_swing_percent,iz_contact_percent,barrel_batted_rate&csv=true`),
+      // Everyone's batted-ball mix (direction by height); min=1 takes in
+      // the part-timers the default list leaves off.
+      getSavantCsv(`/leaderboard/batted-ball?type=batter&csv=true&min=1&season%5B%5D=${y}`),
       !fielder ? none : getSavantCsv(`/leaderboard/outs_above_average?type=Fielder&startYear=${y}&endYear=${y}&split=no&team=&range=year&min=q&pos=&roles=&viz=hide&csv=true`),
       !fielder ? none : getSavantCsv(`/leaderboard/fielding-run-value?gameType=Regular&seasonStart=${y}&seasonEnd=${y}&type=fielder&position=&csv=true`),
       !fielder || catcher ? none : getSavantCsv(`/leaderboard/arm-strength?type=player&year=${y}&minThrows=50&pos=&team=&csv=true`),
       catcher ? getSavantCsv(`/leaderboard/poptime?year=${y}&team=&min2b=5&min3b=0&csv=true`) : none,
       !fielder ? Promise.resolve({}) : getSavantFrv(y, '2')
     ]);
-    return { pct: csvById(pct), sprint: csvById(sprint), oaa: csvById(oaa), frv: csvById(frv, 'id'), arm: csvById(arm), pop: csvById(pop, 'entity_id'), catchers: catchers || {} };
+    return { pct: csvById(pct), custom: csvById(custom), bb: csvById(bb, 'id'), oaa: csvById(oaa), frv: csvById(frv, 'id'), arm: csvById(arm), pop: csvById(pop, 'entity_id'), catchers: catchers || {} };
   }
-  const NO_SAVANT = { pct: {}, sprint: {}, oaa: {}, frv: {}, arm: {}, pop: {}, catchers: {}, custom: {}, ext: {} };
+  const NO_SAVANT = { pct: {}, custom: {}, bb: {}, oaa: {}, frv: {}, arm: {}, pop: {}, catchers: {}, ext: {} };
 
   // Who a player is ranked against for his results stats: the pool, the
   // heading's note, and whether he's in it.
@@ -12280,31 +12443,30 @@
     const need = games * (pitcher ? SKILL_POOL_BF_PER_GAME : SKILL_POOL_PA_PER_GAME);
     const pool = (rows || []).filter(r => sample(r.stat) >= need && (!pitcher || isStartingPitcher(r.stat) !== reliever));
     const inPool = pool.some(r => r.id === person.id);
-    const who = !pitcher ? 'hitters' : reliever ? 'relievers' : 'starters';
-    const short = Math.ceil(need - sample(seasonStat));
-    const note = inPool ? `vs ${pool.length} ${who}` : (games ? `${short} ${pitcher ? 'batters faced' : 'PA'} short of the pool` : 'Not ranked');
-    return { pool, note, reliever, inPool };
+    return { pool, reliever, inPool };
   }
 
-  // savantData undefined means Savant is still on its way: the Statcast
-  // group's tiles are drawn waiting rather than dashed, so the results
-  // group (Stats API only) can show first.
+  // savantData undefined means Savant is still on its way: its tiles (and
+  // a hitter's tags) are drawn waiting rather than dashed, so what the
+  // Stats API alone gives can show first. null is a season before
+  // Statcast: those tiles are dashed and there are no tags.
   function buildProfileBoard(person, pitcher, seasonStat, poolInfo, savantData) {
     const pending = savantData === undefined;
     const savant = { ...NO_SAVANT, ...(savantData || {}) };
-    const { pool, note, reliever, inPool } = poolInfo;
+    const { pool, reliever, inPool } = poolInfo;
     const s = seasonStat;
     const wait = skills => (pending ? skills.map(k => ({ name: k.name, pending: true })) : skills);
     if (!pitcher) {
       const { hitting, tools } = hitterSkillFields(person, s, pool, inPool, savant);
       return {
-        groups: [{ title: 'Hitting', note, skills: hitting }, { title: 'Tools', skills: wait(tools) }],
+        groups: [{ title: 'Hitting', skills: hitting.map(k => (pending && k.savant ? { name: k.name, pending: true } : k)) }, { title: 'Tools', skills: wait(tools) }],
+        tags: pending ? 'pending' : (savantData ? buildHitterTags(person.id, pool, inPool, savant) : []),
         totals: [['G', s.gamesPlayed ?? 0], ['HR', s.homeRuns ?? 0], ['SB', s.stolenBases ?? 0]]
       };
     }
     const { pitching, stuff } = pitcherSkillFields(person.id, s, pool, inPool, savant);
     return {
-      groups: [{ title: 'Pitching', note, skills: pitching }, { title: 'Stuff', skills: wait(stuff) }],
+      groups: [{ title: 'Pitching', skills: pitching }, { title: 'Stuff', skills: wait(stuff) }],
       totals: reliever
         ? [['G', s.gamesPitched ?? 0], ['IP', s.inningsPitched ?? '0.0'], ['SV', s.saves ?? 0]]
         : [['GS', s.gamesStarted ?? 0], ['IP', s.inningsPitched ?? '0.0'], ['K', s.strikeOuts ?? 0]]
@@ -12318,16 +12480,43 @@
       const cls = k.soft ? ' is-soft' : (k.pct >= SKILL_GOLD_PERCENTILE ? ' is-top' : '');
       return `<div class="pp-sk"><span class="pp-sk-name">${k.name}</span><span class="pp-sk-score${cls}">${k.pct}</span><span class="pp-sk-stat">${k.stat}</span></div>`;
     };
-    const group = g => `<section class="pp-skg">
-      <div class="pp-skg-head"><span>${g.title}</span>${g.note ? `<em>${g.note}</em>` : ''}</div>
+    const pctText = v => (v == null ? '&#8212;' : `${v.toFixed(1)}%`);
+    const tag = t => `<div class="pp-tag">
+        <span class="pp-sk-name">${t.title}</span>
+        <button type="button" class="pp-tag-btn" aria-expanded="false" aria-describedby="ppTag-${t.key}"><span>${t.word}</span></button>
+        <div class="pp-tag-pop" id="ppTag-${t.key}" role="tooltip">
+          <div class="pp-tag-pop-head">${t.word}</div>
+          <table><thead><tr><th></th><th>His</th><th>Lg</th></tr></thead>
+          <tbody>${t.rows.map(r => `<tr><th>${r.label}</th><td>${pctText(r.his)}</td><td>${pctText(r.lg)}</td></tr>`).join('')}</tbody></table>
+        </div>
+      </div>`;
+    const tags = board.tags === 'pending'
+      ? `<div class="pp-tags">${['Approach', 'Batted Ball'].map(t => `<div class="pp-tag"><span class="pp-sk-name">${t}</span><span class="pp-tag-wait">&#160;</span></div>`).join('')}</div>`
+      : (board.tags && board.tags.length ? `<div class="pp-tags">${board.tags.map(tag).join('')}</div>` : '');
+    const group = (g, extra = '') => `<section class="pp-skg">
+      <div class="pp-skg-head"><span>${g.title}</span></div>
       <div class="pp-skg-row">${g.skills.map(skill).join('')}</div>
+      ${extra}
     </section>`;
-    return `<div class="pp-skills">
-      <div class="pp-skg-pair">${board.groups.map(group).join('')}</div>
-      <section class="pp-skg pp-totals">
+    // A hitter's tags make his first column the taller, so his totals go
+    // under the second group to even them up; a pitcher's run beneath both
+    // groups, as on a phone.
+    const totals = `<section class="pp-skg pp-totals">
         <div class="pp-skg-head"><span>Totals</span></div>
         <div class="pp-tot-row">${board.totals.map(([k, v]) => `<div class="pp-tot"><span class="pp-sk-name">${k}</span><span class="pp-tot-v">${v}</span></div>`).join('')}</div>
-      </section>
+      </section>`;
+    const [first, second] = board.groups;
+    if (!tags) {
+      return `<div class="pp-skills">
+        <div class="pp-skg-pair">${group(first)}${group(second)}</div>
+        ${totals}
+      </div>`;
+    }
+    return `<div class="pp-skills">
+      <div class="pp-skg-pair">
+        ${group(first, tags)}
+        <div class="pp-skg-side">${group(second)}${totals}</div>
+      </div>
     </div>`;
   }
 
@@ -14206,7 +14395,7 @@
       showPitchPopup(e.target.getAttribute('data-pkey'));
       return;
     }
-    if (e.key === 'Escape') { hidePitchPopup(); hideRosterModal(); hidePlayerModal(); hideGameSummaryModal(); hideTeamChartModal(); hideGameStripModal(); hideClipModal(); playerSearchResults.hidden = true; }
+    if (e.key === 'Escape') { hidePitchPopup(); hideRosterModal(); hidePlayerModal(); hideGameSummaryModal(); hideTeamChartModal(); hideGameStripModal(); hideClipModal(); playerSearchResults.hidden = true; hushProfileTags(); }
   });
 
   // Backgrounding the tab (or the installed PWA) gets setTimeout/setInterval
