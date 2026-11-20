@@ -4054,6 +4054,186 @@
     .score-bottom-bar { position: static; margin: 18px -18px -18px; box-shadow: none; }
     #mlbBody { padding-bottom: 0; }
   }
+
+  /* Journey tab: what he's signed to, his clubs and his climb, over the
+     line of his seasons. From 760px the deal sits beside the clubs and the
+     climb, the two sharing their top and bottom edge. */
+  .jy { display: flex; flex-direction: column; gap: 26px; padding: 2px 0 4px; }
+  .jy-top { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px 40px; }
+  .jy-top-side { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+  @container (min-width: 760px) { .jy-top { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .jy-kicker { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+  .jy-arrow { color: var(--gold); }
+  .jy-deal { display: flex; flex-direction: column; min-width: 0; }
+  .jy-deal-btn { display: flex; flex-direction: column; gap: 10px; flex: 1; width: 100%; margin: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+  .jy-deal-btn:hover .jy-deal-big, .jy-deal-btn:focus-visible .jy-deal-big { color: var(--gold); }
+  .jy-deal-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; }
+  .jy-deal-top { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; }
+  .jy-deal-id { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .jy-deal-big { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 30px; line-height: 1.05; color: var(--ink); font-variant-numeric: tabular-nums; transition: color 0.15s ease; }
+  @container (min-width: 760px) { .jy-deal-big { font-size: 44px; } }
+  .jy-deal-note { margin-top: 8px; font-family: 'Overpass', sans-serif; font-weight: 600; font-size: 12px; color: var(--ink-soft); }
+  .jy-slots { display: flex; gap: 8px; flex: none; }
+  .jy-slot { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .jy-slot-v {
+    padding: 1px 10px;
+    border-radius: 2px;
+    background: rgba(0, 0, 0, 0.22);
+    box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.5), inset 0 -1px 1px rgba(255, 255, 255, 0.05);
+    font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 20px; color: var(--ink);
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+  }
+  .jy-strip { display: grid; gap: 3px; margin-top: auto; }
+  .jy-deal > .jy-strip { margin-top: 10px; }
+  .jy-strip-yr {
+    display: flex; align-items: center; justify-content: center; height: 22px; min-width: 0; overflow: hidden;
+    border-radius: 2px; background: rgba(0, 0, 0, 0.22); box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.5);
+    font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; color: var(--ink-soft);
+  }
+  .jy-strip-yr.is-done { background: var(--ink); box-shadow: none; color: var(--paper); }
+  .jy-deal-foot { display: flex; justify-content: space-between; gap: 10px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+  .jy-deal-foot > span:last-child { color: var(--ink); }
+  .jy-phase-key { display: grid; gap: 3px; margin-top: 6px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .jy-phase-key span { padding-top: 4px; border-top: 2px solid var(--ink); color: var(--ink); }
+  .jy-phase-key .is-pre { border-color: var(--ink-soft); color: var(--ink-soft); }
+
+  .jy-clubs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  .jy-club {
+    position: relative; overflow: hidden; height: 54px; padding: 7px 8px;
+    display: flex; flex-direction: column; justify-content: space-between;
+    border-radius: 2px; background: rgba(0, 0, 0, 0.22); box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.5);
+  }
+  .jy-club img { position: absolute; right: -12px; bottom: -14px; width: 58px; height: 58px; opacity: 0.22; pointer-events: none; }
+  .jy-club > span { position: relative; }
+  .jy-club-abbr { display: flex; justify-content: space-between; align-items: center; gap: 4px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 12px; letter-spacing: 0.08em; color: var(--ink); }
+  .jy-club-n { padding: 0 4px; background: var(--ink); color: var(--paper); font-size: 9px; letter-spacing: 0.04em; }
+  .jy-club-yrs { display: flex; align-items: baseline; gap: 5px; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 16px; color: var(--ink); white-space: nowrap; }
+  .jy-club-minors { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+  .jy-club.is-minors { background: none; box-shadow: none; border: 1px dashed var(--paper-line); }
+  .jy-club.is-minors img { opacity: 0.12; }
+  .jy-club.is-minors .jy-club-abbr, .jy-club.is-minors .jy-club-yrs { color: var(--ink-soft); }
+
+  /* The climb's strip: each level a shade, lighter as it rises, the
+     majors in the board's ink. */
+  .jy-path { display: flex; gap: 2px; height: 26px; margin-top: 4px; }
+  .jy-path.is-dense { gap: 1px; }
+  .jy-seg {
+    position: relative; flex: 1 1 0; min-width: 3px;
+    display: flex; align-items: center; justify-content: center; white-space: nowrap;
+    font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.04em; color: var(--ink);
+  }
+  .jy-seg.is-debut::before { content: ''; position: absolute; left: -2px; top: -5px; bottom: -5px; width: 3px; background: var(--gold); }
+  .lv-mlb { background: var(--ink); color: var(--paper); }
+  .lv-aaa { background: var(--ink-soft); color: var(--paper); }
+  .lv-aa { background: #9aa293; color: var(--paper); }
+  .lv-ap { background: #7d8577; }
+  .lv-a { background: #66705f; }
+  .lv-am { background: #5d6656; }
+  .lv-rok { background: var(--paper-line); }
+  .jy-climb-axis { position: relative; display: flex; justify-content: space-between; height: 12px; margin-top: 8px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+  .jy-climb-debut { position: absolute; top: 0; white-space: nowrap; color: var(--ink); }
+  .jy-climb-key { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 8px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; color: var(--ink-soft); }
+  .jy-climb-key i { display: inline-block; width: 9px; height: 9px; margin-right: 4px; vertical-align: -1px; }
+
+  /* The line: a track for his contract phase, the line itself (thin
+     through the minors, thick from the debut), then the season or move. */
+  .jy-line { display: flex; flex-direction: column; max-width: 720px; }
+  .jy-row { display: grid; grid-template-columns: 18px 30px minmax(0, 1fr); }
+  .jy-track { position: relative; }
+  .jy-track::before { content: ''; position: absolute; top: 0; bottom: 0; left: 8px; width: 2px; background: var(--ink-soft); }
+  .jy-track.ph-minors::before { background: radial-gradient(circle, #7d8577 1px, transparent 1.4px) 0 0 / 2px 5px repeat-y; }
+  .jy-track.ph-arb::before { left: 7.5px; width: 3px; background: var(--ink); }
+  .jy-track.ph-fa::before, .jy-track.ph-ext::before { left: 6.5px; width: 5px; background: var(--ink); }
+  .jy-phase-label {
+    position: absolute; z-index: 1; top: 0; left: 50%; padding: 4px 0;
+    transform: translateX(-50%) rotate(180deg); writing-mode: vertical-rl; white-space: nowrap;
+    background: var(--paper);
+    font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink);
+  }
+  .jy-track.ph-minors .jy-phase-label, .jy-track.ph-pre .jy-phase-label { color: var(--ink-soft); }
+  .jy-rail { position: relative; }
+  .jy-rail::before { content: ''; position: absolute; top: 0; bottom: 0; left: 14px; width: 2px; background: var(--ink-soft); }
+  .jy-rail.is-mlb::before { left: 12px; width: 6px; background: var(--ink); }
+  .jy-rail.is-first::before { top: 9px; }
+  .jy-rail.is-last::before { bottom: auto; height: 9px; }
+  .jy-rail.is-future::before { background: repeating-linear-gradient(to bottom, #7d8577 0 6px, transparent 6px 10px); }
+  .jy-stn {
+    position: absolute; z-index: 1; left: 15px; top: 9px; width: 10px; height: 10px;
+    transform: translate(-50%, -50%); border-radius: 50%;
+    background: var(--paper); border: 2px solid var(--ink-soft);
+  }
+  .jy-rail.is-mlb .jy-stn { border: 3px solid var(--ink); }
+  .jy-rail.is-future .jy-stn { border: 2px dashed var(--ink-soft); }
+  .jy-stn.is-debut { width: 16px; height: 16px; background: var(--gold); border: 3px solid var(--paper) !important; box-shadow: 0 0 0 2px var(--gold); }
+  .jy-row.is-move .jy-stn { top: 26px; width: 18px; height: 18px; box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--ink-soft); }
+  .jy-row.is-move .jy-rail.is-mlb .jy-stn { box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--ink); }
+  .jy-cell { min-width: 0; padding: 1px 0 12px; }
+  .jy-season { display: grid; grid-template-columns: 50px minmax(0, 1fr) 108px; align-items: center; gap: 0 4px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 12px; color: var(--ink); }
+  .jy-yr { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 16px; line-height: 1.1; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .jy-where { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .jy-note { font-size: 11px; font-weight: 600; color: var(--ink-soft); }
+  .jy-pay { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+  .jy-bar { height: 8px; background: var(--ink); border-radius: 0 3px 3px 0; }
+  .jy-bar.is-ghost { background: none; border: 1px dashed #7d8577; }
+  .jy-pay-v { width: 46px; text-align: right; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .jy-row.is-future .jy-season { color: var(--ink-soft); }
+  .jy-chips { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0 0 54px; }
+  .jy-row.is-future .jy-yr { font-size: 14px; }
+  .jy-chip { padding: 3px 5px 2px; border: 1px solid var(--paper-line); background: rgba(243, 236, 219, 0.08); font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); }
+  .jy-chip.is-soft { color: var(--ink-soft); }
+
+  /* A move as a cream ticket stub, its tear-off holding one number. */
+  .jy-stub, .jy-ticket {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; width: 100%; margin: 0; padding: 0; border: 0;
+    background: var(--ink); color: var(--paper); text-align: left; font: inherit;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+  }
+  button.jy-stub { cursor: pointer; }
+  button.jy-stub:hover, button.jy-stub:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .jy-stub-main { display: flex; flex-direction: column; gap: 1px; min-width: 0; padding: 7px 10px; }
+  .jy-stub-kick { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; }
+  .jy-stub-title { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 20px; line-height: 1.1; }
+  .jy-stub-sub { font-family: 'Overpass', sans-serif; font-weight: 600; font-size: 12px; }
+  .jy-stub-tear { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 60px; padding: 6px 10px; border-left: 2px dashed var(--paper); }
+  .jy-stub-tv { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 16px; white-space: nowrap; }
+  .jy-ticket { margin: 4px 0 18px; box-shadow: 0 6px 14px rgba(0, 0, 0, 0.45); }
+  .jy-ticket .jy-stub-main { padding: 12px 14px; gap: 4px; }
+  .jy-ticket-title { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 30px; line-height: 1.05; }
+  .jy-ticket-sub { font-family: 'Overpass', sans-serif; font-weight: 600; font-size: 13px; }
+  .jy-ticket-tv { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 24px; line-height: 1.1; }
+  .jy-trade { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .jy-trade-p { display: flex; align-items: center; gap: 6px; min-width: 0; margin-bottom: 7px; }
+  .jy-trade-pos { flex: none; width: 30px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); }
+  .jy-trade-self { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 12px; color: var(--ink); }
+  .jy-trade-text { margin-top: 12px; font-family: 'Overpass', sans-serif; font-weight: 600; font-size: 12px; line-height: 1.45; color: var(--ink-soft); }
+  .jy-deal-slots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-bottom: 18px; }
+  .jy-deal-slots .jy-slot-v { width: 100%; text-align: center; font-size: 24px; font-weight: 600; }
+  .jy-yby { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; }
+  .jy-yby-yr { display: flex; flex-direction: column; align-items: center; padding: 5px 0 4px; border: 1px dashed #7d8577; border-radius: 2px; }
+  .jy-yby-yr.is-done { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+  .jy-yby-yr.is-done .jy-kicker { color: var(--paper); }
+  .jy-yby-y { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 16px; }
+  .jy-src { display: inline-block; margin-top: 16px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); text-decoration: none; }
+  .jy-src:hover, .jy-src:focus-visible { color: var(--gold); }
+
+  /* From 900px the line turns on its side (renderJourneyLineWide). */
+  .jy-wide-wrap { display: none; }
+  @container (min-width: 900px) {
+    .jy-line { display: none; }
+    .jy-wide-wrap { display: block; overflow-x: auto; }
+  }
+  .jy-wide { display: block; max-width: 100%; height: auto; }
+  .jy-w-kick { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 8.5px; letter-spacing: 0.1em; }
+  .jy-w-title { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 18px; }
+  .jy-w-sub { font-family: 'Overpass', sans-serif; font-weight: 600; font-size: 10.5px; }
+  .jy-w-tv { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 14px; }
+  .jy-w-club { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9.5px; letter-spacing: 0.08em; fill: var(--ink); }
+  .jy-w-pay { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 13px; fill: var(--ink); }
+  .jy-w-pay.is-small { font-size: 11px; }
+  .jy-w-club.is-soft, .jy-w-pay.is-soft { fill: var(--ink-soft); }
+  .jy-w-year { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.06em; fill: var(--ink-soft); }
+  .jy-wstub[role="button"] { cursor: pointer; outline: none; }
+  .jy-wstub[role="button"]:hover > rect, .jy-wstub[role="button"]:focus-visible > rect { stroke: var(--gold); stroke-width: 3; }
 </style>
 </head>
 <body>
@@ -4196,6 +4376,12 @@
     <div class="pitch-modal">
       <button id="gameStripOverlayClose" class="pitch-close" aria-label="Close">&#10005;</button>
       <div id="gameStripOverlayBody"></div>
+    </div>
+  </div>
+  <div id="journeyOverlay" class="pitch-overlay">
+    <div class="pitch-modal">
+      <button id="journeyClose" class="pitch-close" aria-label="Close">&#10005;</button>
+      <div id="journeyModalBody"></div>
     </div>
   </div>
   <div id="clipOverlay" class="pitch-overlay">
@@ -4385,6 +4571,10 @@
   let lastProfileArsenal;
   let profileArsenalRequested = false;
   let profileArsenalSide = null;
+  // The Journey tab (buildJourney), loaded only once it opens: undefined
+  // while loading, null if the transactions failed.
+  let lastProfileJourney;
+  let profileJourneyRequested = false;
   // Players tab's browsable list (Batters/Pitchers toggle, sortable current-
   // season stats) -- separate from the search/profile state above since the
   // list and a profile are just two different things playersBody can show.
@@ -11298,6 +11488,15 @@
     showPlayerList();
   });
 
+  // The wide line's stubs are SVG groups acting as buttons.
+  playersBody.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const stub = e.target.closest && e.target.closest('g[data-jy-move]');
+    if (!stub) return;
+    e.preventDefault();
+    stub.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  });
+
   // Profile controls: the back link, the profile's own tab row, and Game
   // Log dates (each opens that game's scorecard).
   playersBody.addEventListener('click', (e) => {
@@ -11326,6 +11525,17 @@
         if (history.state && history.state.profile) history.replaceState({ ...history.state, profileTab: tab.dataset.ppTab }, '', location.hash);
       } catch (err) {}
       showProfileTab(tab.dataset.ppTab);
+      return;
+    }
+    const jyMove = e.target.closest('[data-jy-move]');
+    if (jyMove && lastProfileJourney) {
+      const move = lastProfileJourney.moves[Number(jyMove.dataset.jyMove)];
+      if (move && move.kind === 'trade') showTradeModal(move);
+      else if (move && move.deal) showDealModal(move.deal, lastProfilePerson);
+      return;
+    }
+    if (e.target.closest('[data-jy-deal]') && lastProfileJourney && lastProfileJourney.deal) {
+      showDealModal(lastProfileJourney.deal.d, lastProfilePerson);
       return;
     }
     const arsSide = e.target.closest('[data-ars-side]');
@@ -13866,13 +14076,765 @@
     return sections.join('');
   }
 
+  // ---- Journey ----
+  // A player's path through the game: what he's signed to now, the clubs
+  // he's belonged to, his climb through the levels, and every season with
+  // its pay and the moves between them. Transactions, minor-league seasons
+  // and drafts come from the Stats API; the money comes from the repo's own
+  // contracts.json (the Stats API has none), and is left out for a player
+  // it doesn't list.
+  const JOURNEY_LEVEL_BY_SPORT = { 11: 'AAA', 12: 'AA', 13: 'A+', 14: 'A', 15: 'A-', 16: 'ROK' };
+  const JOURNEY_LEVEL_RANK = { 'ROK': 0, 'A-': 1, 'A': 2, 'A+': 3, 'AA': 4, 'AAA': 5, 'MLB': 6 };
+  const JOURNEY_LEVEL_CLASS = { 'ROK': 'rok', 'A-': 'am', 'A': 'a', 'A+': 'ap', 'AA': 'aa', 'AAA': 'aaa', 'MLB': 'mlb' };
+  // Moves that put him in an organization, and ones that leave him without one.
+  const JOURNEY_JOIN_TYPES = new Set(['SFA', 'SGN', 'TR', 'CLW', 'R5', 'R5M']);
+  const JOURNEY_LEAVE_TYPES = new Set(['REL', 'DFA', 'RET']);
+  const JOURNEY_PHASES = { minors: 'Minors', pre: 'Pre-arb', arb: 'Arb', fa: 'Free agent', ext: 'Extension' };
+
+  // Career-spanning, so cached by id for the session; a failure isn't
+  // cached, since the whole tab rests on these and a retry is cheap.
+  const playerTransactionsCache = {};
+  async function getPlayerTransactions(personId) {
+    if (playerTransactionsCache[personId]) return playerTransactionsCache[personId];
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/transactions?playerId=${personId}`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      // The feed sometimes lists one move two or three times over.
+      const seen = new Set();
+      const list = (data.transactions || []).filter(t => {
+        if (!t.date || t.typeCode === 'NUM') return false;
+        const key = `${t.date}|${t.typeCode}|${t.fromTeam ? t.fromTeam.id : ''}|${t.toTeam ? t.toTeam.id : ''}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      }).sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+      playerTransactionsCache[personId] = list;
+      return list;
+    } catch (e) {
+      return null;
+    }
+  }
+  // Every minor-league season by level. The transaction log only reaches
+  // back to about 2009; these go back to his first pro season.
+  const playerMinorSeasonsCache = {};
+  async function getPlayerMinorSeasons(personId, group) {
+    const key = `${personId}-${group}`;
+    if (playerMinorSeasonsCache[key]) return playerMinorSeasonsCache[key];
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/people/${personId}/stats?stats=yearByYear&group=${group}&leagueListId=milb_all`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      const splits = ((data.stats && data.stats[0] && data.stats[0].splits) || [])
+        .filter(s => s.sport && JOURNEY_LEVEL_BY_SPORT[s.sport.id] && s.team)
+        .map(s => ({ season: Number(s.season), level: JOURNEY_LEVEL_BY_SPORT[s.sport.id], team: s.team.id, games: (s.stat && s.stat.gamesPlayed) || 0 }));
+      playerMinorSeasonsCache[key] = splits;
+      return splits;
+    } catch (e) {
+      return null;
+    }
+  }
+  const playerDraftsCache = {};
+  async function getPlayerDrafts(personId) {
+    if (playerDraftsCache[personId] !== undefined) return playerDraftsCache[personId];
+    try {
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/people/${personId}?hydrate=draft`);
+      const data = await res.json();
+      const drafts = ((data.people && data.people[0] && data.people[0].drafts) || [])
+        .map(d => ({ year: Number(d.year), round: d.pickRound, team: d.team && d.team.id }))
+        .sort((a, b) => a.year - b.year);
+      playerDraftsCache[personId] = drafts;
+      return drafts;
+    } catch (e) {
+      playerDraftsCache[personId] = [];
+      return [];
+    }
+  }
+  // The repo's contracts.json (see CLAUDE.md), once a session, fresh past
+  // the HTTP cache; a failed load is retried on the next profile.
+  let contractsPromise = null;
+  function getContracts() {
+    if (!contractsPromise) {
+      contractsPromise = fetch('contracts.json', { cache: 'no-cache' })
+        .then(res => (res.ok ? res.json() : null))
+        .then(data => (data && data.players) || null)
+        .catch(() => null)
+        .then(players => {
+          if (!players) contractsPromise = null;
+          return players;
+        });
+    }
+    return contractsPromise;
+  }
+  // A trade's other players, for its ticket. Every player in a trade gets
+  // his own transaction carrying the same text, so the club's moves that
+  // day give each one's id and which way he went; positions come from the
+  // text itself ("LF Juan Soto and 1B Josh Bell"), matched by name.
+  const tradeDetailCache = {};
+  async function getTradeDetail(tx) {
+    const key = `${tx.date}|${tx.description}`;
+    if (tradeDetailCache[key]) return tradeDetailCache[key];
+    try {
+      const teamId = (tx.fromTeam && tx.fromTeam.id) || (tx.toTeam && tx.toTeam.id);
+      const res = await fetch(`https://statsapi.mlb.com/api/v1/transactions?teamId=${teamId}&startDate=${tx.date}&endDate=${tx.date}`);
+      const data = await res.json();
+      const norm = s => s.toLowerCase().replace(/[^a-z]/g, '');
+      const pos = {};
+      (tx.description.match(/\b(RHP|LHP|[123]B|SS|C|LF|CF|RF|OF|DH|P|IF|INF|UT)\s+([^,]+?)(?=,|\s+and\s|\s+to\s|\s+for\s|\.$|$)/g) || []).forEach(m => {
+        const i = m.indexOf(' ');
+        pos[norm(m.slice(i + 1))] = m.slice(0, i);
+      });
+      const seen = new Set();
+      const players = (data.transactions || [])
+        .filter(t => t.typeCode === 'TR' && t.description === tx.description && t.person && !seen.has(t.person.id) && seen.add(t.person.id))
+        .map(t => ({ id: t.person.id, name: t.person.fullName, pos: pos[norm(t.person.fullName)] || '', to: t.toTeam && t.toTeam.id }));
+      tradeDetailCache[key] = players;
+      return players;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function formatMoney(m) {
+    if (m == null) return '';
+    if (m < 1) return `$${Math.round(m * 1000)}K`;
+    return `$${Number.isInteger(m) ? m : (Math.round(m * 10) / 10).toFixed(1).replace(/\.0$/, '')}M`;
+  }
+  function journeyDays(a, b) {
+    return (Date.parse(b) - Date.parse(a)) / 86400000;
+  }
+  function ageOn(birthDate, date) {
+    if (!birthDate) return null;
+    const [by, bm, bd] = birthDate.split('-').map(Number);
+    const [y, m, d] = date.split('-').map(Number);
+    return y - by - (m < bm || (m === bm && d < bd) ? 1 : 0);
+  }
+  function shortYear(y) {
+    return `'${String(y).slice(2)}`;
+  }
+  function journeyDate(dateStr) {
+    return `${formatShortDate(dateStr)}, ${dateStr.slice(0, 4)}`;
+  }
+  // "WSH traded LF Juan Soto and 1B Josh Bell to SD for ..." -> the people
+  // on each side, counted from the text (the ticket fetches the ids).
+  function parseTradeSides(description) {
+    const m = /traded (.+?) to .+? for (.+?)\.?$/.exec(description || '');
+    if (!m) return null;
+    const split = s => s.split(/,\s*(?:and\s+)?|\s+and\s+/).map(x => x.trim()).filter(Boolean);
+    const strip = s => s.replace(/^(RHP|LHP|[123]B|SS|C|LF|CF|RF|OF|DH|P|IF|INF|UT)\s+/, '');
+    const nonPlayer = s => /cash|considerations|player to be named|international bonus|draft pick|competitive balance/i.test(s);
+    const sent = split(m[1]).map(strip);
+    const got = split(m[2]).map(strip);
+    return { sent, got: got.filter(s => !nonPlayer(s)), cash: got.some(nonPlayer) ? got.filter(nonPlayer).join(', ') : '' };
+  }
+
+  function buildJourney(person, tx, minors, mlbSplits, drafts, contracts) {
+    const now = new Date();
+    const thisYear = now.getFullYear();
+    // A season counts as played once it's into October.
+    const lastDone = now.getMonth() >= 9 ? thisYear : thisYear - 1;
+    const debutDate = person.mlbDebutDate || null;
+    const debutSeason = debutDate ? Number(debutDate.slice(0, 4)) : null;
+    const isOrg = id => !!TEAM_ABBR[id];
+    const firstTxYear = tx.length ? Number(tx[0].date.slice(0, 4)) : Infinity;
+
+    // Levels by season. A rehab stint isn't time at that level; before the
+    // transaction log begins, a few games down while he was in the majors
+    // that season stands in for one.
+    const mlbGames = new Map();
+    mlbSplits.forEach(s => {
+      const yr = Number(s.season);
+      mlbGames.set(yr, (mlbGames.get(yr) || 0) + ((s.stat && s.stat.gamesPlayed) || 0));
+    });
+    // By team id: an affiliate's name changes (the GCL became the FCL) and
+    // the stats carry the new one.
+    const rehab = new Set(tx.filter(t => t.toTeam && /rehab assignment/i.test(t.description || '')).map(t => `${t.date.slice(0, 4)}|${t.toTeam.id}`));
+    const bySeason = new Map();
+    const addLevel = (yr, level, games) => {
+      if (!bySeason.has(yr)) bySeason.set(yr, new Map());
+      const m = bySeason.get(yr);
+      m.set(level, (m.get(level) || 0) + games);
+    };
+    minors.forEach(s => {
+      const isRehab = rehab.has(`${s.season}|${s.team}`) || (s.season < firstTxYear && s.games <= 3 && mlbGames.get(s.season));
+      if (!isRehab && s.games) addLevel(s.season, s.level, s.games);
+    });
+    mlbGames.forEach((g, yr) => { if (g) addLevel(yr, 'MLB', g); });
+    const seasonsPlayed = [...bySeason.keys()].sort((a, b) => a - b);
+
+    // The climb: each level in the order he reached it, a stay at one
+    // level running on across seasons until he moves.
+    const path = [];
+    seasonsPlayed.forEach(yr => {
+      [...bySeason.get(yr).entries()].sort((a, b) => JOURNEY_LEVEL_RANK[a[0]] - JOURNEY_LEVEL_RANK[b[0]]).forEach(([level, games]) => {
+        const last = path[path.length - 1];
+        if (last && last.level === level) { last.games += games; last.to = yr; }
+        else path.push({ level, games, from: yr, to: yr });
+      });
+    });
+
+    // Organizations: the club that drafted and signed him (before the
+    // transaction log), then every move into or out of one. A return to a
+    // club he'd just left (elected free agency, re-signed) is the same stint.
+    const orgs = new Map();
+    const touch = (id, yr) => {
+      if (!isOrg(id)) return null;
+      let o = orgs.get(id);
+      if (!o) { o = { id, years: new Set(), stints: 0, mlb: false, order: orgs.size }; orgs.set(id, o); }
+      o.years.add(yr);
+      return o;
+    };
+    const signedDraft = drafts.filter(d => d.year < firstTxYear && isOrg(d.team)).pop() || null;
+    let current = null, lastOrg = null, lastLeave = null;
+    if (signedDraft) { touch(signedDraft.team, signedDraft.year).stints = 1; current = signedDraft.team; }
+    // A move in November or December is for the season ahead.
+    const seasonOf = d => Number(d.slice(0, 4)) + (Number(d.slice(5, 7)) >= 11 ? 1 : 0);
+    tx.forEach(t => {
+      const yr = seasonOf(t.date);
+      const to = t.toTeam && t.toTeam.id;
+      if (JOURNEY_JOIN_TYPES.has(t.typeCode) && isOrg(to)) {
+        const back = to === current || (lastOrg === to && lastLeave && journeyDays(lastLeave, t.date) < 120);
+        const o = touch(to, yr);
+        if (!back) o.stints++;
+        current = to;
+      } else if (JOURNEY_LEAVE_TYPES.has(t.typeCode)) {
+        if (current) { touch(current, yr); lastOrg = current; lastLeave = t.date; }
+        current = null;
+      } else if (current) {
+        touch(current, yr);
+      }
+    });
+    mlbSplits.forEach(s => {
+      const o = s.team && touch(s.team.id, Number(s.season));
+      if (o) o.mlb = true;
+    });
+    const currentTeamId = person.currentTeam && (isOrg(person.currentTeam.id) ? person.currentTeam.id : person.currentTeam.parentOrgId);
+    const clubs = [...orgs.values()].map(o => {
+      const years = [...o.years];
+      return { id: o.id, from: Math.min(...years), to: Math.max(...years), stints: Math.max(1, o.stints), minorsOnly: !o.mlb, open: person.active !== false && o.id === currentTeamId, order: o.order };
+    }).sort((a, b) => a.from - b.from || a.order - b.order);
+
+    // Money: multiyear deals and any known one-year salaries.
+    const entry = contracts && contracts[String(person.id)];
+    const deals = ((entry && entry.deals) || []).slice().sort((a, b) => a.first - b.first);
+    const salaries = (entry && entry.salaries) || {};
+    const dealFor = yr => deals.filter(d => yr >= d.first && yr < d.first + d.years).pop() || null;
+    const payFor = yr => (salaries[yr] != null ? salaries[yr] : (dealFor(yr) ? dealFor(yr).aav : null));
+
+    // Contract phase by season. MLB has no public service time, so it's
+    // read from the debut: three pre-arb seasons, arbitration until his
+    // sixth year of service (a debut too late for a full year of service
+    // adds one) or the first time he elects free agency after it, a deal
+    // in contracts.json overriding either. Super Two isn't visible here.
+    let faFrom = null, arbFrom = null;
+    if (debutSeason) {
+      const fullYear = journeyDays(debutDate, `${debutSeason}-09-30`) >= 172;
+      arbFrom = debutSeason + (fullYear ? 3 : 4);
+      faFrom = debutSeason + (fullYear ? 6 : 7);
+      const elected = tx.find(t => t.typeCode === 'DFA' && t.date > debutDate);
+      if (elected) faFrom = Math.min(faFrom, Number(elected.date.slice(0, 4)) + 1);
+      arbFrom = Math.min(arbFrom, faFrom);
+    }
+    const phaseFor = yr => {
+      const d = dealFor(yr);
+      if (d) return d.kind === 'fa' ? 'fa' : 'ext';
+      if (!debutSeason || yr < debutSeason) return 'minors';
+      if (yr >= faFrom) return 'fa';
+      if (salaries[yr] != null && yr >= arbFrom) return 'arb';
+      return yr >= arbFrom ? 'arb' : 'pre';
+    };
+
+    // Moves worth a ticket: his first signing (or draft), trades, free-agent
+    // signings with a big-league deal, and extensions. The rest of the churn
+    // (released, designated, claimed, called up) is chips under its season.
+    const moves = [];
+    const birthCountry = person.birthCountry || '';
+    // Before the transaction log, the draft is his signing; otherwise it's
+    // his first move into an organization.
+    const firstJoin = signedDraft ? null : tx.find(t => JOURNEY_JOIN_TYPES.has(t.typeCode) && isOrg(t.toTeam && t.toTeam.id));
+    if (signedDraft) {
+      moves.push({ kind: 'sign', key: `${signedDraft.year}-03-30`, kicker: `Drafted | ${signedDraft.year}`, title: `→ ${TEAM_ABBR[signedDraft.team]}`,
+        sub: `Round ${signedDraft.round}${drafts.length > 1 ? `, drafted ${drafts.length} times` : ''}` });
+    } else if (firstJoin && firstJoin.typeCode !== 'TR') {
+      const draft = drafts.find(d => d.year === Number(firstJoin.date.slice(0, 4)) && d.team === firstJoin.toTeam.id);
+      const age = ageOn(person.birthDate, firstJoin.date);
+      const how = draft ? `Round ${draft.round} pick` : (birthCountry && birthCountry !== 'USA' ? 'International free agent' : 'Free agent');
+      // Ahead of his first season's row, whenever in the year he signed.
+      moves.push({ kind: 'sign', key: `${firstJoin.date.slice(0, 4)}-01-01`, kicker: `Signed | ${journeyDate(firstJoin.date)}`, title: `→ ${TEAM_ABBR[firstJoin.toTeam.id]}`,
+        sub: `${how}${age != null ? `, age ${age}` : ''}${drafts.length > 1 ? `, drafted ${drafts.length} times` : ''}` });
+    }
+    const usedDeals = new Set();
+    const dealSigned = new Map();
+    const dealTerms = d => `${d.years} yr, ${formatMoney(d.total)}${d.years > 1 ? ` | ${formatMoney(d.aav)} AAV` : ''}`;
+    let lastOrgSeen = signedDraft ? signedDraft.team : null;
+    const chips = new Map();
+    const addChip = (yr, date, text, soft) => {
+      if (!chips.has(yr)) chips.set(yr, []);
+      chips.get(yr).push({ date, text, soft });
+    };
+    tx.forEach((t, i) => {
+      const yr = Number(t.date.slice(0, 4));
+      const to = t.toTeam && t.toTeam.id;
+      const from = t.fromTeam && t.fromTeam.id;
+      const minorDeal = /minor league/i.test(t.description || '');
+      if (t.typeCode === 'TR' && isOrg(to)) {
+        const sides = parseTradeSides(t.description);
+        const fromOrg = isOrg(from) ? from : lastOrgSeen;
+        const others = sides ? sides.sent.filter(n => !n.toLowerCase().includes((person.lastName || '').toLowerCase())) : [];
+        const got = sides ? sides.got : [];
+        const sub = sides
+          ? `${others.length ? `With ${others.map(n => n.split(' ').slice(-1)[0]).join(', ')}, for ` : 'For '}${got.length ? got.slice(0, 2).map(n => n.split(' ').slice(-1)[0]).join(', ') + (got.length > 2 ? ` +${got.length - 2}` : '') : sides.cash || 'cash'}`
+          : '';
+        moves.push({ kind: 'trade', key: t.date, tx: t, kicker: `Trade | ${journeyDate(t.date)}`, title: `${fromOrg ? TEAM_ABBR[fromOrg] : '?'} → ${TEAM_ABBR[to]}`,
+          sub, tear: sides && got.length ? ['Players', `${sides.sent.length} for ${got.length}`] : null });
+        lastOrgSeen = to;
+        return;
+      }
+      if (t.typeCode === 'SFA' && isOrg(to) && t !== firstJoin) {
+        if (!minorDeal && debutDate && t.date > debutDate) {
+          const season = Number(t.date.slice(0, 4)) + (Number(t.date.slice(5, 7)) > 3 ? 1 : 0);
+          const found = deals.find(d => d.team === to && Math.abs(d.first - season) <= 1 && !usedDeals.has(d));
+          // The dataset often lacks the signing date; the transaction has it.
+          if (found) { usedDeals.add(found); dealSigned.set(found, found.signed || t.date); }
+          const deal = found && { ...found, signed: found.signed || t.date };
+          moves.push({ kind: 'fa', key: t.date, deal, kicker: `Free agent | ${journeyDate(t.date)}`,
+            title: lastOrgSeen && lastOrgSeen !== to ? `${TEAM_ABBR[lastOrgSeen]} → ${TEAM_ABBR[to]}` : `Stays with ${TEAM_ABBR[to]}`,
+            sub: deal ? dealTerms(deal) : 'Major-league deal', tear: deal ? ['Through', String(deal.first + deal.years - 1)] : null });
+        } else {
+          addChip(yr, t.date, `→ ${TEAM_ABBR[to]}${minorDeal ? ', minors deal' : ''}`);
+        }
+        lastOrgSeen = to;
+        return;
+      }
+      if (firstJoin && t.date < firstJoin.date) return;
+      // His first call-up is the debut, already on its row.
+      if (t.typeCode === 'SE' && !(debutDate && Math.abs(journeyDays(debutDate, t.date)) < 45)) addChip(yr, t.date, '↑ MLB');
+      else if (t.typeCode === 'REL') addChip(yr, t.date, 'Released', true);
+      else if (t.typeCode === 'DES') addChip(yr, t.date, 'DFA', true);
+      else if (t.typeCode === 'OUT') addChip(yr, t.date, 'Outrighted', true);
+      else if (t.typeCode === 'CLW' && isOrg(to)) { addChip(yr, t.date, `Claimed by ${TEAM_ABBR[to]}`); lastOrgSeen = to; }
+      else if (t.typeCode === 'DFA' && debutDate && t.date > debutDate) {
+        // Elected free agency: a chip only when no ticket follows it.
+        const next = tx.slice(i + 1).find(n => n.typeCode === 'SFA');
+        if (!next || /minor league/i.test(next.description || '') || journeyDays(t.date, next.date) > 120) addChip(yr, t.date, 'Free agent', true);
+      }
+    });
+    deals.filter(d => !usedDeals.has(d)).forEach(d => {
+      const ext = d.kind !== 'fa';
+      moves.push({ kind: ext ? 'ext' : 'fa', key: d.signed || `${d.first - 1}-12-31`, deal: d,
+        kicker: `${ext ? 'Extension' : 'Free agent'} | ${d.signed ? journeyDate(d.signed) : `${d.first - 1} offseason`}`,
+        title: ext ? `Stays with ${TEAM_ABBR[d.team]}` : `→ ${TEAM_ABBR[d.team]}`, sub: dealTerms(d), tear: ['Through', String(d.first + d.years - 1)] });
+    });
+
+    // One row a season, from his first season in the game to now.
+    const orgYears = [];
+    orgs.forEach(o => o.years.forEach(y => orgYears.push(y)));
+    const firstYear = Math.min(...seasonsPlayed, ...orgYears);
+    const lastYear = Math.max(...seasonsPlayed, ...orgYears.filter(y => y <= thisYear));
+    const rows = [];
+    for (let yr = firstYear; yr <= lastYear && Number.isFinite(firstYear); yr++) {
+      const levels = bySeason.get(yr);
+      const clubsThat = clubs.filter(c => orgs.get(c.id).years.has(yr)).map(c => TEAM_ABBR[c.id]);
+      const pay = payFor(yr);
+      const seasonChips = (chips.get(yr) || []).filter((c, i, a) => a.findIndex(x => x.date === c.date && x.text === c.text) === i);
+      if (!levels && pay == null && !seasonChips.length) continue;
+      const minorLevels = levels ? [...levels.keys()].filter(l => l !== 'MLB').sort((a, b) => JOURNEY_LEVEL_RANK[a] - JOURNEY_LEVEL_RANK[b]) : [];
+      const inMlb = !!(levels && levels.has('MLB'));
+      let note = '';
+      if (minorLevels.length) note = [...minorLevels, ...(inMlb ? ['MLB'] : [])].join(' → ');
+      if (yr === debutSeason) note = `${note ? `${note}, ` : ''}debut ${formatShortDate(debutDate)}`;
+      rows.push({ season: yr, key: `${yr}-03-31`, clubs: clubsThat, note, mlb: inMlb, pay, phase: phaseFor(yr), chips: seasonChips, debut: yr === debutSeason, played: yr <= lastDone });
+    }
+    // The years still to come on a deal, as one row.
+    const curDeal = deals.filter(d => d.first <= thisYear + 1 && d.first + d.years - 1 >= lastDone + 1).pop() || null;
+    let future = null;
+    if (curDeal) {
+      const from = Math.max(lastYear + 1, curDeal.first);
+      const to = curDeal.first + curDeal.years - 1;
+      if (to >= from) future = { from, to, pay: curDeal.aav, phase: phaseFor(from), team: TEAM_ABBR[curDeal.team] };
+    }
+    const maxPay = Math.max(0, ...rows.map(r => r.pay || 0), future ? future.pay : 0);
+
+    // The deal header: what he's signed to now, or where he stands.
+    let deal;
+    const lastTx = tx[tx.length - 1];
+    if (curDeal) {
+      const last = curDeal.first + curDeal.years - 1;
+      deal = { state: 'contract', d: { ...curDeal, signed: curDeal.signed || dealSigned.get(curDeal) }, last, played: Math.max(0, Math.min(curDeal.years, lastDone - curDeal.first + 1)),
+        kicker: `${curDeal.kind === 'fa' ? 'Free-agent contract' : 'Extension'} | ${TEAM_ABBR[curDeal.team]}` };
+    } else if (person.active !== false && debutSeason && person.currentTeam && isOrg(person.currentTeam.id) && phaseFor(thisYear) !== 'fa') {
+      const year = Math.min(6, Math.max(1, lastDone - debutSeason + 1));
+      deal = { state: 'control', team: person.currentTeam.id, year, from: debutSeason, phase: phaseFor(Math.max(lastDone, debutSeason)), arbFrom, salary: salaries[lastDone] != null ? salaries[lastDone] : null };
+    } else if (person.active !== false && !debutSeason && currentTeamId) {
+      deal = { state: 'prospect', team: currentTeamId };
+    } else if (lastTx && (lastTx.typeCode === 'DFA' || lastTx.typeCode === 'REL') && person.active !== false && !(person.currentTeam && isOrg(person.currentTeam.id))) {
+      const lastSign = [...tx].reverse().find(t => t.typeCode === 'SFA' || t.typeCode === 'SGN');
+      deal = { state: 'free', since: lastTx.date, lastSign };
+    } else if (person.active === false) {
+      deal = { state: 'retired', last: seasonsPlayed[seasonsPlayed.length - 1] };
+    } else {
+      deal = null;
+    }
+
+    const items = [...rows.map(r => ({ type: 'season', ...r })), ...moves.map((m, i) => ({ type: 'move', idx: i, ...m }))]
+      .sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : (a.type === 'season' ? -1 : 1)));
+    const debutIdx = path.findIndex(p => p.level === 'MLB');
+    return { clubs, path, debutIdx, debutDate, items, moves, future, maxPay, deal, hasMoney: !!entry, lastDone, active: person.active !== false };
+  }
+
+  // ---- Journey rendering ----
+  function renderJourneyDeal(j) {
+    const deal = j.deal;
+    if (!deal) return '';
+    const head = '<div class="pp-skg-head"><span>The Deal</span></div>';
+    const strip = (years, filled, cls = '') => `<div class="jy-strip${cls}" style="grid-template-columns: repeat(${years.length}, minmax(0, 1fr))">${years.map((y, i) => `<span class="jy-strip-yr${i < filled ? ' is-done' : ''}">${shortYear(y)}</span>`).join('')}</div>`;
+    if (deal.state === 'contract') {
+      const d = deal.d;
+      const years = Array.from({ length: d.years }, (_, i) => d.first + i);
+      return `<section class="jy-deal">${head}
+        <button type="button" class="jy-deal-btn" data-jy-deal>
+          <span class="jy-deal-top">
+            <span class="jy-deal-id"><span class="jy-kicker">${deal.kicker}</span><span class="jy-deal-big">${d.years} yr | ${formatMoney(d.total)}</span></span>
+            <span class="jy-slots">${d.years > 1 ? `<span class="jy-slot"><span class="jy-kicker">AAV</span><span class="jy-slot-v">${formatMoney(d.aav)}</span></span>` : ''}<span class="jy-slot"><span class="jy-kicker">Through</span><span class="jy-slot-v">${deal.last}</span></span></span>
+          </span>
+          ${strip(years, deal.played)}
+          <span class="jy-deal-foot"><span>${d.signed ? `Signed ${journeyDate(d.signed)}` : `${d.first}`}</span><span>${d.deferred ? `${formatMoney(d.deferred)} deferred | ` : ''}Terms <span class="jy-arrow">→</span></span></span>
+        </button>
+      </section>`;
+    }
+    if (deal.state === 'control') {
+      const years = Array.from({ length: 6 }, (_, i) => deal.from + i);
+      const preN = Math.max(0, Math.min(6, deal.arbFrom - deal.from));
+      return `<section class="jy-deal">${head}
+        <div class="jy-deal-top">
+          <span class="jy-deal-id"><span class="jy-kicker">Club control | ${TEAM_ABBR[deal.team]}</span><span class="jy-deal-big">Year ${deal.year} of 6</span></span>
+          <span class="jy-slots"><span class="jy-slot"><span class="jy-kicker">${deal.phase === 'arb' ? 'Arbitration' : 'Pre-arb'}</span><span class="jy-slot-v">${deal.salary != null ? formatMoney(deal.salary) : '—'}</span></span></span>
+        </div>
+        ${strip(years, deal.year)}
+        <div class="jy-phase-key" style="grid-template-columns: ${preN}fr ${6 - preN}fr"><span class="is-pre">Pre-arb</span><span class="is-arb">Arbitration</span></div>
+      </section>`;
+    }
+    if (deal.state === 'prospect') {
+      return `<section class="jy-deal">${head}<div class="jy-deal-id"><span class="jy-kicker">${TEAM_ABBR[deal.team]} system</span><span class="jy-deal-big">In the minors</span></div></section>`;
+    }
+    if (deal.state === 'free') {
+      const s = deal.lastSign;
+      const lastLine = s ? `Last deal: ${TEAM_ABBR[s.toTeam && s.toTeam.id] || ''}${/minor league/i.test(s.description || '') ? ', minor-league contract' : ''}, ${journeyDate(s.date)}` : '';
+      return `<section class="jy-deal">${head}<div class="jy-deal-id"><span class="jy-kicker">Since ${journeyDate(deal.since)}</span><span class="jy-deal-big">Free agent</span></div>${lastLine ? `<div class="jy-deal-note">${lastLine}</div>` : ''}</section>`;
+    }
+    return `<section class="jy-deal">${head}<div class="jy-deal-id"><span class="jy-kicker">Last season ${deal.last || ''}</span><span class="jy-deal-big">Retired</span></div></section>`;
+  }
+
+  function renderJourneyClubs(j) {
+    if (!j.clubs.length) return '';
+    const tile = c => {
+      const years = c.open ? `${shortYear(c.from)}–` : (c.from === c.to ? shortYear(c.from) : `${shortYear(c.from)}–${shortYear(c.to)}`);
+      return `<div class="jy-club${c.minorsOnly ? ' is-minors' : ''}">
+        <img src="${capLogoUrl(c.id)}" alt="" aria-hidden="true" onerror="this.remove()">
+        <span class="jy-club-abbr">${TEAM_ABBR[c.id]}${c.stints > 1 ? `<span class="jy-club-n">${c.stints}×</span>` : ''}</span>
+        <span class="jy-club-yrs">${years}${c.minorsOnly ? '<span class="jy-club-minors">Minors</span>' : ''}</span>
+      </div>`;
+    };
+    return `<section class="jy-clubs-sec"><div class="pp-skg-head"><span>Clubs</span></div><div class="jy-clubs">${j.clubs.map(tile).join('')}</div></section>`;
+  }
+
+  // The climb as one strip in the order he reached each level, a segment's
+  // width the square root of his games there (so a ten-day stop still
+  // shows beside a decade in the majors), the debut a gold line.
+  function renderJourneyClimb(j) {
+    if (!j.path.length) return '';
+    const weights = j.path.map(p => Math.sqrt(p.games));
+    const total = weights.reduce((a, b) => a + b, 0);
+    const segs = j.path.map((p, i) => {
+      const share = weights[i] / total;
+      const label = share > 0.075 || (share > 0.04 && p.level.length <= 2) ? p.level : '';
+      return `<span class="jy-seg lv-${JOURNEY_LEVEL_CLASS[p.level]}${i === j.debutIdx ? ' is-debut' : ''}" style="flex-grow: ${weights[i].toFixed(3)}" title="${p.level} ${p.from === p.to ? p.from : `${p.from}–${p.to}`}">${label}</span>`;
+    }).join('');
+    const debutAt = j.debutIdx >= 0 ? weights.slice(0, j.debutIdx).reduce((a, b) => a + b, 0) / total : null;
+    const first = j.path[0].from, last = j.path[j.path.length - 1].to;
+    const levels = Object.keys(JOURNEY_LEVEL_RANK).filter(l => j.path.some(p => p.level === l)).reverse();
+    const debutLabel = j.debutDate && debutAt != null && debutAt > 0.08 && debutAt < 0.72
+      ? `<span class="jy-climb-debut" style="left: ${(debutAt * 100).toFixed(1)}%">Debut ${journeyDate(j.debutDate)}</span>` : '';
+    return `<section class="jy-climb"><div class="pp-skg-head"><span>The Climb</span></div>
+      <div class="jy-path${j.path.length > 12 ? ' is-dense' : ''}" role="img" aria-label="${j.path.map(p => `${p.level} ${p.from === p.to ? p.from : `${p.from} to ${p.to}`}`).join(', ')}">${segs}</div>
+      <div class="jy-climb-axis"><span>${first}</span>${debutLabel}<span>${j.active && last >= j.lastDone ? 'Now' : last}</span></div>
+      <div class="jy-climb-key">${levels.map(l => `<span><i class="lv-${JOURNEY_LEVEL_CLASS[l]}"></i>${l}</span>`).join('')}</div>
+    </section>`;
+  }
+
+  function renderJourneyStub(m) {
+    const tag = m.kind === 'trade' || m.deal ? 'button' : 'div';
+    const attrs = tag === 'button' ? ` type="button" data-jy-move="${m.idx}"` : '';
+    return `<${tag} class="jy-stub"${attrs}>
+      <span class="jy-stub-main"><span class="jy-stub-kick">${m.kicker}</span><span class="jy-stub-title">${m.title}</span>${m.sub ? `<span class="jy-stub-sub">${m.sub}</span>` : ''}</span>
+      ${m.tear ? `<span class="jy-stub-tear"><span class="jy-stub-kick">${m.tear[0]}</span><span class="jy-stub-tv">${m.tear[1]}</span></span>` : ''}
+    </${tag}>`;
+  }
+
+  // The line: a row a season (where he was, what he was paid), with the
+  // moves between them as ticket stubs, and his contract phase written up
+  // a track beside it. Thin through the minors, thick from the debut.
+  function renderJourneyLine(j) {
+    const items = j.items;
+    if (!items.length) return '';
+    let prevPhase = null;
+    let seenMlb = false;
+    const bar = pay => (pay == null || !j.maxPay ? '' : `<span class="jy-bar" style="width: ${Math.max(2, Math.round((pay / j.maxPay) * 56))}px"></span>`);
+    const out = items.map((it, i) => {
+      const phase = it.type === 'season' ? it.phase : (prevPhase || 'minors');
+      const label = it.type === 'season' && phase !== prevPhase ? `<span class="jy-phase-label">${JOURNEY_PHASES[phase]}</span>` : '';
+      if (it.type === 'season') prevPhase = phase;
+      if (it.type === 'season' && (it.mlb || it.debut)) seenMlb = true;
+      const railCls = `jy-rail${seenMlb ? ' is-mlb' : ''}${i === 0 ? ' is-first' : ''}${i === items.length - 1 && !j.future ? ' is-last' : ''}`;
+      const track = `<span class="jy-track ph-${phase}">${label}</span>`;
+      if (it.type === 'move') {
+        return `<div class="jy-row is-move">${track}<span class="${railCls}"><span class="jy-stn is-transfer"></span></span><div class="jy-cell">${renderJourneyStub(it)}</div></div>`;
+      }
+      const stn = it.debut ? 'is-debut' : '';
+      const chips = it.chips.length ? `<div class="jy-chips">${it.chips.map(c => `<span class="jy-chip${c.soft ? ' is-soft' : ''}">${formatShortDate(c.date)} ${c.text}</span>`).join('')}</div>` : '';
+      return `<div class="jy-row">${track}<span class="${railCls}"><span class="jy-stn ${stn}"></span></span>
+        <div class="jy-cell"><div class="jy-season">
+          <span class="jy-yr">${it.season}</span>
+          <span class="jy-where"><span>${it.clubs.join(', ')}</span>${it.note ? `<span class="jy-note">${it.note}</span>` : ''}</span>
+          <span class="jy-pay">${bar(it.pay)}<span class="jy-pay-v">${it.pay != null ? formatMoney(it.pay) : ''}</span></span>
+        </div>${chips}</div></div>`;
+    }).join('');
+    const f = j.future;
+    const futureRow = f ? `<div class="jy-row is-future"><span class="jy-track ph-${f.phase}"></span><span class="jy-rail is-mlb is-future is-last"><span class="jy-stn"></span></span>
+      <div class="jy-cell"><div class="jy-season"><span class="jy-yr">${shortYear(f.from)}${f.to > f.from ? `–${shortYear(f.to)}` : ''}</span><span class="jy-where"><span>${f.team}</span><span class="jy-note">${f.to - f.from + 1} more on the deal</span></span><span class="jy-pay"><span class="jy-bar is-ghost" style="width: ${Math.max(2, Math.round((f.pay / j.maxPay) * 56))}px"></span><span class="jy-pay-v">${formatMoney(f.pay)}</span></span></div></div></div>` : '';
+    // Both are drawn; CSS shows the one that fits the sheet.
+    return `<section class="jy-line-sec"><div class="pp-skg-head"><span>The Line</span></div><div class="jy-line">${out}${futureRow}</div><div class="jy-wide-wrap">${renderJourneyLineWide(j)}</div></section>`;
+  }
+
+  // The line on a wide sheet, turned on its side: a column a season, the
+  // moves as stubs hung over the date they happened (dropping a tier where
+  // two would collide), the line itself, his clubs, his pay standing up as
+  // bars, and the contract phase along the bottom. The rest of a deal is
+  // one dashed column at the end.
+  function renderJourneyLineWide(j) {
+    const rows = j.items.filter(it => it.type === 'season');
+    if (!rows.length) return '';
+    const moves = j.items.filter(it => it.type === 'move');
+    const f = j.future;
+    const x0 = 6;
+    const colW = Math.max(44, Math.min(96, Math.floor((1150 - (f ? 110 : 0)) / rows.length)));
+    const futW = f ? Math.max(96, Math.round(colW * 1.3)) : 0;
+    const width = x0 + rows.length * colW + futW + 4;
+    const colOf = yr => {
+      let i = rows.findIndex(r => r.season >= yr);
+      if (i < 0) i = rows.length - 1;
+      return i;
+    };
+    const xOfDate = date => {
+      const yr = Number(date.slice(0, 4));
+      const i = colOf(yr);
+      if (rows[i].season !== yr) return x0 + i * colW + (rows[i].season > yr ? 4 : colW - 4);
+      const frac = (Number(date.slice(5, 7)) - 1 + (Number(date.slice(8, 10)) - 1) / 31) / 12;
+      return x0 + i * colW + frac * colW;
+    };
+    const center = i => x0 + i * colW + colW / 2;
+    // Stubs: each tries the top tier first, then the ones below.
+    const stubW = 184, tierH = 62;
+    const tierEnd = [];
+    const placed = moves.map(m => {
+      const x = m.key.length === 10 && m.key.slice(5) !== '01-01' && m.key.slice(5) !== '03-30' ? xOfDate(m.key) : center(colOf(Number(m.key.slice(0, 4)))) - colW / 2 + 2;
+      const left = Math.max(0, Math.min(width - stubW, x - 6));
+      let tier = tierEnd.findIndex(end => end + 6 <= left);
+      if (tier < 0) tier = tierEnd.length;
+      tierEnd[tier] = left + stubW;
+      return { m, x, left, tier };
+    });
+    const tiers = Math.max(1, tierEnd.length);
+    const railY = tiers * tierH + 26;
+    const clubY = railY + 34;
+    const base = railY + 150;
+    const phaseY = base + 18;
+    const yearY = phaseY + 30;
+    const height = yearY + 8;
+    const debutRow = rows.findIndex(r => r.debut);
+    const debutX = debutRow >= 0 && j.debutDate ? xOfDate(j.debutDate) : null;
+    const mlbFrom = debutX != null ? debutX : (rows.findIndex(r => r.mlb) >= 0 ? x0 + rows.findIndex(r => r.mlb) * colW : null);
+    const railEnd = x0 + rows.length * colW;
+    const parts = [];
+    // the line
+    const thinTo = mlbFrom != null ? mlbFrom : railEnd;
+    parts.push(`<line x1="${center(0)}" y1="${railY}" x2="${thinTo}" y2="${railY}" stroke="#c3c8bb" stroke-width="2"/>`);
+    if (mlbFrom != null) parts.push(`<line x1="${mlbFrom}" y1="${railY}" x2="${railEnd - colW / 2}" y2="${railY}" stroke="#f3ecdb" stroke-width="6"/>`);
+    if (f) parts.push(`<line x1="${railEnd - colW / 2}" y1="${railY}" x2="${railEnd + futW - 4}" y2="${railY}" stroke="#7d8577" stroke-width="6" stroke-dasharray="6 4"/>`);
+    // stubs and their drops to the line
+    placed.forEach(({ m, x, left, tier }) => {
+      const top = tier * tierH;
+      const tear = m.tear ? 54 : 0;
+      const clip = `jyc${m.idx}`;
+      parts.push(`<line x1="${x}" y1="${top + 56}" x2="${x}" y2="${railY - 12}" stroke="#c3c8bb" stroke-width="1" stroke-dasharray="2 3"/>`);
+      parts.push(`<g class="jy-wstub"${m.kind === 'trade' || m.deal ? ` data-jy-move="${m.idx}" role="button" tabindex="0" aria-label="${m.kicker.replace(' | ', ', ')}: ${m.title}"` : ''}>
+        <clipPath id="${clip}"><rect x="${left}" y="${top}" width="${stubW - tear - 4}" height="56"/></clipPath>
+        <rect x="${left}" y="${top}" width="${stubW}" height="56" fill="#f3ecdb"/>
+        <g clip-path="url(#${clip})" fill="#3b4336">
+          <text x="${left + 8}" y="${top + 14}" class="jy-w-kick">${m.kicker.toUpperCase()}</text>
+          <text x="${left + 8}" y="${top + 34}" class="jy-w-title">${m.title}</text>
+          ${m.sub ? `<text x="${left + 8}" y="${top + 49}" class="jy-w-sub">${m.sub}</text>` : ''}
+        </g>
+        ${m.tear ? `<line x1="${left + stubW - tear}" y1="${top + 4}" x2="${left + stubW - tear}" y2="${top + 52}" stroke="#3b4336" stroke-width="1.5" stroke-dasharray="3 3"/>
+          <text x="${left + stubW - tear / 2}" y="${top + 25}" class="jy-w-kick" text-anchor="middle" fill="#3b4336">${m.tear[0].toUpperCase()}</text>
+          <text x="${left + stubW - tear / 2}" y="${top + 42}" class="jy-w-tv" text-anchor="middle" fill="#3b4336">${m.tear[1]}</text>` : ''}
+      </g>`);
+    });
+    // stations, the debut, his clubs, pay
+    const maxPay = j.maxPay || 1;
+    rows.forEach((r, i) => {
+      const cx = center(i);
+      const mlb = mlbFrom != null && cx >= mlbFrom;
+      parts.push(`<circle cx="${cx}" cy="${railY}" r="${mlb ? 5.5 : 4.5}" fill="#3b4336" stroke="${mlb ? '#f3ecdb' : '#c3c8bb'}" stroke-width="${mlb ? 3 : 2}"/>`);
+      const clubs = r.clubs.length > 1 && colW < 80 ? `${r.clubs[0]} +${r.clubs.length - 1}` : r.clubs.join(', ');
+      parts.push(`<text x="${cx}" y="${clubY}" class="jy-w-club${mlb ? '' : ' is-soft'}" text-anchor="middle">${clubs}</text>`);
+      if (r.chips.length) parts.push(`<g class="jy-w-chips"><title>${r.chips.map(c => `${formatShortDate(c.date)} ${c.text}`).join('\n')}</title>${r.chips.slice(0, 6).map((c, k) => `<rect x="${cx - (Math.min(6, r.chips.length) * 5) / 2 + k * 5}" y="${clubY + 8}" width="3" height="8" fill="${c.soft ? '#7d8577' : '#c3c8bb'}"/>`).join('')}</g>`);
+      if (r.pay != null) {
+        const h = Math.max(3, Math.round((r.pay / maxPay) * 90));
+        const bw = Math.min(40, Math.round(colW * 0.55));
+        parts.push(`<rect x="${cx - bw / 2}" y="${base - h}" width="${bw}" height="${h}" rx="2" fill="#f3ecdb"/>`);
+        parts.push(`<text x="${cx}" y="${base - h - 6}" class="jy-w-pay${colW < 60 ? ' is-small' : ''}" text-anchor="middle">${formatMoney(r.pay)}</text>`);
+      }
+    });
+    parts.push(`<line x1="${x0}" y1="${base + 0.5}" x2="${width}" y2="${base + 0.5}" stroke="#545e4d"/>`);
+    // moves as transfer stations
+    placed.forEach(({ x }) => parts.push(`<circle cx="${x}" cy="${railY}" r="8" fill="#3b4336" stroke="#f3ecdb" stroke-width="3"/><circle cx="${x}" cy="${railY}" r="12" fill="none" stroke="#f3ecdb" stroke-width="2"/>`));
+    if (debutX != null) parts.push(`<rect x="${debutX - 1.5}" y="${railY - 16}" width="3" height="32" fill="#d9a91a"/><text x="${debutX + 6}" y="${railY - 9}" class="jy-w-kick" fill="#f3ecdb">DEBUT</text>`);
+    // the rest of the deal
+    if (f) {
+      const fx = railEnd + futW / 2;
+      const h = Math.max(3, Math.round((f.pay / maxPay) * 90));
+      parts.push(`<rect x="${fx - 30}" y="${base - h + 0.5}" width="60" height="${h - 1}" rx="2" fill="none" stroke="#7d8577" stroke-dasharray="3 3"/>`);
+      parts.push(`<text x="${fx}" y="${base - h - 6}" class="jy-w-pay is-soft" text-anchor="middle">${formatMoney(f.pay)}</text>`);
+      parts.push(`<text x="${fx}" y="${clubY}" class="jy-w-club is-soft" text-anchor="middle">${f.to - f.from + 1} MORE</text>`);
+      parts.push(`<text x="${fx}" y="${yearY}" class="jy-w-year" text-anchor="middle">${shortYear(f.from)}${f.to > f.from ? `–${shortYear(f.to)}` : ''}</text>`);
+    }
+    // contract phase, a run at a time
+    const runs = [];
+    rows.forEach((r, i) => {
+      const last = runs[runs.length - 1];
+      if (last && last.phase === r.phase) last.to = i;
+      else runs.push({ phase: r.phase, from: i, to: i });
+    });
+    if (f) {
+      const last = runs[runs.length - 1];
+      if (last && last.phase === f.phase) last.future = true;
+      else runs.push({ phase: f.phase, from: rows.length, to: rows.length - 1, future: true });
+    }
+    const phaseStroke = { minors: ['#7d8577', 2, '1 4'], pre: ['#c3c8bb', 2, ''], arb: ['#f3ecdb', 3, ''], fa: ['#f3ecdb', 5, ''], ext: ['#f3ecdb', 5, ''] };
+    runs.forEach(run => {
+      const a = x0 + run.from * colW + 3;
+      const b = x0 + (run.to + 1) * colW - 3 + (run.future ? futW : 0);
+      const [col, w, dash] = phaseStroke[run.phase];
+      parts.push(`<line x1="${a}" y1="${phaseY}" x2="${b}" y2="${phaseY}" stroke="${col}" stroke-width="${w}"${dash ? ` stroke-dasharray="${dash}" stroke-linecap="round"` : ''}/>`);
+      if (b - a >= 46) parts.push(`<text x="${a}" y="${phaseY + 15}" class="jy-w-kick" fill="${run.phase === 'minors' || run.phase === 'pre' ? '#c3c8bb' : '#f3ecdb'}">${JOURNEY_PHASES[run.phase].toUpperCase()}</text>`);
+    });
+    const every = colW >= 60 ? 1 : colW >= 48 ? 2 : 3;
+    rows.forEach((r, i) => {
+      if (i % every && i !== rows.length - 1) return;
+      parts.push(`<text x="${center(i)}" y="${yearY}" class="jy-w-year" text-anchor="middle">${colW >= 60 ? r.season : shortYear(r.season)}</text>`);
+    });
+    return `<svg class="jy-wide" viewBox="0 0 ${width} ${height}" width="${width}" role="group" aria-label="Seasons ${rows[0].season} to ${rows[rows.length - 1].season}: ${moves.map(m => `${m.kicker.replace(' | ', ' ')} ${m.title}`).join('; ')}">${parts.join('')}</svg>`;
+  }
+
+  function renderProfileJourney() {
+    const j = lastProfileJourney;
+    if (j === undefined) return '<div class="mlb-status-msg">Loading journey&#8230;</div>';
+    if (j === null) return apiErrorMsg('transactions');
+    if (!j.items.length && !j.clubs.length) return '<div class="pitch-empty">No transactions on record.</div>';
+    return `<div class="jy">
+      <div class="jy-top">
+        ${renderJourneyDeal(j)}
+        <div class="jy-top-side">${renderJourneyClubs(j)}${renderJourneyClimb(j)}</div>
+      </div>
+      ${renderJourneyLine(j)}
+    </div>`;
+  }
+
+  function ensureProfileJourney() {
+    if (profileJourneyRequested || profileTab !== 'jy' || !lastProfilePerson || !lastProfilePerson.primaryPosition) return;
+    profileJourneyRequested = true;
+    loadProfileJourney(lastProfilePerson, playerProfileRequestId);
+  }
+  async function loadProfileJourney(person, requestId) {
+    const id = Number(person.id);
+    const group = isPitcher(person) ? 'pitching' : 'hitting';
+    const [tx, minors, career, drafts, contracts] = await Promise.all([
+      getPlayerTransactions(id), getPlayerMinorSeasons(id, group), getPlayerCareerStats(id), getPlayerDrafts(id), getContracts()
+    ]);
+    if (requestId !== playerProfileRequestId) return;
+    lastProfileJourney = tx && minors ? buildJourney(person, tx, minors, career[group] || [], drafts, contracts) : null;
+    rerenderPlayerProfile();
+  }
+
+  // The popups: a trade's ticket (its players fetched as it opens) and a
+  // contract's terms.
+  const journeyOverlay = document.getElementById('journeyOverlay');
+  const journeyModalBody = document.getElementById('journeyModalBody');
+  let journeyModalRequestId = 0;
+  function journeyTicket(kicker, title, sub, tear) {
+    return `<div class="jy-ticket">
+      <span class="jy-stub-main"><span class="jy-stub-kick">${kicker}</span><span class="jy-ticket-title">${title}</span>${sub ? `<span class="jy-ticket-sub">${sub}</span>` : ''}</span>
+      ${tear ? `<span class="jy-stub-tear"><span class="jy-stub-kick">${tear[0]}</span><span class="jy-ticket-tv">${tear[1]}</span>${tear[2] ? `<span class="jy-stub-kick">${tear[2]}</span>` : ''}</span>` : ''}
+    </div>`;
+  }
+  async function showTradeModal(move) {
+    const requestId = ++journeyModalRequestId;
+    const t = move.tx;
+    const head = `<div class="pitch-header">Trade</div>${journeyTicket(`${formatLongDate(t.date)}`, move.title, move.tear ? `${move.tear[1].replace(' for ', ' players for ')}` : '', null)}`;
+    journeyModalBody.innerHTML = `${head}<div class="mlb-status-msg">Loading the trade&#8230;</div>`;
+    openOverlay(journeyOverlay);
+    const players = await getTradeDetail(t);
+    if (requestId !== journeyModalRequestId || !journeyOverlay.classList.contains('open')) return;
+    if (!players) { journeyModalBody.innerHTML = `${head}${apiErrorMsg('trade')}`; return; }
+    const sides = parseTradeSides(t.description);
+    const toIds = [...new Set(players.map(p => p.to))];
+    const self = Number(lastProfilePerson && lastProfilePerson.id);
+    const col = teamId => {
+      const list = players.filter(p => p.to === teamId);
+      return `<div class="jy-trade-side"><div class="pp-skg-head"><span>To ${teamNickname({ id: teamId })}</span></div>
+        ${list.map(p => `<div class="jy-trade-p"><span class="jy-trade-pos">${p.pos}</span>${p.id === self ? `<span class="jy-trade-self">${p.name}</span>` : `<button type="button" class="player-name-btn" data-jy-player="${p.id}" data-jy-name="${p.name}">${p.name}</button>`}</div>`).join('')}
+        ${sides && sides.cash && teamId !== (t.toTeam && t.toTeam.id) ? `<div class="jy-trade-p"><span class="jy-trade-pos"></span><span class="jy-trade-self">${sides.cash}</span></div>` : ''}
+      </div>`;
+    };
+    const order = [t.toTeam && t.toTeam.id, ...toIds.filter(id => id !== (t.toTeam && t.toTeam.id))].filter(Boolean);
+    journeyModalBody.innerHTML = `${head}<div class="jy-trade">${order.map(col).join('')}</div><div class="jy-trade-text">${t.description}</div>`;
+  }
+  function showDealModal(d, person) {
+    const years = Array.from({ length: d.years }, (_, i) => d.first + i);
+    const lastDone = lastProfileJourney ? lastProfileJourney.lastDone : new Date().getFullYear() - 1;
+    const age = y => (person.birthDate ? y - Number(person.birthDate.slice(0, 4)) - (Number(person.birthDate.slice(5, 7)) > 6 ? 1 : 0) : null);
+    const slots = [['AAV', formatMoney(d.aav)], ['Total', formatMoney(d.total)], ['Deferred', d.deferred ? formatMoney(d.deferred) : 'None']];
+    journeyModalBody.innerHTML = `<div class="pitch-header">${d.kind === 'fa' ? 'Free-agent contract' : 'Extension'}</div>
+      ${journeyTicket(d.signed ? formatLongDate(d.signed) : `${d.first - 1} offseason`, `${d.years} yr | ${formatMoney(d.total)}`, `${teamNickname({ id: d.team })}, ${d.first}–${d.first + d.years - 1}`, ['Through', d.first + d.years - 1, age(d.first + d.years - 1) != null ? `Age ${age(d.first + d.years - 1)}` : ''])}
+      <div class="jy-deal-slots">${slots.map(([k, v]) => `<span class="jy-slot"><span class="jy-kicker">${k}</span><span class="jy-slot-v">${v}</span></span>`).join('')}</div>
+      <div class="pp-skg-head"><span>Year by Year</span></div>
+      <div class="jy-yby">${years.map(y => `<span class="jy-yby-yr${y <= lastDone ? ' is-done' : ''}"><span class="jy-yby-y">${y}</span>${age(y) != null ? `<span class="jy-kicker">Age ${age(y)}</span>` : ''}</span>`).join('')}</div>
+      ${d.src ? `<a class="jy-src" href="${d.src}" target="_blank" rel="noopener">Source <span class="jy-arrow">→</span></a>` : ''}`;
+    openOverlay(journeyOverlay);
+  }
+  function hideJourneyModal() {
+    journeyModalRequestId++;
+    closeOverlay(journeyOverlay);
+  }
+  document.getElementById('journeyClose').addEventListener('click', hideJourneyModal);
+  journeyOverlay.addEventListener('click', (e) => {
+    if (e.target === journeyOverlay) { hideJourneyModal(); return; }
+    const p = e.target.closest('[data-jy-player]');
+    if (p) {
+      const person = { id: Number(p.dataset.jyPlayer), fullName: p.dataset.jyName };
+      hideJourneyModal();
+      whenModalHistorySettled(() => showPlayerProfile(person));
+    }
+  });
+
   // ---- Assembly ----
   function profileTabsFor(pitcher, detail, person) {
     const hasStarts = pitcher && detail && detail.gameLog.some(g => g.stat && g.stat.gamesStarted);
     const fielder = !pitcher && defenseGroupFor(person);
     return pitcher
-      ? [['ov', 'Overview'], ...(hasStarts ? [['starts', 'Starts']] : []), ...(Number(lastProfileSeason) >= ARSENAL_FIRST_SEASON ? [['ars', 'Arsenal']] : []), ['log', 'Game Log'], ['spl', 'Splits'], ['car', 'Career']]
-      : [['ov', 'Overview'], ['log', 'Game Log'], ['spl', 'Splits'], ...(fielder ? [['def', 'Defense']] : []), ['car', 'Career']];
+      ? [['ov', 'Overview'], ...(hasStarts ? [['starts', 'Starts']] : []), ...(Number(lastProfileSeason) >= ARSENAL_FIRST_SEASON ? [['ars', 'Arsenal']] : []), ['log', 'Game Log'], ['spl', 'Splits'], ['car', 'Career'], ['jy', 'Journey']]
+      : [['ov', 'Overview'], ['log', 'Game Log'], ['spl', 'Splits'], ...(fielder ? [['def', 'Defense']] : []), ['car', 'Career'], ['jy', 'Journey']];
   }
 
   function renderProfileTabBody(tab, pitcher) {
@@ -13886,6 +14848,7 @@
     }
     if (tab === 'def') return renderProfileDefense();
     if (tab === 'ars') return renderProfileArsenal();
+    if (tab === 'jy') return renderProfileJourney();
     if (detail === undefined) return '<div class="mlb-status-msg">Loading season stats&#8230;</div>';
     if (detail === null) return apiErrorMsg('season stats');
     if (tab === 'ov') {
@@ -14073,6 +15036,7 @@
     ensureProfileDefense();
     ensureProfileSpray();
     ensureProfileArsenal();
+    ensureProfileJourney();
   }
 
   function ensureProfileRecent() {
@@ -14184,6 +15148,8 @@
     lastProfileArsenal = undefined;
     profileArsenalRequested = false;
     profileArsenalSide = null;
+    lastProfileJourney = undefined;
+    profileJourneyRequested = false;
     lastProfileSeason = playerListState.season || defaultListSeason;
     prefetchProfile(rawPerson, lastProfileSeason);
     playerSprayState = { personId: person.id, season: null, balls: null, loading: true };
@@ -14214,6 +15180,7 @@
     loadProfileSeason(person.id, season, pitcher, requestId);
     ensureProfileDefense();
     ensureProfileArsenal();
+    ensureProfileJourney();
     await profileAwardsReady;
     if (requestId !== playerProfileRequestId) return;
     rerenderPlayerProfile();
@@ -14450,7 +15417,8 @@
     const rosterBtn = e.target.closest('.roster-btn');
     if (rosterBtn) showRosterModal(rosterBtn.getAttribute('data-team'));
     const playerBtn = e.target.closest('.player-name-btn');
-    if (playerBtn) {
+    // A trade ticket's names open the full profile (its own handler).
+    if (playerBtn && !playerBtn.hasAttribute('data-jy-player')) {
       // Players of the Game already lives inside the game summary modal --
       // stacking the quick-look player modal on top of that would be a
       // modal-over-modal, so it jumps straight to the Players tab instead
@@ -14511,7 +15479,7 @@
       showPitchPopup(e.target.getAttribute('data-pkey'));
       return;
     }
-    if (e.key === 'Escape') { hidePitchPopup(); hideRosterModal(); hidePlayerModal(); hideGameSummaryModal(); hideTeamChartModal(); hideGameStripModal(); hideClipModal(); playerSearchResults.hidden = true; hushProfileTags(); }
+    if (e.key === 'Escape') { hidePitchPopup(); hideRosterModal(); hidePlayerModal(); hideGameSummaryModal(); hideTeamChartModal(); hideGameStripModal(); hideClipModal(); hideJourneyModal(); playerSearchResults.hidden = true; hushProfileTags(); }
   });
 
   // Backgrounding the tab (or the installed PWA) gets setTimeout/setInterval
