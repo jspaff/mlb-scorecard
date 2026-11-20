@@ -3366,9 +3366,9 @@
   .pp-tab:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
 
   /* Overview board: skill scores (percentiles), each a bold number over
-     the stat behind it, four to a row. The two skill groups stack on a
-     phone and sit side by side on a wide sheet, the totals under the
-     second. */
+     the stat behind it, four to a row. Two columns on a wide sheet (a
+     hitter's scores over his Approach, Tools over Totals), stacked in that
+     order on a phone. */
   .pp-skills { padding: 2px 0 4px; }
   .pp-skg-pair { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px 40px; }
   @container (min-width: 760px) { .pp-skg-pair { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -3404,10 +3404,10 @@
   @container (min-width: 760px) { .pp-skills > .pp-totals { max-width: calc(50% - 20px); } }
   .pp-tot-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
   .pp-tot-v { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 30px; line-height: 1.15; color: var(--ink); font-variant-numeric: tabular-nums; }
-  /* A hitter's two tags under his scores: words, not grades -- cream,
+  /* A hitter's Approach: two tags, words rather than grades -- cream,
      never gold. Each opens a plate of his rates beside the pool's
      medians: on hover where there is one, on keyboard focus, or a tap. */
-  .pp-tags { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 12px; padding-top: 8px; border-top: 1px dashed var(--paper-line); }
+  .pp-tags { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .pp-tag { position: relative; display: flex; flex-direction: column; align-items: center; min-width: 0; }
   .pp-tag-btn {
     margin: 0;
@@ -3423,8 +3423,15 @@
     color: var(--ink);
   }
   .pp-tag-btn span { border-bottom: 1px dotted var(--ink-soft); }
+  .pp-tag-btn span + span { display: table; margin: 3px auto 0; font-size: 0.8em; }
+  .pp-tag-btn span:first-child:not(:only-child) { display: table; margin: 0 auto; }
+  /* The put-away pitch's mark: the scorebook's K on a small plate. */
+  .pp-tag-k { display: inline-block; margin-left: 4px; padding: 0 3px; border: 1px solid var(--ink-soft); font-family: 'Overpass', sans-serif; font-style: normal; font-weight: 800; font-size: 9px; line-height: 13px; vertical-align: 0.35em; letter-spacing: 0; color: var(--ink); }
+  .pp-tag-pop tr.is-mark th, .pp-tag-pop tr.is-mark td:first-of-type { text-decoration: underline; text-underline-offset: 2px; }
+  .pp-tag-pop-foot { margin-top: 4px; font-weight: 800; font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; }
   .pp-tag-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
   .pp-tag-wait { display: block; width: 6em; height: 21px; margin: 11px auto; background: rgba(243, 236, 219, 0.035); }
+  .pp-tag-none { display: block; padding: 6px 4px; min-height: 44px; box-sizing: border-box; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 19px; line-height: 1.1; color: var(--ink-soft); opacity: 0.6; }
   /* Opens upward, over the scores: below, a short sheet's edge would
      clip it. */
   .pp-tag-pop {
@@ -3458,7 +3465,7 @@
     .pp-sk-score { font-size: 44px; }
     .pp-tot-v { font-size: 44px; }
     .pp-sk-stat { font-size: 11px; }
-    .pp-tag-btn { font-size: 22px; }
+    .pp-tag-btn, .pp-tag-none { font-size: 22px; }
   }
 
   /* Arsenal: velo and movement, then the mix and two-strike sections --
@@ -12279,7 +12286,11 @@
     const sprint = csvNumber((savant.custom[id] || {}).sprint_speed);
     const speed = savantSkill('Speed', pct.sprint_speed, 'Sprint', sprint != null ? `${sprint.toFixed(1)} ft/s` : null);
     const type = person.primaryPosition && person.primaryPosition.type;
-    if (type !== 'Outfielder' && type !== 'Infielder' && type !== 'Catcher') return { hitting, tools: [speed] };
+    // A DH or two-way player has no fielding boards, but keeps their
+    // tiles dashed (fixed: not waiting on Savant) so the row stays whole.
+    if (type !== 'Outfielder' && type !== 'Infielder' && type !== 'Catcher') {
+      return { hitting, tools: [speed, ...['Range', 'Glove', 'Arm'].map(name => ({ name, pct: null, fixed: true }))] };
+    }
     const catcher = type === 'Catcher';
     const oaa = csvNumber((savant.oaa[id] || {}).outs_above_average);
     const range = catcher || oaa == null ? { name: 'Range', pct: null } : savantSkill('Range', pct.oaa, 'OAA', formatSigned(oaa));
@@ -12332,7 +12343,8 @@
   function buildHitterTags(id, pool, inPool, savant) {
     const tags = [];
     const rank = (of, low) => poolPercentile(of(id), pool.map(r => of(r.id)), { low, inPool });
-    const row = (label, of) => ({ label, his: of(id), lg: poolMedian(pool.map(r => of(r.id))) });
+    const pctText = v => (v == null ? '&#8212;' : `${v.toFixed(1)}%`);
+    const row = (label, of) => ({ label, cells: [pctText(of(id)), pctText(poolMedian(pool.map(r => of(r.id))))] });
 
     const sw = pid => csvNumber((savant.custom[pid] || {}).swing_percent);
     const zs = pid => csvNumber((savant.custom[pid] || {}).z_swing_percent);
@@ -12345,7 +12357,7 @@
       const word = mid ? 'Balanced'
         : aggression >= 50 ? (selectivity >= 50 ? 'Aggressive' : 'Free Swinging')
         : (selectivity >= 50 ? 'Discerning' : 'Patient');
-      tags.push({ key: 'approach', title: 'Approach', word, rows: [row('Swing', sw), row('Z-Swing', zs), row('O-Swing', os)] });
+      tags.push({ key: 'decisions', title: 'Decisions', lines: [word], head: ['His', 'Lg'], rows: [row('Swing', sw), row('Z-Swing', zs), row('O-Swing', os)] });
     }
 
     const bb = column => pid => {
@@ -12362,7 +12374,7 @@
         if (best[1] >= BATTED_TAG_PERCENTILE) word = best[0];
       }
       tags.push({
-        key: 'batted', title: 'Batted Ball', word,
+        key: 'batted', title: 'Batted Ball', lines: [word], head: ['His', 'Lg'],
         rows: [row('Pull-Air', pullAir), row('Pull', pull), row('Straight', bb('straight_rate')), row('Oppo', bb('oppo_rate')),
           row('Ground ball', gb), row('Line drive', bb('ld_rate')), row('Fly ball', fb)]
       });
@@ -12381,21 +12393,109 @@
     const pct = savant.pct[personId] || {};
     const custom = savant.custom[personId] || {};
     const fb = csvNumber(custom.ff_avg_speed) ?? csvNumber(custom.si_avg_speed);
-    const whiff = csvNumber(custom.whiff_percent);
-    // Savant publishes no percentile for extension or ground-ball rate, so
-    // those rank in the same pool as the results above.
+    // Savant publishes no percentile for extension, so it ranks in the same
+    // pool as the results above. Chase and Whiff are the hitters' Chase and
+    // Contact from the other side (O-Swing and Z-Contact against), ranked
+    // in that pool too: Whiff is misses in the zone, so it doesn't count
+    // the chases twice.
     const ext = s => csvNumber((savant.ext[s.__id] || {}).release_extension);
-    const gb = s => csvNumber((savant.custom[s.__id] || {}).groundballs_percent);
     const tag = (stat, id) => ({ ...stat, __id: id });
     const mine = tag(me, personId);
     const tagged = pool.map(r => ({ stat: tag(r.stat, r.id) }));
     const stuff = [
       savantSkill('Velo', pct.fb_velocity, 'FB', fb != null ? `${fb.toFixed(1)} mph` : null),
       poolSkill('Reach', 'Ext', ext, v => `${v.toFixed(1)} ft`, false, mine, tagged, inPool),
-      savantSkill('Whiff', pct.whiff_percent, 'Whiff', whiff != null ? wholePct(whiff) : null),
-      poolSkill('Grounders', 'GB%', gb, wholePct, false, mine, tagged, inPool)
+      savantPoolSkill('Chase', 'O-Swing', savant.custom, 'oz_swing_percent', false, personId, pool, inPool),
+      savantPoolSkill('Whiff', 'Z-Contact', savant.custom, 'iz_contact_percent', true, personId, pool, inPool)
     ];
     return { pitching, stuff };
+  }
+
+  // A pitcher's two tags. Arsenal is the headline of his mix: his main
+  // fastball and his main breaking or offspeed pitch (a third on the same
+  // line if it's thrown PITCH_TAG_THIRD%+), "Fastballs" for a pitcher who
+  // works off two or three of them, or "Five-Pitch Mix" for one with five
+  // or more real pitches; under it the pitch he gets the most strikeouts
+  // with, when it leads clearly. Slot is his arm angle.
+  const PITCH_TAG_MIN = 250;
+  const PITCH_TAG_REAL = 10;
+  const PITCH_TAG_THIRD = 20;
+  const PITCH_TAG_PUTAWAY_LEAD = 3;
+  const FASTBALL_TYPES = new Set(['FF', 'SI', 'FC']);
+  const COUNT_WORDS = { 5: 'Five', 6: 'Six', 7: 'Seven', 8: 'Eight', 9: 'Nine' };
+  const ARM_SLOTS = [[55, 'Over the Top'], [45, 'High Slot'], [30, 'Three-Quarter'], [15, 'Low Slot'], [0, 'Sidearm'], [-90, 'Submarine']];
+
+  function buildArsenalTag(rows) {
+    const pitches = (rows || []).map(r => {
+      const pa = csvNumber(r.pa) || 0;
+      return { t: r.pitch_type, n: csvNumber(r.pitches) || 0, k: Math.round((csvNumber(r.k_percent) || 0) / 100 * pa) };
+    }).filter(p => p.n > 0 && p.t);
+    const total = pitches.reduce((a, p) => a + p.n, 0);
+    if (total < PITCH_TAG_MIN) return null;
+    pitches.forEach(p => { p.u = p.n / total * 100; });
+    pitches.sort((a, b) => b.n - a.n);
+    const name = t => pitchName(t).replace('Curveball', 'Curve');
+    const fbs = pitches.filter(p => FASTBALL_TYPES.has(p.t));
+    const secs = pitches.filter(p => !FASTBALL_TYPES.has(p.t));
+    const real = pitches.filter(p => p.u >= PITCH_TAG_REAL).length;
+    // Each line is a list of pitch types, or a word for the whole mix.
+    let lines;
+    if (real >= 5) lines = [`${COUNT_WORDS[real] || real}-Pitch Mix`];
+    else if (!fbs.length || !secs.length) lines = [[pitches[0].t]];
+    else if (fbs.reduce((a, p) => a + p.u, 0) >= 70 && fbs[1] && fbs[1].u >= 15 && secs[0].u < PITCH_TAG_THIRD) lines = ['Fastballs'];
+    else if (secs[0].u < 15) {
+      // A cutter can be his real second pitch even though it's a fastball.
+      const cutter = fbs.slice(1).find(p => p.t === 'FC' && p.u >= 15);
+      lines = cutter ? [[fbs[0].t], ['FC']] : [[fbs[0].t]];
+    } else {
+      const second = secs.slice(0, secs[1] && secs[1].u >= PITCH_TAG_THIRD ? 2 : 1).map(p => p.t);
+      // The fastball leads unless a secondary pitch clearly outnumbers it.
+      lines = secs[0].u - fbs[0].u > 10 ? [[secs[0].t], [fbs[0].t]] : [[fbs[0].t], second];
+    }
+    // The put-away pitch: the most strikeouts, if it leads clearly; on a
+    // near-tie between a fastball and a secondary pitch, the secondary,
+    // since that's the pitch a hitter is put away with.
+    const ks = pitches.reduce((a, p) => a + p.k, 0);
+    const [k1, k2] = [...pitches].sort((a, b) => b.k - a.k);
+    let putAway = null;
+    if (ks && k1.k > 0) {
+      if (!k2 || (k1.k - k2.k) / ks * 100 >= PITCH_TAG_PUTAWAY_LEAD) putAway = k1.t;
+      else if (FASTBALL_TYPES.has(k1.t) !== FASTBALL_TYPES.has(k2.t)) putAway = FASTBALL_TYPES.has(k1.t) ? k2.t : k1.t;
+    }
+    // The put-away pitch always carries the K: where the headline doesn't
+    // name it (a mix, "Fastballs", or a pitch it leaves out), it's added on
+    // the second line.
+    const headline = lines;
+    if (putAway && !lines.some(l => Array.isArray(l) && l.includes(putAway))) {
+      lines = lines.length > 1 ? [lines[0], [...lines[1], putAway]] : [lines[0], [putAway]];
+    }
+    const show = (l, mark) => (Array.isArray(l) ? l.map(t => name(t) + (mark && t === putAway ? '<i class="pp-tag-k" aria-label="put away pitch">K</i>' : '')).join(' &#183; ') : l);
+    return {
+      key: 'mix', title: 'Mix', lines: lines.map(l => show(l, true)), plain: headline.map(l => show(l, false)),
+      foot: putAway ? `Put Away &#183; ${name(putAway)}` : null,
+      head: ['Use', 'K'],
+      rows: pitches.filter(p => p.u >= 5).map(p => ({ label: name(p.t), cells: [wholePct(p.u), String(p.k)], mark: p.t === putAway }))
+    };
+  }
+
+  function buildPitcherTags(id, savant) {
+    const tags = [];
+    const mix = buildArsenalTag(savant.arsenal[id]);
+    if (mix) tags.push(mix);
+    const angleOf = pid => csvNumber((savant.ext[pid] || {}).arm_angle);
+    const angle = angleOf(id);
+    if (angle != null) {
+      const word = ARM_SLOTS.find(([min]) => angle >= min)[1];
+      const lg = col => poolMedian(Object.values(savant.ext).map(r => csvNumber(r[col])));
+      const mine = col => csvNumber(savant.ext[id][col]);
+      const row = (label, col, fmt) => ({ label, cells: [fmt(mine(col)), fmt(lg(col))] });
+      const ft = v => (v == null ? '&#8212;' : `${v.toFixed(1)} ft`);
+      tags.push({
+        key: 'slot', title: 'Slot', lines: [word], head: ['His', 'Lg'],
+        rows: [row('Arm angle', 'arm_angle', v => (v == null ? '&#8212;' : `${Math.round(v)}&#176;`)), row('Release height', 'release_pos_z', ft), row('Extension', 'release_extension', ft)]
+      });
+    }
+    return tags;
   }
 
   // fielder: a hitter with a fielding position (not a DH or two-way
@@ -12404,14 +12504,18 @@
     if (Number(season) < STATCAST_FIRST_SEASON) return null;
     const y = season;
     if (pitcher) {
-      const [pct, custom, ext] = await Promise.all([
+      const [pct, custom, ext, arsenal] = await Promise.all([
         getSavantCsv(`/leaderboard/percentile-rankings?type=pitcher&year=${y}&csv=true`),
-        getSavantCsv(`/leaderboard/custom?year=${y}&type=pitcher&min=1&selections=ff_avg_speed,si_avg_speed,whiff_percent,groundballs_percent&csv=true`),
-        // Statcast Search grouped by pitcher is the one place extension
-        // comes as a season average (pitchers with 500+ pitches).
-        getSavantCsv(`/statcast_search/csv?all=true&hfGT=R%7C&hfSea=${y}%7C&player_type=pitcher&group_by=name&min_pitches=500&min_results=0&min_pas=0&sort_col=pitches&player_event_sort=api_p_release_speed&sort_order=desc`)
+        getSavantCsv(`/leaderboard/custom?year=${y}&type=pitcher&min=1&selections=ff_avg_speed,si_avg_speed,oz_swing_percent,iz_contact_percent&csv=true`),
+        // Statcast Search grouped by pitcher is the one place extension and
+        // arm angle come as season averages.
+        getSavantCsv(`/statcast_search/csv?all=true&hfGT=R%7C&hfSea=${y}%7C&player_type=pitcher&group_by=name&min_pitches=${PITCH_TAG_MIN}&min_results=0&min_pas=0&sort_col=pitches&player_event_sort=api_p_release_speed&sort_order=desc`),
+        // The Arsenal tab's own leaderboard (same URL, so it's shared).
+        Number(y) >= ARSENAL_FIRST_SEASON ? getSavantCsv(`/leaderboard/pitch-arsenal-stats?type=pitcher&pitchType=&year=${y}&team=&min=1&csv=true`) : Promise.resolve([])
       ]);
-      return { pct: csvById(pct), custom: csvById(custom), ext: csvById(ext) };
+      const byPitcher = {};
+      (arsenal || []).forEach(r => { (byPitcher[Number(r.player_id)] = byPitcher[Number(r.player_id)] || []).push(r); });
+      return { pct: csvById(pct), custom: csvById(custom), ext: csvById(ext), arsenal: byPitcher };
     }
     const none = Promise.resolve([]);
     const [pct, custom, bb, oaa, frv, arm, pop, catchers] = await Promise.all([
@@ -12428,7 +12532,7 @@
     ]);
     return { pct: csvById(pct), custom: csvById(custom), bb: csvById(bb, 'id'), oaa: csvById(oaa), frv: csvById(frv, 'id'), arm: csvById(arm), pop: csvById(pop, 'entity_id'), catchers: catchers || {} };
   }
-  const NO_SAVANT = { pct: {}, custom: {}, bb: {}, oaa: {}, frv: {}, arm: {}, pop: {}, catchers: {}, ext: {} };
+  const NO_SAVANT = { pct: {}, custom: {}, bb: {}, oaa: {}, frv: {}, arm: {}, pop: {}, catchers: {}, ext: {}, arsenal: {} };
 
   // Who a player is ranked against for his results stats: the pool, the
   // heading's note, and whether he's in it.
@@ -12455,11 +12559,13 @@
     const savant = { ...NO_SAVANT, ...(savantData || {}) };
     const { pool, reliever, inPool } = poolInfo;
     const s = seasonStat;
-    const wait = skills => (pending ? skills.map(k => ({ name: k.name, pending: true })) : skills);
+    const wait = skills => (pending ? skills.map(k => (k.fixed ? k : { name: k.name, pending: true })) : skills);
     if (!pitcher) {
       const { hitting, tools } = hitterSkillFields(person, s, pool, inPool, savant);
       return {
+        tagSlots: [['decisions', 'Decisions'], ['batted', 'Batted Ball']],
         groups: [{ title: 'Hitting', skills: hitting.map(k => (pending && k.savant ? { name: k.name, pending: true } : k)) }, { title: 'Tools', skills: wait(tools) }],
+        // Before Statcast both tags are dashed, like the tiles.
         tags: pending ? 'pending' : (savantData ? buildHitterTags(person.id, pool, inPool, savant) : []),
         totals: [['G', s.gamesPlayed ?? 0], ['HR', s.homeRuns ?? 0], ['SB', s.stolenBases ?? 0]]
       };
@@ -12467,6 +12573,8 @@
     const { pitching, stuff } = pitcherSkillFields(person.id, s, pool, inPool, savant);
     return {
       groups: [{ title: 'Pitching', skills: pitching }, { title: 'Stuff', skills: wait(stuff) }],
+      tags: pending ? 'pending' : (savantData ? buildPitcherTags(person.id, savant) : []),
+      tagSlots: [['mix', 'Mix'], ['slot', 'Slot']],
       totals: reliever
         ? [['G', s.gamesPitched ?? 0], ['IP', s.inningsPitched ?? '0.0'], ['SV', s.saves ?? 0]]
         : [['GS', s.gamesStarted ?? 0], ['IP', s.inningsPitched ?? '0.0'], ['K', s.strikeOuts ?? 0]]
@@ -12480,27 +12588,35 @@
       const cls = k.soft ? ' is-soft' : (k.pct >= SKILL_GOLD_PERCENTILE ? ' is-top' : '');
       return `<div class="pp-sk"><span class="pp-sk-name">${k.name}</span><span class="pp-sk-score${cls}">${k.pct}</span><span class="pp-sk-stat">${k.stat}</span></div>`;
     };
-    const pctText = v => (v == null ? '&#8212;' : `${v.toFixed(1)}%`);
+    // A tag is one word, or a pitcher's mix on two lines (his fastball,
+    // then what goes with it).
     const tag = t => `<div class="pp-tag">
         <span class="pp-sk-name">${t.title}</span>
-        <button type="button" class="pp-tag-btn" aria-expanded="false" aria-describedby="ppTag-${t.key}"><span>${t.word}</span></button>
+        <button type="button" class="pp-tag-btn" aria-expanded="false" aria-describedby="ppTag-${t.key}">${t.lines.map(l => `<span>${l}</span>`).join('')}</button>
         <div class="pp-tag-pop" id="ppTag-${t.key}" role="tooltip">
-          <div class="pp-tag-pop-head">${t.word}</div>
-          <table><thead><tr><th></th><th>His</th><th>Lg</th></tr></thead>
-          <tbody>${t.rows.map(r => `<tr><th>${r.label}</th><td>${pctText(r.his)}</td><td>${pctText(r.lg)}</td></tr>`).join('')}</tbody></table>
+          <div class="pp-tag-pop-head">${(t.plain || t.lines).join(' + ')}</div>
+          <table><thead><tr><th></th>${t.head.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+          <tbody>${t.rows.map(r => `<tr${r.mark ? ' class="is-mark"' : ''}><th>${r.label}</th>${r.cells.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>
+          ${t.foot ? `<div class="pp-tag-pop-foot">${t.foot}</div>` : ''}
         </div>
       </div>`;
-    const tags = board.tags === 'pending'
-      ? `<div class="pp-tags">${['Approach', 'Batted Ball'].map(t => `<div class="pp-tag"><span class="pp-sk-name">${t}</span><span class="pp-tag-wait">&#160;</span></div>`).join('')}</div>`
-      : (board.tags && board.tags.length ? `<div class="pp-tags">${board.tags.map(tag).join('')}</div>` : '');
-    const group = (g, extra = '') => `<section class="pp-skg">
+    // Every slot is drawn whether or not it has a tag: waiting, dashed, or
+    // the word.
+    const tagSlot = (key, title) => {
+      if (board.tags === 'pending') return `<div class="pp-tag"><span class="pp-sk-name">${title}</span><span class="pp-tag-wait">&#160;</span></div>`;
+      const t = board.tags.find(x => x.key === key);
+      return t ? tag(t) : `<div class="pp-tag"><span class="pp-sk-name">${title}</span><span class="pp-tag-none">&#8212;</span></div>`;
+    };
+    const tags = board.tags ? `<section class="pp-skg">
+        <div class="pp-skg-head"><span>Approach</span></div>
+        <div class="pp-tags">${board.tagSlots.map(([k, t]) => tagSlot(k, t)).join('')}</div>
+      </section>` : '';
+    const group = g => `<section class="pp-skg">
       <div class="pp-skg-head"><span>${g.title}</span></div>
       <div class="pp-skg-row">${g.skills.map(skill).join('')}</div>
-      ${extra}
     </section>`;
-    // A hitter's tags make his first column the taller, so his totals go
-    // under the second group to even them up; a pitcher's run beneath both
-    // groups, as on a phone.
+    // Four sections in two columns: scores over tags, the other scores
+    // over totals.
     const totals = `<section class="pp-skg pp-totals">
         <div class="pp-skg-head"><span>Totals</span></div>
         <div class="pp-tot-row">${board.totals.map(([k, v]) => `<div class="pp-tot"><span class="pp-sk-name">${k}</span><span class="pp-tot-v">${v}</span></div>`).join('')}</div>
@@ -12514,7 +12630,7 @@
     }
     return `<div class="pp-skills">
       <div class="pp-skg-pair">
-        ${group(first, tags)}
+        <div class="pp-skg-side">${group(first)}${tags}</div>
         <div class="pp-skg-side">${group(second)}${totals}</div>
       </div>
     </div>`;
