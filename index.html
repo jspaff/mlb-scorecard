@@ -3427,7 +3427,6 @@
   .pp-tag-btn span:first-child:not(:only-child) { display: table; margin: 0 auto; }
   /* The put-away pitch's mark: the scorebook's K on a small plate. */
   .pp-tag-k { display: inline-block; margin-left: 4px; padding: 0 3px; border: 1px solid var(--ink-soft); font-family: 'Overpass', sans-serif; font-style: normal; font-weight: 800; font-size: 9px; line-height: 13px; vertical-align: 0.35em; letter-spacing: 0; color: var(--ink); }
-  .pp-tag-note { margin-top: -4px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; }
   .pp-tag-pop tr.is-mark th, .pp-tag-pop tr.is-mark td:first-of-type { text-decoration: underline; text-underline-offset: 2px; }
   .pp-tag-pop-foot { margin-top: 4px; font-weight: 800; font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; }
   .pp-tag-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
@@ -12463,14 +12462,16 @@
       if (!k2 || (k1.k - k2.k) / ks * 100 >= PITCH_TAG_PUTAWAY_LEAD) putAway = k1.t;
       else if (FASTBALL_TYPES.has(k1.t) !== FASTBALL_TYPES.has(k2.t)) putAway = FASTBALL_TYPES.has(k1.t) ? k2.t : k1.t;
     }
-    // Named in the tag, the put-away pitch carries the mark; otherwise
-    // (a mix, "Fastballs", or a pitch the headline leaves out) it gets a
-    // line of its own under the tag.
-    const named = lines.some(l => Array.isArray(l) && l.includes(putAway));
+    // The put-away pitch always carries the K: where the headline doesn't
+    // name it (a mix, "Fastballs", or a pitch it leaves out), it's added on
+    // the second line.
+    const headline = lines;
+    if (putAway && !lines.some(l => Array.isArray(l) && l.includes(putAway))) {
+      lines = lines.length > 1 ? [lines[0], [...lines[1], putAway]] : [lines[0], [putAway]];
+    }
     const show = (l, mark) => (Array.isArray(l) ? l.map(t => name(t) + (mark && t === putAway ? '<i class="pp-tag-k" aria-label="put away pitch">K</i>' : '')).join(' &#183; ') : l);
     return {
-      key: 'mix', title: 'Mix', lines: lines.map(l => show(l, true)), plain: lines.map(l => show(l, false)),
-      note: putAway && !named ? `Put Away &#183; ${name(putAway)}` : null,
+      key: 'mix', title: 'Mix', lines: lines.map(l => show(l, true)), plain: headline.map(l => show(l, false)),
       foot: putAway ? `Put Away &#183; ${name(putAway)}` : null,
       head: ['Use', 'K'],
       rows: pitches.filter(p => p.u >= 5).map(p => ({ label: name(p.t), cells: [wholePct(p.u), String(p.k)], mark: p.t === putAway }))
@@ -12588,11 +12589,10 @@
       return `<div class="pp-sk"><span class="pp-sk-name">${k.name}</span><span class="pp-sk-score${cls}">${k.pct}</span><span class="pp-sk-stat">${k.stat}</span></div>`;
     };
     // A tag is one word, or a pitcher's mix on two lines (his fastball,
-    // then what goes with it); a note (the put-away pitch) sits under it.
+    // then what goes with it).
     const tag = t => `<div class="pp-tag">
         <span class="pp-sk-name">${t.title}</span>
         <button type="button" class="pp-tag-btn" aria-expanded="false" aria-describedby="ppTag-${t.key}">${t.lines.map(l => `<span>${l}</span>`).join('')}</button>
-        ${t.note ? `<span class="pp-tag-note">${t.note}</span>` : ''}
         <div class="pp-tag-pop" id="ppTag-${t.key}" role="tooltip">
           <div class="pp-tag-pop-head">${(t.plain || t.lines).join(' + ')}</div>
           <table><thead><tr><th></th>${t.head.map(h => `<th>${h}</th>`).join('')}</tr></thead>
