@@ -4132,8 +4132,6 @@
   .lv-rok { background: var(--paper-line); }
   .jy-climb-axis { position: relative; display: flex; justify-content: space-between; height: 12px; margin-top: 8px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
   .jy-climb-debut { position: absolute; top: 0; white-space: nowrap; color: var(--ink); }
-  .jy-climb-key { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 8px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; color: var(--ink-soft); }
-  .jy-climb-key i { display: inline-block; width: 9px; height: 9px; margin-right: 4px; vertical-align: -1px; }
 
   /* The line: a track for his contract phase, the line itself (thin
      through the minors, thick from the debut), then the season or move. */
@@ -14458,11 +14456,17 @@
     // The deal header: what he's signed to now, or where he stands.
     let deal;
     const lastTx = tx[tx.length - 1];
-    if (curDeal) {
-      const last = curDeal.first + curDeal.years - 1;
-      deal = { state: 'contract', d: { ...curDeal, signed: curDeal.signed || dealSigned.get(curDeal) }, last, played: Math.max(0, Math.min(curDeal.years, lastDone - curDeal.first + 1)),
-        kicker: `${curDeal.kind === 'fa' ? 'Free-agent contract' : 'Extension'} | ${TEAM_ABBR[curDeal.team]}` };
-    } else if (person.active !== false && debutSeason && person.currentTeam && isOrg(person.currentTeam.id) && phaseFor(thisYear) !== 'fa') {
+    // A deal that ran out with the season just played stays up until he
+    // moves on (elects free agency, is released, traded or re-signs) --
+    // between the last out and that move he's still that club's.
+    const endedDeal = !curDeal && person.active !== false && person.currentTeam
+      ? deals.filter(d => d.first + d.years - 1 === lastDone && d.team === person.currentTeam.id).pop() || null : null;
+    const shownDeal = curDeal || (endedDeal && !tx.some(t => t.date >= `${lastDone}-10-01` && ['DFA', 'REL', 'TR', 'SFA', 'SGN', 'CLW'].includes(t.typeCode)) ? endedDeal : null);
+    if (shownDeal) {
+      const last = shownDeal.first + shownDeal.years - 1;
+      deal = { state: 'contract', d: { ...shownDeal, signed: shownDeal.signed || dealSigned.get(shownDeal) }, last, played: Math.max(0, Math.min(shownDeal.years, lastDone - shownDeal.first + 1)),
+        kicker: `${shownDeal.kind === 'fa' ? 'Free-agent contract' : 'Extension'} | ${TEAM_ABBR[shownDeal.team]}${shownDeal === curDeal ? '' : ' | Complete'}` };
+    } else if (person.active !== false && debutSeason && person.currentTeam && isOrg(person.currentTeam.id) && thisYear < faFrom) {
       const year = Math.min(6, Math.max(1, lastDone - debutSeason + 1));
       deal = { state: 'control', team: person.currentTeam.id, year, from: debutSeason, phase: phaseFor(Math.max(lastDone, debutSeason)), arbFrom, salary: salaries[lastDone] != null ? salaries[lastDone] : null };
     } else if (person.active !== false && !debutSeason && currentTeamId) {
@@ -14552,13 +14556,11 @@
     }).join('');
     const debutAt = j.debutIdx >= 0 ? weights.slice(0, j.debutIdx).reduce((a, b) => a + b, 0) / total : null;
     const first = j.path[0].from, last = j.path[j.path.length - 1].to;
-    const levels = Object.keys(JOURNEY_LEVEL_RANK).filter(l => j.path.some(p => p.level === l)).reverse();
     const debutLabel = j.debutDate && debutAt != null && debutAt > 0.08 && debutAt < 0.72
       ? `<span class="jy-climb-debut" style="left: ${(debutAt * 100).toFixed(1)}%">Debut ${journeyDate(j.debutDate)}</span>` : '';
     return `<section class="jy-climb"><div class="pp-skg-head"><span>The Climb</span></div>
       <div class="jy-path${j.path.length > 12 ? ' is-dense' : ''}" role="img" aria-label="${j.path.map(p => `${p.level} ${p.from === p.to ? p.from : `${p.from} to ${p.to}`}`).join(', ')}">${segs}</div>
       <div class="jy-climb-axis"><span>${first}</span>${debutLabel}<span>${j.active && last >= j.lastDone ? 'Now' : last}</span></div>
-      <div class="jy-climb-key">${levels.map(l => `<span><i class="lv-${JOURNEY_LEVEL_CLASS[l]}"></i>${l}</span>`).join('')}</div>
     </section>`;
   }
 
@@ -14603,7 +14605,7 @@
     const futureRow = f ? `<div class="jy-row is-future"><span class="jy-track ph-${f.phase}"></span><span class="jy-rail is-mlb is-future is-last"><span class="jy-stn"></span></span>
       <div class="jy-cell"><div class="jy-season"><span class="jy-yr">${shortYear(f.from)}${f.to > f.from ? `–${shortYear(f.to)}` : ''}</span><span class="jy-where"><span>${f.team}</span><span class="jy-note">${f.to - f.from + 1} more on the deal</span></span><span class="jy-pay"><span class="jy-bar is-ghost" style="width: ${Math.max(2, Math.round((f.pay / j.maxPay) * 56))}px"></span><span class="jy-pay-v">${formatMoney(f.pay)}</span></span></div></div></div>` : '';
     // Both are drawn; CSS shows the one that fits the sheet.
-    return `<section class="jy-line-sec"><div class="pp-skg-head"><span>The Line</span></div><div class="jy-line">${out}${futureRow}</div><div class="jy-wide-wrap">${renderJourneyLineWide(j)}</div></section>`;
+    return `<section class="jy-line-sec"><div class="pp-skg-head"><span>The Timeline</span></div><div class="jy-line">${out}${futureRow}</div><div class="jy-wide-wrap">${renderJourneyLineWide(j)}</div></section>`;
   }
 
   // The line on a wide sheet, turned on its side: a column a season, the
