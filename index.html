@@ -3425,6 +3425,8 @@
   .pp-tag-btn span { border-bottom: 1px dotted var(--ink-soft); }
   .pp-tag-btn span + span { display: table; margin: 3px auto 0; font-size: 0.8em; }
   .pp-tag-btn span:first-child:not(:only-child) { display: table; margin: 0 auto; }
+  /* The put-away pitch's mark: the scorebook's K on a small plate. */
+  .pp-tag-k { display: inline-block; margin-left: 4px; padding: 0 3px; border: 1px solid var(--ink-soft); font-family: 'Overpass', sans-serif; font-style: normal; font-weight: 800; font-size: 9px; line-height: 13px; vertical-align: 0.35em; letter-spacing: 0; color: var(--ink); }
   .pp-tag-note { margin-top: -4px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; }
   .pp-tag-pop tr.is-mark th, .pp-tag-pop tr.is-mark td:first-of-type { text-decoration: underline; text-underline-offset: 2px; }
   .pp-tag-pop-foot { margin-top: 4px; font-weight: 800; font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; }
@@ -12419,7 +12421,7 @@
   const PITCH_TAG_MIN = 250;
   const PITCH_TAG_REAL = 10;
   const PITCH_TAG_THIRD = 20;
-  const PITCH_TAG_PUTAWAY_LEAD = 5;
+  const PITCH_TAG_PUTAWAY_LEAD = 3;
   const FASTBALL_TYPES = new Set(['FF', 'SI', 'FC']);
   const COUNT_WORDS = { 5: 'Five', 6: 'Six', 7: 'Seven', 8: 'Eight', 9: 'Nine' };
   const ARM_SLOTS = [[55, 'Over the Top'], [45, 'High Slot'], [30, 'Three-Quarter'], [15, 'Low Slot'], [0, 'Sidearm'], [-90, 'Submarine']];
@@ -12437,24 +12439,39 @@
     const fbs = pitches.filter(p => FASTBALL_TYPES.has(p.t));
     const secs = pitches.filter(p => !FASTBALL_TYPES.has(p.t));
     const real = pitches.filter(p => p.u >= PITCH_TAG_REAL).length;
+    // Each line is a list of pitch types, or a word for the whole mix.
     let lines;
     if (real >= 5) lines = [`${COUNT_WORDS[real] || real}-Pitch Mix`];
-    else if (!fbs.length || !secs.length) lines = [name(pitches[0].t)];
+    else if (!fbs.length || !secs.length) lines = [[pitches[0].t]];
     else if (fbs.reduce((a, p) => a + p.u, 0) >= 70 && fbs[1] && fbs[1].u >= 15 && secs[0].u < PITCH_TAG_THIRD) lines = ['Fastballs'];
     else if (secs[0].u < 15) {
       // A cutter can be his real second pitch even though it's a fastball.
       const cutter = fbs.slice(1).find(p => p.t === 'FC' && p.u >= 15);
-      lines = cutter ? [name(fbs[0].t), name('FC')] : [name(fbs[0].t)];
+      lines = cutter ? [[fbs[0].t], ['FC']] : [[fbs[0].t]];
     } else {
-      const second = secs.slice(0, secs[1] && secs[1].u >= PITCH_TAG_THIRD ? 2 : 1).map(p => name(p.t)).join(' &#183; ');
+      const second = secs.slice(0, secs[1] && secs[1].u >= PITCH_TAG_THIRD ? 2 : 1).map(p => p.t);
       // The fastball leads unless a secondary pitch clearly outnumbers it.
-      lines = secs[0].u - fbs[0].u > 10 ? [name(secs[0].t), name(fbs[0].t)] : [name(fbs[0].t), second];
+      lines = secs[0].u - fbs[0].u > 10 ? [[secs[0].t], [fbs[0].t]] : [[fbs[0].t], second];
     }
+    // The put-away pitch: the most strikeouts, if it leads clearly; on a
+    // near-tie between a fastball and a secondary pitch, the secondary,
+    // since that's the pitch a hitter is put away with.
     const ks = pitches.reduce((a, p) => a + p.k, 0);
-    const byK = [...pitches].sort((a, b) => b.k - a.k);
-    const putAway = ks && byK[0].k > 0 && (byK[0].k - ((byK[1] || {}).k || 0)) / ks * 100 >= PITCH_TAG_PUTAWAY_LEAD ? byK[0].t : null;
+    const [k1, k2] = [...pitches].sort((a, b) => b.k - a.k);
+    let putAway = null;
+    if (ks && k1.k > 0) {
+      if (!k2 || (k1.k - k2.k) / ks * 100 >= PITCH_TAG_PUTAWAY_LEAD) putAway = k1.t;
+      else if (FASTBALL_TYPES.has(k1.t) !== FASTBALL_TYPES.has(k2.t)) putAway = FASTBALL_TYPES.has(k1.t) ? k2.t : k1.t;
+    }
+    // Named in the tag, the put-away pitch carries the mark; otherwise
+    // (a mix, "Fastballs", or a pitch the headline leaves out) it gets a
+    // line of its own under the tag.
+    const named = lines.some(l => Array.isArray(l) && l.includes(putAway));
+    const show = (l, mark) => (Array.isArray(l) ? l.map(t => name(t) + (mark && t === putAway ? '<i class="pp-tag-k" aria-label="put away pitch">K</i>' : '')).join(' &#183; ') : l);
     return {
-      key: 'arsenal', title: 'Arsenal', lines, note: putAway ? `Put Away &#183; ${name(putAway)}` : null,
+      key: 'mix', title: 'Mix', lines: lines.map(l => show(l, true)), plain: lines.map(l => show(l, false)),
+      note: putAway && !named ? `Put Away &#183; ${name(putAway)}` : null,
+      foot: putAway ? `Put Away &#183; ${name(putAway)}` : null,
       head: ['Use', 'K'],
       rows: pitches.filter(p => p.u >= 5).map(p => ({ label: name(p.t), cells: [wholePct(p.u), String(p.k)], mark: p.t === putAway }))
     };
@@ -12462,8 +12479,8 @@
 
   function buildPitcherTags(id, savant) {
     const tags = [];
-    const arsenal = buildArsenalTag(savant.arsenal[id]);
-    if (arsenal) tags.push(arsenal);
+    const mix = buildArsenalTag(savant.arsenal[id]);
+    if (mix) tags.push(mix);
     const angleOf = pid => csvNumber((savant.ext[pid] || {}).arm_angle);
     const angle = angleOf(id);
     if (angle != null) {
@@ -12556,7 +12573,7 @@
     return {
       groups: [{ title: 'Pitching', skills: pitching }, { title: 'Stuff', skills: wait(stuff) }],
       tags: pending ? 'pending' : (savantData ? buildPitcherTags(person.id, savant) : []),
-      tagSlots: [['arsenal', 'Arsenal'], ['slot', 'Slot']],
+      tagSlots: [['mix', 'Mix'], ['slot', 'Slot']],
       totals: reliever
         ? [['G', s.gamesPitched ?? 0], ['IP', s.inningsPitched ?? '0.0'], ['SV', s.saves ?? 0]]
         : [['GS', s.gamesStarted ?? 0], ['IP', s.inningsPitched ?? '0.0'], ['K', s.strikeOuts ?? 0]]
@@ -12577,10 +12594,10 @@
         <button type="button" class="pp-tag-btn" aria-expanded="false" aria-describedby="ppTag-${t.key}">${t.lines.map(l => `<span>${l}</span>`).join('')}</button>
         ${t.note ? `<span class="pp-tag-note">${t.note}</span>` : ''}
         <div class="pp-tag-pop" id="ppTag-${t.key}" role="tooltip">
-          <div class="pp-tag-pop-head">${t.lines.join(' + ')}</div>
+          <div class="pp-tag-pop-head">${(t.plain || t.lines).join(' + ')}</div>
           <table><thead><tr><th></th>${t.head.map(h => `<th>${h}</th>`).join('')}</tr></thead>
           <tbody>${t.rows.map(r => `<tr${r.mark ? ' class="is-mark"' : ''}><th>${r.label}</th>${r.cells.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>
-          ${t.note ? `<div class="pp-tag-pop-foot">${t.note}</div>` : ''}
+          ${t.foot ? `<div class="pp-tag-pop-foot">${t.foot}</div>` : ''}
         </div>
       </div>`;
     // Every slot is drawn whether or not it has a tag: waiting, dashed, or
