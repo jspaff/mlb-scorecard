@@ -7,7 +7,7 @@
 // cache-first with a background refresh -- still bump this on every deploy
 // that changes index.html, manifest.json, or the icons, so activate clears
 // the old cache and install re-fetches the whole shell.
-const CACHE_NAME = 'mlb-scorecard-v365';
+const CACHE_NAME = 'mlb-scorecard-v366';
 const APP_SHELL = [
   './',
   './index.html',
@@ -39,7 +39,9 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
 
-  if (request.mode === 'navigate') {
+  // contracts.json changes with each merged update, so like the page it
+  // goes network-first, the cached copy only for offline.
+  if (request.mode === 'navigate' || new URL(request.url).pathname.endsWith('/contracts.json')) {
     event.respondWith(
       fetch(request, { cache: 'no-cache' }).then((response) => {
         if (response.ok) {
