@@ -9434,7 +9434,7 @@
       return;
     }
     const photo = e.target.closest('.dcf-photo[data-player-id], .tlc[data-player-id]');
-    if (photo) { showPlayerModal(photo.dataset.playerId); return; }
+    if (photo) { openPlayerFromName(photo.dataset.playerId); return; }
     const rosterTab = e.target.closest('[data-roster-view]');
     if (rosterTab) {
       if (rosterTab.dataset.rosterView === teamTab.rosterView) return;
@@ -15295,6 +15295,13 @@
   const playerModalBody = document.getElementById('playerModalBody');
   const playerClose = document.getElementById('playerClose');
 
+  // The quick look belongs to the game being scored; everywhere else a
+  // name goes straight to the full profile.
+  function openPlayerFromName(playerId) {
+    if (Tabs.current() === 'scorecard') showPlayerModal(playerId);
+    else jumpToPlayerProfile(playerId);
+  }
+
   async function showPlayerModal(playerId) {
     const info = playerStore[playerId];
     if (!info) return;
@@ -15421,10 +15428,9 @@
     if (playerBtn && !playerBtn.hasAttribute('data-jy-player')) {
       // Players of the Game already lives inside the game summary modal --
       // stacking the quick-look player modal on top of that would be a
-      // modal-over-modal, so it jumps straight to the Players tab instead
-      // of going through showPlayerModal like every other name button does.
+      // modal-over-modal, so it jumps straight to the Players tab.
       if (playerBtn.classList.contains('potg-player-name')) jumpToPlayerProfile(playerBtn.getAttribute('data-player-id'));
-      else showPlayerModal(playerBtn.getAttribute('data-player-id'));
+      else openPlayerFromName(playerBtn.getAttribute('data-player-id'));
     }
     const teamChartBtn = e.target.closest('.standings-team-btn');
     if (teamChartBtn) {
