@@ -2495,6 +2495,104 @@
   .sc-half .pbox-stats { width: 100%; justify-content: space-between; }
   .sc-half .pbox-rel { flex-direction: row; align-items: center; flex-wrap: wrap; gap: 8px 10px; padding-left: 0; border-left: 0; }
   .sc-half .pbox-rel-list { display: flex; flex-wrap: wrap; gap: 8px 10px; }
+  .pbox-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .pbox-log {
+    font-family: 'Overpass', sans-serif;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink);
+    background: rgba(243, 236, 219, 0.04);
+    border: 1px solid var(--paper-line);
+    border-radius: 0;
+    padding: 4px 9px 3px;
+    margin: 3px 0 -2px;
+    cursor: pointer;
+  }
+  .pbox-log:hover { background: rgba(243, 236, 219, 0.08); }
+  .pbox-log:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
+
+  /* The Pitch Log popup: one section per pitcher, each a row of times
+     through the order. Its pitches are solid boxes (or rings), square,
+     since they're marks, not recessed slots. Sized by its own width. */
+  #pitchLogOverlay .pitch-modal { max-width: 940px; max-height: 88vh; padding: 0; }
+  #pitchLogBody { container: plog / inline-size; }
+  .plog-head { padding: 16px 52px 12px 18px; border-bottom: 1px solid var(--paper-line); }
+  .plog-kicker { display: flex; gap: 12px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); margin-bottom: 4px; }
+  .plog-now { display: inline-flex; align-items: center; gap: 3px; }
+  .plog-title { margin: 0; font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 20px; line-height: 1.2; color: var(--ink); }
+  .plog-line { display: flex; flex-wrap: wrap; gap: 0 10px; font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 12px; font-variant-numeric: tabular-nums; color: var(--ink); }
+  .plog-list { padding: 0 18px 14px; }
+  .plog-sec + .plog-sec { border-top: 1px solid var(--paper-line); }
+  .plog-ph { width: 100%; display: grid; grid-template-columns: 12px minmax(0, max-content) minmax(0, 1fr) auto; align-items: center; gap: 4px 12px; padding: 12px 2px; background: none; border: 0; color: var(--ink); text-align: left; cursor: pointer; font: inherit; }
+  .plog-ph:hover { background: rgba(243, 236, 219, 0.04); }
+  .plog-ph:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+  .plog-chev { width: 10px; height: 10px; color: var(--ink-soft); }
+  .plog-sec.is-open .plog-chev { transform: rotate(90deg); color: var(--ink); }
+  .plog-who { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+  .plog-nm { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 16px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .plog-nm { padding-bottom: 3px; }
+  .plog-nm.is-pitching { box-shadow: inset 0 -2px 0 var(--gold); }
+  .plog-hand { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; color: var(--ink-soft); }
+  .plog-span { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; }
+  .plog-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 14px; padding: 2px 0 18px; }
+  .plog-col { min-width: 0; }
+  .plog-th { padding-bottom: 8px; border-bottom: 2px solid var(--title-rule); display: flex; flex-direction: column; gap: 6px; }
+  .plog-th-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 11.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink); }
+  .plog-th-nums { display: flex; align-items: baseline; gap: 10px; letter-spacing: 0; text-transform: none; }
+  .plog-pc, .plog-velo { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 16px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .plog-pc small, .plog-velo small { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.08em; color: var(--ink-soft); }
+  .plog-pc small { margin-left: 3px; }
+  .plog-velo small { margin-right: 4px; }
+  .plog-mix { display: flex; height: 12px; background: rgba(0, 0, 0, 0.22); }
+  .plog-mix i { position: relative; display: block; height: 100%; }
+  .plog-mix i:hover, .plog-mix i:focus-visible { outline: 1px solid var(--ink); z-index: 2; }
+  .plog-mix i::after {
+    content: attr(data-tip); position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%); z-index: 5;
+    background: var(--ink); color: var(--paper); font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 11px; font-style: normal; line-height: 1.3;
+    padding: 4px 7px; white-space: nowrap; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4); opacity: 0; pointer-events: none; transition: opacity 0.1s;
+  }
+  .plog-mix i:first-child::after { left: 0; transform: none; }
+  .plog-mix i:last-child::after { left: auto; right: 0; transform: none; }
+  .plog-mix i:hover::after, .plog-mix i:focus-visible::after { opacity: 1; }
+  .plog-inn { display: flex; align-items: center; gap: 4px; margin: 8px 0 2px; font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); }
+  .plog-inn::after { content: ""; flex: 1; height: 1px; background: var(--gold); margin-left: 4px; }
+  .plog-inn .plog-ip { order: 2; color: var(--ink-soft); font-weight: 700; letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
+  .plog-entry { color: var(--ink-soft); font-weight: 700; font-size: 10px; letter-spacing: 0.02em; text-transform: none; margin-left: 4px; }
+  .plog-ab { width: 100%; display: grid; grid-template-columns: 10px 54px minmax(0, 1fr) 34px; align-items: center; gap: 0 3px; min-height: 38px; padding: 2px; background: none; border: 0; border-bottom: 1px solid rgba(84, 94, 77, 0.7); color: var(--ink); text-align: left; cursor: pointer; font: inherit; }
+  .plog-ab:hover { background: rgba(243, 236, 219, 0.04); }
+  .plog-ab:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+  .plog-ab.is-live { box-shadow: inset 0 -2px 0 var(--gold); }
+  .plog-ab.is-deck { opacity: 0.65; cursor: default; }
+  .plog-slot { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 11px; color: var(--gold); text-align: right; }
+  .plog-bat { font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 10px; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 2px; }
+  .plog-run { display: flex; flex-wrap: wrap; gap: 1px; align-items: center; min-width: 0; }
+  .plog-deck { font-family: 'Overpass', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
+  .plog-dia svg { display: block; width: 34px; height: 34px; }
+  .plog-pt {
+    display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+    width: 23px; height: 27px; background: var(--hue); color: #2c3328;
+    font-family: 'Overpass', sans-serif; font-weight: 700; font-size: 9px; line-height: 1; font-variant-numeric: tabular-nums;
+  }
+  .plog-pt b { font-weight: 800; font-size: 9.5px; letter-spacing: 0.04em; }
+  .plog-pt.k-ball { color: var(--ink); }
+  .plog-pt.hollow { background: var(--paper); box-shadow: inset 0 0 0 1.5px var(--hue); color: var(--ink); }
+  .plog-pt.hollow b { color: var(--hue); }
+  .plog-pt.k-strike-called b { color: var(--brick-text); }
+  .plog-pt.k-hbp b { color: var(--ball-text); }
+  .plog-2k { width: 6px; align-self: stretch; position: relative; }
+  .plog-2k::before { content: ""; position: absolute; left: 2.5px; top: 3px; bottom: 3px; width: 1px; background: var(--ink-soft); opacity: 0.55; }
+  @keyframes plog-glow { from { box-shadow: 0 0 0 2px var(--gold), 0 0 10px rgba(217, 169, 26, 0.8); } to { box-shadow: 0 0 0 0 rgba(217, 169, 26, 0); } }
+  .plog-pt.is-new { animation: plog-glow 1.6s ease-out; }
+  @media (prefers-reduced-motion: reduce) { .plog-pt.is-new { animation: none; outline: 2px solid var(--gold); } }
+  @container plog (max-width: 620px) {
+    .plog-head { padding-left: 12px; }
+    .plog-list { padding: 0 12px 12px; }
+    .plog-ph { grid-template-columns: 12px minmax(0, 1fr) auto; }
+    .plog-ph .plog-line { grid-column: 2 / -1; grid-row: 2; }
+    .plog-cols { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  }
 
   /* The team toggle in each card's header (see renderTeamToggle); the
      triangle marks the side batting now. */
@@ -4376,6 +4474,12 @@
       <div id="gameStripOverlayBody"></div>
     </div>
   </div>
+  <div id="pitchLogOverlay" class="pitch-overlay">
+    <div class="pitch-modal">
+      <button id="pitchLogClose" class="pitch-close" aria-label="Close">&#10005;</button>
+      <div id="pitchLogBody"></div>
+    </div>
+  </div>
   <div id="journeyOverlay" class="pitch-overlay">
     <div class="pitch-modal">
       <button id="journeyClose" class="pitch-close" aria-label="Close">&#10005;</button>
@@ -5205,6 +5309,7 @@
             .replace(/^(Four|Two)-Seam Fastball$/, '$1 Seam'),
           typeCode: (pe.details && pe.details.type && pe.details.type.code) || '',
           speed: pe.pitchData && pe.pitchData.startSpeed ? Math.round(pe.pitchData.startSpeed) : null,
+          mph: pe.pitchData && typeof pe.pitchData.startSpeed === 'number' ? pe.pitchData.startSpeed : null,
           result: (pe.details && pe.details.description) || '',
           balls: pe.count && pe.count.balls,
           strikes: pe.count && pe.count.strikes,
@@ -5453,7 +5558,7 @@
         const videoUrl = savantVideoUrl(extractPlayId(play));
         row.cells[inning] = row.cells[inning] || [];
         row.cells[inning].push({
-          code, reached: rb, scored: rb === 4, isOut: rb === 0, playerId: batterId,
+          code, reached: rb, batterReached: rb, scored: rb === 4, isOut: rb === 0, playerId: batterId,
           pitcherChanged, pitcherId, pitcherName, order, calledLooking,
           pitches, events: extractEvents(play), ...handedness, isComplete: true, videoUrl,
           batterName: (play.matchup && play.matchup.batter && play.matchup.batter.fullName) || '',
@@ -6419,7 +6524,7 @@
   // The pitchers' section at the foot of the card: the starter's line, then
   // each reliever by name as he enters. Whoever is on the mound now gets the
   // gold rule; a starter who's done says so.
-  function renderPitchingBox(staff, teamNick, isLive) {
+  function renderPitchingBox(staff, teamNick, isLive, sideKey) {
     if (!staff || !staff.length) return '';
     const starter = staff[0];
     const relievers = staff.slice(1);
@@ -6427,7 +6532,7 @@
     const s = starter.stats;
     const stat = (label, val, cls) => `<div class="pbox-stat${cls ? ' ' + cls : ''}"><div class="pbox-lbl">${label}</div><div class="pbox-val">${val}</div></div>`;
     return `<div class="pbox">
-      <div class="pbox-title">${teamNick} Pitching</div>
+      <div class="pbox-title"><span>${teamNick} Pitching</span><button type="button" class="pbox-log" data-pitch-log="${sideKey}">Pitch Log</button></div>
       <div class="pbox-body">
         <div class="pbox-starter">
           <div class="pbox-who">
@@ -6443,6 +6548,146 @@
           `<button type="button" class="player-name-btn${onMound === p ? ' is-pitching' : ''}" data-player-id="${p.id}" title="${p.name}">${p.lastName}</button>`).join('')}</div></div>` : ''}
       </div>
     </div>`;
+  }
+
+  // The Pitch Log: every pitcher a side used, in order of entry, each one's
+  // at-bats in columns by time through the order, read in game order. Built
+  // from the batting side's rows (their cells already carry each at-bat's
+  // pitches, play code and pitcher), so it costs no fetch of its own; each
+  // at-bat's pkey is the one renderTeamTable gives its diamond, so a row
+  // opens the same at-bat popup.
+  const PLOG_SHADES = ['#f3ecdb', '#c9cfbf', '#a3ab98', '#7d8577', '#5e6857', '#4a5345'];
+  const PLOG_FASTBALLS = ['FF', 'SI', 'FC'];
+
+  // How a reliever came in when it was mid-inning: the outs and the runners
+  // he inherited, from the play before his first.
+  function pitchLogEntry(plays, pitcherId) {
+    const k = (plays || []).findIndex(p => p.matchup && p.matchup.pitcher && p.matchup.pitcher.id === pitcherId);
+    if (k <= 0) return '';
+    const first = plays[k], prev = plays[k - 1];
+    if (prev.about.inning !== first.about.inning || prev.about.isTopInning !== first.about.isTopInning) return '';
+    const outs = (prev.count && prev.count.outs) || 0;
+    const mu = prev.matchup || {};
+    const on = [mu.postOnFirst && '1st', mu.postOnSecond && '2nd', mu.postOnThird && '3rd'].filter(Boolean);
+    const outsTxt = outs === 0 ? 'No outs' : outs === 1 ? '1 out' : `${outs} outs`;
+    const runTxt = on.length === 3 ? 'bases loaded' : on.length === 2 ? `runners on ${on[0]} and ${on[1]}` : on.length ? `runner on ${on[0]}` : '';
+    return runTxt ? `${outsTxt}, ${runTxt}` : outsTxt;
+  }
+
+  function buildPitchLog(m, side) {
+    const bat = side === 'away' ? 'home' : 'away';
+    const t = m[bat];
+    const pas = [];
+    t.rows.forEach(r => Object.keys(r.cells).forEach(inn => (r.cells[inn] || []).forEach((c, k) => {
+      if (!c.pitcherId || !c.pitches) return;
+      const who = r.players.find(p => p.id === c.playerId) || r.players[r.players.length - 1];
+      pas.push({ c, inning: +inn, slot: r.slot, lastName: who.lastName, pkey: `${t.name}-${r.slot}-${inn}-${k}`, pitches: c.pitches });
+    })));
+    pas.sort((a, b) => a.c.order - b.c.order);
+    const staff = m[side].staff || [];
+    const onMound = m.isLive ? staff[staff.length - 1] : null;
+    const lb = m.isLive && m.liveBatterInfo && m.liveBatterInfo.team === bat ? m.liveBatterInfo : null;
+    return staff.map(p => {
+      const list = pas.filter(x => x.c.pitcherId === p.id);
+      let live = null, deck = null;
+      if (p === onMound && lb) {
+        const row = t.rows.find(r => r.slot === lb.rowSlot);
+        live = { live: true, inning: lb.inning, slot: lb.rowSlot, lastName: row ? row.players[row.players.length - 1].lastName : lb.batterName, pkey: m.livePkey, pitches: lb.pitches || [] };
+        const od = m.onDeck && t.rows.find(r => r.players.some(x => x.id === m.onDeck.id));
+        if (od) deck = { slot: od.slot, lastName: (od.players.find(x => x.id === m.onDeck.id) || {}).lastName };
+      }
+      const all = live ? list.concat(live) : list;
+      // A new column each time the order comes back around to him: the
+      // first at-bat whose slot he's now facing for the nth time.
+      const seen = {}, turns = [];
+      all.forEach(pa => {
+        const n = (seen[pa.slot] = (seen[pa.slot] || 0) + 1);
+        if (n > turns.length) turns.push([]);
+        turns[turns.length - 1].push(pa);
+      });
+      const hand = (list[0] && list[0].c.pitchHand) || (lb && lb.pitchHand) || '';
+      return { p, hand, turns, deck, onMound: p === onMound, entry: pitchLogEntry(m.plays, p.id), innings: all.map(x => x.inning) };
+    }).filter(x => x.turns.length || x.onMound);
+  }
+
+  const staffLine = st => [`${st.inningsPitched ?? '0.0'} IP`, `${st.hits ?? 0} H`, `${st.runs ?? 0} R`, `${st.baseOnBalls ?? 0} BB`, `${st.strikeOuts ?? 0} K`, `${st.numberOfPitches ?? st.pitchesThrown ?? 0} P`];
+  const ipOuts = ip => { const [w, f] = String(ip || '0.0').split('.'); return (+w || 0) * 3 + (+f || 0); };
+  const plogLine = parts => `<span class="plog-line">${parts.map(x => `<span>${x}</span>`).join('')}</span>`;
+
+  // A pitch as a solid box in the zone marker's hue -- or a ring for the
+  // lesser half of a pair (RESULT_MARKER) -- with its type over its speed.
+  function plogPitch(p, isNew) {
+    const kind = classifyPitch(p);
+    const spec = RESULT_MARKER[kind] || RESULT_MARKER.other;
+    return `<span class="plog-pt k-${kind}${spec.hollow ? ' hollow' : ''}${isNew ? ' is-new' : ''}" style="--hue:${spec.hue}" title="${p.type}${p.speed ? ` ${p.speed}` : ''} | ${p.result}"><b>${p.typeCode || '&#8211;'}</b>${p.speed || ''}</span>`;
+  }
+  // A hairline where the at-bat reached two strikes: what he finishes with
+  // sits after it.
+  function plogRun(pitches, newFrom) {
+    const k = pitches.findIndex(p => (p.preStrikes || 0) >= 2);
+    return pitches.map((p, j) => (j === k && k > 0 ? '<span class="plog-2k" aria-hidden="true"></span>' : '') + plogPitch(p, newFrom != null && j >= newFrom)).join('');
+  }
+  function plogMix(ps) {
+    const by = {};
+    ps.forEach(p => { const c = p.typeCode || '?'; (by[c] = by[c] || { n: 0, type: p.type }).n++; });
+    return Object.entries(by).sort((a, b) => b[1].n - a[1].n).map(([c, v], i) => {
+      const pct = Math.round(v.n / ps.length * 100);
+      return `<i tabindex="0" style="width:${v.n / ps.length * 100}%;background:${PLOG_SHADES[Math.min(i, PLOG_SHADES.length - 1)]}" data-tip="${v.type} ${pct}%, ${v.n} P" aria-label="${v.type} ${pct}%"></i>`;
+    }).join('');
+  }
+  function plogVelo(ps) {
+    const fb = PLOG_FASTBALLS.map(c => [c, ps.filter(p => p.typeCode === c && p.mph)]).sort((a, b) => b[1].length - a[1].length)[0];
+    if (!fb || !fb[1].length) return '';
+    return `<span class="plog-velo"><small>${fb[0]}</small>${(fb[1].reduce((a, p) => a + p.mph, 0) / fb[1].length).toFixed(1)}</span>`;
+  }
+
+  function renderPitchLogPitcher(e, top, st) {
+    const open = st.open.has(e.p.id);
+    const span = e.innings.length ? (Math.min(...e.innings) === Math.max(...e.innings) ? ordinalSuffix(e.innings[0]) : `${ordinalSuffix(Math.min(...e.innings))}&#8211;${ordinalSuffix(Math.max(...e.innings))}`) : '';
+    const head = `<button type="button" class="plog-ph" data-plog-pitcher="${e.p.id}" aria-expanded="${open}">
+        <svg class="plog-chev" viewBox="0 0 10 10" aria-hidden="true"><path d="M3 1.5L7 5L3 8.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+        <span class="plog-who"><span class="plog-nm${e.onMound ? ' is-pitching' : ''}">${e.p.name}</span>${e.hand ? `<span class="plog-hand">${e.hand}HP</span>` : ''}</span>
+        ${plogLine(staffLine(e.p.stats))}<span class="plog-span">${span}</span></button>`;
+    if (!open) return `<section class="plog-sec">${head}</section>`;
+    const innP = {};
+    e.turns.flat().forEach(pa => { innP[pa.inning] = (innP[pa.inning] || 0) + pa.pitches.length; });
+    const newFrom = st.liveNewFrom;
+    const cols = e.turns.map((tl, t) => {
+      const ps = tl.flatMap(pa => pa.pitches);
+      let html = `<div class="plog-col"><div class="plog-th"><div class="plog-th-row"><span>${ordinalSuffix(t + 1)} Time Through</span><span class="plog-th-nums"><span class="plog-pc">${ps.length}<small>P</small></span>${plogVelo(ps)}</span></div><div class="plog-mix">${plogMix(ps)}</div></div>`;
+      let lastInn = null;
+      tl.forEach(pa => {
+        if (pa.inning !== lastInn) {
+          const entry = e.entry && pa === e.turns[0][0] ? ` <span class="plog-entry">${e.entry}</span>` : '';
+          html += `<div class="plog-inn">${NOW_TRI_SVG(top)}${ordinalSuffix(pa.inning)}${entry}<span class="plog-ip">${innP[pa.inning]} P</span></div>`;
+          lastInn = pa.inning;
+        }
+        if (pa.live) {
+          const lp = pa.pitches[pa.pitches.length - 1];
+          const count = lp && !/in play/i.test(lp.result || '') ? `${lp.balls ?? 0}-${lp.strikes ?? 0}` : (lp ? '' : '0-0');
+          html += `<button type="button" class="plog-ab is-live" data-pkey="${pa.pkey}" aria-label="${pa.lastName}, at bat${count ? `, ${count}` : ''}"><span class="plog-slot">${pa.slot}</span><span class="plog-bat">${pa.lastName}</span><span class="plog-run">${plogRun(pa.pitches, newFrom)}</span><span class="plog-dia"><svg viewBox="0 0 40 40" aria-hidden="true"><polygon points="20,36 36,20 20,4 4,20" fill="none" stroke="${PALETTE.gold}" stroke-width="1.4"/><text x="20" y="24" text-anchor="middle" font-family="'Overpass', sans-serif" font-weight="800" font-size="11" fill="${PALETTE.ink}">${count}</text></svg></span></button>`;
+          if (e.deck) html += `<div class="plog-ab is-deck"><span class="plog-slot">${e.deck.slot}</span><span class="plog-bat">${e.deck.lastName}</span><span class="plog-run plog-deck">On deck</span><span class="plog-dia">${HALF_EMPTY_DIAMOND}</span></div>`;
+          return;
+        }
+        const c = pa.c, r = c.batterReached ?? c.reached;
+        html += `<button type="button" class="plog-ab" data-pkey="${pa.pkey}" aria-label="${pa.lastName}, ${c.code}"><span class="plog-slot">${pa.slot}</span><span class="plog-bat">${pa.lastName}</span><span class="plog-run">${plogRun(pa.pitches)}</span><span class="plog-dia">${diamondSVG(r, r === 4, c.code, r === 0, null, null, false, c.calledLooking)}</span></button>`;
+      });
+      return html + '</div>';
+    }).join('');
+    return `<section class="plog-sec is-open">${head}<div class="plog-cols">${cols}</div></section>`;
+  }
+
+  function renderPitchLog(m, side, st) {
+    const t = m[side];
+    const top = side === 'home';
+    const log = buildPitchLog(m, side);
+    const outs = (t.staff || []).reduce((a, p) => a + ipOuts(p.stats.inningsPitched), 0);
+    const sum = k => (t.staff || []).reduce((a, p) => a + (p.stats[k] ?? 0), 0);
+    const pc = (t.staff || []).reduce((a, p) => a + (p.stats.numberOfPitches ?? p.stats.pitchesThrown ?? 0), 0);
+    const state = m.state === 'Final' ? 'Final' : (m.isLive && m.liveHalf ? `<span class="plog-now">${NOW_TRI_SVG(m.liveHalf.top)}${ordinalSuffix(m.liveHalf.inning)}</span>` : '');
+    return `<div class="plog-head"><div class="plog-kicker"><span>${m.away.abbr} at ${m.home.abbr}</span>${state ? `<span>${state}</span>` : ''}</div>
+        <h2 class="plog-title">${t.nickname} Pitching</h2>${plogLine([`${Math.floor(outs / 3)}.${outs % 3} IP`, `${sum('hits')} H`, `${sum('runs')} R`, `${sum('baseOnBalls')} BB`, `${sum('strikeOuts')} K`, `${pc} P`])}</div>
+      <div class="plog-list">${log.length ? log.map(e => renderPitchLogPitcher(e, top, st)).join('') : '<div class="pitch-empty">No pitches yet.</div>'}</div>`;
   }
 
   function renderTeamToggle(m, activeSide, long) {
@@ -10273,6 +10518,8 @@
   body.addEventListener('click', (e) => {
     const sideBtn = e.target.closest('[data-sc-side]');
     if (sideBtn) { setScorecardSide(sideBtn.dataset.scSide); return; }
+    const logBtn = e.target.closest('[data-pitch-log]');
+    if (logBtn) { showPitchLogModal(logBtn.dataset.pitchLog); return; }
     if (e.target.closest('[data-hv-live]')) { jumpToLiveHalf(); return; }
     const retry = e.target.closest('[data-sc-retry]');
     if (retry) {
@@ -10639,13 +10886,16 @@
       const isLive = state === 'Live' && gameHasStarted;
       scorecardModel = {
         gamePk, state, halves, liveHalf, liveBatterInfo, highlights, numInnings, columnsPerInning, season, officialDate,
+        plays: allPlays, livePkey, isLive,
+        onDeck: (isLive && linescore.offense && linescore.offense.onDeck) || null,
         away: { name: awayName, abbr: awayAbbr, nickname: teamNickname(gameData.teams.away), rows: awayRows, pitcherByInning: away.pitcherByInning, starterPitcherId: away.starterPitcherId,
-          pitchingBox: renderPitchingBox(awayStaff, teamNickname(gameData.teams.away), isLive) },
+          staff: awayStaff, pitchingBox: renderPitchingBox(awayStaff, teamNickname(gameData.teams.away), isLive, 'away') },
         home: { name: homeName, abbr: homeAbbr, nickname: teamNickname(gameData.teams.home), rows: homeRows, pitcherByInning: home.pitcherByInning, starterPitcherId: home.starterPitcherId,
-          pitchingBox: renderPitchingBox(homeStaff, teamNickname(gameData.teams.home), isLive) }
+          staff: homeStaff, pitchingBox: renderPitchingBox(homeStaff, teamNickname(gameData.teams.home), isLive, 'home') }
       };
       syncScorecardView();
       renderScorecardSheet();
+      refreshPitchLog();
       announceNewPlay(gamePk, allPlays);
       renderedFeedKey = feedKey;
       renderedFeedLive = state === 'Live';
@@ -11237,6 +11487,61 @@
   function hideRosterModal() {
     closeOverlay(rosterOverlay);
   }
+
+  const pitchLogOverlay = document.getElementById('pitchLogOverlay');
+  const pitchLogBody = document.getElementById('pitchLogBody');
+  const pitchLogClose = document.getElementById('pitchLogClose');
+  // side is the pitching team. It opens on the pitcher on the mound during
+  // a game, the starter after one; the rest are collapsed until tapped.
+  const pitchLogState = { side: null, gamePk: null, open: new Set(), liveKey: null, liveCount: 0, liveNewFrom: null };
+  function drawPitchLog() {
+    const m = scorecardModel;
+    // Only the newest pitch of the live at-bat glows, and only on the poll
+    // that brought it.
+    const lb = m.isLive && m.liveBatterInfo ? m.liveBatterInfo : null;
+    const key = lb ? `${m.livePkey}|${lb.batterName}` : null;
+    const n = lb ? (lb.pitches || []).length : 0;
+    pitchLogState.liveNewFrom = key && key === pitchLogState.liveKey && n > pitchLogState.liveCount ? pitchLogState.liveCount : null;
+    pitchLogState.liveKey = key; pitchLogState.liveCount = n;
+    pitchLogBody.innerHTML = renderPitchLog(m, pitchLogState.side, pitchLogState);
+  }
+  function showPitchLogModal(side) {
+    const m = scorecardModel;
+    if (!m || !m[side]) return;
+    const staff = m[side].staff || [];
+    const first = m.isLive ? staff[staff.length - 1] : staff[0];
+    Object.assign(pitchLogState, { side, gamePk: m.gamePk, open: new Set(first ? [first.id] : []), liveKey: null, liveCount: 0 });
+    drawPitchLog();
+    pitchLogOverlay.querySelector('.pitch-modal').scrollTop = 0;
+    openOverlay(pitchLogOverlay);
+  }
+  function hidePitchLogModal() {
+    closeOverlay(pitchLogOverlay);
+  }
+  // Each poll redraws an open log in place, keeping the reader's scroll and
+  // focus; a different game closes it.
+  function refreshPitchLog() {
+    if (!pitchLogOverlay.classList.contains('open')) return;
+    const m = scorecardModel;
+    if (!m || m.gamePk !== pitchLogState.gamePk) { hidePitchLogModal(); return; }
+    const modal = pitchLogOverlay.querySelector('.pitch-modal');
+    const scroll = modal.scrollTop;
+    const focusSel = focusedControlSelector(pitchLogBody);
+    drawPitchLog();
+    modal.scrollTop = scroll;
+    const el = focusSel && pitchLogBody.querySelector(focusSel);
+    if (el) el.focus({ preventScroll: true });
+  }
+  pitchLogBody.addEventListener('click', (e) => {
+    const h = e.target.closest('[data-plog-pitcher]');
+    if (!h) return;
+    const id = Number(h.dataset.plogPitcher);
+    if (pitchLogState.open.has(id)) pitchLogState.open.delete(id); else pitchLogState.open.add(id);
+    pitchLogState.liveNewFrom = null;
+    pitchLogBody.innerHTML = renderPitchLog(scorecardModel, pitchLogState.side, pitchLogState);
+    const again = pitchLogBody.querySelector(`[data-plog-pitcher="${id}"]`);
+    if (again) again.focus({ preventScroll: true });
+  });
 
   const teamChartOverlay = document.getElementById('teamChartOverlay');
   const teamChartModalBody = document.getElementById('teamChartModalBody');
@@ -15465,6 +15770,10 @@
     if (btn) jumpToPlayerProfile(btn.dataset.playerId);
   });
   teamChartClose.addEventListener('click', hideTeamChartModal);
+  pitchLogClose.addEventListener('click', hidePitchLogModal);
+  pitchLogOverlay.addEventListener('click', (e) => {
+    if (e.target === pitchLogOverlay) hidePitchLogModal();
+  });
   teamChartOverlay.addEventListener('click', (e) => {
     if (e.target === teamChartOverlay) hideTeamChartModal();
   });
@@ -15487,7 +15796,7 @@
       showPitchPopup(e.target.getAttribute('data-pkey'));
       return;
     }
-    if (e.key === 'Escape') { hidePitchPopup(); hideRosterModal(); hidePlayerModal(); hideGameSummaryModal(); hideTeamChartModal(); hideGameStripModal(); hideClipModal(); hideJourneyModal(); playerSearchResults.hidden = true; hushProfileTags(); }
+    if (e.key === 'Escape') { hidePitchPopup(); hideRosterModal(); hidePlayerModal(); hideGameSummaryModal(); hideTeamChartModal(); hideGameStripModal(); hideClipModal(); hideJourneyModal(); hidePitchLogModal(); playerSearchResults.hidden = true; hushProfileTags(); }
   });
 
   // Backgrounding the tab (or the installed PWA) gets setTimeout/setInterval
