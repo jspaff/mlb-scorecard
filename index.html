@@ -2938,7 +2938,11 @@
      columns and stay pinned in view when the cell itself had scrolled out
      of frame -- box-shadow never participated in that. Left as box-shadow
      regardless since it works fine and there's no reason to touch it. */
-  table.scorecard-table td.pitcher-change { box-shadow: inset 0 1.5px 0 var(--ink); padding-top: 5px; }
+  table.scorecard-table td.pitcher-change { position: relative; box-shadow: inset 0 1.5px 0 var(--ink); padding-top: 5px; }
+  /* In the grid the plate hangs on the cell, not the diamond, so a column
+     that's grown on a wide sheet gives the name the room: 52px at the
+     phone-landscape minimum, as before, and the column's width above it. */
+  table.scorecard-table td.pitcher-change > .pitch-tag.player-name-btn { top: 2px; left: 1px; right: 1px; width: auto; }
   table.scorecard-table th.starter-span,
   table.scorecard-table td.starter-span { background: rgba(243, 236, 219, 0.07); }
   .cell-wrap { position: relative; display: inline-block; }
@@ -7041,15 +7045,21 @@
   const ADV_ARROW_SVG = '<svg class="adv-arrow" viewBox="0 0 7 6" aria-hidden="true"><path d="M0 3H5.5M3.5 0.8L5.8 3L3.5 5.2" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>';
   // A plate appearance's diamond and everything drawn on it: runner tags and
   // the entering pitcher's plate. Shared by the grid and the phone's
-  // half-inning view, so a play looks the same in both.
-  function renderCellInner(c) {
+  // half-inning view, so a play looks the same in both -- except that the
+  // grid hangs the pitcher's plate on the inning's cell instead (tag false,
+  // pitchTagHtml), so it can span a column that's grown wider than the
+  // diamond.
+  function pitchTagHtml(c) {
+    return c && c.pitcherChanged && c.pitcherName ? `<button type="button" class="pitch-tag player-name-btn" data-player-id="${c.pitcherId}" title="${c.pitcherFullName || c.pitcherName} enters to pitch">${c.pitcherName}</button>` : '';
+  }
+  function renderCellInner(c, tag = true) {
     let inner = diamondSVG(c.reached, c.scored, c.code, c.isOut, c.outEdge, c.specialEdges, c.ghostStart, c.calledLooking);
     if (c.otherAdvances && c.otherAdvances.length) {
       inner += '<div class="adv-wrap">' + c.otherAdvances.map(a =>
         `<div class="adv-tag ${a.scored ? 'scored' : a.out ? 'out' : ''}">${a.from}${ADV_ARROW_SVG}${a.to}</div>`
       ).join('') + '</div>';
     }
-    if (c.pitcherChanged && c.pitcherName) inner += `<button type="button" class="pitch-tag player-name-btn" data-player-id="${c.pitcherId}" title="${c.pitcherFullName || c.pitcherName} enters to pitch">${c.pitcherName}</button>`;
+    if (tag) inner += pitchTagHtml(c);
     return inner;
   }
   function liveCellInner(liveBatterInfo) {
@@ -7115,7 +7125,7 @@
         const cellArr = r.cells[i] || [];
         for (let k = 0; k < cols; k++) {
           const c = cellArr[k];
-          let inner = c ? renderCellInner(c) : '';
+          let inner = c ? renderCellInner(c, false) : '';
           // A substitute's entry: the cream rule down the left of the inning
           // he comes in, his position and name written up it (bottom to
           // top), side by side when two come in together. On the rule's
@@ -7148,7 +7158,7 @@
             + (r.dividerInnings && r.dividerInnings.has(i) && k === 0 ? ' sub-divider' : '')
             + (c && c.pitcherChanged ? ' pitcher-change' : '')
             + (c && starterPitcherId && c.pitcherId === starterPitcherId ? ' starter-span' : '');
-          cells += `<td class="${cls}">${upTheLine}${cellHtml}</td>`;
+          cells += `<td class="${cls}">${upTheLine}${cellHtml}${pitchTagHtml(c)}</td>`;
         }
       }
       return `<tr>${cells}</tr>`;
